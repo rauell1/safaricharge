@@ -1,0 +1,21 @@
+# dependencies
+node_modules
+
+# nextjs
+.next
+out
+
+# environment
+.env
+.env.local
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+
+# misc
+.DS_Store
+
+#upload/download logs
+upload
+download
