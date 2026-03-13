@@ -1,0 +1,1279 @@
+'use client';
+
+import React, { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffect } from 'react';
+import { 
+  Sun, Cloud, Factory, Home, Building2, Battery, UtilityPole, Wifi, 
+  Clock, Smartphone, Zap, ArrowDown, ArrowUp, MessageSquare, X, Send, 
+  Sparkles, Loader2, Sliders, Play, Pause, FastForward, ChevronDown, 
+  ChevronUp, MapPin, Table, FileText, PieChart, Settings, Calendar, 
+  CloudRain, Moon, Download, RotateCcw, AlertTriangle, DollarSign,
+  Cpu, Car, ZapOff, FileSpreadsheet
+} from 'lucide-react';
+
+// --- CONFIGURATION - Kenya Power Commercial Tariff (E-Mobility) ---
+// Based on actual KPLC bill for ROAM ELECTRIC LIMITED - February 2026
+// Peak Hours: 6:00-10:00 (morning) and 18:00-22:00 (evening)
+// Off-Peak Hours: All other times including weekends
+
+const KPLC_TARIFF = {
+  // Base energy rates (KES/kWh)
+  HIGH_RATE_BASE: 16.00,      // Peak consumption rate
+  LOW_RATE_BASE: 8.00,        // Off-peak consumption rate
+  
+  // Additional charges per kWh (from KPLC bill)
+  FUEL_ENERGY_COST: 3.10,     // Fuel cost adjustment
+  FERFA: 1.2061,              // Forex Exchange Adjustment
+  INFA: 0.46,                 // Inflation Adjustment
+  ERC_LEVY: 0.08,             // Energy Regulatory Commission Levy
+  WRA_LEVY: 0.0121,           // Water Resources Authority Levy
+  VAT_RATE: 0.16,             // Value Added Tax (16%)
+  
+  // Peak hours definition (24-hour format)
+  PEAK_MORNING_START: 6,
+  PEAK_MORNING_END: 10,
+  PEAK_EVENING_START: 18,
+  PEAK_EVENING_END: 22,
+  
+  // Calculate total rate including all charges
+  getHighRateWithVAT: function() {
+    const base = this.HIGH_RATE_BASE + this.FUEL_ENERGY_COST + this.FERFA + 
+                 this.INFA + this.ERC_LEVY + this.WRA_LEVY;
+    return base * (1 + this.VAT_RATE);
+  },
+  
+  getLowRateWithVAT: function() {
+    const base = this.LOW_RATE_BASE + this.FUEL_ENERGY_COST + this.FERFA + 
+                 this.INFA + this.ERC_LEVY + this.WRA_LEVY;
+    return base * (1 + this.VAT_RATE);
+  },
+  
+  // Check if current time is peak hours
+  isPeakTime: function(hour: number): boolean {
+    return (hour >= this.PEAK_MORNING_START && hour < this.PEAK_MORNING_END) ||
+           (hour >= this.PEAK_EVENING_START && hour < this.PEAK_EVENING_END);
+  },
+  
+  // Get applicable rate based on time
+  getRateForTime: function(hour: number): number {
+    return this.isPeakTime(hour) ? this.getHighRateWithVAT() : this.getLowRateWithVAT();
+  }
+};
+
+// System specifications
+const PV_CAPACITY = 50.0; 
+const INVERTER_CAPACITY = 48.0; 
+const BATTERY_CAPACITY = 60.0; 
+const BATTERY_EFFICIENCY = 0.96;
+const EV_CHARGER_RATE = 22.0; 
+const MAX_BAT_CHARGE_RATE = 30.0; 
+const MAX_BAT_DISCHARGE_RATE = 40.0; 
+
+// --- 1. PHYSICS ENGINE (Shared Logic) ---
+const PhysicsEngine = {
+  generateDayScenario: (weather: string) => {
+    return {
+      initialBatSoc: 30.0,
+      ev1: {
+        startSoc: 40 + Math.random() * 30,
+        depart: 7.5 + (Math.random() - 0.5) * 0.5, 
+        return: 18.0 + (Math.random() - 0.5) * 1.0, 
+        emergency: Math.random() < 0.2 ? { start: 20.0 + Math.random()*0.5, end: 21.0 + Math.random()*0.5 } : null,
+        drainRate: 0.5,
+        cap: 80,
+        onboard: 7
+      },
+      ev2: {
+        startSoc: 15 + Math.random() * 25,
+        depart: 5.5 + (Math.random() - 0.5) * 0.5, 
+        lunchStart: 12.5 + Math.random() * 0.5,    
+        lunchEnd: 14.0 + Math.random() * 0.5,      
+        return: 22.0 + (Math.random() - 0.5) * 1.0,
+        drainRate: 0.8,
+        cap: 118,
+        onboard: 22
+      },
+      weatherFactor: weather === 'Sunny' ? 1.0 : weather === 'Cloudy' ? 0.6 : 0.2,
+      cloudNoiseSeed: Math.random(),
+      houseLoadProfile: Array(24).fill(0).map((_, h) => {
+         if (h >= 6 && h < 9) return 5.0 + Math.random() * 2;
+         if (h >= 9 && h < 18) return 2.0 + Math.random();
+         if (h >= 18 && h < 22) return 6.0 + Math.random() * 3;
+         return 0.8;
+      })
+    };
+  },
+
+  calculateInstant: (t: number, prevBatKwh: number, prevEv1Soc: number, prevEv2Soc: number, scenario: any, evSpecs: any) => {
+    const timeStep = 5/60;
+    
+    // A. Solar
+    let solar = 0;
+    if (t > 6.2 && t < 18.8) { 
+        const peakHour = 12.75;
+        const width = 7; 
+        const noise = (Math.sin(t * 10 + scenario.cloudNoiseSeed * 100) * 0.1); 
+        solar = PV_CAPACITY * Math.max(0, Math.exp(-Math.pow(t - peakHour, 2) / width)) * (scenario.weatherFactor + noise);
+        solar = Math.max(0, solar);
+    }
+
+    // B. House Load
+    const hIdx = Math.floor(t);
+    const houseLoad = scenario.houseLoadProfile[hIdx % 24];
+
+    // C. EV Logic
+    let ev1Load = 0;
+    let ev2Load = 0;
+    let ev1IsHome = true;
+    let ev2IsHome = true;
+
+    // EV1 Status
+    if ((t > scenario.ev1.depart && t < scenario.ev1.return) || 
+        (scenario.ev1.emergency && t > scenario.ev1.emergency.start && t < scenario.ev1.emergency.end)) {
+        ev1IsHome = false;
+        prevEv1Soc = Math.max(5, prevEv1Soc - (evSpecs.ev1.drainRate * timeStep / evSpecs.ev1.cap * 100));
+    } else {
+        if (prevEv1Soc < 100) {
+            const needed = (100 - prevEv1Soc) / 100 * evSpecs.ev1.cap;
+            ev1Load = Math.min(Math.min(EV_CHARGER_RATE, evSpecs.ev1.onboard), needed / timeStep);
+        }
+    }
+
+    // EV2 Status
+    if ((t > scenario.ev2.depart && t < scenario.ev2.lunchStart) || 
+        (t > scenario.ev2.lunchEnd && t < scenario.ev2.return)) {
+        ev2IsHome = false;
+        prevEv2Soc = Math.max(5, prevEv2Soc - (evSpecs.ev2.drainRate * timeStep / evSpecs.ev2.cap * 100));
+    } else {
+        if (prevEv2Soc < 100) {
+            const needed = (100 - prevEv2Soc) / 100 * evSpecs.ev2.cap;
+            ev2Load = Math.min(Math.min(EV_CHARGER_RATE, evSpecs.ev2.onboard), needed / timeStep);
+        }
+    }
+
+    // Load Management
+    let totalLoad = houseLoad + ev1Load + ev2Load;
+    if (totalLoad > INVERTER_CAPACITY) {
+        const available = Math.max(0, INVERTER_CAPACITY - houseLoad);
+        if (ev1Load + ev2Load > 0) {
+            const factor = available / (ev1Load + ev2Load);
+            ev1Load *= factor;
+            ev2Load *= factor;
+            totalLoad = INVERTER_CAPACITY;
+        }
+    }
+
+    // Apply Charge to SOC
+    if (ev1Load > 0) prevEv1Soc += (ev1Load * timeStep / evSpecs.ev1.cap * 100);
+    if (ev2Load > 0) prevEv2Soc += (ev2Load * timeStep / evSpecs.ev2.cap * 100);
+
+    // D. Energy Balance
+    let batCharge = 0;
+    let batDischarge = 0;
+    let gridImport = 0;
+    let gridExport = 0;
+    let newBatKwh = prevBatKwh;
+
+    if (solar >= totalLoad) {
+        let excess = solar - totalLoad;
+        if (newBatKwh < BATTERY_CAPACITY) {
+            const capRem = BATTERY_CAPACITY - newBatKwh;
+            batCharge = Math.min(excess, MAX_BAT_CHARGE_RATE, (capRem / BATTERY_EFFICIENCY) / timeStep);
+            newBatKwh += batCharge * timeStep * BATTERY_EFFICIENCY;
+            excess -= batCharge;
+        }
+        gridExport = excess;
+    } else {
+        let deficit = totalLoad - solar;
+        if (newBatKwh > 12.0) {
+            const enAvail = (newBatKwh - 12.0) * BATTERY_EFFICIENCY;
+            batDischarge = Math.min(deficit, MAX_BAT_DISCHARGE_RATE, enAvail / timeStep);
+            newBatKwh -= (batDischarge * timeStep) / BATTERY_EFFICIENCY;
+            deficit -= batDischarge;
+        }
+        gridImport = deficit;
+    }
+
+    return {
+        solar, load: totalLoad, houseLoad, evLoad: ev1Load + ev2Load,
+        gridImport, gridExport, 
+        batPower: batCharge > 0 ? batCharge : -batDischarge,
+        batKwh: newBatKwh,
+        ev1Soc: prevEv1Soc, ev2Soc: prevEv2Soc,
+        ev1IsHome, ev2IsHome,
+        ev1Kw: ev1Load, ev2Kw: ev2Load
+    };
+  }
+};
+
+// --- UTILITIES ---
+const formatDate = (date: Date | null): string => {
+  if (!date) return '';
+  return date.toLocaleDateString('en-GB', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+};
+
+const formatTime = (decimalTime: number): string => {
+  const hours = Math.floor(decimalTime);
+  const minutes = Math.floor((decimalTime - hours) * 60);
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+};
+
+const getWeekNumber = (date: Date): number => {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+};
+
+// --- 2. VISUAL COMPONENTS ---
+
+const RigidCable = React.memo(({ height = 40, width = 2, active = false, color = 'bg-slate-300', flowDirection = 'down', speed = 1, arrowColor = 'text-white' }: {
+  height?: number; width?: number; active?: boolean; color?: string; flowDirection?: string; speed?: number; arrowColor?: string;
+}) => (
+  <div className={`relative ${color} transition-colors duration-500`} style={{ width: width, height: height }}>
+     {active && (
+       <div 
+         className={`absolute left-1/2 -translate-x-1/2 z-10 ${flowDirection === 'down' ? 'animate-flow-down' : 'animate-flow-up'}`}
+         style={{ animationDuration: `${Math.max(0.1, 0.8 / Math.max(0.2, Math.min(speed, 10)))}s` }}
+       >
+         <div className={`bg-white rounded-full p-0.5 shadow-sm ${flowDirection === 'down' ? '' : 'rotate-180'}`}>
+            <ChevronDown size={8} className={arrowColor} strokeWidth={4} />
+         </div>
+       </div>
+     )}
+  </div>
+));
+
+const HorizontalCable = React.memo(({ width = '100%', height = 2, color = 'bg-slate-300' }: {
+  width?: string | number; height?: number; color?: string;
+}) => (
+  <div className={`relative ${color} transition-colors duration-500`} style={{ width: width, height: height }}></div>
+));
+
+const SolarPanelProduct = React.memo(({ power, capacity, weather, isNight }: {
+  power: number; capacity: number; weather: string; isNight: boolean;
+}) => (
+  <div className="flex flex-col items-center z-20">
+    <div className={`w-48 h-28 rounded-lg border-2 border-slate-300 shadow-xl relative overflow-hidden transform transition-all duration-500 hover:scale-105 ${isNight ? 'bg-slate-900' : 'bg-gradient-to-br from-sky-900 to-slate-900'}`}>
+      <div className="absolute inset-0 grid grid-cols-6 grid-rows-2 gap-0.5 opacity-30 pointer-events-none">
+        {[...Array(12)].map((_, i) => <div key={i} className="bg-slate-300"></div>)}
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none"></div>
+      {!isNight && (
+        <div 
+          className={`absolute top-0 rounded-full w-24 h-24 transition-all duration-1000 blur-xl
+            ${weather === 'Sunny' ? 'bg-white/30 opacity-70' : weather === 'Rainy' ? 'bg-slate-400/20 opacity-20' : 'bg-white/10 opacity-40'}
+          `}
+          style={{ left: `${(power / capacity) * 80}%` }}
+        ></div>
+      )}
+      {isNight && <div className="absolute top-2 right-4 w-1 h-1 bg-white rounded-full shadow-[0_0_4px_white] animate-pulse"></div>}
+    </div>
+    <div className="text-center mt-2 bg-white/80 px-3 py-1 rounded-full shadow-sm border border-slate-200 backdrop-blur-sm">
+      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">PV Array ({capacity}kW)</div>
+      <div className="text-lg font-black text-slate-800 leading-none">{power.toFixed(1)} <span className="text-xs font-normal">kW</span></div>
+    </div>
+  </div>
+));
+
+const BatteryProduct = React.memo(({ level, status, power }: {
+  level: number; status: string; power: number;
+}) => (
+  <div className="flex flex-col items-center z-20">
+    <div className="relative w-28 h-40 bg-slate-100 rounded-xl border border-slate-300 shadow-lg flex flex-col items-center justify-center overflow-hidden group transition-all duration-500 hover:-translate-y-1">
+      <div className="absolute top-3 text-[7px] font-black text-slate-300 tracking-widest">SAFARICHARGE</div>
+      <div className="w-3 h-24 bg-slate-200 rounded-full overflow-hidden relative border border-slate-300 shadow-inner">
+         <div 
+           className={`absolute bottom-0 left-0 w-full transition-all duration-500 
+             ${status === 'Charging' ? 'bg-green-500 animate-pulse' : status === 'Discharging' ? 'bg-orange-500' : 'bg-green-600'}
+           `} 
+           style={{ height: `${level}%` }}
+         ></div>
+         <div className="absolute bottom-[20%] w-full h-0.5 bg-red-400 z-10"></div>
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none"></div>
+    </div>
+    <div className="text-center mt-2 bg-white/80 px-2 py-1 rounded border border-slate-200 min-w-[90px] backdrop-blur-sm">
+      <div className="text-[9px] font-bold text-slate-500 uppercase">Storage (60kWh)</div>
+      <div className="text-sm font-black text-slate-800">{level.toFixed(1)}%</div>
+      <div className={`text-[9px] font-bold ${status === 'Charging' ? 'text-green-600' : status === 'Discharging' ? 'text-orange-500' : 'text-slate-400'}`}>
+        {status === 'Idle' ? 'IDLE' : `${Math.abs(power).toFixed(1)} kW`}
+      </div>
+    </div>
+  </div>
+));
+
+const EVChargerProduct = React.memo(({ id, status, power, soc, carName, capacity, maxRate, onToggle }: {
+  id: number; status: string; power: number; soc: number; carName: string; capacity: number; maxRate: number; onToggle: () => void;
+}) => (
+  <div className="flex flex-col items-center z-20" onClick={onToggle}>
+    <div className={`relative w-20 h-28 bg-slate-800 rounded-xl shadow-lg border-l-4 border-slate-600 flex flex-col items-center pt-3 group transition-all duration-500 hover:-translate-y-1 ring-2 ${status === 'Charging' ? 'ring-sky-400' : 'ring-transparent'}`}>
+      <div className="w-12 h-6 bg-black rounded border border-slate-600 flex items-center justify-center mb-2 overflow-hidden relative">
+         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20 opacity-50 z-10 pointer-events-none"></div>
+         {status === 'Charging' ? (
+           <span className="text-green-500 text-[9px] font-mono animate-pulse z-20">{power.toFixed(1)}kW</span>
+         ) : status === 'Away' ? (
+           <span className="text-red-500 text-[8px] z-20">AWAY</span>
+         ) : (
+           <span className="text-slate-500 text-[8px] z-20">IDLE</span>
+         )}
+      </div>
+      <div className="w-12 h-8 border-4 border-slate-700 rounded-b-full border-t-0"></div>
+      <div className={`absolute top-2 right-2 w-1.5 h-1.5 rounded-full ${status === 'Charging' ? 'bg-sky-500 shadow-[0_0_8px_#0ea5e9]' : status === 'Away' ? 'bg-red-500' : 'bg-slate-600'}`}></div>
+    </div>
+    <div className="text-center mt-2 bg-white/80 px-2 py-1 rounded border border-slate-200 backdrop-blur-sm min-w-[90px]">
+      <div className="text-[8px] font-bold text-slate-500 uppercase">{carName}</div>
+      <div className="text-[7px] text-slate-400">{capacity}kWh • {maxRate}kW</div>
+      <div className="flex justify-between items-end px-1 mt-1 border-t border-slate-100 pt-0.5">
+         <span className="text-[8px] text-slate-400">SoC</span>
+         <span className={`text-[10px] font-bold ${soc < 20 ? 'text-red-500' : 'text-sky-600'}`}>{(soc || 0).toFixed(0)}%</span>
+      </div>
+    </div>
+  </div>
+));
+
+const InverterProduct = React.memo(({ id, power }: { id: number; power: number }) => (
+  <div className="flex flex-col items-center bg-white rounded-lg shadow-md border border-slate-200 w-24 p-2 z-20 transition-transform hover:scale-105">
+    <div className="w-full flex justify-between items-center mb-1 border-b border-slate-100 pb-1">
+       <span className="text-[8px] font-bold text-slate-400">16kW Unit #{id}</span>
+       <div className={`w-1.5 h-1.5 rounded-full ${power > 0 ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`}></div>
+    </div>
+    <div className="bg-slate-800 rounded w-full h-8 flex items-center justify-center font-mono text-orange-400 text-[10px] shadow-inner">
+      {power.toFixed(1)} kW
+    </div>
+  </div>
+));
+
+const GridProduct = React.memo(({ power, isImporting, isExporting, gridStatus }: {
+  power: number; isImporting: boolean; isExporting: boolean; gridStatus: string;
+}) => (
+  <div className="flex flex-col items-center z-20">
+     <div className="w-24 h-32 flex items-center justify-center relative">
+        <UtilityPole size={64} className={gridStatus === 'Online' ? "text-slate-700" : "text-red-300"} strokeWidth={1} />
+        {gridStatus === 'Offline' && (
+           <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded animate-pulse">GRID DOWN</div>
+           </div>
+        )}
+        {gridStatus === 'Online' && (isImporting || isExporting) && (
+           <div className={`absolute top-0 right-0 p-1 rounded bg-white border border-slate-200 shadow-sm flex items-center gap-1 ${isImporting ? 'text-sky-600' : 'text-green-500'}`}>
+              {isImporting ? <ArrowDown size={10} /> : <ArrowUp size={10} />}
+              <span className="text-[9px] font-bold">{Math.abs(power).toFixed(1)} kW</span>
+           </div>
+        )}
+     </div>
+     <div className="text-center mt-2 bg-white/80 px-2 py-1 rounded border border-slate-200 backdrop-blur-sm">
+        <div className="text-[9px] font-bold text-slate-500 uppercase">Utility Grid</div>
+        <div className="text-[9px] font-bold text-slate-800">
+           {gridStatus === 'Offline' ? 'OFFLINE' : isImporting ? 'IMPORTING' : isExporting ? 'EXPORTING' : 'IDLE'}
+        </div>
+     </div>
+  </div>
+));
+
+const HomeProduct = React.memo(({ power }: { power: number }) => (
+  <div className="flex flex-col items-center z-20">
+    <div className="w-24 h-32 flex items-center justify-center bg-slate-100 rounded-2xl border border-slate-200 shadow-sm">
+       <Home size={40} className="text-slate-700" strokeWidth={1.5} />
+    </div>
+    <div className="text-center mt-2 bg-white/80 px-2 py-1 rounded border border-slate-200 backdrop-blur-sm">
+      <div className="text-[9px] font-bold text-slate-500 uppercase">Home Load</div>
+      <div className="text-sm font-black text-slate-800">{power.toFixed(1)} kW</div>
+    </div>
+  </div>
+));
+
+// --- 4. ADVANCED COMPONENTS ---
+
+const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather }: {
+  isOpen: boolean; onClose: () => void; data: any; timeOfDay: number; weather: string;
+}) => {
+  const [messages, setMessages] = useState([
+    { role: 'assistant', text: "Hello! I'm SafariCharge AI. I'm actively balancing your EV fleet to keep your grid bill at zero. How can I help?" }
+  ]);
+  const [inputText, setInputText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
+
+  const handleSend = async () => {
+    if (!inputText.trim()) return;
+    const userMsg = { role: 'user', text: inputText };
+    setMessages(prev => [...prev, userMsg]);
+    setInputText('');
+    setIsTyping(true);
+    
+    // Simulate AI response
+    setTimeout(() => {
+      setIsTyping(false);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        text: `Based on current conditions: Solar at ${data.solarR.toFixed(1)}kW, Battery at ${data.batteryLevel.toFixed(1)}%. I recommend continuing current operation for optimal savings.` 
+      }]);
+    }, 1000);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="absolute right-0 top-16 bottom-0 w-full md:w-96 bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col animate-slide-in-right">
+      <div className="p-4 bg-slate-900 text-white flex justify-between items-center shadow-md">
+        <div className="flex items-center gap-2">
+          <Sparkles size={16} className="text-green-400" />
+          <h3 className="font-bold text-sm">SafariCharge AI</h3>
+        </div>
+        <button onClick={onClose} className="text-white hover:text-slate-300"><X size={20} /></button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+        {messages.map((msg, idx) => (
+          <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-sky-500 text-white' : 'bg-white border text-slate-700'}`}>
+              {msg.text}
+            </div>
+          </div>
+        ))}
+        {isTyping && <div className="text-slate-400 text-xs ml-4">Thinking...</div>}
+        <div ref={messagesEndRef} />
+      </div>
+      <div className="p-4 bg-white border-t border-slate-200 flex gap-2">
+        <input 
+          type="text" value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+          placeholder="Ask SafariCharge AI..." className="flex-1 bg-slate-100 rounded-full px-4 text-sm outline-none focus:ring-2 focus:ring-sky-500"
+        />
+        <button onClick={handleSend} disabled={!inputText.trim()} className="p-2 bg-sky-500 text-white rounded-full disabled:opacity-50"><Send size={18} /></button>
+      </div>
+    </div>
+  );
+};
+
+const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport, minuteData, systemStartDate, onExport }: {
+  isOpen: boolean; onClose: () => void; savings: number; solarConsumed: number; gridImport: number;
+  minuteData: Array<{
+    timestamp: string;
+    date: string;
+    year: number;
+    month: number;
+    week: number;
+    day: number;
+    hour: number;
+    minute: number;
+    solarKW: number;
+    homeLoadKW: number;
+    ev1LoadKW: number;
+    ev2LoadKW: number;
+    batteryPowerKW: number;
+    batteryLevelPct: number;
+    gridImportKW: number;
+    gridExportKW: number;
+    ev1SocPct: number;
+    ev2SocPct: number;
+    tariffRate: number;
+    isPeakTime: boolean;
+    savingsKES: number;
+    solarEnergyKWh: number;
+    gridImportKWh: number;
+    gridExportKWh: number;
+  }>;
+  systemStartDate: string;
+  onExport: () => void;
+}) => {
+  const [activeTab, setActiveTab] = useState('daily');
+  const [isExporting, setIsExporting] = useState(false);
+
+  if (!isOpen) return null;
+  
+  // Calculate tariff breakdown for display
+  const highRateTotal = KPLC_TARIFF.getHighRateWithVAT();
+  const lowRateTotal = KPLC_TARIFF.getLowRateWithVAT();
+  
+  // Calculate summary stats from minute data
+  const totalDataPoints = minuteData.length;
+  const totalSolarGenerated = minuteData.reduce((sum, d) => sum + d.solarEnergyKWh, 0);
+  const totalGridImportKWh = minuteData.reduce((sum, d) => sum + d.gridImportKWh, 0);
+  const totalGridExportKWh = minuteData.reduce((sum, d) => sum + d.gridExportKWh, 0);
+  const totalSavings = minuteData.reduce((sum, d) => sum + d.savingsKES, 0);
+  
+  // Get date range
+  const dateRange = totalDataPoints > 0 
+    ? `${minuteData[0]?.date || 'N/A'} to ${minuteData[totalDataPoints - 1]?.date || 'N/A'}`
+    : 'No data yet';
+    
+  // Count unique days, weeks, months, years
+  const uniqueDays = new Set(minuteData.map(d => d.date)).size;
+  const uniqueWeeks = new Set(minuteData.map(d => `${d.year}-W${d.week}`)).size;
+  const uniqueMonths = new Set(minuteData.map(d => `${d.year}-${d.month}`)).size;
+  const uniqueYears = new Set(minuteData.map(d => d.year)).size;
+
+  return (
+    <div className="absolute inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-slide-in-right">
+        <div className="p-4 bg-slate-900 text-white flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <FileSpreadsheet size={20} className="text-sky-400" />
+            <h2 className="font-bold text-lg">Energy Report & Export</h2>
+          </div>
+          <button onClick={onClose} className="text-white hover:text-slate-300"><X size={20}/></button>
+        </div>
+        
+        <div className="flex bg-slate-100 p-1 border-b border-slate-200">
+          <button onClick={() => setActiveTab('daily')} className={`flex-1 py-2 text-xs font-bold uppercase ${activeTab === 'daily' ? 'bg-white shadow text-sky-600' : 'text-slate-500'}`}>Summary</button>
+          <button onClick={() => setActiveTab('tariff')} className={`flex-1 py-2 text-xs font-bold uppercase ${activeTab === 'tariff' ? 'bg-white shadow text-sky-600' : 'text-slate-500'}`}>Tariff Rates</button>
+          <button onClick={() => setActiveTab('export')} className={`flex-1 py-2 text-xs font-bold uppercase ${activeTab === 'export' ? 'bg-white shadow text-sky-600' : 'text-slate-500'}`}>Export Data</button>
+        </div>
+
+        <div className="flex-1 overflow-auto p-6">
+          {activeTab === 'daily' && (
+          <div className="space-y-4">
+            <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex items-center justify-between">
+              <div className="text-xs text-slate-500">
+                <span className="font-bold">System Start:</span> {systemStartDate} | 
+                <span className="font-bold ml-2">Date Range:</span> {dateRange}
+              </div>
+              <div className="text-xs bg-sky-100 text-sky-700 px-2 py-1 rounded font-bold">
+                {totalDataPoints.toLocaleString()} data points
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-4 gap-3">
+              <div className="bg-green-50 p-4 rounded-xl border border-green-100 flex flex-col items-center">
+                  <span className="text-xs font-bold text-green-600 uppercase">Total Savings</span>
+                  <span className="text-2xl font-black text-green-900">KES {totalSavings.toFixed(0)}</span>
+              </div>
+              <div className="bg-sky-50 p-4 rounded-xl border border-sky-100 flex flex-col items-center">
+                  <span className="text-xs font-bold text-sky-600 uppercase">Solar Generated</span>
+                  <span className="text-2xl font-black text-sky-900">{totalSolarGenerated.toFixed(1)} kWh</span>
+              </div>
+              <div className="bg-red-50 p-4 rounded-xl border border-red-100 flex flex-col items-center">
+                  <span className="text-xs font-bold text-red-600 uppercase">Grid Import</span>
+                  <span className="text-2xl font-black text-red-900">{totalGridImportKWh.toFixed(1)} kWh</span>
+              </div>
+              <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 flex flex-col items-center">
+                  <span className="text-xs font-bold text-purple-600 uppercase">Grid Export</span>
+                  <span className="text-2xl font-black text-purple-900">{totalGridExportKWh.toFixed(1)} kWh</span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-4 gap-3">
+              <div className="bg-white p-3 rounded-lg border border-slate-200 text-center">
+                <div className="text-2xl font-black text-slate-800">{uniqueYears}</div>
+                <div className="text-xs text-slate-500 font-bold uppercase">Years</div>
+              </div>
+              <div className="bg-white p-3 rounded-lg border border-slate-200 text-center">
+                <div className="text-2xl font-black text-slate-800">{uniqueMonths}</div>
+                <div className="text-xs text-slate-500 font-bold uppercase">Months</div>
+              </div>
+              <div className="bg-white p-3 rounded-lg border border-slate-200 text-center">
+                <div className="text-2xl font-black text-slate-800">{uniqueWeeks}</div>
+                <div className="text-xs text-slate-500 font-bold uppercase">Weeks</div>
+              </div>
+              <div className="bg-white p-3 rounded-lg border border-slate-200 text-center">
+                <div className="text-2xl font-black text-slate-800">{uniqueDays}</div>
+                <div className="text-xs text-slate-500 font-bold uppercase">Days</div>
+              </div>
+            </div>
+          </div>
+          )}
+          
+          {activeTab === 'tariff' && (
+          <div className="space-y-4">
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <DollarSign size={16} className="text-green-600" />
+                Kenya Power Commercial Tariff (E-Mobility)
+              </h3>
+              <p className="text-xs text-slate-500 mb-4">Based on KPLC bill - February 2026 for ROAM ELECTRIC LIMITED</p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-orange-600">PEAK HOURS</span>
+                    <span className="text-[10px] bg-orange-200 text-orange-800 px-2 py-0.5 rounded">06:00-10:00 & 18:00-22:00</span>
+                  </div>
+                  <div className="text-2xl font-black text-orange-900">KES {highRateTotal.toFixed(2)}/kWh</div>
+                  <div className="text-[10px] text-orange-600 mt-1">Base: KES {KPLC_TARIFF.HIGH_RATE_BASE.toFixed(2)} + charges</div>
+                </div>
+                
+                <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-green-600">OFF-PEAK HOURS</span>
+                    <span className="text-[10px] bg-green-200 text-green-800 px-2 py-0.5 rounded">All other times</span>
+                  </div>
+                  <div className="text-2xl font-black text-green-900">KES {lowRateTotal.toFixed(2)}/kWh</div>
+                  <div className="text-[10px] text-green-600 mt-1">Base: KES {KPLC_TARIFF.LOW_RATE_BASE.toFixed(2)} + charges</div>
+                </div>
+              </div>
+              
+              <div className="mt-4 pt-4 border-t border-slate-200">
+                <h4 className="text-xs font-bold text-slate-600 mb-2">Additional Charges (per kWh)</h4>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="flex justify-between bg-slate-100 px-2 py-1 rounded">
+                    <span className="text-slate-500">Fuel Cost</span>
+                    <span className="font-bold text-slate-700">KES {KPLC_TARIFF.FUEL_ENERGY_COST.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between bg-slate-100 px-2 py-1 rounded">
+                    <span className="text-slate-500">FERFA</span>
+                    <span className="font-bold text-slate-700">KES {KPLC_TARIFF.FERFA.toFixed(4)}</span>
+                  </div>
+                  <div className="flex justify-between bg-slate-100 px-2 py-1 rounded">
+                    <span className="text-slate-500">INFA</span>
+                    <span className="font-bold text-slate-700">KES {KPLC_TARIFF.INFA.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between bg-slate-100 px-2 py-1 rounded">
+                    <span className="text-slate-500">ERC Levy</span>
+                    <span className="font-bold text-slate-700">KES {KPLC_TARIFF.ERC_LEVY.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between bg-slate-100 px-2 py-1 rounded">
+                    <span className="text-slate-500">WRA Levy</span>
+                    <span className="font-bold text-slate-700">KES {KPLC_TARIFF.WRA_LEVY.toFixed(4)}</span>
+                  </div>
+                  <div className="flex justify-between bg-slate-100 px-2 py-1 rounded">
+                    <span className="text-slate-500">VAT</span>
+                    <span className="font-bold text-slate-700">{(KPLC_TARIFF.VAT_RATE * 100).toFixed(0)}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          )}
+          
+          {activeTab === 'evs' && (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-sky-50 p-4 rounded-xl border border-sky-100">
+              <h4 className="text-sm font-bold text-sky-800 mb-2">EV #1 (Commuter)</h4>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between"><span className="text-slate-500">Battery</span><span className="font-bold">80 kWh</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Charger Rate</span><span className="font-bold">7 kW</span></div>
+              </div>
+            </div>
+            <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+              <h4 className="text-sm font-bold text-purple-800 mb-2">EV #2 (Uber)</h4>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between"><span className="text-slate-500">Battery</span><span className="font-bold">118 kWh</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Charger Rate</span><span className="font-bold">22 kW</span></div>
+              </div>
+            </div>
+          </div>
+          )}
+          
+          {activeTab === 'export' && (
+          <div className="space-y-6">
+            <div className="bg-gradient-to-br from-sky-50 to-green-50 p-6 rounded-xl border border-sky-200">
+              <div className="flex items-center gap-3 mb-4">
+                <Download size={24} className="text-sky-600" />
+                <div>
+                  <h3 className="font-bold text-slate-800 text-lg">Export Full Report</h3>
+                  <p className="text-xs text-slate-500">Download comprehensive energy data in Excel-compatible CSV format</p>
+                </div>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg border border-slate-200 mb-4">
+                <h4 className="text-xs font-bold text-slate-600 mb-2 uppercase">Report Contents</h4>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    Minute-by-minute data ({totalDataPoints.toLocaleString()} records)
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <span className="w-2 h-2 bg-sky-500 rounded-full"></span>
+                    Hourly summaries ({uniqueDays * 24}+ hours)
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                    Daily summaries ({uniqueDays} days)
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                    Weekly summaries ({uniqueWeeks} weeks)
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                    Monthly summaries ({uniqueMonths} months)
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
+                    Yearly summaries ({uniqueYears} years)
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-4 text-xs text-slate-600">
+                <div className="font-bold mb-1">Data Includes:</div>
+                <div className="grid grid-cols-3 gap-1">
+                  <span>• Solar generation</span>
+                  <span>• Home load</span>
+                  <span>• EV charging</span>
+                  <span>• Battery status</span>
+                  <span>• Grid import/export</span>
+                  <span>• Tariff rates</span>
+                  <span>• Savings (KES)</span>
+                  <span>• Peak/Off-peak</span>
+                  <span>• Energy totals</span>
+                </div>
+              </div>
+              
+              <button
+                onClick={async () => {
+                  setIsExporting(true);
+                  try {
+                    await onExport();
+                  } finally {
+                    setIsExporting(false);
+                  }
+                }}
+                disabled={isExporting || totalDataPoints === 0}
+                className="w-full py-3 bg-gradient-to-r from-sky-600 to-green-600 text-white font-bold rounded-lg hover:from-sky-700 hover:to-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isExporting ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Generating Report...
+                  </>
+                ) : (
+                  <>
+                    <Download size={18} />
+                    Download Excel Report ({(totalDataPoints * 0.5 / 1024).toFixed(1)} KB)
+                  </>
+                )}
+              </button>
+              
+              {totalDataPoints === 0 && (
+                <p className="text-xs text-amber-600 mt-2 text-center">
+                  Start the simulation to collect data for export
+                </p>
+              )}
+            </div>
+            
+            <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+              <h4 className="text-xs font-bold text-amber-800 mb-1">Data Retention</h4>
+              <p className="text-xs text-amber-700">
+                All data from system start (January 1, 2026) is retained. The system can track up to 20+ years 
+                of simulation data. Use high speed simulation (x1000) to quickly generate multi-year datasets.
+              </p>
+            </div>
+          </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- 5. PANEL LAYOUTS ---
+
+const Header = ({ onToggleAssistant, currentDate, onReset }: {
+  onToggleAssistant: () => void; currentDate: Date; onReset: () => void;
+}) => (
+  <div className="w-full bg-white relative z-50 shadow-sm">
+    <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+      <div className="flex items-center gap-3">
+         <div className="flex items-center gap-2">
+            <svg viewBox="0 0 100 100" className="w-8 h-8 fill-sky-500">
+              <path d="M50 0 L90 40 L75 40 L50 15 L25 40 L10 40 Z" />
+              <path d="M10 50 L35 75 L50 90 L65 75 L90 50 L75 50 L50 75 L25 50 Z" />
+            </svg>
+            <div className="flex flex-col">
+               <h1 className="text-xl font-black tracking-wide text-sky-500 uppercase leading-none">SAFARI<span className="text-slate-800">CHARGE</span></h1>
+               <span className="text-[10px] font-bold tracking-[0.2em] text-slate-400">LIMITED</span>
+            </div>
+         </div>
+      </div>
+      <div className="flex items-center gap-6">
+         <button onClick={onReset} className="text-slate-400 hover:text-red-500 transition-colors" title="Reset Simulation"><RotateCcw size={16} /></button>
+         <div className="hidden md:flex items-center gap-2 text-slate-500 text-xs font-medium bg-slate-100 px-3 py-1 rounded-full">
+            <Calendar size={14} className="text-slate-400" /> {formatDate(currentDate)}
+         </div>
+         <div className="hidden md:flex items-center gap-2 text-slate-500 text-xs font-medium bg-slate-100 px-3 py-1 rounded-full">
+            <MapPin size={14} className="text-sky-500" /> Nairobi, KE
+         </div>
+         <button onClick={onToggleAssistant} className="bg-slate-900 text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 hover:bg-slate-800 transition-colors shadow-lg border border-slate-700">
+           <Sparkles size={14} className="text-green-400" /> SafariCharge AI
+         </button>
+      </div>
+    </div>
+    <div className="h-0.5 w-full bg-gradient-to-r from-sky-500 to-green-500 shadow-[0_0_15px_rgba(14,165,233,0.5)]"></div>
+  </div>
+);
+
+const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAuto, simSpeed, onSpeedChange, onOpenReport, priorityMode, onTogglePriority, weather, isNight, gridStatus, onToggleGrid, displayPriority, ev1Status, ev2Status }: {
+  data: any; timeOfDay: number; onTimeChange: (t: number) => void; isAutoMode: boolean; onToggleAuto: () => void; simSpeed: number; onSpeedChange: (s: number) => void; onOpenReport: () => void; priorityMode: string; onTogglePriority: () => void; weather: string; isNight: boolean; gridStatus: string; onToggleGrid: () => void; displayPriority: string; ev1Status: string; ev2Status: string;
+}) => {
+  return (
+    <div className="relative flex flex-col items-center justify-center w-full h-full p-6">
+      <div className="text-center mb-6 w-full">
+        <h2 className="text-2xl font-black text-slate-800 leading-tight">SIMULATION <span className="text-sky-500">CONTROLS</span></h2>
+        
+        <div className="mt-4 bg-white p-4 rounded-xl shadow-md border border-slate-200 w-full max-w-sm mx-auto relative overflow-hidden">
+          <div className="absolute top-2 right-2 text-xs text-slate-400 font-bold flex items-center gap-1 bg-slate-50 px-2 py-1 rounded transition-colors duration-500">
+             {isNight ? (<><Moon size={14} className="text-indigo-400" /> Night</>) : (<>{weather === 'Sunny' && <Sun size={14} className="text-orange-500" />}{weather}</>)}
+          </div>
+
+          <div className="flex justify-between items-center mb-2">
+            <div className="flex items-center gap-2">
+               <span className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1"><Clock size={12}/> Time</span>
+               {isAutoMode && <span className="text-[9px] bg-green-500 text-white px-1.5 rounded animate-pulse">LIVE</span>}
+            </div>
+            <span className="text-sm font-mono font-bold text-slate-800">{formatTime(timeOfDay)}</span>
+          </div>
+          
+          <div className="flex items-center gap-3">
+             <button onClick={onToggleAuto} className={`p-2 rounded-full transition-colors ${isAutoMode ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                {isAutoMode ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
+             </button>
+             <input type="range" min="0" max="24" step="0.08" value={timeOfDay} onChange={(e) => { onTimeChange(parseFloat(e.target.value)); if(isAutoMode) onToggleAuto(); }} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-500" />
+          </div>
+
+          <div className="flex justify-center gap-2 mt-3 pt-2 border-t border-slate-100 flex-wrap">
+             {[1, 5, 20, 100, 1000].map(speed => (
+               <button key={speed} onClick={() => onSpeedChange(speed)} className={`text-[9px] px-2 py-1 rounded font-bold transition-all ${simSpeed === speed ? 'bg-slate-800 text-white scale-110' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>x{speed}</button>
+             ))}
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-2 w-full max-w-sm mx-auto">
+           <div className="flex justify-center gap-2">
+             <div className={`px-3 py-2 rounded-lg border text-[10px] font-bold flex items-center gap-1 w-32 justify-center transition-all ${ev1Status === 'Charging' ? 'bg-sky-50 border-sky-200 text-sky-700 ring-2 ring-sky-500' : ev1Status === 'Away' ? 'bg-slate-50 border-slate-200 text-red-400' : 'bg-green-50 border-green-200 text-green-700'}`}>
+               EV #1: {ev1Status}
+             </div>
+             <div className={`px-3 py-2 rounded-lg border text-[10px] font-bold flex items-center gap-1 w-32 justify-center transition-all ${ev2Status === 'Charging' ? 'bg-sky-50 border-sky-200 text-sky-700 ring-2 ring-sky-500' : ev2Status === 'Away' ? 'bg-slate-50 border-slate-200 text-red-400' : 'bg-green-50 border-green-200 text-green-700'}`}>
+               EV #2: {ev2Status}
+             </div>
+           </div>
+           
+           <div className="grid grid-cols-2 gap-2">
+             <button onClick={onTogglePriority} className="bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg p-2 flex items-center justify-center text-xs gap-2 transition-colors">
+               <span className={`font-bold ${displayPriority === 'load' ? 'text-sky-600' : 'text-green-600'}`}>{displayPriority === 'load' ? 'Load First' : 'Charge First'}</span>
+               {priorityMode === 'auto' && <span className="text-[8px] bg-purple-100 text-purple-600 px-1 rounded font-bold">AUTO</span>}
+             </button>
+             <button onClick={onToggleGrid} className={`border rounded-lg p-2 flex items-center justify-center text-xs gap-2 ${gridStatus === 'Online' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700 animate-pulse'}`}>
+               <Zap size={12} fill="currentColor" /> {gridStatus === 'Online' ? 'Grid OK' : 'Outage'}
+             </button>
+           </div>
+        </div>
+      </div>
+      
+      {/* Financial/Flow Widget */}
+      <div className="bg-slate-900 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-700 relative">
+         <div className="p-6 relative z-10">
+            {/* Current Tariff Rate Display */}
+            <div className="mb-4 pb-3 border-b border-slate-700">
+               <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                     <DollarSign size={14} className="text-yellow-400" />
+                     <span className="text-[10px] uppercase tracking-wider text-slate-400">Current Tariff</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                     <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${data.isPeakTime ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400'}`}>
+                       {data.isPeakTime ? 'PEAK' : 'OFF-PEAK'}
+                     </span>
+                     <span className="text-white font-bold text-sm">KES {data.currentTariffRate.toFixed(2)}/kWh</span>
+                  </div>
+               </div>
+            </div>
+            
+            <div className="flex justify-between items-center mb-4">
+               <div>
+                  <div className="text-slate-400 text-[10px] uppercase tracking-wider">Today&apos;s Savings</div>
+                  <div className="text-2xl font-light text-white flex items-center gap-1">
+                    <span className="text-green-400 font-bold">KES {data.displaySavings.toFixed(0)}</span>
+                  </div>
+               </div>
+               <button onClick={onOpenReport} className="text-[10px] bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded flex items-center gap-1 transition-colors">
+                   <Table size={10} /> View Report
+               </button>
+            </div>
+            
+            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700 space-y-2">
+               <div className="flex justify-between items-center text-xs">
+                 <span className="text-slate-300">1. {displayPriority === 'load' ? 'Loads' : 'Battery'}</span>
+                 <span className="text-white font-bold">{displayPriority === 'load' ? `${Math.min(data.solarR, data.homeLoad + data.ev1Load + data.ev2Load).toFixed(1)} kW` : (data.batteryStatus === 'Charging' ? `${Math.abs(data.batteryPower).toFixed(1)} kW` : '0.0 kW')}</span>
+               </div>
+               <div className="flex justify-between items-center text-xs">
+                 <span className="text-slate-300">2. {displayPriority === 'load' ? 'Battery' : 'Loads'}</span>
+                 <span className="text-white font-bold">{displayPriority === 'load' ? (data.batteryStatus === 'Charging' ? `${Math.abs(data.batteryPower).toFixed(1)} kW` : '0.0 kW') : `${Math.min(data.solarR, data.homeLoad + data.ev1Load + data.ev2Load).toFixed(1)} kW`}</span>
+               </div>
+               <div className="flex justify-between items-center text-xs border-t border-slate-700 pt-1 mt-1">
+                 <span className="text-slate-300">3. Grid Backup</span>
+                 <span className={`${data.netGridPower < 0 ? 'text-red-400' : 'text-green-400'} font-bold`}>{data.netGridPower < 0 ? `${Math.abs(data.netGridPower).toFixed(1)} kW (In)` : `${Math.abs(data.netGridPower).toFixed(1)} kW (Out)`}</span>
+               </div>
+            </div>
+         </div>
+      </div>
+    </div>
+  );
+};
+
+const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridStatus, ev1Status, ev2Status, evSpecs }: {
+  data: any; simSpeed: number; weather: string; isNight: boolean; gridStatus: string; ev1Status: string; ev2Status: string; evSpecs: any;
+}) => {
+  const isSolarActive = data.solarR > 0.1;
+  const gridFlowDir = data.netGridPower < 0 ? 'up' : 'down';
+  
+  return (
+    <div className="flex flex-col items-center w-full h-full p-6 bg-slate-50/50 rounded-3xl border border-slate-200 shadow-inner">
+       <div className="mb-0"><SolarPanelProduct power={data.solarR} capacity={50.0} weather={weather} isNight={isNight} /></div>
+       <div className="flex flex-col items-center">
+          <RigidCable height={30} active={isSolarActive} color={isSolarActive ? "bg-green-500" : "bg-slate-300"} speed={simSpeed} arrowColor="text-green-100" />
+          <HorizontalCable width={240} color={isSolarActive ? "bg-green-500" : "bg-slate-300"} />
+          <div className="flex justify-between w-[240px]">
+             <RigidCable height={20} active={isSolarActive} color={isSolarActive ? "bg-green-500" : "bg-slate-300"} speed={simSpeed} arrowColor="text-green-100" />
+             <RigidCable height={20} active={isSolarActive} color={isSolarActive ? "bg-green-500" : "bg-slate-300"} speed={simSpeed} arrowColor="text-green-100" />
+             <RigidCable height={20} active={isSolarActive} color={isSolarActive ? "bg-green-500" : "bg-slate-300"} speed={simSpeed} arrowColor="text-green-100" />
+          </div>
+       </div>
+       <div className="flex gap-8 justify-center items-start mb-0">
+          <InverterProduct id={1} power={data.solarR / 3} />
+          <InverterProduct id={2} power={data.solarR / 3} />
+          <InverterProduct id={3} power={data.solarR / 3} />
+       </div>
+       <div className="flex flex-col items-center">
+          <div className="flex justify-between w-[240px]">
+             <RigidCable height={30} active={isSolarActive} color={isSolarActive ? "bg-green-500" : "bg-slate-300"} speed={simSpeed} arrowColor="text-green-100" />
+             <RigidCable height={30} active={isSolarActive} color={isSolarActive ? "bg-green-500" : "bg-slate-300"} speed={simSpeed} arrowColor="text-green-100" />
+             <RigidCable height={30} active={isSolarActive} color={isSolarActive ? "bg-green-500" : "bg-slate-300"} speed={simSpeed} arrowColor="text-green-100" />
+          </div>
+          <div className="w-[550px] h-4 bg-slate-800 rounded-full shadow-md z-10 relative flex items-center justify-center">
+             <div className="text-[8px] text-white font-mono tracking-widest">AC DISTRIBUTION BUS</div>
+          </div>
+          <div className="flex justify-between w-[500px]">
+             <RigidCable 
+               height={40} 
+               active={data.netGridPower !== 0 && gridStatus === 'Online'} 
+               flowDirection={gridFlowDir} 
+               color={gridStatus === 'Offline' ? 'bg-red-200' : data.netGridPower < 0 ? "bg-sky-500" : data.netGridPower > 0 ? "bg-green-500" : "bg-slate-300"} 
+               speed={simSpeed}
+               arrowColor={data.netGridPower < 0 ? "text-sky-100" : "text-green-100"}
+             />
+             <RigidCable height={40} active={data.homeLoad > 0} color="bg-slate-800" speed={simSpeed} arrowColor="text-slate-200" />
+             <RigidCable height={40} active={ev1Status === 'Charging'} color={ev1Status === 'Charging' ? "bg-slate-800" : "bg-slate-200"} speed={simSpeed} arrowColor="text-slate-200" />
+             <RigidCable height={40} active={ev2Status === 'Charging'} color={ev2Status === 'Charging' ? "bg-slate-800" : "bg-slate-200"} speed={simSpeed} arrowColor="text-slate-200" />
+             <RigidCable 
+               height={40} 
+               active={data.batteryStatus !== 'Idle'} 
+               flowDirection={data.batteryStatus === 'Charging' ? 'down' : 'up'} 
+               color={data.batteryStatus === 'Charging' ? "bg-green-500" : data.batteryStatus === 'Discharging' ? "bg-orange-500" : "bg-slate-300"} 
+               speed={simSpeed}
+               arrowColor={data.batteryStatus === 'Charging' ? "text-green-100" : "text-orange-100"}
+             />
+          </div>
+       </div>
+       <div className="flex gap-4 justify-between w-full max-w-[600px] mt-0">
+          <div className="flex-1 flex justify-center scale-90"><GridProduct power={data.netGridPower} isImporting={data.netGridPower < 0} isExporting={data.netGridPower > 0} gridStatus={gridStatus} /></div>
+          <div className="flex-1 flex justify-center scale-90"><HomeProduct power={data.homeLoad} /></div>
+          <div className="flex-1 flex justify-center scale-90"><EVChargerProduct id={1} status={ev1Status} soc={data.ev1Soc} power={data.ev1Load} carName="EV 1 (Commuter)" capacity={evSpecs.ev1.capacity} maxRate={evSpecs.ev1.rate} onToggle={() => {}} /></div>
+          <div className="flex-1 flex justify-center scale-90"><EVChargerProduct id={2} status={ev2Status} soc={data.ev2Soc} power={data.ev2Load} carName="EV 2 (Uber)" capacity={evSpecs.ev2.capacity} maxRate={evSpecs.ev2.rate} onToggle={() => {}} /></div>
+          <div className="flex-1 flex justify-center scale-90"><BatteryProduct level={data.batteryLevel} status={data.batteryStatus} power={data.batteryPower} /></div>
+       </div>
+    </div>
+  );
+});
+
+// --- 6. APP COMPONENT ---
+
+export default function App() {
+  const [timeOfDay, setTimeOfDay] = useState(12); 
+  const [currentDate, setCurrentDate] = useState(new Date('2026-01-01T00:00:00'));
+  const [isAutoMode, setIsAutoMode] = useState(false);
+  const [simSpeed, setSimSpeed] = useState(1); 
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false); 
+  const [priorityMode, setPriorityMode] = useState('auto');
+  const [gridStatus, setGridStatus] = useState('Online');
+  const [weather, setWeather] = useState('Sunny');
+
+  const evSpecs = {
+     ev1: { capacity: 80, rate: 7, drainRate: 0.5, cap: 80, onboard: 7 },
+     ev2: { capacity: 118, rate: 22, drainRate: 0.8, cap: 118, onboard: 22 }
+  };
+
+  const [data, setData] = useState({
+    solarR: 0, homeLoad: 5, ev1Load: 0, ev2Load: 0, 
+    ev1Status: 'Idle', ev2Status: 'Idle',
+    ev1Soc: 60, ev2Soc: 50,
+    batteryPower: 0, batteryLevel: 50, batteryStatus: 'Idle',
+    netGridPower: 0, displaySavings: 0,
+    effectivePriority: 'load',
+    totalSolar: 0,
+    totalGridImport: 0,
+    currentTariffRate: KPLC_TARIFF.getLowRateWithVAT(),
+    isPeakTime: false,
+  });
+
+  const accumulators = useRef({ solar: 0, savings: 0, gridImport: 0 });
+  const dayScenarioRef = useRef(PhysicsEngine.generateDayScenario('Sunny'));
+  
+  // Comprehensive data tracking for export - stores all minute-by-minute data
+  const minuteDataRef = useRef<Array<{
+    timestamp: string;
+    date: string;
+    year: number;
+    month: number;
+    week: number;
+    day: number;
+    hour: number;
+    minute: number;
+    solarKW: number;
+    homeLoadKW: number;
+    ev1LoadKW: number;
+    ev2LoadKW: number;
+    batteryPowerKW: number;
+    batteryLevelPct: number;
+    gridImportKW: number;
+    gridExportKW: number;
+    ev1SocPct: number;
+    ev2SocPct: number;
+    tariffRate: number;
+    isPeakTime: boolean;
+    savingsKES: number;
+    solarEnergyKWh: number;
+    gridImportKWh: number;
+    gridExportKWh: number;
+  }>>([]);
+  
+  const systemStartDate = useRef('2026-01-01'); // System start date for tracking
+
+  const handleReset = () => {
+    setTimeOfDay(12);
+    setCurrentDate(new Date('2026-01-01T00:00:00'));
+    accumulators.current = { solar: 0, savings: 0, gridImport: 0 };
+    minuteDataRef.current = []; // Clear all tracked data on reset
+    setData(prev => ({ ...prev, batteryLevel: 50, ev1Soc: 60, ev2Soc: 50, displaySavings: 0 }));
+    setIsAutoMode(false);
+    dayScenarioRef.current = PhysicsEngine.generateDayScenario('Sunny');
+  };
+
+  const handleNewDay = useCallback(() => {
+    const nextDate = new Date(currentDate);
+    nextDate.setDate(nextDate.getDate() + 1);
+    setCurrentDate(nextDate);
+    accumulators.current = { solar: 0, savings: 0, gridImport: 0 };
+
+    const r = Math.random();
+    let newWeather = 'Sunny';
+    if (r > 0.7) newWeather = 'Cloudy';
+    if (r > 0.9) newWeather = 'Rainy';
+    setWeather(newWeather);
+    
+    if (Math.random() > 0.95) setGridStatus('Offline'); else setGridStatus('Online');
+    
+    dayScenarioRef.current = PhysicsEngine.generateDayScenario(newWeather);
+    setData(prev => ({ ...prev, ev1Soc: dayScenarioRef.current.ev1.startSoc, ev2Soc: dayScenarioRef.current.ev2.startSoc }));
+  }, [currentDate]);
+
+  const handleNewDayRef = useRef(handleNewDay);
+  
+  // Update ref in useLayoutEffect to avoid render-time ref assignment warning
+  useLayoutEffect(() => {
+    handleNewDayRef.current = handleNewDay;
+  });
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isAutoMode) {
+      interval = setInterval(() => {
+        setTimeOfDay(prev => {
+          let next = prev + 0.05 * simSpeed;
+          if (next >= 24) {
+             handleNewDayRef.current();
+             next = next % 24;
+          }
+          return next;
+        });
+      }, 100); 
+    }
+    return () => clearInterval(interval);
+  }, [isAutoMode, simSpeed]); 
+
+  useEffect(() => {
+    setData(prev => {
+      const state = PhysicsEngine.calculateInstant(
+          timeOfDay, 
+          prev.batteryLevel / 100 * BATTERY_CAPACITY, 
+          prev.ev1Soc, 
+          prev.ev2Soc, 
+          dayScenarioRef.current,
+          evSpecs
+      );
+
+      const timeStep = 0.05 * simSpeed; 
+      const solarConsumed = state.solar - (state.gridExport > 0 ? state.gridExport : 0);
+      
+      // Calculate savings using time-based Kenya Power tariff
+      // Peak hours have higher rates, off-peak hours have lower rates
+      const currentHour = Math.floor(timeOfDay);
+      const applicableRate = KPLC_TARIFF.getRateForTime(currentHour);
+      const moneySaved = solarConsumed * applicableRate * timeStep;
+
+      if (isAutoMode) {
+         accumulators.current.solar += state.solar * timeStep;
+         accumulators.current.savings += moneySaved;
+         if (state.gridImport > 0) accumulators.current.gridImport += state.gridImport * timeStep;
+         
+         // Record minute-by-minute data for export
+         const now = new Date(currentDate);
+         now.setHours(Math.floor(timeOfDay), Math.floor((timeOfDay % 1) * 60), 0);
+         const weekNum = getWeekNumber(now);
+         
+         minuteDataRef.current.push({
+           timestamp: now.toISOString(),
+           date: now.toISOString().split('T')[0],
+           year: now.getFullYear(),
+           month: now.getMonth() + 1,
+           week: weekNum,
+           day: now.getDate(),
+           hour: Math.floor(timeOfDay),
+           minute: Math.floor((timeOfDay % 1) * 60),
+           solarKW: state.solar,
+           homeLoadKW: state.houseLoad,
+           ev1LoadKW: state.ev1Kw,
+           ev2LoadKW: state.ev2Kw,
+           batteryPowerKW: state.batPower,
+           batteryLevelPct: (state.batKwh / BATTERY_CAPACITY) * 100,
+           gridImportKW: state.gridImport,
+           gridExportKW: state.gridExport,
+           ev1SocPct: state.ev1Soc,
+           ev2SocPct: state.ev2Soc,
+           tariffRate: applicableRate,
+           isPeakTime: KPLC_TARIFF.isPeakTime(currentHour),
+           savingsKES: moneySaved,
+           solarEnergyKWh: state.solar * timeStep,
+           gridImportKWh: state.gridImport * timeStep,
+           gridExportKWh: state.gridExport * timeStep,
+         });
+      }
+
+      let effectivePriority = priorityMode;
+      if (priorityMode === 'auto') {
+         effectivePriority = 'load'; 
+         if (state.batKwh / BATTERY_CAPACITY * 100 < 40) effectivePriority = 'battery'; 
+      }
+
+      return {
+         ...prev,
+         solarR: state.solar,
+         homeLoad: state.houseLoad,
+         ev1Load: state.ev1Kw, ev1Status: state.ev1Kw > 0 ? 'Charging' : (state.ev1IsHome ? 'Idle' : 'Away'), ev1Soc: state.ev1Soc,
+         ev2Load: state.ev2Kw, ev2Status: state.ev2Kw > 0 ? 'Charging' : (state.ev2IsHome ? 'Idle' : 'Away'), ev2Soc: state.ev2Soc,
+         batteryPower: state.batPower,
+         batteryStatus: state.batPower > 0.1 ? 'Charging' : (state.batPower < -0.1 ? 'Discharging' : 'Idle'),
+         batteryLevel: (state.batKwh / BATTERY_CAPACITY) * 100,
+         netGridPower: state.gridExport > 0 ? state.gridExport : -state.gridImport,
+         effectivePriority: effectivePriority,
+         displaySavings: accumulators.current.savings,
+         totalSolar: accumulators.current.solar,
+         totalGridImport: accumulators.current.gridImport,
+         currentTariffRate: applicableRate,
+         isPeakTime: KPLC_TARIFF.isPeakTime(currentHour),
+      };
+    });
+  }, [timeOfDay, simSpeed, priorityMode, isAutoMode, evSpecs]); 
+
+  const isNight = timeOfDay < 6 || timeOfDay > 19;
+  
+  // Export function for downloading report
+  const handleExportReport = async () => {
+    try {
+      // Check if there's data to export
+      if (!minuteDataRef.current || minuteDataRef.current.length === 0) {
+        alert('No data to export. Please run the simulation first by clicking the Play button.');
+        return;
+      }
+
+      console.log(`Exporting ${minuteDataRef.current.length} data points...`);
+      
+      const response = await fetch('/api/export-report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          minuteData: minuteDataRef.current,
+          startDate: systemStartDate.current,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `SafariCharge_Report_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      console.log('Export completed successfully!');
+    } catch (error) {
+      console.error('Export error:', error);
+      alert(`Failed to export report: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-200 font-sans text-slate-900 overflow-hidden flex flex-col relative">
+      <Header onToggleAssistant={() => setIsAssistantOpen(!isAssistantOpen)} currentDate={currentDate} onReset={handleReset} />
+      <SafariChargeAIAssistant isOpen={isAssistantOpen} onClose={() => setIsAssistantOpen(false)} data={data} timeOfDay={timeOfDay} weather={weather} />
+      <EnergyReportModal 
+        isOpen={isReportOpen} 
+        onClose={() => setIsReportOpen(false)} 
+        savings={data.displaySavings}
+        solarConsumed={data.totalSolar}
+        gridImport={data.totalGridImport}
+        minuteData={minuteDataRef.current}
+        systemStartDate={systemStartDate.current}
+        onExport={handleExportReport}
+      />
+
+      <main className="flex-1 flex items-center justify-center p-4">
+        <div className="w-full max-w-7xl h-full min-h-[600px] bg-slate-100 rounded-[30px] shadow-2xl border border-white relative flex flex-col lg:flex-row overflow-hidden">
+          <div className="absolute inset-0 opacity-40 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
+          
+          <div className="flex-1 p-4 flex items-center justify-center z-10 border-r border-slate-200/60 bg-slate-50/50">
+             <div className="absolute bg-sky-500/5 blur-3xl w-3/4 h-3/4 rounded-full -z-10"></div>
+             <CentralDisplay 
+               data={data} 
+               timeOfDay={timeOfDay} 
+               onTimeChange={setTimeOfDay}
+               isAutoMode={isAutoMode}
+               onToggleAuto={() => setIsAutoMode(!isAutoMode)}
+               simSpeed={simSpeed}
+               onSpeedChange={setSimSpeed}
+               onOpenReport={() => setIsReportOpen(true)}
+               priorityMode={priorityMode}
+               onTogglePriority={() => setPriorityMode(prev => prev === 'battery' ? 'load' : prev === 'load' ? 'auto' : 'battery')}
+               weather={weather}
+               isNight={isNight}
+               gridStatus={gridStatus}
+               onToggleGrid={() => setGridStatus(prev => prev === 'Online' ? 'Offline' : 'Online')}
+               displayPriority={data.effectivePriority}
+               ev1Status={data.ev1Status}
+               ev2Status={data.ev2Status}
+             />
+          </div>
+
+          <div className="flex-[2] p-4 bg-gradient-to-br from-slate-50 to-slate-100 relative">
+            <ResidentialPanel 
+              data={data} 
+              simSpeed={simSpeed} 
+              weather={weather}
+              isNight={isNight}
+              gridStatus={gridStatus}
+              ev1Status={data.ev1Status}
+              ev2Status={data.ev2Status}
+              evSpecs={evSpecs}
+            />
+          </div>
+        </div>
+      </main>
+      
+      <div className="fixed bottom-2 right-4 text-[9px] text-slate-400 font-mono">
+        SafariCharge Ltd • Simulation Mode: {isAutoMode ? `Auto (x${simSpeed})` : 'Manual'}
+      </div>
+    </div>
+  );
+}
