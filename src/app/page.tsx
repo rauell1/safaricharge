@@ -9,7 +9,7 @@ import {
   CloudRain, Moon, Download, RotateCcw, AlertTriangle, DollarSign,
   Cpu, Car, ZapOff, FileSpreadsheet
 } from 'lucide-react';
-import DailyEnergyGraph, { type GraphDataPoint } from '@/components/DailyEnergyGraph';
+import DailyEnergyGraph, { type GraphDataPoint, buildGraphSVG, triggerSVGDownload } from '@/components/DailyEnergyGraph';
 
 // --- CONFIGURATION - Kenya Power Commercial Tariff (E-Mobility) ---
 // Based on actual KPLC bill for ROAM ELECTRIC LIMITED - February 2026
@@ -1428,6 +1428,7 @@ export default function App() {
   const monthlyPeakDemandRef = useRef(0);
   const todayGraphDataRef = useRef<GraphDataPoint[]>([]);
   const [dailyGraphData, setDailyGraphData] = useState<GraphDataPoint[]>([]);
+  const [pastGraphs, setPastGraphs] = useState<Array<{ date: string; data: GraphDataPoint[] }>>([]);
   const dayScenarioRef = useRef(PhysicsEngine.generateDayScenario('Sunny', new Date('2026-01-01'), 1.0));
   
   // Comprehensive data tracking for export - stores all minute-by-minute data
@@ -1472,8 +1473,8 @@ export default function App() {
     monthlyPeakDemandRef.current = 0;
     todayGraphDataRef.current = [];
     setDailyGraphData([]);
-    minuteDataRef.current = [];
-    setData(prev => ({ ...prev, batteryLevel: 50, ev1Soc: 60, ev2Soc: 50, displaySavings: 0, carbonOffset: 0, batteryHealth: 1.0, batteryCycles: 0, monthlyPeakDemandKW: 0, estimatedDemandChargeKES: 0, feedInEarnings: 0, ev1V2g: false, ev2V2g: false }));
+    setPastGraphs([]);
+    minuteDataRef.current = [];({ ...prev, batteryLevel: 50, ev1Soc: 60, ev2Soc: 50, displaySavings: 0, carbonOffset: 0, batteryHealth: 1.0, batteryCycles: 0, monthlyPeakDemandKW: 0, estimatedDemandChargeKES: 0, feedInEarnings: 0, ev1V2g: false, ev2V2g: false }));
     setIsAutoMode(false);
     dayScenarioRef.current = PhysicsEngine.generateDayScenario('Sunny', new Date('2026-01-01'), 1.0);
   };
@@ -1483,6 +1484,14 @@ export default function App() {
     nextDate.setDate(nextDate.getDate() + 1);
     setCurrentDate(nextDate);
     accumulators.current = { solar: 0, savings: 0, gridImport: 0, carbonOffset: 0, batDischargeKwh: 0, feedInEarnings: 0 };
+
+    // Archive completed day's graph before clearing
+    if (todayGraphDataRef.current.length > 0) {
+      const dateStr = currentDate.toISOString().slice(0, 10);
+      const snapshot = [...todayGraphDataRef.current];
+      setPastGraphs(prev => [...prev, { date: dateStr, data: snapshot }]);
+    }
+
     todayGraphDataRef.current = [];
     setDailyGraphData([]);
 
@@ -1777,6 +1786,42 @@ export default function App() {
         <div className="w-full max-w-7xl px-2 pb-2">
           <DailyEnergyGraph data={dailyGraphData} dateLabel={currentDate.toISOString().slice(0, 10)} />
         </div>
+
+        {/* Past Days Graph Archive */}
+        {pastGraphs.length > 0 && (
+          <div className="w-full max-w-7xl px-2 pb-4">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+              <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <span>📅 Past Days — Energy Profiles</span>
+                <span className="text-[9px] font-normal text-slate-400 normal-case">({pastGraphs.length} day{pastGraphs.length !== 1 ? 's' : ''} archived)</span>
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {pastGraphs.map(({ date, data: pastData }) => {
+                  const peakSolar = Math.max(...pastData.map(p => p.solar)).toFixed(1);
+                  const peakLoad  = Math.max(...pastData.map(p => p.load)).toFixed(1);
+                  return (
+                    <button
+                      key={date}
+                      onClick={() => {
+                        const svg = buildGraphSVG(pastData, date);
+                        triggerSVGDownload(svg, `SafariCharge_DailyGraph_${date}.svg`);
+                      }}
+                      className="flex items-center gap-2 bg-slate-50 hover:bg-sky-50 border border-slate-200 hover:border-sky-300 rounded-lg px-3 py-2 transition-colors group"
+                    >
+                      <Download size={12} className="text-slate-400 group-hover:text-sky-600 flex-shrink-0" />
+                      <div className="text-left">
+                        <div className="text-xs font-bold text-slate-700">{date}</div>
+                        <div className="text-[9px] text-slate-400 font-mono">
+                          ☀️ {peakSolar} kW peak · ⚡ {peakLoad} kW load
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
       
       <div className="fixed bottom-2 right-4 text-[9px] text-slate-400 font-mono">
