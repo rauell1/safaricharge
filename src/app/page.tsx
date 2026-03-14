@@ -774,7 +774,7 @@ const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, cu
   );
 };
 
-const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport, minuteData, systemStartDate, onExport, carbonOffset }: {
+const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport, minuteData, systemStartDate, onExport, onFormalReport, carbonOffset }: {
   isOpen: boolean; onClose: () => void; savings: number; solarConsumed: number; gridImport: number;
   carbonOffset: number;
   minuteData: Array<{
@@ -805,9 +805,11 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
   }>;
   systemStartDate: string;
   onExport: () => void;
+  onFormalReport: () => Promise<void>;
 }) => {
   const [activeTab, setActiveTab] = useState('daily');
   const [isExporting, setIsExporting] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   if (!isOpen) return null;
   
@@ -1130,6 +1132,67 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
               {totalDataPoints === 0 && (
                 <p className="text-xs text-amber-600 mt-2 text-center">
                   Start the simulation to collect data for export
+                </p>
+              )}
+            </div>
+            
+            {/* Formal PDF Report */}
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-6 rounded-xl border border-slate-700">
+              <div className="flex items-center gap-3 mb-4">
+                <FileText size={24} className="text-sky-400" />
+                <div>
+                  <h3 className="font-bold text-white text-lg">Generate PDF Report</h3>
+                  <p className="text-xs text-slate-400">Professional investor-ready report with charts &amp; analysis</p>
+                </div>
+              </div>
+              
+              <div className="bg-slate-700/50 p-3 rounded-lg border border-slate-600 mb-4">
+                <h4 className="text-xs font-bold text-slate-300 mb-2 uppercase">Report Includes</h4>
+                <div className="grid grid-cols-2 gap-1.5 text-xs text-slate-400">
+                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-sky-400 rounded-full inline-block"></span> Executive Summary</span>
+                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-green-400 rounded-full inline-block"></span> KPI Dashboard</span>
+                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-yellow-400 rounded-full inline-block"></span> Solar Analytics &amp; Charts</span>
+                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-purple-400 rounded-full inline-block"></span> Battery Storage Analysis</span>
+                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-orange-400 rounded-full inline-block"></span> Financial ROI &amp; Payback</span>
+                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-teal-400 rounded-full inline-block"></span> EV Charging &amp; V2G Data</span>
+                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-red-400 rounded-full inline-block"></span> Grid Interaction Analysis</span>
+                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-emerald-400 rounded-full inline-block"></span> Carbon Offset &amp; Impact</span>
+                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-amber-400 rounded-full inline-block"></span> Recommendations</span>
+                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-indigo-400 rounded-full inline-block"></span> Full Appendix</span>
+                </div>
+              </div>
+              
+              <button
+                onClick={async () => {
+                  setIsGeneratingPDF(true);
+                  try {
+                    await onFormalReport();
+                  } finally {
+                    setIsGeneratingPDF(false);
+                  }
+                }}
+                disabled={isGeneratingPDF || totalDataPoints === 0}
+                className="w-full py-3 bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold rounded-lg hover:from-sky-600 hover:to-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-sky-500/25"
+              >
+                {isGeneratingPDF ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Generating Report...
+                  </>
+                ) : (
+                  <>
+                    <FileText size={18} />
+                    Open PDF Report (New Tab)
+                  </>
+                )}
+              </button>
+              {totalDataPoints === 0 ? (
+                <p className="text-xs text-amber-400 mt-2 text-center">
+                  Start the simulation to generate a report
+                </p>
+              ) : (
+                <p className="text-xs text-slate-500 mt-2 text-center">
+                  Opens in new tab — use browser Print (Ctrl+P) to save as PDF
                 </p>
               )}
             </div>
@@ -1959,6 +2022,41 @@ export default function App() {
     }
   };
 
+  // Formal PDF report
+  const handleFormalReport = async () => {
+    try {
+      if (!minuteDataRef.current || minuteDataRef.current.length === 0) {
+        alert('No data available. Please run the simulation first by clicking the Play button.');
+        return;
+      }
+
+      const response = await fetch('/api/formal-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          minuteData: minuteDataRef.current,
+          startDate: systemStartDate.current,
+          reportDate: new Date().toLocaleDateString('en-KE', { year: 'numeric', month: 'long', day: 'numeric' }),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      const html = await response.text();
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      // Revoke after 5 minutes to give the browser time to fully load the report
+      setTimeout(() => URL.revokeObjectURL(url), 300_000);
+    } catch (error) {
+      console.error('Formal report error:', error);
+      alert(`Failed to generate report: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-200 font-sans text-slate-900 flex flex-col relative">
       <Header onToggleAssistant={() => setIsAssistantOpen(!isAssistantOpen)} currentDate={currentDate} onReset={handleReset} />
@@ -1972,6 +2070,7 @@ export default function App() {
         minuteData={minuteDataRef.current}
         systemStartDate={systemStartDate.current}
         onExport={handleExportReport}
+        onFormalReport={handleFormalReport}
         carbonOffset={data.carbonOffset}
       />
 
