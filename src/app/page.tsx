@@ -1085,12 +1085,21 @@ export default function App() {
     return () => clearInterval(interval);
   }, [isAutoMode, simSpeed]); 
 
+  // Use a ref to store computation parameters to avoid dependency issues
+  const computeParamsRef = useRef({ simSpeed, priorityMode, isAutoMode, evSpecs, currentDate });
   useEffect(() => {
-    // Prevent infinite loop by checking if timeOfDay actually changed
+    computeParamsRef.current = { simSpeed, priorityMode, isAutoMode, evSpecs, currentDate };
+  }, [simSpeed, priorityMode, isAutoMode, evSpecs, currentDate]);
+
+  // Compute physics state whenever timeOfDay changes, using refs for other params
+  useEffect(() => {
+    // Skip if timeOfDay hasn't actually changed
     if (lastProcessedTimeRef.current === timeOfDay) {
       return;
     }
     lastProcessedTimeRef.current = timeOfDay;
+    
+    const { simSpeed: currentSimSpeed, priorityMode: currentPriorityMode, isAutoMode: currentIsAutoMode, evSpecs: currentEvSpecs, currentDate: currentDateValue } = computeParamsRef.current;
     
     setData(prev => {
       const state = PhysicsEngine.calculateInstant(
@@ -1099,10 +1108,10 @@ export default function App() {
           prev.ev1Soc, 
           prev.ev2Soc, 
           dayScenarioRef.current,
-          evSpecs
+          currentEvSpecs
       );
 
-      const timeStep = 0.05 * simSpeed; 
+      const timeStep = 0.05 * currentSimSpeed; 
       const solarConsumed = state.solar - (state.gridExport > 0 ? state.gridExport : 0);
       
       // Calculate savings using time-based Kenya Power tariff
@@ -1111,13 +1120,13 @@ export default function App() {
       const applicableRate = KPLC_TARIFF.getRateForTime(currentHour);
       const moneySaved = solarConsumed * applicableRate * timeStep;
 
-      if (isAutoMode) {
+      if (currentIsAutoMode) {
          accumulators.current.solar += state.solar * timeStep;
          accumulators.current.savings += moneySaved;
          if (state.gridImport > 0) accumulators.current.gridImport += state.gridImport * timeStep;
          
          // Record minute-by-minute data for export
-         const now = new Date(currentDate);
+         const now = new Date(currentDateValue);
          now.setHours(Math.floor(timeOfDay), Math.floor((timeOfDay % 1) * 60), 0);
          const weekNum = getWeekNumber(now);
          
@@ -1149,8 +1158,8 @@ export default function App() {
          });
       }
 
-      let effectivePriority = priorityMode;
-      if (priorityMode === 'auto') {
+      let effectivePriority = currentPriorityMode;
+      if (currentPriorityMode === 'auto') {
          effectivePriority = 'load'; 
          if (state.batKwh / BATTERY_CAPACITY * 100 < 40) effectivePriority = 'battery'; 
       }
@@ -1173,7 +1182,7 @@ export default function App() {
          isPeakTime: KPLC_TARIFF.isPeakTime(currentHour),
       };
     });
-  }, [timeOfDay, simSpeed, priorityMode, isAutoMode, evSpecs]); 
+  }, [timeOfDay]); // Only depend on timeOfDay - other params are read from refs 
 
   const isNight = timeOfDay < 6 || timeOfDay > 19;
   
