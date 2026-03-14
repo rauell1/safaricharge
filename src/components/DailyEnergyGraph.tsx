@@ -99,7 +99,33 @@ export function triggerJPGDownload(svgStr: string, filename: string, width = 820
   img.src = url;
 }
 
-const DailyEnergyGraph = React.memo(({ data, dateLabel }: { data: GraphDataPoint[]; dateLabel?: string }) => {
+// Renders SVG to a JPG Blob — used by the ZIP download
+export function buildJPGBlob(svgStr: string, width = 820, height = 340): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = width * 2;
+      canvas.height = height * 2;
+      const ctx = canvas.getContext('2d')!;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.scale(2, 2);
+      ctx.drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(blob => {
+        if (blob) resolve(blob);
+        else reject(new Error('Canvas toBlob failed'));
+      }, 'image/jpeg', 0.95);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image load failed')); };
+    img.src = url;
+  });
+}
+
+
   const handleDownloadJPG = useCallback(() => {
     if (!data || data.length === 0) return;
     const svgStr = buildGraphSVG(data, dateLabel);

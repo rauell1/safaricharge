@@ -9,7 +9,8 @@ import {
   CloudRain, Moon, Download, RotateCcw, AlertTriangle, DollarSign,
   Cpu, Car, ZapOff, FileSpreadsheet
 } from 'lucide-react';
-import DailyEnergyGraph, { type GraphDataPoint, buildGraphSVG, triggerJPGDownload } from '@/components/DailyEnergyGraph';
+import DailyEnergyGraph, { type GraphDataPoint, buildGraphSVG, triggerJPGDownload, buildJPGBlob } from '@/components/DailyEnergyGraph';
+import JSZip from 'jszip';
 
 // --- CONFIGURATION - Kenya Power Commercial Tariff (E-Mobility) ---
 // Based on actual KPLC bill for ROAM ELECTRIC LIMITED - February 2026
@@ -1799,19 +1800,28 @@ export default function App() {
                   <span>📅 Past Days: Energy Profiles</span>
                   <span className="text-[9px] font-normal text-slate-400 normal-case">({pastGraphs.length} day{pastGraphs.length !== 1 ? 's' : ''} archived)</span>
                 </h3>
-                {pastGraphs.length > 1 && (
+                {pastGraphs.length > 0 && (
                   <button
-                    onClick={() => {
-                      pastGraphs.forEach(({ date, data: pastData }, i) => {
-                        setTimeout(() => {
-                          const svg = buildGraphSVG(pastData, date);
-                          triggerJPGDownload(svg, `SafariCharge_DailyGraph_${date}.jpg`);
-                        }, i * 400);
-                      });
+                    onClick={async () => {
+                      const zip = new JSZip();
+                      for (const { date, data: pastData } of pastGraphs) {
+                        const svg = buildGraphSVG(pastData, date);
+                        const blob = await buildJPGBlob(svg);
+                        zip.file(`SafariCharge_DailyGraph_${date}.jpg`, blob);
+                      }
+                      const zipBlob = await zip.generateAsync({ type: 'blob' });
+                      const url = URL.createObjectURL(zipBlob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `SafariCharge_DailyGraphs_${new Date().toISOString().slice(0, 10)}.zip`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      setTimeout(() => URL.revokeObjectURL(url), 300);
                     }}
                     className="flex items-center gap-1.5 text-[10px] font-bold text-sky-600 hover:text-sky-800 bg-sky-50 hover:bg-sky-100 border border-sky-200 px-2 py-1 rounded transition-colors"
                   >
-                    <Download size={11} /> Download All ({pastGraphs.length})
+                    <Download size={11} /> Download ZIP ({pastGraphs.length})
                   </button>
                 )}
               </div>
