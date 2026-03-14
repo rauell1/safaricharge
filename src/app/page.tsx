@@ -1695,13 +1695,18 @@ export default function App() {
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isAutoMode) {
-      // Sub-step through at most 1 simulated hour per physics step so that:
-      //   x1   → 1 step  of 0.05 h  (unchanged behaviour)
-      //   x100 → 5 steps of 1.00 h  (5 graph points / tick)
-      //   x1000→ 24 steps of 1.00 h (24 graph points / tick, 1 full day)
-      // Capping at 24 h guarantees at most one day-boundary crossing per tick,
-      // which keeps the handleNewDay closure and accumulator reset correct.
-      const GRAPH_STEP_H = 1.0;
+      // Sub-step through at a fixed 0.05 h (3-minute) physics step for all
+      // simulation speeds so that the graph always accumulates the same number
+      // of data points per simulated day regardless of speed:
+      //   x1   →   1 step  of 0.05 h per tick
+      //   x5   →   5 steps of 0.05 h per tick
+      //   x20  →  20 steps of 0.05 h per tick
+      //   x100 → 100 steps of 0.05 h per tick
+      //   x1000→ 480 steps of 0.05 h per tick (full day)
+      // This keeps graph resolution consistent (~480 data points/day) for all
+      // simulation types and is capped at 24 h to ensure at most one
+      // day-boundary crossing per tick.
+      const GRAPH_STEP_H = 0.05;
       interval = setInterval(() => {
         const { simSpeed: spd, priorityMode: curPriority, evSpecs: curEvSpecs } = computeParamsRef.current;
         const totalAdvance = Math.min(24.0, 0.05 * spd);
@@ -1881,7 +1886,7 @@ export default function App() {
 
   // Compute physics state whenever timeOfDay changes (manual mode only).
   // Auto mode is handled entirely by the interval above, which sub-steps at
-  // a fixed 1-hour resolution regardless of simulation speed.
+  // a fixed 0.05-hour (3-minute) resolution for all simulation speeds.
   useEffect(() => {
     if (lastProcessedTimeRef.current === timeOfDay) return;
     lastProcessedTimeRef.current = timeOfDay;

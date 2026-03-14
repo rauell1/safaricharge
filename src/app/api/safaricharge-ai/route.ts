@@ -1,3 +1,4 @@
+import ZAI from 'z-ai-web-dev-sdk';
 import { NextRequest, NextResponse } from 'next/server';
 
 const SOLAR_KNOWLEDGE = `
@@ -64,9 +65,6 @@ export async function POST(request: NextRequest) {
       systemContext: SystemContext;
     };
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
-
     const systemInstruction = `
 You are SafariCharge AI, an intelligent solar and EV energy advisor for a charging facility in Nairobi.
 
@@ -110,62 +108,79 @@ Simulation Running: ${systemContext.simRunning}
 Respond clearly with actionable insights.
 `;
 
+    // --- Try Gemini API first ---
+    const geminiKey = process.env.GEMINI_API_KEY;
     const history = conversationHistory.slice(-12).map(msg => ({
       role: msg.role === 'user' ? 'user' : 'model',
       parts: [{ text: msg.content }]
     }));
 
-    const body = {
-      system_instruction: {
-        parts: [{ text: systemInstruction }]
-      },
-      contents: [
-        ...history,
-        {
-          role: 'user',
-          parts: [{ text: userPrompt }]
+    if (geminiKey) {
+      const body = {
+        system_instruction: {
+          parts: [{ text: systemInstruction }]
+        },
+        contents: [
+          ...history,
+          {
+            role: 'user',
+            parts: [{ text: userPrompt }]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 1024
         }
-      ],
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 1024
-      }
-    };
+      };
 
-    const models = [
-      "gemini-2.0-flash",
-      "gemini-1.5-flash-latest"
-    ];
+      const models = [
+        "gemini-2.0-flash",
+        "gemini-1.5-flash-latest"
+      ];
 
-    let lastError = "";
+      for (const model of models) {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${geminiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+          }
+        );
 
-    for (const model of models) {
-
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(body)
+        if (res.ok) {
+          const data = await res.json();
+          const text =
+            data?.candidates?.[0]?.content?.parts?.[0]?.text ??
+            "I couldn't generate a response.";
+          return NextResponse.json({ response: text });
         }
-      );
 
-      if (res.ok) {
-        const data = await res.json();
-
-        const text =
-          data?.candidates?.[0]?.content?.parts?.[0]?.text ??
-          "I couldn't generate a response.";
-
-        return NextResponse.json({ response: text });
+        const errText = await res.text();
+        console.error(`Gemini ${model} error:`, errText);
       }
-
-      lastError = await res.text();
     }
 
-    console.error("Gemini error:", lastError);
+    // --- Fall back to Z.AI SDK ---
+    try {
+      const zai = await ZAI.create();
+      // Build messages including conversation history for context continuity.
+      const zaiHistory = conversationHistory.slice(-12).map(msg => ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content
+      }));
+      const completion = await zai.chat.completions.create({
+        messages: [
+          { role: 'system', content: systemInstruction },
+          ...zaiHistory,
+          { role: 'user', content: userPrompt }
+        ]
+      });
+      const responseText = completion.choices?.[0]?.message?.content || "I couldn't generate a response.";
+      return NextResponse.json({ response: responseText });
+    } catch (zaiError) {
+      console.error("Z.AI fallback error:", zaiError);
+    }
 
     return NextResponse.json(
       { error: "AI service unavailable." },
