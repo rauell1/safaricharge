@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
 
-    const systemInstruction = `You are SafariCharge AI — a highly intelligent, expert energy management assistant for the SafariCharge solar+EV charging facility in Nairobi, Kenya. You are embedded in a live simulation dashboard.
+    const systemInstruction = `You are SafariCharge AI - a highly intelligent, expert energy management assistant for the SafariCharge solar+EV charging facility in Nairobi, Kenya. You are embedded in a live simulation dashboard.
 
 You have deep expertise in:
 - Solar PV systems, battery storage (LiFePO4), and grid interaction
