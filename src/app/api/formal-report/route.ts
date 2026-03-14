@@ -23,6 +23,9 @@ interface MinuteData {
   solarEnergyKWh: number;
   gridImportKWh: number;
   gridExportKWh: number;
+  homeLoadKWh?: number;
+  ev1LoadKWh?: number;
+  ev2LoadKWh?: number;
 }
 
 interface DailyAgg {
@@ -50,10 +53,12 @@ function aggregateDaily(data: MinuteData[]): DailyAgg[] {
     row.gridImport += d.gridImportKWh ?? 0;
     row.gridExport += d.gridExportKWh ?? 0;
     row.savings += d.savingsKES ?? 0;
-    row.homeLoad += (d.homeLoadKW ?? 0) / 12;
-    row.ev1Load += (d.ev1LoadKW ?? 0) / 12;
-    row.ev2Load += (d.ev2LoadKW ?? 0) / 12;
-    row.evLoad += ((d.ev1LoadKW ?? 0) + (d.ev2LoadKW ?? 0)) / 12;
+    const ev1Kwh = d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (24 / 420);
+    const ev2Kwh = d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (24 / 420);
+    row.homeLoad += d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (24 / 420);
+    row.ev1Load += ev1Kwh;
+    row.ev2Load += ev2Kwh;
+    row.evLoad += ev1Kwh + ev2Kwh;
     row.avgBattery += d.batteryLevelPct ?? 0;
     row.batteryCount += 1;
   }
@@ -345,9 +350,9 @@ export async function POST(request: NextRequest) {
     const totalGridImport = minuteData.reduce((s, d) => s + (d.gridImportKWh ?? 0), 0);
     const totalGridExport = minuteData.reduce((s, d) => s + (d.gridExportKWh ?? 0), 0);
     const totalSavings = minuteData.reduce((s, d) => s + (d.savingsKES ?? 0), 0);
-    const totalHomeLoad = minuteData.reduce((s, d) => s + (d.homeLoadKW ?? 0) / 12, 0);
-    const totalEV1 = minuteData.reduce((s, d) => s + (d.ev1LoadKW ?? 0) / 12, 0);
-    const totalEV2 = minuteData.reduce((s, d) => s + (d.ev2LoadKW ?? 0) / 12, 0);
+    const totalHomeLoad = minuteData.reduce((s, d) => s + (d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (24 / 420)), 0);
+    const totalEV1 = minuteData.reduce((s, d) => s + (d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (24 / 420)), 0);
+    const totalEV2 = minuteData.reduce((s, d) => s + (d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (24 / 420)), 0);
     const totalLoad = totalHomeLoad + totalEV1 + totalEV2;
     const selfSufficiency = totalLoad > 0 ? (Math.min(totalSolar, totalLoad) / totalLoad) * 100 : 0;
     const solarSelfConsumptionRate = totalSolar > 0 ? ((totalSolar - totalGridExport) / totalSolar) * 100 : 0;

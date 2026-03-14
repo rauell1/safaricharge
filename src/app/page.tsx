@@ -1622,6 +1622,9 @@ export default function App() {
     isPeakTime: boolean;
     savingsKES: number;
     solarEnergyKWh: number;
+    homeLoadKWh: number;
+    ev1LoadKWh: number;
+    ev2LoadKWh: number;
     gridImportKWh: number;
     gridExportKWh: number;
   }>>([]);
@@ -1716,21 +1719,21 @@ export default function App() {
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isAutoMode) {
-      // Sub-step through at a fixed 0.05 h (3-minute) physics step for all
-      // simulation speeds so that the graph always accumulates the same number
-      // of data points per simulated day regardless of speed:
-      //   x1   →   1 step  of 0.05 h per tick
-      //   x5   →   5 steps of 0.05 h per tick
-      //   x20  →  20 steps of 0.05 h per tick
-      //   x100 → 100 steps of 0.05 h per tick
-      //   x1000→ 480 steps of 0.05 h per tick (full day)
-      // This keeps graph resolution consistent (~480 data points/day) for all
+      // Sub-step through a fixed physics step for all simulation speeds so
+      // that the graph always accumulates exactly 420 data points per simulated
+      // day regardless of speed:
+      //   x1   →   1 step  of (24/420) h per tick
+      //   x5   →   5 steps of (24/420) h per tick
+      //   x20  →  20 steps of (24/420) h per tick
+      //   x100 → 100 steps of (24/420) h per tick
+      //   x1000→ 420 steps of (24/420) h per tick (full day)
+      // This keeps graph resolution consistent (420 data points/day) for all
       // simulation types and is capped at 24 h to ensure at most one
       // day-boundary crossing per tick.
-      const GRAPH_STEP_H = 0.05;
+      const GRAPH_STEP_H = 24 / 420;
       interval = setInterval(() => {
         const { simSpeed: spd, priorityMode: curPriority, evSpecs: curEvSpecs } = computeParamsRef.current;
-        const totalAdvance = Math.min(24.0, 0.05 * spd);
+        const totalAdvance = Math.min(24.0, GRAPH_STEP_H * spd);
         const numSteps = Math.max(1, Math.ceil(totalAdvance / GRAPH_STEP_H));
         const actualStep = totalAdvance / numSteps;
 
@@ -1829,6 +1832,9 @@ export default function App() {
             tariffRate: applicableRate,
             isPeakTime: KPLC_TARIFF.isPeakTime(currentHour),
             savingsKES: moneySaved,
+            homeLoadKWh: state.houseLoad * actualStep,
+            ev1LoadKWh: state.ev1Kw * actualStep,
+            ev2LoadKWh: state.ev2Kw * actualStep,
             solarEnergyKWh: state.solar * actualStep,
             gridImportKWh: state.gridImport * actualStep,
             gridExportKWh: state.gridExport * actualStep,
