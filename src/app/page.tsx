@@ -141,6 +141,33 @@ const getEVTaperedRate = (soc: number, maxRate: number): number => {
   return maxRate;
 };
 
+// Gaussian random (Box-Muller transform)
+const gaussianRandom = (mean: number, std: number): number => {
+  const u1 = Math.max(1e-10, Math.random());
+  return mean + std * Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * Math.random());
+};
+
+// Feed-in tariff: Kenya net metering pilot (KES/kWh earned for solar exported to grid)
+const FEED_IN_TARIFF_RATE = 5.0;
+
+// KPLC maximum demand charge (KES per kW of monthly peak grid import)
+const KPLC_DEMAND_CHARGE_KES_PER_KW = 750.0;
+
+// Weather Markov chain: realistic day-to-day persistence
+const WEATHER_TRANSITION: Record<string, { Sunny: number; Cloudy: number; Rainy: number }> = {
+  Sunny:  { Sunny: 0.70, Cloudy: 0.25, Rainy: 0.05 },
+  Cloudy: { Sunny: 0.30, Cloudy: 0.50, Rainy: 0.20 },
+  Rainy:  { Sunny: 0.10, Cloudy: 0.30, Rainy: 0.60 },
+};
+
+const nextWeatherMarkov = (current: string): string => {
+  const row = WEATHER_TRANSITION[current] ?? WEATHER_TRANSITION.Sunny;
+  const r = Math.random();
+  if (r < row.Sunny) return 'Sunny';
+  if (r < row.Sunny + row.Cloudy) return 'Cloudy';
+  return 'Rainy';
+};
+
 // --- 1. PHYSICS ENGINE (Shared Logic) ---
 const PhysicsEngine = {
   generateDayScenario: (weather: string, date: Date = new Date('2026-01-01'), soilingFactor: number = 1.0) => {
@@ -160,8 +187,8 @@ const PhysicsEngine = {
       soilingFactor,
       ev1: {
         startSoc: 40 + Math.random() * 30,
-        depart: 7.5 + (Math.random() - 0.5) * 0.5, 
-        return: 18.0 + (Math.random() - 0.5) * 1.0, 
+        depart: 7.5 + gaussianRandom(0, 0.2),
+        return: 18.0 + gaussianRandom(0, 0.4),
         emergency: Math.random() < 0.2 ? { start: 20.0 + Math.random()*0.5, end: 21.0 + Math.random()*0.5 } : null,
         drainRate: 0.5,
         cap: 80,
@@ -169,10 +196,10 @@ const PhysicsEngine = {
       },
       ev2: {
         startSoc: 15 + Math.random() * 25,
-        depart: 5.5 + (Math.random() - 0.5) * 0.5, 
+        depart: 5.5 + gaussianRandom(0, 0.2),
         lunchStart: 12.5 + Math.random() * 0.5,    
         lunchEnd: 14.0 + Math.random() * 0.5,      
-        return: 22.0 + (Math.random() - 0.5) * 1.0,
+        return: 22.0 + gaussianRandom(0, 0.4),
         drainRate: 0.8,
         cap: 118,
         onboard: 22
@@ -197,7 +224,7 @@ const PhysicsEngine = {
     };
   },
 
-  calculateInstant: (t: number, prevBatKwh: number, prevEv1Soc: number, prevEv2Soc: number, scenario: any, evSpecs: any) => {
+  calculateInstant: (t: number, prevBatKwh: number, prevEv1Soc: number, prevEv2Soc: number, scenario: any, evSpecs: any, cloudNoise = 0, batteryHealth = 1.0) => {
     const timeStep = 5/60;
     const month: number = scenario.month || 1;
     const peakHour: number = scenario.peakSolarHour || 12.75;
@@ -206,17 +233,22 @@ const PhysicsEngine = {
     // A. Solar — seasonal peak hour, temperature coefficient, soiling/dust
     let solar = 0;
     if (t > 6.2 && t < 18.8) { 
-        const width = 7; 
-        const noise = (Math.sin(t * 10 + scenario.cloudNoiseSeed * 100) * 0.1); 
+        // Seasonal Gaussian width: wider in dry months (Jan-Feb, Jul-Aug), narrower in rainy months
+        const width = 6 + 2 * Math.cos(((month - 7) / 12) * 2 * Math.PI);
+        // Brownian cloud noise (passed in from external walk, bounded [-1,1])
+        const noise = cloudNoise * 0.15;
         const irradFraction = Math.max(0, Math.exp(-Math.pow(t - peakHour, 2) / width));
         const tempEffect = getPanelTempEffect(irradFraction * scenario.weatherFactor, month);
         solar = PV_CAPACITY * irradFraction * (scenario.weatherFactor + noise) * soiling * tempEffect;
         solar = Math.max(0, solar);
     }
 
-    // B. House Load
+    // B. House Load with ±8% stochastic noise (appliance switching)
     const hIdx = Math.floor(t);
-    const houseLoad = scenario.houseLoadProfile[hIdx % 24];
+    const houseLoad = scenario.houseLoadProfile[hIdx % 24] * Math.max(0.5, 1 + gaussianRandom(0, 0.08));
+    // Effective battery capacity and reserve accounting for degradation
+    const effectiveCapacity = BATTERY_CAPACITY * batteryHealth;
+    const effectiveReserve = 12.0 * batteryHealth;
 
     // C. EV Logic with tapered charging above 80% SOC
     let ev1Load = 0;
@@ -277,10 +309,32 @@ const PhysicsEngine = {
     let gridExport = 0;
     let newBatKwh = prevBatKwh;
 
-    if (effectiveSolar >= totalLoad) {
-        let excess = effectiveSolar - totalLoad;
-        if (newBatKwh < BATTERY_CAPACITY) {
-            const capRem = BATTERY_CAPACITY - newBatKwh;
+    // V2G: during peak hours, EVs discharge to cover deficit if battery is low
+    const isPeakNow = KPLC_TARIFF.isPeakTime(Math.floor(t));
+    let v2gKw = 0;
+    let ev1V2g = false;
+    let ev2V2g = false;
+    if (isPeakNow) {
+        const batSocPct = (newBatKwh / effectiveCapacity) * 100;
+        if (ev1IsHome && prevEv1Soc > 50 && batSocPct < 30) {
+            const rate = Math.min(5, evSpecs.ev1.onboard);
+            v2gKw += rate;
+            ev1V2g = true;
+            prevEv1Soc = Math.max(20, prevEv1Soc - (rate * timeStep / evSpecs.ev1.cap * 100));
+        }
+        if (ev2IsHome && prevEv2Soc > 50 && batSocPct < 30) {
+            const rate = Math.min(5, evSpecs.ev2.onboard);
+            v2gKw += rate;
+            ev2V2g = true;
+            prevEv2Soc = Math.max(20, prevEv2Soc - (rate * timeStep / evSpecs.ev2.cap * 100));
+        }
+    }
+    const augmentedSolar = effectiveSolar + v2gKw;
+
+    if (augmentedSolar >= totalLoad) {
+        let excess = augmentedSolar - totalLoad;
+        if (newBatKwh < effectiveCapacity) {
+            const capRem = effectiveCapacity - newBatKwh;
             const chargeFraction = Math.min(excess, MAX_BAT_CHARGE_RATE) / MAX_BAT_CHARGE_RATE;
             const batEff = getBatteryEfficiency(chargeFraction);
             batCharge = Math.min(excess, MAX_BAT_CHARGE_RATE, (capRem / batEff) / timeStep);
@@ -289,9 +343,9 @@ const PhysicsEngine = {
         }
         gridExport = excess;
     } else {
-        let deficit = totalLoad - effectiveSolar;
-        if (newBatKwh > 12.0) {
-            const enAvail = newBatKwh - 12.0;
+        let deficit = totalLoad - augmentedSolar;
+        if (newBatKwh > effectiveReserve) {
+            const enAvail = newBatKwh - effectiveReserve;
             const dischargeFraction = Math.min(deficit, MAX_BAT_DISCHARGE_RATE) / MAX_BAT_DISCHARGE_RATE;
             const batEff = getBatteryEfficiency(dischargeFraction);
             batDischarge = Math.min(deficit, MAX_BAT_DISCHARGE_RATE, (enAvail * batEff) / timeStep);
@@ -305,10 +359,12 @@ const PhysicsEngine = {
         solar, load: totalLoad, houseLoad, evLoad: ev1Load + ev2Load,
         gridImport, gridExport, 
         batPower: batCharge > 0 ? batCharge : -batDischarge,
-        batKwh: Math.max(0, Math.min(BATTERY_CAPACITY, newBatKwh)),
+        batKwh: Math.max(0, Math.min(effectiveCapacity, newBatKwh)),
         ev1Soc: prevEv1Soc, ev2Soc: prevEv2Soc,
         ev1IsHome, ev2IsHome,
-        ev1Kw: ev1Load, ev2Kw: ev2Load
+        ev1Kw: ev1Load, ev2Kw: ev2Load,
+        ev1V2g, ev2V2g, v2gKw,
+        batDischargeKw: batDischarge,
     };
   }
 };
@@ -384,8 +440,8 @@ const SolarPanelProduct = React.memo(({ power, capacity, weather, isNight }: {
   </div>
 ));
 
-const BatteryProduct = React.memo(({ level, status, power }: {
-  level: number; status: string; power: number;
+const BatteryProduct = React.memo(({ level, status, power, health = 1.0, cycles = 0 }: {
+  level: number; status: string; power: number; health?: number; cycles?: number;
 }) => (
   <div className="flex flex-col items-center z-20">
     <div className="relative w-28 h-40 bg-slate-100 rounded-xl border border-slate-300 shadow-lg flex flex-col items-center justify-center overflow-hidden group transition-all duration-500 hover:-translate-y-1">
@@ -402,23 +458,25 @@ const BatteryProduct = React.memo(({ level, status, power }: {
       <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none"></div>
     </div>
     <div className="text-center mt-2 bg-white/80 px-2 py-1 rounded border border-slate-200 min-w-[90px] backdrop-blur-sm">
-      <div className="text-[9px] font-bold text-slate-500 uppercase">Storage (60kWh)</div>
+      <div className="text-[9px] font-bold text-slate-500 uppercase">Storage ({(60 * health).toFixed(0)}kWh)</div>
       <div className="text-sm font-black text-slate-800">{level.toFixed(1)}%</div>
-      <div className={`text-[9px] font-bold ${status === 'Charging' ? 'text-green-600' : status === 'Discharging' ? 'text-orange-500' : 'text-slate-400'}`}>
-        {status === 'Idle' ? 'IDLE' : `${Math.abs(power).toFixed(1)} kW`}
+      <div className={`text-[9px] font-bold ${health < 0.85 ? 'text-orange-500' : 'text-slate-400'}`}>
+        Health: {(health * 100).toFixed(0)}% ({cycles} cyc)
       </div>
     </div>
   </div>
 ));
 
-const EVChargerProduct = React.memo(({ id, status, power, soc, carName, capacity, maxRate, onToggle }: {
-  id: number; status: string; power: number; soc: number; carName: string; capacity: number; maxRate: number; onToggle: () => void;
+const EVChargerProduct = React.memo(({ id, status, power, soc, carName, capacity, maxRate, onToggle, v2g = false }: {
+  id: number; status: string; power: number; soc: number; carName: string; capacity: number; maxRate: number; onToggle: () => void; v2g?: boolean;
 }) => (
   <div className="flex flex-col items-center z-20" onClick={onToggle}>
     <div className={`relative w-20 h-28 bg-slate-800 rounded-xl shadow-lg border-l-4 border-slate-600 flex flex-col items-center pt-3 group transition-all duration-500 hover:-translate-y-1 ring-2 ${status === 'Charging' ? 'ring-sky-400' : 'ring-transparent'}`}>
       <div className="w-12 h-6 bg-black rounded border border-slate-600 flex items-center justify-center mb-2 overflow-hidden relative">
          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20 opacity-50 z-10 pointer-events-none"></div>
-         {status === 'Charging' ? (
+         {v2g ? (
+           <span className="text-purple-400 text-[8px] font-mono animate-pulse z-20">V2G↑</span>
+         ) : status === 'Charging' ? (
            <span className="text-green-500 text-[9px] font-mono animate-pulse z-20">{power.toFixed(1)}kW</span>
          ) : status === 'Away' ? (
            <span className="text-red-500 text-[8px] z-20">AWAY</span>
@@ -1072,6 +1130,18 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
                  <span className="text-slate-300">3. Grid Backup</span>
                  <span className={`${data.netGridPower < 0 ? 'text-red-400' : 'text-green-400'} font-bold`}>{data.netGridPower < 0 ? `${Math.abs(data.netGridPower).toFixed(1)} kW (In)` : `${Math.abs(data.netGridPower).toFixed(1)} kW (Out)`}</span>
                </div>
+               {data.estimatedDemandChargeKES > 0 && (
+               <div className="flex justify-between items-center text-xs border-t border-slate-600 pt-1 mt-1">
+                 <span className="text-amber-400">⚡ Peak Demand</span>
+                 <span className="text-amber-300 font-bold">{data.monthlyPeakDemandKW?.toFixed(1)} kW → KES {data.estimatedDemandChargeKES?.toFixed(0)}/mo</span>
+               </div>
+               )}
+               {data.feedInEarnings > 0 && (
+               <div className="flex justify-between items-center text-xs">
+                 <span className="text-green-400">↑ Feed-in Earned</span>
+                 <span className="text-green-300 font-bold">KES {data.feedInEarnings?.toFixed(1)}</span>
+               </div>
+               )}
             </div>
          </div>
       </div>
@@ -1136,9 +1206,9 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
        <div className="flex gap-4 justify-between w-full max-w-[600px] mt-0">
           <div className="flex-1 flex justify-center scale-90"><GridProduct power={data.netGridPower} isImporting={data.netGridPower < 0} isExporting={data.netGridPower > 0} gridStatus={gridStatus} /></div>
           <div className="flex-1 flex justify-center scale-90"><HomeProduct power={data.homeLoad} /></div>
-          <div className="flex-1 flex justify-center scale-90"><EVChargerProduct id={1} status={ev1Status} soc={data.ev1Soc} power={data.ev1Load} carName="EV 1 (Commuter)" capacity={evSpecs.ev1.capacity} maxRate={evSpecs.ev1.rate} onToggle={() => {}} /></div>
-          <div className="flex-1 flex justify-center scale-90"><EVChargerProduct id={2} status={ev2Status} soc={data.ev2Soc} power={data.ev2Load} carName="EV 2 (Uber)" capacity={evSpecs.ev2.capacity} maxRate={evSpecs.ev2.rate} onToggle={() => {}} /></div>
-          <div className="flex-1 flex justify-center scale-90"><BatteryProduct level={data.batteryLevel} status={data.batteryStatus} power={data.batteryPower} /></div>
+          <div className="flex-1 flex justify-center scale-90"><EVChargerProduct id={1} status={ev1Status} soc={data.ev1Soc} power={data.ev1Load} carName="EV 1 (Commuter)" capacity={evSpecs.ev1.capacity} maxRate={evSpecs.ev1.rate} onToggle={() => {}} v2g={data.ev1V2g} /></div>
+          <div className="flex-1 flex justify-center scale-90"><EVChargerProduct id={2} status={ev2Status} soc={data.ev2Soc} power={data.ev2Load} carName="EV 2 (Uber)" capacity={evSpecs.ev2.capacity} maxRate={evSpecs.ev2.rate} onToggle={() => {}} v2g={data.ev2V2g} /></div>
+          <div className="flex-1 flex justify-center scale-90"><BatteryProduct level={data.batteryLevel} status={data.batteryStatus} power={data.batteryPower} health={data.batteryHealth} cycles={data.batteryCycles} /></div>
        </div>
     </div>
   );
@@ -1156,6 +1226,9 @@ export default function App() {
   const [priorityMode, setPriorityMode] = useState('auto');
   const [gridStatus, setGridStatus] = useState('Online');
   const [weather, setWeather] = useState('Sunny');
+  // weatherRef mirrors weather state for use inside callbacks without stale closures
+  const weatherRef = useRef('Sunny');
+  weatherRef.current = weather;
 
   const evSpecs = useMemo(() => ({
      ev1: { capacity: 80, rate: 7, drainRate: 0.5, cap: 80, onboard: 7 },
@@ -1174,10 +1247,21 @@ export default function App() {
     currentTariffRate: KPLC_TARIFF.getLowRateWithVAT(),
     isPeakTime: false,
     carbonOffset: 0,
+    batteryHealth: 1.0,
+    batteryCycles: 0,
+    monthlyPeakDemandKW: 0,
+    estimatedDemandChargeKES: 0,
+    feedInEarnings: 0,
+    ev1V2g: false,
+    ev2V2g: false,
   });
 
-  const accumulators = useRef({ solar: 0, savings: 0, gridImport: 0, carbonOffset: 0 });
+  const accumulators = useRef({ solar: 0, savings: 0, gridImport: 0, carbonOffset: 0, batDischargeKwh: 0, feedInEarnings: 0 });
   const soilingFactorRef = useRef(1.0);
+  const batteryHealthRef = useRef(1.0);
+  const batteryCyclesRef = useRef(0);
+  const cloudNoiseRef = useRef(0);
+  const monthlyPeakDemandRef = useRef(0);
   const dayScenarioRef = useRef(PhysicsEngine.generateDayScenario('Sunny', new Date('2026-01-01'), 1.0));
   
   // Comprehensive data tracking for export - stores all minute-by-minute data
@@ -1214,10 +1298,14 @@ export default function App() {
   const handleReset = () => {
     setTimeOfDay(12);
     setCurrentDate(new Date('2026-01-01T00:00:00'));
-    accumulators.current = { solar: 0, savings: 0, gridImport: 0, carbonOffset: 0 };
+    accumulators.current = { solar: 0, savings: 0, gridImport: 0, carbonOffset: 0, batDischargeKwh: 0, feedInEarnings: 0 };
     soilingFactorRef.current = 1.0;
-    minuteDataRef.current = []; // Clear all tracked data on reset
-    setData(prev => ({ ...prev, batteryLevel: 50, ev1Soc: 60, ev2Soc: 50, displaySavings: 0, carbonOffset: 0 }));
+    batteryHealthRef.current = 1.0;
+    batteryCyclesRef.current = 0;
+    cloudNoiseRef.current = 0;
+    monthlyPeakDemandRef.current = 0;
+    minuteDataRef.current = [];
+    setData(prev => ({ ...prev, batteryLevel: 50, ev1Soc: 60, ev2Soc: 50, displaySavings: 0, carbonOffset: 0, batteryHealth: 1.0, batteryCycles: 0, monthlyPeakDemandKW: 0, estimatedDemandChargeKES: 0, feedInEarnings: 0, ev1V2g: false, ev2V2g: false }));
     setIsAutoMode(false);
     dayScenarioRef.current = PhysicsEngine.generateDayScenario('Sunny', new Date('2026-01-01'), 1.0);
   };
@@ -1226,15 +1314,23 @@ export default function App() {
     const nextDate = new Date(currentDate);
     nextDate.setDate(nextDate.getDate() + 1);
     setCurrentDate(nextDate);
-    accumulators.current = { solar: 0, savings: 0, gridImport: 0, carbonOffset: 0 };
+    accumulators.current = { solar: 0, savings: 0, gridImport: 0, carbonOffset: 0, batDischargeKwh: 0, feedInEarnings: 0 };
 
-    const r = Math.random();
-    let newWeather = 'Sunny';
-    if (r > 0.7) newWeather = 'Cloudy';
-    if (r > 0.9) newWeather = 'Rainy';
+    // Markov chain weather transition (day-to-day persistence)
+    const newWeather = nextWeatherMarkov(weatherRef.current);
     setWeather(newWeather);
     
     if (Math.random() > 0.95) setGridStatus('Offline'); else setGridStatus('Online');
+
+    // Battery degradation: daily discharge cycles → gradual capacity loss (LiFePO4 model)
+    const cyclesDelta = accumulators.current.batDischargeKwh / Math.max(1, BATTERY_CAPACITY * batteryHealthRef.current);
+    batteryCyclesRef.current += cyclesDelta;
+    batteryHealthRef.current = Math.max(0.70, batteryHealthRef.current - cyclesDelta * 0.0002);
+
+    // Reset monthly peak demand at month start
+    if (nextDate.getDate() === 1) {
+      monthlyPeakDemandRef.current = 0;
+    }
     
     // Update soiling: rain resets dust, dry days accumulate per SOILING_LOSS_PER_DAY
     if (newWeather === 'Rainy') {
@@ -1288,13 +1384,19 @@ export default function App() {
     const { simSpeed: currentSimSpeed, priorityMode: currentPriorityMode, isAutoMode: currentIsAutoMode, evSpecs: currentEvSpecs, currentDate: currentDateValue } = computeParamsRef.current;
     
     setData(prev => {
+      // Advance Brownian cloud walk (mean-reverting, bounded [-1, 1])
+      cloudNoiseRef.current += gaussianRandom(0, 0.05);
+      cloudNoiseRef.current = Math.max(-1, Math.min(1, cloudNoiseRef.current * 0.97));
+
       const state = PhysicsEngine.calculateInstant(
           timeOfDay, 
-          prev.batteryLevel / 100 * BATTERY_CAPACITY, 
+          prev.batteryLevel / 100 * BATTERY_CAPACITY * batteryHealthRef.current, 
           prev.ev1Soc, 
           prev.ev2Soc, 
           dayScenarioRef.current,
-          currentEvSpecs
+          currentEvSpecs,
+          cloudNoiseRef.current,
+          batteryHealthRef.current
       );
 
       const timeStep = 0.05 * currentSimSpeed; 
@@ -1305,13 +1407,23 @@ export default function App() {
       const currentDayOfWeek = currentDateValue.getDay();
       const applicableRate = KPLC_TARIFF.getRateForTimeAndDay(currentHour, currentDayOfWeek);
       const moneySaved = solarConsumed * applicableRate * timeStep;
+      // Feed-in tariff earnings from grid export
+      const feedInEarned = state.gridExport * FEED_IN_TARIFF_RATE * timeStep;
+
+      // Track monthly peak grid import for demand charge
+      if (state.gridImport > monthlyPeakDemandRef.current) {
+        monthlyPeakDemandRef.current = state.gridImport;
+      }
 
       if (currentIsAutoMode) {
          accumulators.current.solar += state.solar * timeStep;
-         accumulators.current.savings += moneySaved;
+         accumulators.current.savings += moneySaved + feedInEarned;
+         accumulators.current.feedInEarnings += feedInEarned;
          if (state.gridImport > 0) accumulators.current.gridImport += state.gridImport * timeStep;
          // Carbon offset: CO₂ avoided by using solar instead of grid
          accumulators.current.carbonOffset += solarConsumed * GRID_EMISSION_FACTOR * timeStep;
+         // Track discharge for battery degradation cycle counting
+         if (state.batDischargeKw > 0) accumulators.current.batDischargeKwh += state.batDischargeKw * timeStep;
          
          // Record minute-by-minute data for export
          const now = new Date(currentDateValue);
@@ -1358,14 +1470,21 @@ export default function App() {
          homeLoad: state.houseLoad,
          ev1Load: state.ev1Kw, ev1Status: state.ev1Kw > 0 ? 'Charging' : (state.ev1IsHome ? 'Idle' : 'Away'), ev1Soc: state.ev1Soc,
          ev2Load: state.ev2Kw, ev2Status: state.ev2Kw > 0 ? 'Charging' : (state.ev2IsHome ? 'Idle' : 'Away'), ev2Soc: state.ev2Soc,
+         ev1V2g: state.ev1V2g ?? false,
+         ev2V2g: state.ev2V2g ?? false,
          batteryPower: state.batPower,
          batteryStatus: state.batPower > 0.1 ? 'Charging' : (state.batPower < -0.1 ? 'Discharging' : 'Idle'),
-         batteryLevel: (state.batKwh / BATTERY_CAPACITY) * 100,
+         batteryLevel: (state.batKwh / (BATTERY_CAPACITY * batteryHealthRef.current)) * 100,
+         batteryHealth: batteryHealthRef.current,
+         batteryCycles: Math.round(batteryCyclesRef.current),
          netGridPower: state.gridExport > 0 ? state.gridExport : -state.gridImport,
          effectivePriority: effectivePriority,
          displaySavings: accumulators.current.savings,
          totalSolar: accumulators.current.solar,
          totalGridImport: accumulators.current.gridImport,
+         monthlyPeakDemandKW: monthlyPeakDemandRef.current,
+         estimatedDemandChargeKES: monthlyPeakDemandRef.current * KPLC_DEMAND_CHARGE_KES_PER_KW,
+         feedInEarnings: accumulators.current.feedInEarnings,
          currentTariffRate: applicableRate,
          isPeakTime: KPLC_TARIFF.isPeakTime(currentHour),
          carbonOffset: accumulators.current.carbonOffset,
