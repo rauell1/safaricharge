@@ -811,29 +811,50 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
   const [isExporting, setIsExporting] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
+  // Calculate summary stats from minute data in a single pass (memoised to
+  // avoid re-computing the potentially large dataset on every render).
+  const reportStats = useMemo(() => {
+    let solar = 0, gridImport = 0, gridExport = 0, savings = 0;
+    const days = new Set<string>();
+    const weeks = new Set<string>();
+    const months = new Set<string>();
+    const years = new Set<number>();
+    for (const d of minuteData) {
+      solar += d.solarEnergyKWh;
+      gridImport += d.gridImportKWh;
+      gridExport += d.gridExportKWh;
+      savings += d.savingsKES;
+      days.add(d.date);
+      weeks.add(`${d.year}-W${d.week}`);
+      months.add(`${d.year}-${d.month}`);
+      years.add(d.year);
+    }
+    return {
+      totalSolarGenerated: solar,
+      totalGridImportKWh: gridImport,
+      totalGridExportKWh: gridExport,
+      totalSavings: savings,
+      uniqueDays: days.size,
+      uniqueWeeks: weeks.size,
+      uniqueMonths: months.size,
+      uniqueYears: years.size,
+    };
+  }, [minuteData]);
+
   if (!isOpen) return null;
   
   // Calculate tariff breakdown for display
   const highRateTotal = KPLC_TARIFF.getHighRateWithVAT();
   const lowRateTotal = KPLC_TARIFF.getLowRateWithVAT();
-  
-  // Calculate summary stats from minute data
+
   const totalDataPoints = minuteData.length;
-  const totalSolarGenerated = minuteData.reduce((sum, d) => sum + d.solarEnergyKWh, 0);
-  const totalGridImportKWh = minuteData.reduce((sum, d) => sum + d.gridImportKWh, 0);
-  const totalGridExportKWh = minuteData.reduce((sum, d) => sum + d.gridExportKWh, 0);
-  const totalSavings = minuteData.reduce((sum, d) => sum + d.savingsKES, 0);
-  
+  const { totalSolarGenerated, totalGridImportKWh, totalGridExportKWh, totalSavings,
+          uniqueDays, uniqueWeeks, uniqueMonths, uniqueYears } = reportStats;
+
   // Get date range
   const dateRange = totalDataPoints > 0 
     ? `${minuteData[0]?.date || 'N/A'} to ${minuteData[totalDataPoints - 1]?.date || 'N/A'}`
     : 'No data yet';
-    
-  // Count unique days, weeks, months, years
-  const uniqueDays = new Set(minuteData.map(d => d.date)).size;
-  const uniqueWeeks = new Set(minuteData.map(d => `${d.year}-W${d.week}`)).size;
-  const uniqueMonths = new Set(minuteData.map(d => `${d.year}-${d.month}`)).size;
-  const uniqueYears = new Set(minuteData.map(d => d.year)).size;
 
   return (
     <div className="absolute inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -1218,7 +1239,7 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
 const MiniSparkline = React.memo(({ data }: { data: Array<{ timeOfDay: number; solar: number }> }) => {
   const W = 112, H = 20;
   if (data.length < 2) return null;
-  const maxS = Math.max(...data.map(d => d.solar), 0.1);
+  const maxS = data.reduce((maxValue, dataPoint) => dataPoint.solar > maxValue ? dataPoint.solar : maxValue, 0.1);
   const pts = data
     .map((d, i) => {
       const x = (d.timeOfDay / 24) * W;
@@ -2146,8 +2167,8 @@ export default function App() {
                 style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}
               >
                 {pastGraphs.map(({ date, data: pastData }) => {
-                  const peakSolar = Math.max(...pastData.map(p => p.solar)).toFixed(1);
-                  const peakLoad  = Math.max(...pastData.map(p => p.load)).toFixed(1);
+                  const peakSolar = pastData.reduce((maxValue, point) => point.solar > maxValue ? point.solar : maxValue, 0).toFixed(1);
+                  const peakLoad  = pastData.reduce((maxValue, point) => point.load > maxValue ? point.load : maxValue, 0).toFixed(1);
                   const avgBat    = (pastData.reduce((s, p) => s + p.batSoc, 0) / Math.max(pastData.length, 1)).toFixed(0);
                   return (
                     <button
