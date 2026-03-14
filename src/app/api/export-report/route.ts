@@ -97,6 +97,16 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Guard against excessively large payloads that could exhaust server memory
+    // when multiple users export simultaneously.
+    // 420 points/day × 365 days × 25 years ≈ 3.8 M records is the practical max.
+    const MAX_DATA_POINTS = 420 * 365 * 25; // ~3,832,500
+    if (minuteData.length > MAX_DATA_POINTS) {
+      return NextResponse.json({
+        error: `Dataset too large (${minuteData.length.toLocaleString()} records). Maximum is ${MAX_DATA_POINTS.toLocaleString()} records (~25 years).`
+      }, { status: 413 });
+    }
+
     // Aggregate data by different time periods
     const hourlyData = aggregateData(minuteData, d => `${d.date} ${String(d.hour).padStart(2, '0')}:00`);
     const dailyData = aggregateData(minuteData, d => d.date);

@@ -97,19 +97,23 @@ This installs all dependencies listed in `package.json`.
 
 # ⚙️ Environment Configuration
 
-Create an environment configuration file in the project root:
+Copy the provided template and fill in your values:
 
-```
-.env
-```
-
-Example configuration:
-
-```
-DATABASE_URL="file:./dev.db"
+```bash
+cp .env.example .env
 ```
 
-Additional variables may be added depending on deployment configuration.
+Then open `.env` and populate the required variables:
+
+| Variable | Required | Description |
+|---|---|---|
+| `DATABASE_URL` | ✅ Yes | Prisma database connection string, e.g. `file:./dev.db` |
+| `GEMINI_API_KEY` | ⚠️ Optional | Google Gemini API key for the AI assistant. Obtain one at <https://aistudio.google.com/apikey>. Without it the app falls back to the built-in Z.AI SDK automatically. |
+
+> **Gemini troubleshooting** – If the AI assistant returns errors even after setting `GEMINI_API_KEY`:
+> 1. Make sure the key is in **`.env`** (not `.env.local` or another file) and that the server has been **restarted** after the change.
+> 2. Verify the key is active at <https://aistudio.google.com/apikey>.
+> 3. The app tries `gemini-2.0-flash` → `gemini-1.5-flash` → `gemini-1.5-flash-latest` on the `v1beta` endpoint in order. If all three fail the Z.AI SDK takes over automatically.
 
 ---
 
@@ -205,6 +209,43 @@ Some folders are generated automatically and are intentionally excluded from Git
 * `.env`
 
 These will be created automatically during development.
+
+---
+
+# ⚡ Simulation Design — 420 Data Points Per Day
+
+The physics simulation uses a fixed time step of **24 h ÷ 420 = ~3.43 minutes** per sample.  
+This gives exactly **420 data points per simulated day** for every simulation speed:
+
+| Speed | Steps per tick | Ticks to complete 1 day |
+|---|---|---|
+| x1 | 1 | 420 |
+| x5 | 5 | 84 |
+| x20 | 20 | 21 |
+| x100 | 100 | ~4 |
+| x1000 | 420 | 1 |
+
+The simulation always starts at **midnight (00:00)** so that every simulated day — including the very first one — is a complete 24-hour cycle.  
+Report generation and energy calculations use the same `24/420` constant, keeping kWh totals consistent regardless of the speed chosen.
+
+---
+
+# 👥 Running With Multiple Concurrent Users
+
+The **simulation engine runs entirely in the browser** (React state + `setInterval`).  
+The Next.js server only handles three API routes:
+
+| Route | Purpose | Notes |
+|---|---|---|
+| `/api/safaricharge-ai` | AI chat assistant | Tries Gemini, falls back to Z.AI SDK. Per-request 10 s timeout prevents slow calls from blocking others. |
+| `/api/export-report` | CSV / Excel export | Capped at ~3.8 M records (~25 years) to protect server memory. |
+| `/api/formal-report` | HTML/PDF report | Same 3.8 M record cap. |
+
+Because simulation state is isolated in each user's browser:
+
+* **10 (or more) users can simulate simultaneously without any server-side coordination.**
+* Server load only increases when users request AI answers or generate reports.
+* For heavy production loads consider deploying behind a reverse proxy (the included `Caddyfile.txt` shows a Caddy setup) and scaling the Next.js process with a process manager (e.g. PM2 cluster mode).
 
 ---
 

@@ -133,31 +133,48 @@ Respond clearly with actionable insights.
         }
       };
 
+      // Use v1beta which fully supports system_instruction for all current models.
       const models = [
         "gemini-2.0-flash",
+        "gemini-1.5-flash",
         "gemini-1.5-flash-latest"
       ];
 
       for (const model of models) {
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${geminiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body)
+        // Per-request 10-second timeout so one slow/failed Gemini call does not
+        // block the response indefinitely (important when multiple users are
+        // hitting the AI endpoint concurrently).
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10_000);
+
+        try {
+          const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+              signal: controller.signal,
+            }
+          );
+
+          if (res.ok) {
+            clearTimeout(timeoutId);
+            const data = await res.json();
+            const text =
+              data?.candidates?.[0]?.content?.parts?.[0]?.text ??
+              "I couldn't generate a response.";
+            return NextResponse.json({ response: text });
           }
-        );
 
-        if (res.ok) {
-          const data = await res.json();
-          const text =
-            data?.candidates?.[0]?.content?.parts?.[0]?.text ??
-            "I couldn't generate a response.";
-          return NextResponse.json({ response: text });
+          const errText = await res.text();
+          console.error(`Gemini ${model} error (${res.status}):`, errText);
+        } catch (fetchErr: unknown) {
+          const isAbort = fetchErr instanceof Error && fetchErr.name === 'AbortError';
+          console.error(`Gemini ${model} ${isAbort ? 'timed out' : 'fetch error'}:`, fetchErr);
+        } finally {
+          clearTimeout(timeoutId);
         }
-
-        const errText = await res.text();
-        console.error(`Gemini ${model} error:`, errText);
       }
     }
 

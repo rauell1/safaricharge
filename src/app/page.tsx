@@ -1546,7 +1546,9 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
 // --- 6. APP COMPONENT ---
 
 export default function App() {
-  const [timeOfDay, setTimeOfDay] = useState(12); 
+  // Start at midnight so the very first simulated day runs midnight→midnight
+  // and accumulates the full 420 data points like every subsequent day.
+  const [timeOfDay, setTimeOfDay] = useState(0);
   const [currentDate, setCurrentDate] = useState(new Date('2026-01-01T00:00:00'));
   const [isAutoMode, setIsAutoMode] = useState(false);
   const [simSpeed, setSimSpeed] = useState(1); 
@@ -1633,14 +1635,16 @@ export default function App() {
   const lastProcessedTimeRef = useRef<number | null>(null);
 
   // Physics state refs — keep the authoritative simulation state outside React
-  // so the interval can sub-step at fixed 1-hour intervals regardless of speed.
-  const timeOfDayRef = useRef(12);
+  // so the interval can sub-step at fixed (24/420)-hour steps regardless of speed.
+  // Starting at t=0 (midnight) ensures every simulated day is a full 24-hour
+  // cycle → exactly 420 data points per day for all simulation speeds.
+  const timeOfDayRef = useRef(0);
   const batKwhRef = useRef(BATTERY_CAPACITY * 0.5);
   const ev1SocRef = useRef(60);
   const ev2SocRef = useRef(50);
 
   const handleReset = () => {
-    setTimeOfDay(12);
+    setTimeOfDay(0);
     setCurrentDate(new Date('2026-01-01T00:00:00'));
     accumulators.current = { solar: 0, savings: 0, gridImport: 0, carbonOffset: 0, batDischargeKwh: 0, feedInEarnings: 0 };
     soilingFactorRef.current = 1.0;
@@ -1656,7 +1660,7 @@ export default function App() {
     setData(prev => ({ ...prev, batteryLevel: 50, ev1Soc: 60, ev2Soc: 50, displaySavings: 0, carbonOffset: 0, batteryHealth: 1.0, batteryCycles: 0, monthlyPeakDemandKW: 0, estimatedDemandChargeKES: 0, feedInEarnings: 0, ev1V2g: false, ev2V2g: false }));
     setIsAutoMode(false);
     dayScenarioRef.current = PhysicsEngine.generateDayScenario('Sunny', new Date('2026-01-01'), 1.0);
-    timeOfDayRef.current = 12;
+    timeOfDayRef.current = 0;
     batKwhRef.current = BATTERY_CAPACITY * 0.5;
     ev1SocRef.current = dayScenarioRef.current.ev1.startSoc;
     ev2SocRef.current = dayScenarioRef.current.ev2.startSoc;
