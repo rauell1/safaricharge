@@ -42,11 +42,11 @@ export function buildGraphSVG(data: GraphDataPoint[], dateLabel?: string): strin
       <text x="${x.toFixed(1)}" y="${pad.top + ih + 18}" text-anchor="middle" fill="#64748b" font-size="9">${hr.toString().padStart(2,'0')}:00</text>`;
   }).join('\n');
 
-  const label = dateLabel ? ` – ${dateLabel}` : '';
+  const label = dateLabel ? ` (${dateLabel})` : '';
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
   <rect width="${w}" height="${h}" fill="white"/>
-  <text x="${w/2}" y="22" text-anchor="middle" fill="#0f172a" font-size="13" font-weight="bold" font-family="monospace">SafariCharge – Daily Energy Profile${label}</text>
+  <text x="${w/2}" y="22" text-anchor="middle" fill="#0f172a" font-size="13" font-weight="bold" font-family="monospace">SafariCharge Daily Energy Profile${label}</text>
   ${gridLines}
   ${timeLines}
   <path d="${areaD}" fill="rgba(34,197,94,0.12)"/>
@@ -112,7 +112,7 @@ const DailyEnergyGraph = React.memo(({ data, dateLabel }: { data: GraphDataPoint
     <div className="w-full bg-white p-4 rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
       <div className="flex items-center justify-between mb-2 px-2">
         <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-          Today&apos;s Energy Profile{dateLabel ? ` – ${dateLabel}` : ''}
+          Today&apos;s Energy Profile{dateLabel ? ` (${dateLabel})` : ''}
         </h3>
         <div className="flex items-center gap-3">
           <span className="text-[9px] text-slate-400 font-mono">{data.length} data points</span>

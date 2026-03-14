@@ -225,8 +225,8 @@ const PhysicsEngine = {
     };
   },
 
-  calculateInstant: (t: number, prevBatKwh: number, prevEv1Soc: number, prevEv2Soc: number, scenario: any, evSpecs: any, cloudNoise = 0, batteryHealth = 1.0) => {
-    const timeStep = 5/60;
+  calculateInstant: (t: number, prevBatKwh: number, prevEv1Soc: number, prevEv2Soc: number, scenario: any, evSpecs: any, cloudNoise = 0, batteryHealth = 1.0, actualTimeStep = 5/60) => {
+    const timeStep = actualTimeStep;
     const month: number = scenario.month || 1;
     const peakHour: number = scenario.peakSolarHour || 12.75;
     const soiling: number = scenario.soilingFactor ?? 1.0;
@@ -590,7 +590,7 @@ const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, cu
   isOpen: boolean; onClose: () => void; data: any; timeOfDay: number; weather: string; currentDate: Date; isAutoMode: boolean;
 }) => {
   const [messages, setMessages] = useState<Array<{ role: string; text: string }>>([
-    { role: 'assistant', text: "Hello! I'm **SafariCharge AI** — your intelligent solar energy advisor.\n\nI have live access to your system data and deep knowledge of solar, batteries, KPLC tariffs, and EV charging in Kenya. Ask me anything! ☀️🔋" }
+    { role: 'assistant', text: "Hello! I'm **SafariCharge AI**, your intelligent solar energy advisor.\n\nI have live access to your system data and deep knowledge of solar, batteries, KPLC tariffs, and EV charging in Kenya. Ask me anything! ☀️🔋" }
   ]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -1565,6 +1565,7 @@ export default function App() {
     cloudNoiseRef.current = Math.max(-1, Math.min(1, cloudNoiseRef.current * 0.97));
 
     setData(prev => {
+      const physicsTimeStep = 0.05 * currentSimSpeed;
       const state = PhysicsEngine.calculateInstant(
           timeOfDay, 
           prev.batteryLevel / 100 * BATTERY_CAPACITY * batteryHealthRef.current, 
@@ -1573,10 +1574,11 @@ export default function App() {
           dayScenarioRef.current,
           currentEvSpecs,
           cloudNoiseRef.current,
-          batteryHealthRef.current
+          batteryHealthRef.current,
+          physicsTimeStep
       );
 
-      const timeStep = 0.05 * currentSimSpeed; 
+      const timeStep = physicsTimeStep;
       const solarConsumed = state.solar - (state.gridExport > 0 ? state.gridExport : 0);
       
       const currentHour = Math.floor(timeOfDay);
@@ -1792,10 +1794,27 @@ export default function App() {
         {pastGraphs.length > 0 && (
           <div className="w-full max-w-7xl px-2 pb-4">
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-              <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <span>📅 Past Days — Energy Profiles</span>
-                <span className="text-[9px] font-normal text-slate-400 normal-case">({pastGraphs.length} day{pastGraphs.length !== 1 ? 's' : ''} archived)</span>
-              </h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2">
+                  <span>📅 Past Days: Energy Profiles</span>
+                  <span className="text-[9px] font-normal text-slate-400 normal-case">({pastGraphs.length} day{pastGraphs.length !== 1 ? 's' : ''} archived)</span>
+                </h3>
+                {pastGraphs.length > 1 && (
+                  <button
+                    onClick={() => {
+                      pastGraphs.forEach(({ date, data: pastData }, i) => {
+                        setTimeout(() => {
+                          const svg = buildGraphSVG(pastData, date);
+                          triggerSVGDownload(svg, `SafariCharge_DailyGraph_${date}.svg`);
+                        }, i * 400);
+                      });
+                    }}
+                    className="flex items-center gap-1.5 text-[10px] font-bold text-sky-600 hover:text-sky-800 bg-sky-50 hover:bg-sky-100 border border-sky-200 px-2 py-1 rounded transition-colors"
+                  >
+                    <Download size={11} /> Download All ({pastGraphs.length})
+                  </button>
+                )}
+              </div>
               <div className="flex flex-wrap gap-2">
                 {pastGraphs.map(({ date, data: pastData }) => {
                   const peakSolar = Math.max(...pastData.map(p => p.solar)).toFixed(1);
