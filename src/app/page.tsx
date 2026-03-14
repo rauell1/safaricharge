@@ -9,6 +9,7 @@ import {
   CloudRain, Moon, Download, RotateCcw, AlertTriangle, DollarSign,
   Cpu, Car, ZapOff, FileSpreadsheet
 } from 'lucide-react';
+import DailyEnergyGraph, { type GraphDataPoint } from '@/components/DailyEnergyGraph';
 
 // --- CONFIGURATION - Kenya Power Commercial Tariff (E-Mobility) ---
 // Based on actual KPLC bill for ROAM ELECTRIC LIMITED - February 2026
@@ -1262,6 +1263,8 @@ export default function App() {
   const batteryCyclesRef = useRef(0);
   const cloudNoiseRef = useRef(0);
   const monthlyPeakDemandRef = useRef(0);
+  const todayGraphDataRef = useRef<GraphDataPoint[]>([]);
+  const [dailyGraphData, setDailyGraphData] = useState<GraphDataPoint[]>([]);
   const dayScenarioRef = useRef(PhysicsEngine.generateDayScenario('Sunny', new Date('2026-01-01'), 1.0));
   
   // Comprehensive data tracking for export - stores all minute-by-minute data
@@ -1304,6 +1307,8 @@ export default function App() {
     batteryCyclesRef.current = 0;
     cloudNoiseRef.current = 0;
     monthlyPeakDemandRef.current = 0;
+    todayGraphDataRef.current = [];
+    setDailyGraphData([]);
     minuteDataRef.current = [];
     setData(prev => ({ ...prev, batteryLevel: 50, ev1Soc: 60, ev2Soc: 50, displaySavings: 0, carbonOffset: 0, batteryHealth: 1.0, batteryCycles: 0, monthlyPeakDemandKW: 0, estimatedDemandChargeKES: 0, feedInEarnings: 0, ev1V2g: false, ev2V2g: false }));
     setIsAutoMode(false);
@@ -1315,6 +1320,8 @@ export default function App() {
     nextDate.setDate(nextDate.getDate() + 1);
     setCurrentDate(nextDate);
     accumulators.current = { solar: 0, savings: 0, gridImport: 0, carbonOffset: 0, batDischargeKwh: 0, feedInEarnings: 0 };
+    todayGraphDataRef.current = [];
+    setDailyGraphData([]);
 
     // Markov chain weather transition (day-to-day persistence)
     const newWeather = nextWeatherMarkov(weatherRef.current);
@@ -1456,6 +1463,15 @@ export default function App() {
            gridImportKWh: state.gridImport * timeStep,
            gridExportKWh: state.gridExport * timeStep,
          });
+
+         // Record for daily graph
+         todayGraphDataRef.current.push({
+           timeOfDay,
+           solar: state.solar,
+           load: state.load,
+           batSoc: (state.batKwh / (BATTERY_CAPACITY * batteryHealthRef.current)) * 100,
+         });
+         setDailyGraphData([...todayGraphDataRef.current]);
       }
 
       let effectivePriority = currentPriorityMode;
@@ -1554,7 +1570,7 @@ export default function App() {
         carbonOffset={data.carbonOffset}
       />
 
-      <main className="flex-1 flex items-center justify-center p-4">
+      <main className="flex-1 flex flex-col items-center justify-center p-4 gap-4">
         <div className="w-full max-w-7xl h-full min-h-[600px] bg-slate-100 rounded-[30px] shadow-2xl border border-white relative flex flex-col lg:flex-row overflow-hidden">
           <div className="absolute inset-0 opacity-40 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
           
@@ -1593,6 +1609,11 @@ export default function App() {
               evSpecs={evSpecs}
             />
           </div>
+        </div>
+
+        {/* Daily Energy Graph — full width below main panel */}
+        <div className="w-full max-w-7xl px-2 pb-2">
+          <DailyEnergyGraph data={dailyGraphData} />
         </div>
       </main>
       
