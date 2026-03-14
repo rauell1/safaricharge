@@ -56,6 +56,17 @@ const KPLC_TARIFF = {
   // Get applicable rate based on time
   getRateForTime: function(hour: number): number {
     return this.isPeakTime(hour) ? this.getHighRateWithVAT() : this.getLowRateWithVAT();
+  },
+
+  // Weekends are entirely off-peak per KPLC commercial E-Mobility tariff
+  isWeekend: function(dayOfWeek: number): boolean {
+    return dayOfWeek === 0 || dayOfWeek === 6;
+  },
+
+  // Get applicable rate accounting for both time-of-use and day-of-week
+  getRateForTimeAndDay: function(hour: number, dayOfWeek: number): number {
+    if (this.isWeekend(dayOfWeek)) return this.getLowRateWithVAT();
+    return this.getRateForTime(hour);
   }
 };
 
@@ -68,11 +79,85 @@ const EV_CHARGER_RATE = 22.0;
 const MAX_BAT_CHARGE_RATE = 30.0; 
 const MAX_BAT_DISCHARGE_RATE = 40.0; 
 
+// --- PHYSICS HELPERS ---
+// Average Kenya grid emission factor (mix of hydro + thermal generation)
+const GRID_EMISSION_FACTOR = 0.47; // kgCO2/kWh
+const PANEL_TEMP_COEFFICIENT = -0.005; // -0.5%/°C above 25°C STC
+const TREE_CO2_KG_PER_YEAR = 21.77; // kg CO₂ absorbed per tree per year (UNFAO estimate)
+const AVG_CAR_EMISSION_KG_PER_KM = 0.21; // kg CO₂ per km for average petrol car
+const SOILING_LOSS_PER_DAY = 0.005; // 0.5% dust loss per day (≈3.5% per week)
+const SOILING_MIN_FACTOR = 0.70; // Maximum soiling derating (30% loss before rain cleans)
+
+/**
+ * Seasonal solar peak hour for Nairobi (1.29°S latitude).
+ * Sun is slightly north of zenith in June ("winter") → earlier peak ~11:00.
+ * Sun is slightly south of zenith in December ("summer") → later peak ~13:00.
+ */
+const getSeasonalPeakHour = (month: number): number => {
+  const phaseRad = ((month - 6) / 12) * 2 * Math.PI;
+  return 12.0 + Math.cos(phaseRad) * 1.0;
+};
+
+/**
+ * Panel temperature derating using NOCT model.
+ * Estimates panel temperature from ambient (seasonal for Nairobi) + solar heating,
+ * then applies the standard temperature coefficient.
+ */
+const getPanelTempEffect = (irradFraction: number, month: number): number => {
+  // Nairobi ambient: ~22°C avg, peaks ~30°C in hot months (Oct–Mar)
+  const ambientTemp = 22 + 8 * Math.sin(((month - 3) / 12) * 2 * Math.PI);
+  const panelTemp = ambientTemp + irradFraction * 28; // simplified NOCT model
+  const excess = Math.max(0, panelTemp - 25);
+  return Math.max(0.70, 1.0 + excess * PANEL_TEMP_COEFFICIENT);
+};
+
+/**
+ * Inverter efficiency curve: peaks ~97% at 50-80% of rated load,
+ * falls off at very low loads and near full capacity.
+ */
+const getInverterEfficiency = (loadFraction: number): number => {
+  if (loadFraction <= 0.05) return 0.82;
+  if (loadFraction <= 0.20) return 0.93;
+  if (loadFraction <= 0.60) return 0.97;
+  if (loadFraction <= 0.90) return 0.96;
+  return 0.94;
+};
+
+/**
+ * Battery round-trip efficiency varies with charge/discharge rate:
+ * ~95% at low rates (0.1C), ~85% at maximum rates (0.5C+).
+ */
+const getBatteryEfficiency = (rateFraction: number): number => {
+  return Math.max(0.85, 0.95 - 0.10 * Math.min(1.0, rateFraction));
+};
+
+/**
+ * Tapered EV charging above 80% SOC — realistic Li-ion CC/CV behavior.
+ * Full rate below 80%, linearly reduced to 0 at 100%.
+ */
+const getEVTaperedRate = (soc: number, maxRate: number): number => {
+  if (soc >= 100) return 0;
+  if (soc >= 80) return maxRate * (100 - soc) / 20;
+  return maxRate;
+};
+
 // --- 1. PHYSICS ENGINE (Shared Logic) ---
 const PhysicsEngine = {
-  generateDayScenario: (weather: string) => {
+  generateDayScenario: (weather: string, date: Date = new Date('2026-01-01'), soilingFactor: number = 1.0) => {
+    const month = date.getMonth() + 1;
+    const dayOfWeek = date.getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    const peakSolarHour = getSeasonalPeakHour(month);
+    // Weather-dependent HVAC base load (sunny/hot days drive more cooling demand)
+    const hvacBase = weather === 'Sunny' ? 3.5 : weather === 'Cloudy' ? 2.0 : 0.5;
+
     return {
       initialBatSoc: 30.0,
+      month,
+      dayOfWeek,
+      isWeekend,
+      peakSolarHour,
+      soilingFactor,
       ev1: {
         startSoc: 40 + Math.random() * 30,
         depart: 7.5 + (Math.random() - 0.5) * 0.5, 
@@ -95,24 +180,37 @@ const PhysicsEngine = {
       weatherFactor: weather === 'Sunny' ? 1.0 : weather === 'Cloudy' ? 0.6 : 0.2,
       cloudNoiseSeed: Math.random(),
       houseLoadProfile: Array(24).fill(0).map((_, h) => {
-         if (h >= 6 && h < 9) return 5.0 + Math.random() * 2;
-         if (h >= 9 && h < 18) return 2.0 + Math.random();
-         if (h >= 18 && h < 22) return 6.0 + Math.random() * 3;
-         return 0.8;
+        if (isWeekend) {
+          // Weekend: later start, more midday leisure load, long evening peak
+          if (h >= 8 && h < 11) return 4.0 + Math.random() * 2;
+          if (h >= 11 && h < 16) return 3.0 + Math.random() * 1.5 + (weather === 'Sunny' ? hvacBase * Math.random() * 0.6 : 0);
+          if (h >= 16 && h < 23) return 6.5 + Math.random() * 2.5;
+          return 1.2;
+        } else {
+          // Weekday: morning rush, office-quiet midday with HVAC, evening peak
+          if (h >= 6 && h < 9) return 5.0 + Math.random() * 2;
+          if (h >= 9 && h < 18) return 2.0 + Math.random() + (weather === 'Sunny' && h >= 11 && h < 17 ? hvacBase * Math.random() * 0.5 : 0);
+          if (h >= 18 && h < 22) return 6.0 + Math.random() * 3;
+          return 0.8;
+        }
       })
     };
   },
 
   calculateInstant: (t: number, prevBatKwh: number, prevEv1Soc: number, prevEv2Soc: number, scenario: any, evSpecs: any) => {
     const timeStep = 5/60;
-    
-    // A. Solar
+    const month: number = scenario.month || 1;
+    const peakHour: number = scenario.peakSolarHour || 12.75;
+    const soiling: number = scenario.soilingFactor ?? 1.0;
+
+    // A. Solar — seasonal peak hour, temperature coefficient, soiling/dust
     let solar = 0;
     if (t > 6.2 && t < 18.8) { 
-        const peakHour = 12.75;
         const width = 7; 
         const noise = (Math.sin(t * 10 + scenario.cloudNoiseSeed * 100) * 0.1); 
-        solar = PV_CAPACITY * Math.max(0, Math.exp(-Math.pow(t - peakHour, 2) / width)) * (scenario.weatherFactor + noise);
+        const irradFraction = Math.max(0, Math.exp(-Math.pow(t - peakHour, 2) / width));
+        const tempEffect = getPanelTempEffect(irradFraction * scenario.weatherFactor, month);
+        solar = PV_CAPACITY * irradFraction * (scenario.weatherFactor + noise) * soiling * tempEffect;
         solar = Math.max(0, solar);
     }
 
@@ -120,7 +218,7 @@ const PhysicsEngine = {
     const hIdx = Math.floor(t);
     const houseLoad = scenario.houseLoadProfile[hIdx % 24];
 
-    // C. EV Logic
+    // C. EV Logic with tapered charging above 80% SOC
     let ev1Load = 0;
     let ev2Load = 0;
     let ev1IsHome = true;
@@ -133,8 +231,9 @@ const PhysicsEngine = {
         prevEv1Soc = Math.max(5, prevEv1Soc - (evSpecs.ev1.drainRate * timeStep / evSpecs.ev1.cap * 100));
     } else {
         if (prevEv1Soc < 100) {
+            const taperedRate = getEVTaperedRate(prevEv1Soc, Math.min(EV_CHARGER_RATE, evSpecs.ev1.onboard));
             const needed = (100 - prevEv1Soc) / 100 * evSpecs.ev1.cap;
-            ev1Load = Math.min(Math.min(EV_CHARGER_RATE, evSpecs.ev1.onboard), needed / timeStep);
+            ev1Load = Math.min(taperedRate, needed / timeStep);
         }
     }
 
@@ -145,8 +244,9 @@ const PhysicsEngine = {
         prevEv2Soc = Math.max(5, prevEv2Soc - (evSpecs.ev2.drainRate * timeStep / evSpecs.ev2.cap * 100));
     } else {
         if (prevEv2Soc < 100) {
+            const taperedRate = getEVTaperedRate(prevEv2Soc, Math.min(EV_CHARGER_RATE, evSpecs.ev2.onboard));
             const needed = (100 - prevEv2Soc) / 100 * evSpecs.ev2.cap;
-            ev2Load = Math.min(Math.min(EV_CHARGER_RATE, evSpecs.ev2.onboard), needed / timeStep);
+            ev2Load = Math.min(taperedRate, needed / timeStep);
         }
     }
 
@@ -162,32 +262,40 @@ const PhysicsEngine = {
         }
     }
 
-    // Apply Charge to SOC
-    if (ev1Load > 0) prevEv1Soc += (ev1Load * timeStep / evSpecs.ev1.cap * 100);
-    if (ev2Load > 0) prevEv2Soc += (ev2Load * timeStep / evSpecs.ev2.cap * 100);
+    // Apply inverter efficiency: DC solar → AC bus
+    const inverterEff = getInverterEfficiency(totalLoad / INVERTER_CAPACITY);
+    const effectiveSolar = solar * inverterEff;
 
-    // D. Energy Balance
+    // Apply Charge to SOC
+    if (ev1Load > 0) prevEv1Soc = Math.min(100, prevEv1Soc + (ev1Load * timeStep / evSpecs.ev1.cap * 100));
+    if (ev2Load > 0) prevEv2Soc = Math.min(100, prevEv2Soc + (ev2Load * timeStep / evSpecs.ev2.cap * 100));
+
+    // D. Energy Balance with variable battery efficiency
     let batCharge = 0;
     let batDischarge = 0;
     let gridImport = 0;
     let gridExport = 0;
     let newBatKwh = prevBatKwh;
 
-    if (solar >= totalLoad) {
-        let excess = solar - totalLoad;
+    if (effectiveSolar >= totalLoad) {
+        let excess = effectiveSolar - totalLoad;
         if (newBatKwh < BATTERY_CAPACITY) {
             const capRem = BATTERY_CAPACITY - newBatKwh;
-            batCharge = Math.min(excess, MAX_BAT_CHARGE_RATE, (capRem / BATTERY_EFFICIENCY) / timeStep);
-            newBatKwh += batCharge * timeStep * BATTERY_EFFICIENCY;
+            const chargeFraction = Math.min(excess, MAX_BAT_CHARGE_RATE) / MAX_BAT_CHARGE_RATE;
+            const batEff = getBatteryEfficiency(chargeFraction);
+            batCharge = Math.min(excess, MAX_BAT_CHARGE_RATE, (capRem / batEff) / timeStep);
+            newBatKwh += batCharge * timeStep * batEff;
             excess -= batCharge;
         }
         gridExport = excess;
     } else {
-        let deficit = totalLoad - solar;
+        let deficit = totalLoad - effectiveSolar;
         if (newBatKwh > 12.0) {
-            const enAvail = (newBatKwh - 12.0) * BATTERY_EFFICIENCY;
-            batDischarge = Math.min(deficit, MAX_BAT_DISCHARGE_RATE, enAvail / timeStep);
-            newBatKwh -= (batDischarge * timeStep) / BATTERY_EFFICIENCY;
+            const enAvail = newBatKwh - 12.0;
+            const dischargeFraction = Math.min(deficit, MAX_BAT_DISCHARGE_RATE) / MAX_BAT_DISCHARGE_RATE;
+            const batEff = getBatteryEfficiency(dischargeFraction);
+            batDischarge = Math.min(deficit, MAX_BAT_DISCHARGE_RATE, (enAvail * batEff) / timeStep);
+            newBatKwh -= (batDischarge * timeStep) / batEff;
             deficit -= batDischarge;
         }
         gridImport = deficit;
@@ -197,7 +305,7 @@ const PhysicsEngine = {
         solar, load: totalLoad, houseLoad, evLoad: ev1Load + ev2Load,
         gridImport, gridExport, 
         batPower: batCharge > 0 ? batCharge : -batDischarge,
-        batKwh: newBatKwh,
+        batKwh: Math.max(0, Math.min(BATTERY_CAPACITY, newBatKwh)),
         ev1Soc: prevEv1Soc, ev2Soc: prevEv2Soc,
         ev1IsHome, ev2IsHome,
         ev1Kw: ev1Load, ev2Kw: ev2Load
@@ -447,8 +555,9 @@ const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather }: 
   );
 };
 
-const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport, minuteData, systemStartDate, onExport }: {
+const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport, minuteData, systemStartDate, onExport, carbonOffset }: {
   isOpen: boolean; onClose: () => void; savings: number; solarConsumed: number; gridImport: number;
+  carbonOffset: number;
   minuteData: Array<{
     timestamp: string;
     date: string;
@@ -519,6 +628,7 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
         <div className="flex bg-slate-100 p-1 border-b border-slate-200">
           <button onClick={() => setActiveTab('daily')} className={`flex-1 py-2 text-xs font-bold uppercase ${activeTab === 'daily' ? 'bg-white shadow text-sky-600' : 'text-slate-500'}`}>Summary</button>
           <button onClick={() => setActiveTab('tariff')} className={`flex-1 py-2 text-xs font-bold uppercase ${activeTab === 'tariff' ? 'bg-white shadow text-sky-600' : 'text-slate-500'}`}>Tariff Rates</button>
+          <button onClick={() => setActiveTab('sustainability')} className={`flex-1 py-2 text-xs font-bold uppercase ${activeTab === 'sustainability' ? 'bg-white shadow text-green-600' : 'text-slate-500'}`}>Sustainability</button>
           <button onClick={() => setActiveTab('export')} className={`flex-1 py-2 text-xs font-bold uppercase ${activeTab === 'export' ? 'bg-white shadow text-sky-600' : 'text-slate-500'}`}>Export Data</button>
         </div>
 
@@ -637,6 +747,67 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
           </div>
           )}
           
+          {activeTab === 'sustainability' && (
+          <div className="space-y-4">
+            <div className="bg-green-50 p-4 rounded-xl border border-green-200">
+              <h3 className="font-bold text-green-800 mb-1 flex items-center gap-2">
+                🌿 Carbon Impact
+              </h3>
+              <p className="text-xs text-green-600 mb-4">
+                Estimated CO₂ avoided by using solar instead of the Kenya national grid
+                (avg. emission factor: {GRID_EMISSION_FACTOR} kgCO₂/kWh, hydro+thermal mix).
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-white p-4 rounded-xl border border-green-100 flex flex-col items-center">
+                  <span className="text-2xl font-black text-green-700">{carbonOffset.toFixed(1)}</span>
+                  <span className="text-xs font-bold text-green-600 uppercase mt-1">kg CO₂ Avoided</span>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-green-100 flex flex-col items-center">
+                  <span className="text-2xl font-black text-green-700">{(carbonOffset / TREE_CO2_KG_PER_YEAR).toFixed(2)}</span>
+                  <span className="text-xs font-bold text-green-600 uppercase mt-1">Trees Equivalent</span>
+                  <span className="text-[9px] text-slate-400 mt-0.5">({TREE_CO2_KG_PER_YEAR} kg CO₂/tree/yr)</span>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-green-100 flex flex-col items-center">
+                  <span className="text-2xl font-black text-green-700">{(carbonOffset / AVG_CAR_EMISSION_KG_PER_KM).toFixed(0)}</span>
+                  <span className="text-xs font-bold text-green-600 uppercase mt-1">km Not Driven</span>
+                  <span className="text-[9px] text-slate-400 mt-0.5">(avg {AVG_CAR_EMISSION_KG_PER_KM} kgCO₂/km)</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-sky-50 p-4 rounded-xl border border-sky-200">
+              <h3 className="font-bold text-sky-800 mb-3">Self-Sufficiency Breakdown</h3>
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="bg-white p-3 rounded-lg border border-sky-100">
+                  <div className="text-slate-500 mb-1">Total Solar Generated</div>
+                  <div className="text-xl font-black text-sky-700">{totalSolarGenerated.toFixed(1)} kWh</div>
+                </div>
+                <div className="bg-white p-3 rounded-lg border border-sky-100">
+                  <div className="text-slate-500 mb-1">Grid Import</div>
+                  <div className="text-xl font-black text-red-500">{totalGridImportKWh.toFixed(1)} kWh</div>
+                </div>
+                <div className="bg-white p-3 rounded-lg border border-sky-100">
+                  <div className="text-slate-500 mb-1">Grid Export (Surplus)</div>
+                  <div className="text-xl font-black text-green-600">{totalGridExportKWh.toFixed(1)} kWh</div>
+                </div>
+                <div className="bg-white p-3 rounded-lg border border-sky-100">
+                  <div className="text-slate-500 mb-1">Solar Self-Consumption</div>
+                  <div className="text-xl font-black text-sky-700">
+                    {totalSolarGenerated > 0 ? (((totalSolarGenerated - totalGridExportKWh) / totalSolarGenerated) * 100).toFixed(1) : '0.0'}%
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs text-slate-500">
+              <strong>Simulation Physics:</strong> Solar model uses Nairobi latitude (1.29°S) seasonal peak hour,
+              panel temperature coefficient (−0.5%/°C above 25°C), soiling/dust accumulation (reset by rain),
+              inverter efficiency curve (82–97%), and variable battery round-trip efficiency (85–95%).
+            </div>
+          </div>
+          )}
+
+
           {activeTab === 'evs' && (
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-sky-50 p-4 rounded-xl border border-sky-100">
@@ -877,6 +1048,11 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
                   <div className="text-2xl font-light text-white flex items-center gap-1">
                     <span className="text-green-400 font-bold">KES {data.displaySavings.toFixed(0)}</span>
                   </div>
+                  {data.carbonOffset > 0 && (
+                    <div className="text-[9px] text-green-300 mt-0.5 flex items-center gap-1">
+                      🌿 {data.carbonOffset.toFixed(2)} kg CO₂ avoided
+                    </div>
+                  )}
                </div>
                <button onClick={onOpenReport} className="text-[10px] bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded flex items-center gap-1 transition-colors">
                    <Table size={10} /> View Report
@@ -997,10 +1173,12 @@ export default function App() {
     totalGridImport: 0,
     currentTariffRate: KPLC_TARIFF.getLowRateWithVAT(),
     isPeakTime: false,
+    carbonOffset: 0,
   });
 
-  const accumulators = useRef({ solar: 0, savings: 0, gridImport: 0 });
-  const dayScenarioRef = useRef(PhysicsEngine.generateDayScenario('Sunny'));
+  const accumulators = useRef({ solar: 0, savings: 0, gridImport: 0, carbonOffset: 0 });
+  const soilingFactorRef = useRef(1.0);
+  const dayScenarioRef = useRef(PhysicsEngine.generateDayScenario('Sunny', new Date('2026-01-01'), 1.0));
   
   // Comprehensive data tracking for export - stores all minute-by-minute data
   const minuteDataRef = useRef<Array<{
@@ -1036,18 +1214,19 @@ export default function App() {
   const handleReset = () => {
     setTimeOfDay(12);
     setCurrentDate(new Date('2026-01-01T00:00:00'));
-    accumulators.current = { solar: 0, savings: 0, gridImport: 0 };
+    accumulators.current = { solar: 0, savings: 0, gridImport: 0, carbonOffset: 0 };
+    soilingFactorRef.current = 1.0;
     minuteDataRef.current = []; // Clear all tracked data on reset
-    setData(prev => ({ ...prev, batteryLevel: 50, ev1Soc: 60, ev2Soc: 50, displaySavings: 0 }));
+    setData(prev => ({ ...prev, batteryLevel: 50, ev1Soc: 60, ev2Soc: 50, displaySavings: 0, carbonOffset: 0 }));
     setIsAutoMode(false);
-    dayScenarioRef.current = PhysicsEngine.generateDayScenario('Sunny');
+    dayScenarioRef.current = PhysicsEngine.generateDayScenario('Sunny', new Date('2026-01-01'), 1.0);
   };
 
   const handleNewDay = useCallback(() => {
     const nextDate = new Date(currentDate);
     nextDate.setDate(nextDate.getDate() + 1);
     setCurrentDate(nextDate);
-    accumulators.current = { solar: 0, savings: 0, gridImport: 0 };
+    accumulators.current = { solar: 0, savings: 0, gridImport: 0, carbonOffset: 0 };
 
     const r = Math.random();
     let newWeather = 'Sunny';
@@ -1057,7 +1236,14 @@ export default function App() {
     
     if (Math.random() > 0.95) setGridStatus('Offline'); else setGridStatus('Online');
     
-    dayScenarioRef.current = PhysicsEngine.generateDayScenario(newWeather);
+    // Update soiling: rain resets dust, dry days accumulate per SOILING_LOSS_PER_DAY
+    if (newWeather === 'Rainy') {
+      soilingFactorRef.current = 1.0;
+    } else {
+      soilingFactorRef.current = Math.max(SOILING_MIN_FACTOR, soilingFactorRef.current - SOILING_LOSS_PER_DAY);
+    }
+
+    dayScenarioRef.current = PhysicsEngine.generateDayScenario(newWeather, nextDate, soilingFactorRef.current);
     setData(prev => ({ ...prev, ev1Soc: dayScenarioRef.current.ev1.startSoc, ev2Soc: dayScenarioRef.current.ev2.startSoc }));
   }, [currentDate]);
 
@@ -1114,16 +1300,18 @@ export default function App() {
       const timeStep = 0.05 * currentSimSpeed; 
       const solarConsumed = state.solar - (state.gridExport > 0 ? state.gridExport : 0);
       
-      // Calculate savings using time-based Kenya Power tariff
-      // Peak hours have higher rates, off-peak hours have lower rates
+      // Calculate savings using weekend-aware Kenya Power tariff
       const currentHour = Math.floor(timeOfDay);
-      const applicableRate = KPLC_TARIFF.getRateForTime(currentHour);
+      const currentDayOfWeek = currentDateValue.getDay();
+      const applicableRate = KPLC_TARIFF.getRateForTimeAndDay(currentHour, currentDayOfWeek);
       const moneySaved = solarConsumed * applicableRate * timeStep;
 
       if (currentIsAutoMode) {
          accumulators.current.solar += state.solar * timeStep;
          accumulators.current.savings += moneySaved;
          if (state.gridImport > 0) accumulators.current.gridImport += state.gridImport * timeStep;
+         // Carbon offset: CO₂ avoided by using solar instead of grid
+         accumulators.current.carbonOffset += solarConsumed * GRID_EMISSION_FACTOR * timeStep;
          
          // Record minute-by-minute data for export
          const now = new Date(currentDateValue);
@@ -1180,6 +1368,7 @@ export default function App() {
          totalGridImport: accumulators.current.gridImport,
          currentTariffRate: applicableRate,
          isPeakTime: KPLC_TARIFF.isPeakTime(currentHour),
+         carbonOffset: accumulators.current.carbonOffset,
       };
     });
   }, [timeOfDay]); // Only depend on timeOfDay - other params are read from refs 
@@ -1243,6 +1432,7 @@ export default function App() {
         minuteData={minuteDataRef.current}
         systemStartDate={systemStartDate.current}
         onExport={handleExportReport}
+        carbonOffset={data.carbonOffset}
       />
 
       <main className="flex-1 flex items-center justify-center p-4">
