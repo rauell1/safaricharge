@@ -24,6 +24,9 @@ interface MinuteData {
   isPeakTime: boolean;
   savingsKES: number;
   solarEnergyKWh: number;
+  homeLoadKWh?: number;
+  ev1LoadKWh?: number;
+  ev2LoadKWh?: number;
   gridImportKWh: number;
   gridExportKWh: number;
 }
@@ -68,9 +71,9 @@ function aggregateData(
     return {
       period,
       totalSolarKWh: items.reduce((sum, d) => sum + (d.solarEnergyKWh || 0), 0),
-      totalHomeLoadKWh: items.reduce((sum, d) => sum + ((d.homeLoadKW || 0) * 5/60/60), 0),
-      totalEV1LoadKWh: items.reduce((sum, d) => sum + ((d.ev1LoadKW || 0) * 5/60/60), 0),
-      totalEV2LoadKWh: items.reduce((sum, d) => sum + ((d.ev2LoadKW || 0) * 5/60/60), 0),
+      totalHomeLoadKWh: items.reduce((sum, d) => sum + (d.homeLoadKWh ?? (d.homeLoadKW || 0) * (24 / 420)), 0),
+      totalEV1LoadKWh: items.reduce((sum, d) => sum + (d.ev1LoadKWh ?? (d.ev1LoadKW || 0) * (24 / 420)), 0),
+      totalEV2LoadKWh: items.reduce((sum, d) => sum + (d.ev2LoadKWh ?? (d.ev2LoadKW || 0) * (24 / 420)), 0),
       totalGridImportKWh: items.reduce((sum, d) => sum + (d.gridImportKWh || 0), 0),
       totalGridExportKWh: items.reduce((sum, d) => sum + (d.gridExportKWh || 0), 0),
       avgBatteryLevelPct: count > 0 ? items.reduce((sum, d) => sum + (d.batteryLevelPct || 0), 0) / count : 0,
@@ -106,9 +109,9 @@ export async function POST(request: NextRequest) {
     const totalGridImport = minuteData.reduce((sum, d) => sum + (d.gridImportKWh || 0), 0);
     const totalGridExport = minuteData.reduce((sum, d) => sum + (d.gridExportKWh || 0), 0);
     const totalSavings = minuteData.reduce((sum, d) => sum + (d.savingsKES || 0), 0);
-    const totalHomeLoad = minuteData.reduce((sum, d) => sum + ((d.homeLoadKW || 0) * 5/60/60), 0);
-    const totalEV1Load = minuteData.reduce((sum, d) => sum + ((d.ev1LoadKW || 0) * 5/60/60), 0);
-    const totalEV2Load = minuteData.reduce((sum, d) => sum + ((d.ev2LoadKW || 0) * 5/60/60), 0);
+    const totalHomeLoad = minuteData.reduce((sum, d) => sum + (d.homeLoadKWh ?? (d.homeLoadKW || 0) * (24 / 420)), 0);
+    const totalEV1Load = minuteData.reduce((sum, d) => sum + (d.ev1LoadKWh ?? (d.ev1LoadKW || 0) * (24 / 420)), 0);
+    const totalEV2Load = minuteData.reduce((sum, d) => sum + (d.ev2LoadKWh ?? (d.ev2LoadKW || 0) * (24 / 420)), 0);
     const totalLoad = totalHomeLoad + totalEV1Load + totalEV2Load;
     
     // Get unique counts
