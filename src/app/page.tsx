@@ -839,6 +839,8 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
       uniqueMonths: months.size,
       uniqueYears: years.size,
     };
+  // minuteData.length is included because the array is mutated in place (push),
+  // so the reference never changes — length is what actually triggers recomputation.
   }, [minuteData, minuteData.length]);
 
   if (!isOpen) return null;
