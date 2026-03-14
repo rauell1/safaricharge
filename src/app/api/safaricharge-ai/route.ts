@@ -188,8 +188,25 @@ ${SOLAR_KNOWLEDGE}
 - Use emojis sparingly but helpfully (☀️ for solar, 🔋 for battery, ⚡ for grid, 🚗 for EV).
 - Never say "I don't know" — reason from first principles using your solar knowledge if needed.`;
 
-    // Build Gemini REST API contents (history must alternate user/model)
-    const history = conversationHistory.slice(-10).map(m => ({
+    // Keep last 12 messages (6 user + 6 model) — beyond this Gemini's context
+    // window overhead isn't worth the extra token cost for a chat assistant.
+    const rawHistory = conversationHistory.slice(-12);
+    const deduped: { role: string; content: string }[] = [];
+    for (const msg of rawHistory) {
+      const last = deduped[deduped.length - 1];
+      if (last && last.role === msg.role) {
+        // Merge consecutive same-role messages into one
+        last.content = `${last.content}\n${msg.content}`;
+      } else {
+        deduped.push({ role: msg.role, content: msg.content });
+      }
+    }
+    // History must not end with a user turn (the current prompt is the final user turn)
+    while (deduped.length > 0 && deduped[deduped.length - 1].role === 'user') {
+      deduped.pop();
+    }
+
+    const history = deduped.map(m => ({
       role: m.role === 'user' ? 'user' : 'model',
       parts: [{ text: m.content }],
     }));
@@ -203,27 +220,49 @@ ${SOLAR_KNOWLEDGE}
       generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
     };
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
-    );
+    // Try preferred model first, fall back to stable model on 404
+    const MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+    let lastStatus = 0;
+    let lastErrText = '';
 
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text();
-      console.error('Gemini API error:', geminiRes.status, errText);
-      // Return the actual Gemini error so the client can display it
-      return NextResponse.json(
-        { error: `Gemini API error (${geminiRes.status}): ${errText.slice(0, 300)}` },
-        { status: 502 }
-      );
+    for (const model of MODELS) {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const geminiRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+        );
+
+        lastStatus = geminiRes.status;
+
+        if (geminiRes.ok) {
+          const geminiData = await geminiRes.json();
+          const responseText: string =
+            geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ||
+            "I'm having trouble processing that. Please try rephrasing your question.";
+          return NextResponse.json({ response: responseText });
+        }
+
+        lastErrText = await geminiRes.text();
+
+        // 404 → model not available; try next model immediately
+        if (geminiRes.status === 404) break;
+
+        // 429 → rate-limited; wait then retry
+        if (geminiRes.status === 429 && attempt < 2) {
+          await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+          continue;
+        }
+
+        // Other non-retryable error for this model
+        break;
+      }
     }
 
-    const geminiData = await geminiRes.json();
-    const responseText: string =
-      geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "I'm having trouble processing that. Please try rephrasing your question.";
-
-    return NextResponse.json({ response: responseText });
+    console.error('Gemini API error:', lastStatus, lastErrText);
+    return NextResponse.json(
+      { error: `Gemini API error (${lastStatus}): ${lastErrText.slice(0, 300)}` },
+      { status: 502 }
+    );
   } catch (error) {
     console.error('SafariCharge AI error:', error);
     const msg = error instanceof Error ? error.message : 'Unknown error';

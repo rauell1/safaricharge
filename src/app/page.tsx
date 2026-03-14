@@ -1151,6 +1151,88 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
 
 // --- 5. PANEL LAYOUTS ---
 
+/** Tiny inline solar sparkline shown on each past-day card */
+const MiniSparkline = React.memo(({ data }: { data: Array<{ timeOfDay: number; solar: number }> }) => {
+  const W = 112, H = 20;
+  if (data.length < 2) return null;
+  const maxS = Math.max(...data.map(d => d.solar), 0.1);
+  const pts = data
+    .map((d, i) => {
+      const x = (d.timeOfDay / 24) * W;
+      const y = H - (d.solar / maxS) * H;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(' ');
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} className="block mt-0.5">
+      <polyline points={pts} fill="none" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.8" />
+    </svg>
+  );
+});
+MiniSparkline.displayName = 'MiniSparkline';
+
+/** Download-ZIP button with parallel processing and progress feedback */
+const PastDaysZipButton = ({ pastGraphs }: { pastGraphs: Array<{ date: string; data: import('@/components/DailyEnergyGraph').GraphDataPoint[] }> }) => {
+  const [generating, setGenerating] = React.useState(false);
+  const [done, setDone] = React.useState(0);
+  const total = pastGraphs.length;
+
+  const handleClick = async () => {
+    if (generating || total === 0) return;
+    setGenerating(true);
+    setDone(0);
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < total; i += BATCH_SIZE) {
+        const batch = pastGraphs.slice(i, i + BATCH_SIZE);
+        const results = await Promise.all(
+          batch.map(async ({ date, data: pastData }) => {
+            const svg = buildGraphSVG(pastData, date);
+            const blob = await buildJPGBlob(svg);
+            return { date, blob };
+          })
+        );
+        results.forEach(({ date, blob }) => zip.file(`SafariCharge_DailyGraph_${date}.jpg`, blob));
+        setDone(i + batch.length);
+      }
+      const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `SafariCharge_DailyGraphs_${new Date().toISOString().slice(0, 10)}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 300);
+    } finally {
+      setGenerating(false);
+      setDone(0);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={generating}
+      className="flex items-center gap-1.5 text-[10px] font-bold text-sky-600 hover:text-sky-800 bg-sky-50 hover:bg-sky-100 border border-sky-200 px-2 py-1 rounded transition-colors disabled:opacity-70 disabled:cursor-not-allowed min-w-[110px] justify-center"
+    >
+      {generating ? (
+        <>
+          <Loader2 size={11} className="animate-spin flex-shrink-0" />
+          <span>{done}/{total} graphs…</span>
+        </>
+      ) : (
+        <>
+          <Download size={11} />
+          <span>Download ZIP ({total})</span>
+        </>
+      )}
+    </button>
+  );
+};
+
 const Header = ({ onToggleAssistant, currentDate, onReset }: {
   onToggleAssistant: () => void; currentDate: Date; onReset: () => void;
 }) => (
@@ -1794,45 +1876,30 @@ export default function App() {
           <DailyEnergyGraph data={dailyGraphData} dateLabel={currentDate.toISOString().slice(0, 10)} />
         </div>
 
-        {/* Past Days Graph Archive */}
+        {/* Past Days Graph Archive — horizontally scrollable legend */}
         {pastGraphs.length > 0 && (
           <div className="w-full max-w-7xl px-2 pb-4">
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+              {/* Header row */}
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2">
                   <span>📅 Past Days: Energy Profiles</span>
-                  <span className="text-[9px] font-normal text-slate-400 normal-case">({pastGraphs.length} day{pastGraphs.length !== 1 ? 's' : ''} archived)</span>
+                  <span className="text-[9px] font-normal text-slate-400 normal-case">
+                    ({pastGraphs.length} day{pastGraphs.length !== 1 ? 's' : ''} archived — scroll →)
+                  </span>
                 </h3>
-                {pastGraphs.length > 0 && (
-                  <button
-                    onClick={async () => {
-                      const JSZip = (await import('jszip')).default;
-                      const zip = new JSZip();
-                      for (const { date, data: pastData } of pastGraphs) {
-                        const svg = buildGraphSVG(pastData, date);
-                        const blob = await buildJPGBlob(svg);
-                        zip.file(`SafariCharge_DailyGraph_${date}.jpg`, blob);
-                      }
-                      const zipBlob = await zip.generateAsync({ type: 'blob' });
-                      const url = URL.createObjectURL(zipBlob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `SafariCharge_DailyGraphs_${new Date().toISOString().slice(0, 10)}.zip`;
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      setTimeout(() => URL.revokeObjectURL(url), 300);
-                    }}
-                    className="flex items-center gap-1.5 text-[10px] font-bold text-sky-600 hover:text-sky-800 bg-sky-50 hover:bg-sky-100 border border-sky-200 px-2 py-1 rounded transition-colors"
-                  >
-                    <Download size={11} /> Download ZIP ({pastGraphs.length})
-                  </button>
-                )}
+                <PastDaysZipButton pastGraphs={pastGraphs} />
               </div>
-              <div className="flex flex-wrap gap-2">
+
+              {/* Scrollable single-row legend */}
+              <div
+                className="flex gap-2 overflow-x-auto pb-2"
+                style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}
+              >
                 {pastGraphs.map(({ date, data: pastData }) => {
                   const peakSolar = Math.max(...pastData.map(p => p.solar)).toFixed(1);
                   const peakLoad  = Math.max(...pastData.map(p => p.load)).toFixed(1);
+                  const avgBat    = (pastData.reduce((s, p) => s + p.batSoc, 0) / Math.max(pastData.length, 1)).toFixed(0);
                   return (
                     <button
                       key={date}
@@ -1840,15 +1907,23 @@ export default function App() {
                         const svg = buildGraphSVG(pastData, date);
                         triggerJPGDownload(svg, `SafariCharge_DailyGraph_${date}.jpg`);
                       }}
-                      className="flex items-center gap-2 bg-slate-50 hover:bg-sky-50 border border-slate-200 hover:border-sky-300 rounded-lg px-3 py-2 transition-colors group"
+                      className="flex-shrink-0 flex flex-col gap-1 bg-slate-50 hover:bg-sky-50 border border-slate-200 hover:border-sky-300 rounded-lg px-3 py-2 transition-colors group w-36 text-left"
                     >
-                      <Download size={12} className="text-slate-400 group-hover:text-sky-600 flex-shrink-0" />
-                      <div className="text-left">
-                        <div className="text-xs font-bold text-slate-700">{date}</div>
-                        <div className="text-[9px] text-slate-400 font-mono">
-                          ☀️ {peakSolar} kW peak · ⚡ {peakLoad} kW load
-                        </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-slate-700">{date}</span>
+                        <Download size={11} className="text-slate-300 group-hover:text-sky-500 flex-shrink-0" />
                       </div>
+                      <div className="text-[9px] text-slate-400 font-mono leading-tight">
+                        ☀️ {peakSolar} kW
+                      </div>
+                      <div className="text-[9px] text-slate-400 font-mono leading-tight">
+                        ⚡ {peakLoad} kW load
+                      </div>
+                      <div className="text-[9px] text-slate-400 font-mono leading-tight">
+                        🔋 {avgBat}% avg
+                      </div>
+                      {/* Mini solar sparkline */}
+                      <MiniSparkline data={pastData} />
                     </button>
                   );
                 })}
