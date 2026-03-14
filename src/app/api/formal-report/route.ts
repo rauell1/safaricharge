@@ -345,6 +345,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No simulation data available.' }, { status: 400 });
     }
 
+    // Guard against excessively large payloads that could exhaust server memory
+    // when multiple users generate reports simultaneously.
+    // 420 points/day × 365 days × 25 years ≈ 3.8 M records is the practical max.
+    const MAX_DATA_POINTS = 420 * 365 * 25; // ~3,832,500
+    if (minuteData.length > MAX_DATA_POINTS) {
+      return NextResponse.json({
+        error: `Dataset too large (${minuteData.length.toLocaleString()} records). Maximum is ${MAX_DATA_POINTS.toLocaleString()} records (~25 years).`
+      }, { status: 413 });
+    }
+
     // --- Aggregate ---
     const totalSolar = minuteData.reduce((s, d) => s + (d.solarEnergyKWh ?? 0), 0);
     const totalGridImport = minuteData.reduce((s, d) => s + (d.gridImportKWh ?? 0), 0);
@@ -959,7 +969,7 @@ export async function POST(request: NextRequest) {
       <tr><td>Report Period Start</td><td class="num">${dateFrom}</td><td class="num">&ndash;</td><td>&ndash;</td></tr>
       <tr><td>Report Period End</td><td class="num">${dateTo}</td><td class="num">&ndash;</td><td>&ndash;</td></tr>
       <tr><td>Total Days Simulated</td><td class="num">${uniqueDays}</td><td class="num">days</td><td>Unique calendar dates</td></tr>
-      <tr><td>Total Data Points</td><td class="num">${minuteData.length.toLocaleString()}</td><td class="num">records</td><td>5-minute interval data</td></tr>
+      <tr><td>Total Data Points</td><td class="num">${minuteData.length.toLocaleString()}</td><td class="num">records</td><td>420 samples per day (~3.4 min interval)</td></tr>
       <tr><td colspan="4" style="background:#f1f5f9;font-weight:700;font-size:8pt;text-transform:uppercase;letter-spacing:0.05em;color:#475569;padding:6px 10px;">Energy Flows</td></tr>
       <tr><td>Total Solar Generated</td><td class="num">${totalSolar.toFixed(3)}</td><td class="num">kWh</td><td>AC output post-inverter</td></tr>
       <tr><td>Total Home Load</td><td class="num">${totalHomeLoad.toFixed(3)}</td><td class="num">kWh</td><td>Residential consumption</td></tr>
