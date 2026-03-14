@@ -10,7 +10,6 @@ import {
   Cpu, Car, ZapOff, FileSpreadsheet
 } from 'lucide-react';
 import DailyEnergyGraph, { type GraphDataPoint, buildGraphSVG, triggerJPGDownload, buildJPGBlob } from '@/components/DailyEnergyGraph';
-import JSZip from 'jszip';
 
 // --- CONFIGURATION - Kenya Power Commercial Tariff (E-Mobility) ---
 // Based on actual KPLC bill for ROAM ELECTRIC LIMITED - February 2026
@@ -463,7 +462,7 @@ const BatteryProduct = React.memo(({ level, status, power, health = 1.0, cycles 
       <div className="text-[9px] font-bold text-slate-500 uppercase">Storage ({(60 * health).toFixed(0)}kWh)</div>
       <div className="text-sm font-black text-slate-800">{level.toFixed(1)}%</div>
       <div className={`text-[9px] font-bold ${health < 0.85 ? 'text-orange-500' : 'text-slate-400'}`}>
-        Health: {(health * 100).toFixed(0)}% ({cycles} cyc)
+        Health: {(health * 100).toFixed(1)}% · {cycles.toFixed(1)} cyc
       </div>
     </div>
   </div>
@@ -1424,7 +1423,8 @@ export default function App() {
   const accumulators = useRef({ solar: 0, savings: 0, gridImport: 0, carbonOffset: 0, batDischargeKwh: 0, feedInEarnings: 0 });
   const soilingFactorRef = useRef(1.0);
   const batteryHealthRef = useRef(1.0);
-  const batteryCyclesRef = useRef(0);
+  const batteryCyclesRef = useRef(0);        // lifetime fractional cycles
+  const cumulativeDischargeRef = useRef(0);  // lifetime kWh discharged (persists across days)
   const cloudNoiseRef = useRef(0);
   const monthlyPeakDemandRef = useRef(0);
   const todayGraphDataRef = useRef<GraphDataPoint[]>([]);
@@ -1470,6 +1470,7 @@ export default function App() {
     soilingFactorRef.current = 1.0;
     batteryHealthRef.current = 1.0;
     batteryCyclesRef.current = 0;
+    cumulativeDischargeRef.current = 0;
     cloudNoiseRef.current = 0;
     monthlyPeakDemandRef.current = 0;
     todayGraphDataRef.current = [];
@@ -1502,11 +1503,6 @@ export default function App() {
     setWeather(newWeather);
     
     if (Math.random() > 0.95) setGridStatus('Offline'); else setGridStatus('Online');
-
-    // Battery degradation: daily discharge cycles → gradual capacity loss (LiFePO4 model)
-    const cyclesDelta = accumulators.current.batDischargeKwh / Math.max(1, BATTERY_CAPACITY * batteryHealthRef.current);
-    batteryCyclesRef.current += cyclesDelta;
-    batteryHealthRef.current = Math.max(0.70, batteryHealthRef.current - cyclesDelta * 0.0002);
 
     // Reset monthly peak demand at month start
     if (nextDate.getDate() === 1) {
@@ -1598,7 +1594,14 @@ export default function App() {
          accumulators.current.feedInEarnings += feedInEarned;
          if (state.gridImport > 0) accumulators.current.gridImport += state.gridImport * timeStep;
          accumulators.current.carbonOffset += solarConsumed * GRID_EMISSION_FACTOR * timeStep;
-         if (state.batDischargeKw > 0) accumulators.current.batDischargeKwh += state.batDischargeKw * timeStep;
+         if (state.batDischargeKw > 0) {
+           const dischargedKwh = state.batDischargeKw * timeStep;
+           accumulators.current.batDischargeKwh += dischargedKwh;
+           // Real-time cycle + health tracking (LiFePO4: ~4000 cycles to 70% health)
+           cumulativeDischargeRef.current += dischargedKwh;
+           batteryCyclesRef.current = cumulativeDischargeRef.current / Math.max(1, BATTERY_CAPACITY * batteryHealthRef.current);
+           batteryHealthRef.current = Math.max(0.70, 1.0 - (batteryCyclesRef.current / 4000) * 0.30);
+         }
 
          const now = new Date(currentDateValue);
          now.setHours(Math.floor(timeOfDay), Math.floor((timeOfDay % 1) * 60), 0);
@@ -1650,7 +1653,7 @@ export default function App() {
          batteryStatus: state.batPower > 0.1 ? 'Charging' : (state.batPower < -0.1 ? 'Discharging' : 'Idle'),
          batteryLevel: (state.batKwh / (BATTERY_CAPACITY * batteryHealthRef.current)) * 100,
          batteryHealth: batteryHealthRef.current,
-         batteryCycles: Math.round(batteryCyclesRef.current),
+         batteryCycles: Math.round(batteryCyclesRef.current * 10) / 10,
          netGridPower: state.gridExport > 0 ? state.gridExport : -state.gridImport,
          effectivePriority: effectivePriority,
          displaySavings: accumulators.current.savings,
@@ -1803,6 +1806,7 @@ export default function App() {
                 {pastGraphs.length > 0 && (
                   <button
                     onClick={async () => {
+                      const JSZip = (await import('jszip')).default;
                       const zip = new JSZip();
                       for (const { date, data: pastData } of pastGraphs) {
                         const svg = buildGraphSVG(pastData, date);
