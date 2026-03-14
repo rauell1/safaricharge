@@ -981,10 +981,10 @@ export default function App() {
   const [gridStatus, setGridStatus] = useState('Online');
   const [weather, setWeather] = useState('Sunny');
 
-  const evSpecs = {
+  const evSpecs = useMemo(() => ({
      ev1: { capacity: 80, rate: 7, drainRate: 0.5, cap: 80, onboard: 7 },
      ev2: { capacity: 118, rate: 22, drainRate: 0.8, cap: 118, onboard: 22 }
-  };
+  }), []);
 
   const [data, setData] = useState({
     solarR: 0, homeLoad: 5, ev1Load: 0, ev2Load: 0, 
