@@ -2048,8 +2048,10 @@ export default function App() {
       a.download = `SafariCharge_Report_${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+      // Defer revoke so the browser has time to initiate the download
+      const BLOB_REVOKE_DELAY_MS = 300;
+      setTimeout(() => window.URL.revokeObjectURL(url), BLOB_REVOKE_DELAY_MS);
       
       console.log('Export completed successfully!');
     } catch (error) {
@@ -2066,6 +2068,16 @@ export default function App() {
         return;
       }
 
+      // Open the window synchronously (before any await) so popup blockers don't block it.
+      const reportWindow = window.open('', '_blank');
+      if (!reportWindow) {
+        alert('Unable to open the report. Please allow pop-ups for this site and try again.');
+        return;
+      }
+      // Show a loading indicator while we fetch the report
+      reportWindow.document.write('<html><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#0f172a;color:#94a3b8;"><p>Generating report\u2026</p></body></html>');
+      reportWindow.document.close();
+
       const response = await fetch('/api/formal-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2077,16 +2089,17 @@ export default function App() {
       });
 
       if (!response.ok) {
+        reportWindow.close();
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         throw new Error(errorData.error || `HTTP ${response.status}`);
       }
 
       const html = await response.text();
-      const blob = new Blob([html], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      // Revoke after 5 minutes to give the browser time to fully load the report
-      setTimeout(() => URL.revokeObjectURL(url), 300_000);
+      // Write the HTML directly into the already-opened window to avoid blob: URL
+      // navigation, which can be blocked by popup blockers and CSP policies.
+      reportWindow.document.open();
+      reportWindow.document.write(html);
+      reportWindow.document.close();
     } catch (error) {
       console.error('Formal report error:', error);
       alert(`Failed to generate report: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
