@@ -74,11 +74,36 @@ export function triggerSVGDownload(svgStr: string, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 300);
 }
 
+export function triggerJPGDownload(svgStr: string, filename: string, width = 820, height = 340) {
+  const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = width * 2;   // 2x for retina sharpness
+    canvas.height = height * 2;
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.scale(2, 2);
+    ctx.drawImage(img, 0, 0, width, height);
+    URL.revokeObjectURL(url);
+    const jpgUrl = canvas.toDataURL('image/jpeg', 0.95);
+    const a = document.createElement('a');
+    a.href = jpgUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+  img.src = url;
+}
+
 const DailyEnergyGraph = React.memo(({ data, dateLabel }: { data: GraphDataPoint[]; dateLabel?: string }) => {
-  const handleDownloadSVG = useCallback(() => {
+  const handleDownloadJPG = useCallback(() => {
     if (!data || data.length === 0) return;
     const svgStr = buildGraphSVG(data, dateLabel);
-    triggerSVGDownload(svgStr, `SafariCharge_DailyGraph${dateLabel ? `_${dateLabel}` : ''}.svg`);
+    triggerJPGDownload(svgStr, `SafariCharge_DailyGraph${dateLabel ? `_${dateLabel}` : ''}.jpg`);
   }, [data, dateLabel]);
 
   if (!data || data.length === 0) {
@@ -117,11 +142,11 @@ const DailyEnergyGraph = React.memo(({ data, dateLabel }: { data: GraphDataPoint
         <div className="flex items-center gap-3">
           <span className="text-[9px] text-slate-400 font-mono">{data.length} data points</span>
           <button
-            onClick={handleDownloadSVG}
+            onClick={handleDownloadJPG}
             className="flex items-center gap-1 text-[10px] font-bold text-sky-600 hover:text-sky-800 bg-sky-50 hover:bg-sky-100 border border-sky-200 px-2 py-1 rounded transition-colors"
-            title="Download chart as SVG"
+            title="Download chart as JPG"
           >
-            <Download size={11} /> SVG
+            <Download size={11} /> JPG
           </button>
         </div>
       </div>

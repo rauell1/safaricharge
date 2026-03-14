@@ -9,7 +9,7 @@ import {
   CloudRain, Moon, Download, RotateCcw, AlertTriangle, DollarSign,
   Cpu, Car, ZapOff, FileSpreadsheet
 } from 'lucide-react';
-import DailyEnergyGraph, { type GraphDataPoint, buildGraphSVG, triggerSVGDownload } from '@/components/DailyEnergyGraph';
+import DailyEnergyGraph, { type GraphDataPoint, buildGraphSVG, triggerJPGDownload } from '@/components/DailyEnergyGraph';
 
 // --- CONFIGURATION - Kenya Power Commercial Tariff (E-Mobility) ---
 // Based on actual KPLC bill for ROAM ELECTRIC LIMITED - February 2026
@@ -1805,7 +1805,7 @@ export default function App() {
                       pastGraphs.forEach(({ date, data: pastData }, i) => {
                         setTimeout(() => {
                           const svg = buildGraphSVG(pastData, date);
-                          triggerSVGDownload(svg, `SafariCharge_DailyGraph_${date}.svg`);
+                          triggerJPGDownload(svg, `SafariCharge_DailyGraph_${date}.jpg`);
                         }, i * 400);
                       });
                     }}
@@ -1824,7 +1824,7 @@ export default function App() {
                       key={date}
                       onClick={() => {
                         const svg = buildGraphSVG(pastData, date);
-                        triggerSVGDownload(svg, `SafariCharge_DailyGraph_${date}.svg`);
+                        triggerJPGDownload(svg, `SafariCharge_DailyGraph_${date}.jpg`);
                       }}
                       className="flex items-center gap-2 bg-slate-50 hover:bg-sky-50 border border-slate-200 hover:border-sky-300 rounded-lg px-3 py-2 transition-colors group"
                     >

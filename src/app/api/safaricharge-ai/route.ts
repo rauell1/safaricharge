@@ -211,7 +211,11 @@ ${SOLAR_KNOWLEDGE}
     if (!geminiRes.ok) {
       const errText = await geminiRes.text();
       console.error('Gemini API error:', geminiRes.status, errText);
-      throw new Error(`Gemini API error ${geminiRes.status}`);
+      // Return the actual Gemini error so the client can display it
+      return NextResponse.json(
+        { error: `Gemini API error (${geminiRes.status}): ${errText.slice(0, 300)}` },
+        { status: 502 }
+      );
     }
 
     const geminiData = await geminiRes.json();
@@ -222,8 +226,9 @@ ${SOLAR_KNOWLEDGE}
     return NextResponse.json({ response: responseText });
   } catch (error) {
     console.error('SafariCharge AI error:', error);
+    const msg = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'AI service temporarily unavailable. Please try again.' },
+      { error: `AI error: ${msg}` },
       { status: 500 }
     );
   }
