@@ -334,50 +334,93 @@ const LOGO_SVG = `<svg viewBox="0 0 100 100" width="56" height="56" xmlns="http:
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { minuteData, startDate, reportDate, systemCostKES } = body as {
-      minuteData: MinuteData[];
-      startDate: string;
-      reportDate: string;
-      systemCostKES?: number;
-    };
 
-    if (!minuteData || minuteData.length === 0) {
-      return NextResponse.json({ error: 'No simulation data available.' }, { status: 400 });
+    // Support pre-aggregated payloads (sent by the client to avoid exceeding
+    // Vercel's 4.5 MB body size limit) as well as legacy full minuteData payloads.
+    const preAggregated = body.preAggregated === true;
+
+    let totalSolar: number, totalGridImport: number, totalGridExport: number, totalSavings: number;
+    let totalHomeLoad: number, totalEV1: number, totalEV2: number;
+    let peakSolar: number, peakGridImport: number, avgBattery: number;
+    let peakInstantSolar: number, peakEVLoad: number;
+    let uniqueDays: number, dailyAgg: DailyAgg[];
+    let dateFrom: string, dateTo: string;
+    let startDate: string, reportDate: string;
+    let systemCostKES: number | undefined;
+    let totalDataPoints: number;
+
+    if (preAggregated) {
+      // Client already aggregated the data — use the compact payload directly.
+      totalSolar = body.totalSolar ?? 0;
+      totalGridImport = body.totalGridImport ?? 0;
+      totalGridExport = body.totalGridExport ?? 0;
+      totalSavings = body.totalSavings ?? 0;
+      totalHomeLoad = body.totalHomeLoad ?? 0;
+      totalEV1 = body.totalEV1 ?? 0;
+      totalEV2 = body.totalEV2 ?? 0;
+      peakSolar = body.peakSolar ?? 0;
+      peakGridImport = body.peakGridImport ?? 0;
+      avgBattery = body.avgBattery ?? 0;
+      peakInstantSolar = body.peakInstantSolar ?? 0;
+      peakEVLoad = body.peakEVLoad ?? 0;
+      dailyAgg = (body.dailyAgg ?? []) as DailyAgg[];
+      uniqueDays = dailyAgg.length;
+      dateFrom = body.dateFrom ?? body.startDate ?? '';
+      dateTo = body.dateTo ?? body.startDate ?? '';
+      startDate = body.startDate ?? '';
+      reportDate = body.reportDate ?? '';
+      systemCostKES = body.systemCostKES;
+      totalDataPoints = body.totalDataPoints ?? 0;
+    } else {
+      // Legacy path: full minuteData array.
+      const { minuteData } = body as { minuteData: MinuteData[] };
+      startDate = body.startDate ?? '';
+      reportDate = body.reportDate ?? '';
+      systemCostKES = body.systemCostKES;
+
+      if (!minuteData || minuteData.length === 0) {
+        return NextResponse.json({ error: 'No simulation data available.' }, { status: 400 });
+      }
+      const MAX_DATA_POINTS = 420 * 365 * 25;
+      if (minuteData.length > MAX_DATA_POINTS) {
+        return NextResponse.json({
+          error: `Dataset too large (${minuteData.length.toLocaleString()} records). Maximum is ${MAX_DATA_POINTS.toLocaleString()} records (~25 years).`
+        }, { status: 413 });
+      }
+
+      totalDataPoints = minuteData.length;
+      totalSolar = minuteData.reduce((s, d) => s + (d.solarEnergyKWh ?? 0), 0);
+      totalGridImport = minuteData.reduce((s, d) => s + (d.gridImportKWh ?? 0), 0);
+      totalGridExport = minuteData.reduce((s, d) => s + (d.gridExportKWh ?? 0), 0);
+      totalSavings = minuteData.reduce((s, d) => s + (d.savingsKES ?? 0), 0);
+      totalHomeLoad = minuteData.reduce((s, d) => s + (d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (24 / 420)), 0);
+      totalEV1 = minuteData.reduce((s, d) => s + (d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (24 / 420)), 0);
+      totalEV2 = minuteData.reduce((s, d) => s + (d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (24 / 420)), 0);
+      peakSolar = minuteData.filter(d => d.isPeakTime).reduce((s, d) => s + (d.solarEnergyKWh ?? 0), 0);
+      peakGridImport = 0; peakInstantSolar = 0; peakEVLoad = 0;
+      for (const d of minuteData) {
+        const gi = d.gridImportKW ?? 0; if (gi > peakGridImport) peakGridImport = gi;
+        const sk = d.solarKW ?? 0; if (sk > peakInstantSolar) peakInstantSolar = sk;
+        const ev = (d.ev1LoadKW ?? 0) + (d.ev2LoadKW ?? 0); if (ev > peakEVLoad) peakEVLoad = ev;
+      }
+      avgBattery = minuteData.reduce((s, d) => s + (d.batteryLevelPct ?? 0), 0) / minuteData.length;
+      dailyAgg = aggregateDaily(minuteData);
+      uniqueDays = new Set(minuteData.map(d => d.date)).size;
+      dateFrom = minuteData[0]?.date ?? startDate;
+      dateTo = minuteData[minuteData.length - 1]?.date ?? startDate;
     }
 
-    // Guard against excessively large payloads that could exhaust server memory
-    // when multiple users generate reports simultaneously.
-    // 420 points/day × 365 days × 25 years ≈ 3.8 M records is the practical max.
-    const MAX_DATA_POINTS = 420 * 365 * 25; // ~3,832,500
-    if (minuteData.length > MAX_DATA_POINTS) {
-      return NextResponse.json({
-        error: `Dataset too large (${minuteData.length.toLocaleString()} records). Maximum is ${MAX_DATA_POINTS.toLocaleString()} records (~25 years).`
-      }, { status: 413 });
-    }
-
-    // --- Aggregate ---
-    const totalSolar = minuteData.reduce((s, d) => s + (d.solarEnergyKWh ?? 0), 0);
-    const totalGridImport = minuteData.reduce((s, d) => s + (d.gridImportKWh ?? 0), 0);
-    const totalGridExport = minuteData.reduce((s, d) => s + (d.gridExportKWh ?? 0), 0);
-    const totalSavings = minuteData.reduce((s, d) => s + (d.savingsKES ?? 0), 0);
-    const totalHomeLoad = minuteData.reduce((s, d) => s + (d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (24 / 420)), 0);
-    const totalEV1 = minuteData.reduce((s, d) => s + (d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (24 / 420)), 0);
-    const totalEV2 = minuteData.reduce((s, d) => s + (d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (24 / 420)), 0);
+    // --- Derived metrics (same for both paths) ---
     const totalLoad = totalHomeLoad + totalEV1 + totalEV2;
     const selfSufficiency = totalLoad > 0 ? (Math.min(totalSolar, totalLoad) / totalLoad) * 100 : 0;
     const solarSelfConsumptionRate = totalSolar > 0 ? ((totalSolar - totalGridExport) / totalSolar) * 100 : 0;
     const co2Avoided = totalSolar * 0.47;
-    const uniqueDays = new Set(minuteData.map(d => d.date)).size;
     const avgDailySolar = uniqueDays > 0 ? totalSolar / uniqueDays : 0;
     const avgDailySavings = uniqueDays > 0 ? totalSavings / uniqueDays : 0;
-    const peakGridImport = Math.max(...minuteData.map(d => d.gridImportKW ?? 0), 0);
-    const avgBattery = minuteData.reduce((s, d) => s + (d.batteryLevelPct ?? 0), 0) / minuteData.length;
-    const peakInstantSolar = Math.max(...minuteData.map(d => d.solarKW ?? 0), 0);
-    const peakEVLoad = Math.max(...minuteData.map(d => (d.ev1LoadKW ?? 0) + (d.ev2LoadKW ?? 0)), 0);
     const annualisedSavings = uniqueDays > 0 ? (totalSavings / uniqueDays) * 365 : 0;
 
     // Financial analysis
-    const estimatedSystemCost = systemCostKES ?? 4_800_000; // Default ~KES 4.8M for 50kWp system
+    const estimatedSystemCost = systemCostKES ?? 4_800_000;
     const simplePaybackYears = annualisedSavings > 0 ? estimatedSystemCost / annualisedSavings : 0;
     const roiPct = estimatedSystemCost > 0 ? (annualisedSavings / estimatedSystemCost) * 100 : 0;
     const npv10yr = annualisedSavings > 0
@@ -385,32 +428,23 @@ export async function POST(request: NextRequest) {
           .reduce((a, b) => a + b, 0) - estimatedSystemCost
       : 0;
 
-    // Peak-hour analysis
-    const peakSolar = minuteData.filter(d => d.isPeakTime).reduce((s, d) => s + (d.solarEnergyKWh ?? 0), 0);
     const offPeakSolar = totalSolar - peakSolar;
-
-    // Battery cycles estimate
     const batteryCycles = uniqueDays > 0 ? uniqueDays * 0.85 : 0;
     const batteryHealthPct = Math.max(100 - (batteryCycles / 4000) * 30, 70);
-
-    // EV solar-powered charge share: ratio of solar consumed to total load charged
     const solarConsumedKWh = totalSolar - totalGridExport;
     const totalEVLoad = totalEV1 + totalEV2;
     const evSolarShare = totalEVLoad > 0 && totalSolar > 0
       ? Math.min((solarConsumedKWh / (totalEVLoad + totalHomeLoad)) * 100, 100)
       : 0;
-
-    // Charger utilisation: actual charged vs theoretical max (EV1 7kW + EV2 22kW over simulation days)
     const EV1_CHARGER_KW = 7;
     const EV2_CHARGER_KW = 22;
     const MAX_CHARGER_KWH = (EV1_CHARGER_KW + EV2_CHARGER_KW) * uniqueDays * 24;
-    // Multiply by 3 to normalise for typical daily charging window (~8h out of 24h)
     const CHARGER_WINDOW_FACTOR = 3;
     const chargerUtilisationPct = Math.min(
       MAX_CHARGER_KWH > 0 ? ((totalEVLoad / MAX_CHARGER_KWH) * 100 * CHARGER_WINDOW_FACTOR) : 0,
       100
     );
-    const dailyAgg = aggregateDaily(minuteData);
+
     const solarVsGridChart = buildSolarVsGridSVG(dailyAgg);
     const savingsTrendChart = buildSavingsTrendSVG(dailyAgg);
     const batterySoCChart = buildBatterySoCTrendSVG(dailyAgg);
@@ -418,9 +452,6 @@ export async function POST(request: NextRequest) {
     const gridInteractionChart = buildGridInteractionSVG(dailyAgg);
     const donut = buildDonutSVG(totalSolar, totalGridImport);
 
-    // --- Date range ---
-    const dateFrom = minuteData[0]?.date ?? startDate;
-    const dateTo = minuteData[minuteData.length - 1]?.date ?? startDate;
     const now = new Date();
     const reportRefId = `SCL-EPR-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
@@ -969,7 +1000,7 @@ export async function POST(request: NextRequest) {
       <tr><td>Report Period Start</td><td class="num">${dateFrom}</td><td class="num">&ndash;</td><td>&ndash;</td></tr>
       <tr><td>Report Period End</td><td class="num">${dateTo}</td><td class="num">&ndash;</td><td>&ndash;</td></tr>
       <tr><td>Total Days Simulated</td><td class="num">${uniqueDays}</td><td class="num">days</td><td>Unique calendar dates</td></tr>
-      <tr><td>Total Data Points</td><td class="num">${minuteData.length.toLocaleString()}</td><td class="num">records</td><td>420 samples per day (~3.4 min interval)</td></tr>
+      <tr><td>Total Data Points</td><td class="num">${totalDataPoints.toLocaleString()}</td><td class="num">records</td><td>420 samples per day (~3.4 min interval)</td></tr>
       <tr><td colspan="4" style="background:#f1f5f9;font-weight:700;font-size:8pt;text-transform:uppercase;letter-spacing:0.05em;color:#475569;padding:6px 10px;">Energy Flows</td></tr>
       <tr><td>Total Solar Generated</td><td class="num">${totalSolar.toFixed(3)}</td><td class="num">kWh</td><td>AC output post-inverter</td></tr>
       <tr><td>Total Home Load</td><td class="num">${totalHomeLoad.toFixed(3)}</td><td class="num">kWh</td><td>Residential consumption</td></tr>
