@@ -1545,6 +1545,13 @@ export default function App() {
   const systemStartDate = useRef('2026-01-01'); // System start date for tracking
   const lastProcessedTimeRef = useRef<number | null>(null);
 
+  // Physics state refs — keep the authoritative simulation state outside React
+  // so the interval can sub-step at fixed 1-hour intervals regardless of speed.
+  const timeOfDayRef = useRef(12);
+  const batKwhRef = useRef(BATTERY_CAPACITY * 0.5);
+  const ev1SocRef = useRef(60);
+  const ev2SocRef = useRef(50);
+
   const handleReset = () => {
     setTimeOfDay(12);
     setCurrentDate(new Date('2026-01-01T00:00:00'));
@@ -1562,6 +1569,10 @@ export default function App() {
     setData(prev => ({ ...prev, batteryLevel: 50, ev1Soc: 60, ev2Soc: 50, displaySavings: 0, carbonOffset: 0, batteryHealth: 1.0, batteryCycles: 0, monthlyPeakDemandKW: 0, estimatedDemandChargeKES: 0, feedInEarnings: 0, ev1V2g: false, ev2V2g: false }));
     setIsAutoMode(false);
     dayScenarioRef.current = PhysicsEngine.generateDayScenario('Sunny', new Date('2026-01-01'), 1.0);
+    timeOfDayRef.current = 12;
+    batKwhRef.current = BATTERY_CAPACITY * 0.5;
+    ev1SocRef.current = dayScenarioRef.current.ev1.startSoc;
+    ev2SocRef.current = dayScenarioRef.current.ev2.startSoc;
   };
 
   const handleNewDay = useCallback(() => {
@@ -1606,6 +1617,8 @@ export default function App() {
     }
 
     dayScenarioRef.current = PhysicsEngine.generateDayScenario(newWeather, nextDate, soilingFactorRef.current);
+    ev1SocRef.current = dayScenarioRef.current.ev1.startSoc;
+    ev2SocRef.current = dayScenarioRef.current.ev2.startSoc;
     setData(prev => ({ ...prev, ev1Soc: dayScenarioRef.current.ev1.startSoc, ev2Soc: dayScenarioRef.current.ev2.startSoc }));
   }, [currentDate]);
 
@@ -1619,19 +1632,183 @@ export default function App() {
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isAutoMode) {
+      // Sub-step through at most 1 simulated hour per physics step so that:
+      //   x1   → 1 step  of 0.05 h  (unchanged behaviour)
+      //   x100 → 5 steps of 1.00 h  (5 graph points / tick)
+      //   x1000→ 24 steps of 1.00 h (24 graph points / tick, 1 full day)
+      // Capping at 24 h guarantees at most one day-boundary crossing per tick,
+      // which keeps the handleNewDay closure and accumulator reset correct.
+      const GRAPH_STEP_H = 1.0;
       interval = setInterval(() => {
-        setTimeOfDay(prev => {
-          let next = prev + 0.05 * simSpeed;
-          if (next >= 24) {
-             handleNewDayRef.current();
-             next = next % 24;
+        const { simSpeed: spd, priorityMode: curPriority, evSpecs: curEvSpecs } = computeParamsRef.current;
+        const totalAdvance = Math.min(24.0, 0.05 * spd);
+        const numSteps = Math.max(1, Math.ceil(totalAdvance / GRAPH_STEP_H));
+        const actualStep = totalAdvance / numSteps;
+
+        let lastState: ReturnType<typeof PhysicsEngine.calculateInstant> | null = null;
+        let lastApplicableRate = KPLC_TARIFF.getLowRateWithVAT();
+        const newGraphPoints: GraphDataPoint[] = [];
+
+        for (let i = 0; i < numSteps; i++) {
+          const nextT = timeOfDayRef.current + actualStep;
+
+          if (nextT >= 24) {
+            // Flush sub-step points accumulated so far into today's ref so that
+            // handleNewDay's snapshot includes them, then advance the day.
+            todayGraphDataRef.current.push(...newGraphPoints);
+            newGraphPoints.length = 0;
+            handleNewDayRef.current();
+            // Sync EV SOC refs with the new day scenario (updated synchronously
+            // inside handleNewDay before any React state setter is called).
+            ev1SocRef.current = dayScenarioRef.current.ev1.startSoc;
+            ev2SocRef.current = dayScenarioRef.current.ev2.startSoc;
+            timeOfDayRef.current = nextT - 24;
+          } else {
+            timeOfDayRef.current = nextT;
           }
-          return next;
-        });
-      }, 100); 
+
+          // Advance Brownian cloud walk proportionally to sub-step size.
+          cloudNoiseRef.current += gaussianRandom(0, 0.05 * Math.sqrt(actualStep / 0.05));
+          cloudNoiseRef.current = Math.max(-1, Math.min(1, cloudNoiseRef.current * 0.97));
+
+          const state = PhysicsEngine.calculateInstant(
+            timeOfDayRef.current,
+            batKwhRef.current,
+            ev1SocRef.current,
+            ev2SocRef.current,
+            dayScenarioRef.current,
+            curEvSpecs,
+            cloudNoiseRef.current,
+            batteryHealthRef.current,
+            actualStep
+          );
+
+          // Update authoritative physics refs.
+          batKwhRef.current = state.batKwh;
+          ev1SocRef.current = state.ev1Soc;
+          ev2SocRef.current = state.ev2Soc;
+
+          // Accumulators.
+          const currentHour = Math.floor(timeOfDayRef.current);
+          const dayOfWeek = computeParamsRef.current.currentDate.getDay();
+          const applicableRate = KPLC_TARIFF.getRateForTimeAndDay(currentHour, dayOfWeek);
+          const solarConsumed = state.solar - (state.gridExport > 0 ? state.gridExport : 0);
+          const moneySaved = solarConsumed * applicableRate * actualStep;
+          const feedInEarned = state.gridExport * FEED_IN_TARIFF_RATE * actualStep;
+
+          accumulators.current.solar += state.solar * actualStep;
+          accumulators.current.savings += moneySaved + feedInEarned;
+          accumulators.current.feedInEarnings += feedInEarned;
+          if (state.gridImport > 0) accumulators.current.gridImport += state.gridImport * actualStep;
+          accumulators.current.carbonOffset += solarConsumed * GRID_EMISSION_FACTOR * actualStep;
+
+          if (state.gridImport > monthlyPeakDemandRef.current) {
+            monthlyPeakDemandRef.current = state.gridImport;
+          }
+
+          if (state.batDischargeKw > 0) {
+            const dischargedKwh = state.batDischargeKw * actualStep;
+            accumulators.current.batDischargeKwh += dischargedKwh;
+            cumulativeDischargeRef.current += dischargedKwh;
+            batteryCyclesRef.current = cumulativeDischargeRef.current / Math.max(1, BATTERY_CAPACITY * batteryHealthRef.current);
+            batteryHealthRef.current = Math.max(0.70, 1.0 - (batteryCyclesRef.current / 4000) * 0.30);
+          }
+
+          // Minute-data log: one entry per sub-step (covers actualStep simulated hours).
+          const nowTs = new Date(computeParamsRef.current.currentDate);
+          nowTs.setHours(currentHour, Math.floor((timeOfDayRef.current % 1) * 60), 0);
+          const weekNum = getWeekNumber(nowTs);
+          minuteDataRef.current.push({
+            timestamp: nowTs.toISOString(),
+            date: nowTs.toISOString().split('T')[0],
+            year: nowTs.getFullYear(),
+            month: nowTs.getMonth() + 1,
+            week: weekNum,
+            day: nowTs.getDate(),
+            hour: currentHour,
+            minute: Math.floor((timeOfDayRef.current % 1) * 60),
+            solarKW: state.solar,
+            homeLoadKW: state.houseLoad,
+            ev1LoadKW: state.ev1Kw,
+            ev2LoadKW: state.ev2Kw,
+            batteryPowerKW: state.batPower,
+            batteryLevelPct: (state.batKwh / BATTERY_CAPACITY) * 100,
+            gridImportKW: state.gridImport,
+            gridExportKW: state.gridExport,
+            ev1SocPct: state.ev1Soc,
+            ev2SocPct: state.ev2Soc,
+            tariffRate: applicableRate,
+            isPeakTime: KPLC_TARIFF.isPeakTime(currentHour),
+            savingsKES: moneySaved,
+            solarEnergyKWh: state.solar * actualStep,
+            gridImportKWh: state.gridImport * actualStep,
+            gridExportKWh: state.gridExport * actualStep,
+          });
+
+          // Collect one graph data point per sub-step.
+          newGraphPoints.push({
+            timeOfDay: timeOfDayRef.current,
+            solar: state.solar,
+            load: state.load,
+            batSoc: (state.batKwh / (BATTERY_CAPACITY * batteryHealthRef.current)) * 100,
+          });
+
+          lastState = state;
+          lastApplicableRate = applicableRate;
+        }
+
+        if (lastState) {
+          // Append graph points and refresh the graph once per interval tick.
+          todayGraphDataRef.current.push(...newGraphPoints);
+          setDailyGraphData([...todayGraphDataRef.current]);
+
+          // Single React state update per tick for all display values.
+          setTimeOfDay(timeOfDayRef.current);
+          const finalState = lastState;
+          const effectiveCapacity = BATTERY_CAPACITY * batteryHealthRef.current;
+          setData(prev => {
+            let effectivePriority = curPriority;
+            if (curPriority === 'auto') {
+              effectivePriority = 'load';
+              if (batKwhRef.current / effectiveCapacity * 100 < 40) effectivePriority = 'battery';
+            }
+            return {
+              ...prev,
+              solarR: finalState.solar,
+              homeLoad: finalState.houseLoad,
+              ev1Load: finalState.ev1Kw,
+              ev1Status: finalState.ev1Kw > 0 ? 'Charging' : (finalState.ev1IsHome ? 'Idle' : 'Away'),
+              ev1Soc: finalState.ev1Soc,
+              ev2Load: finalState.ev2Kw,
+              ev2Status: finalState.ev2Kw > 0 ? 'Charging' : (finalState.ev2IsHome ? 'Idle' : 'Away'),
+              ev2Soc: finalState.ev2Soc,
+              ev1V2g: finalState.ev1V2g ?? false,
+              ev2V2g: finalState.ev2V2g ?? false,
+              batteryPower: finalState.batPower,
+              batteryStatus: finalState.batPower > 0.1 ? 'Charging' : (finalState.batPower < -0.1 ? 'Discharging' : 'Idle'),
+              batteryLevel: (batKwhRef.current / effectiveCapacity) * 100,
+              batteryHealth: batteryHealthRef.current,
+              batteryCycles: Math.round(batteryCyclesRef.current * 10) / 10,
+              netGridPower: finalState.gridExport > 0 ? finalState.gridExport : -finalState.gridImport,
+              effectivePriority,
+              displaySavings: accumulators.current.savings,
+              totalSolar: accumulators.current.solar,
+              totalGridImport: accumulators.current.gridImport,
+              monthlyPeakDemandKW: monthlyPeakDemandRef.current,
+              estimatedDemandChargeKES: monthlyPeakDemandRef.current * KPLC_DEMAND_CHARGE_KES_PER_KW,
+              feedInEarnings: accumulators.current.feedInEarnings,
+              currentTariffRate: lastApplicableRate,
+              isPeakTime: KPLC_TARIFF.isPeakTime(Math.floor(timeOfDayRef.current)),
+              carbonOffset: accumulators.current.carbonOffset,
+              // Auto mode drives graph via todayGraphDataRef; no _graphPoint needed.
+              _graphPoint: null,
+            };
+          });
+        }
+      }, 100);
     }
     return () => clearInterval(interval);
-  }, [isAutoMode, simSpeed]); 
+  }, [isAutoMode, simSpeed]);
 
   // Use a ref to store computation parameters to avoid dependency issues
   const computeParamsRef = useRef({ simSpeed, priorityMode, isAutoMode, evSpecs, currentDate });
@@ -1639,31 +1816,44 @@ export default function App() {
     computeParamsRef.current = { simSpeed, priorityMode, isAutoMode, evSpecs, currentDate };
   }, [simSpeed, priorityMode, isAutoMode, evSpecs, currentDate]);
 
-  // Compute physics state whenever timeOfDay changes, using refs for other params
+  // Compute physics state whenever timeOfDay changes (manual mode only).
+  // Auto mode is handled entirely by the interval above, which sub-steps at
+  // a fixed 1-hour resolution regardless of simulation speed.
   useEffect(() => {
     if (lastProcessedTimeRef.current === timeOfDay) return;
     lastProcessedTimeRef.current = timeOfDay;
 
-    const { simSpeed: currentSimSpeed, priorityMode: currentPriorityMode, isAutoMode: currentIsAutoMode, evSpecs: currentEvSpecs, currentDate: currentDateValue } = computeParamsRef.current;
+    const { priorityMode: currentPriorityMode, isAutoMode: currentIsAutoMode, evSpecs: currentEvSpecs, currentDate: currentDateValue } = computeParamsRef.current;
+
+    // Skip in auto mode — the interval loop handles all physics + graph data.
+    if (currentIsAutoMode) return;
 
     // Advance Brownian cloud walk outside of setData (safe side-effect location)
     cloudNoiseRef.current += gaussianRandom(0, 0.05);
     cloudNoiseRef.current = Math.max(-1, Math.min(1, cloudNoiseRef.current * 0.97));
 
-    setData(prev => {
-      const physicsTimeStep = 0.05 * currentSimSpeed;
-      const state = PhysicsEngine.calculateInstant(
-          timeOfDay, 
-          prev.batteryLevel / 100 * BATTERY_CAPACITY * batteryHealthRef.current, 
-          prev.ev1Soc, 
-          prev.ev2Soc, 
-          dayScenarioRef.current,
-          currentEvSpecs,
-          cloudNoiseRef.current,
-          batteryHealthRef.current,
-          physicsTimeStep
-      );
+    // Use a fixed 15-minute step for manual time-slider exploration.
+    const physicsTimeStep = 0.25;
 
+    // Compute physics using ref-based state for continuity across manual scrubs.
+    const state = PhysicsEngine.calculateInstant(
+      timeOfDay,
+      batKwhRef.current,
+      ev1SocRef.current,
+      ev2SocRef.current,
+      dayScenarioRef.current,
+      currentEvSpecs,
+      cloudNoiseRef.current,
+      batteryHealthRef.current,
+      physicsTimeStep
+    );
+
+    // Keep refs in sync with the freshly-computed state.
+    batKwhRef.current = state.batKwh;
+    ev1SocRef.current = state.ev1Soc;
+    ev2SocRef.current = state.ev2Soc;
+
+    setData(prev => {
       const timeStep = physicsTimeStep;
       const solarConsumed = state.solar - (state.gridExport > 0 ? state.gridExport : 0);
       
@@ -1675,53 +1865,6 @@ export default function App() {
 
       if (state.gridImport > monthlyPeakDemandRef.current) {
         monthlyPeakDemandRef.current = state.gridImport;
-      }
-
-      if (currentIsAutoMode) {
-         accumulators.current.solar += state.solar * timeStep;
-         accumulators.current.savings += moneySaved + feedInEarned;
-         accumulators.current.feedInEarnings += feedInEarned;
-         if (state.gridImport > 0) accumulators.current.gridImport += state.gridImport * timeStep;
-         accumulators.current.carbonOffset += solarConsumed * GRID_EMISSION_FACTOR * timeStep;
-         if (state.batDischargeKw > 0) {
-           const dischargedKwh = state.batDischargeKw * timeStep;
-           accumulators.current.batDischargeKwh += dischargedKwh;
-           // Real-time cycle + health tracking (LiFePO4: ~4000 cycles to 70% health)
-           cumulativeDischargeRef.current += dischargedKwh;
-           batteryCyclesRef.current = cumulativeDischargeRef.current / Math.max(1, BATTERY_CAPACITY * batteryHealthRef.current);
-           batteryHealthRef.current = Math.max(0.70, 1.0 - (batteryCyclesRef.current / 4000) * 0.30);
-         }
-
-         const now = new Date(currentDateValue);
-         now.setHours(Math.floor(timeOfDay), Math.floor((timeOfDay % 1) * 60), 0);
-         const weekNum = getWeekNumber(now);
-         
-         minuteDataRef.current.push({
-           timestamp: now.toISOString(),
-           date: now.toISOString().split('T')[0],
-           year: now.getFullYear(),
-           month: now.getMonth() + 1,
-           week: weekNum,
-           day: now.getDate(),
-           hour: Math.floor(timeOfDay),
-           minute: Math.floor((timeOfDay % 1) * 60),
-           solarKW: state.solar,
-           homeLoadKW: state.houseLoad,
-           ev1LoadKW: state.ev1Kw,
-           ev2LoadKW: state.ev2Kw,
-           batteryPowerKW: state.batPower,
-           batteryLevelPct: (state.batKwh / BATTERY_CAPACITY) * 100,
-           gridImportKW: state.gridImport,
-           gridExportKW: state.gridExport,
-           ev1SocPct: state.ev1Soc,
-           ev2SocPct: state.ev2Soc,
-           tariffRate: applicableRate,
-           isPeakTime: KPLC_TARIFF.isPeakTime(currentHour),
-           savingsKES: moneySaved,
-           solarEnergyKWh: state.solar * timeStep,
-           gridImportKWh: state.gridImport * timeStep,
-           gridExportKWh: state.gridExport * timeStep,
-         });
       }
 
       let effectivePriority = currentPriorityMode;
@@ -1754,18 +1897,13 @@ export default function App() {
          currentTariffRate: applicableRate,
          isPeakTime: KPLC_TARIFF.isPeakTime(currentHour),
          carbonOffset: accumulators.current.carbonOffset,
-         // embed graph point in data so it triggers one render
-         _graphPoint: currentIsAutoMode ? {
-           timeOfDay,
-           solar: state.solar,
-           load: state.load,
-           batSoc: (state.batKwh / (BATTERY_CAPACITY * batteryHealthRef.current)) * 100,
-         } : null,
+         _graphPoint: null,
       };
     });
   }, [timeOfDay]);
 
-  // Sync graph state: update dailyGraphData after each physics tick when in auto mode
+  // Graph sync: no-op in auto mode (interval handles it directly).
+  // Kept to handle any edge cases where _graphPoint is non-null.
   useEffect(() => {
     if (data._graphPoint) {
       todayGraphDataRef.current.push(data._graphPoint as GraphDataPoint);
