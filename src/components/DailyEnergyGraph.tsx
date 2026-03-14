@@ -16,7 +16,9 @@ export function buildGraphSVG(data: GraphDataPoint[], dateLabel?: string): strin
   const pad = { top: 40, right: 60, bottom: 40, left: 60 };
   const iw = w - pad.left - pad.right;
   const ih = h - pad.top - pad.bottom;
-  const maxKw = Math.max(60, ...data.map(d => Math.max(d.solar, d.load))) + 5;
+  // Fixed scale based on system capacity (PV 50 kW + margin) so the y-axis
+  // never jumps when sparse data is collected at high simulation speeds.
+  const maxKw = 60;
 
   const gx = (t: number) => pad.left + (t / 24) * iw;
   const gy = (v: number) => pad.top + ih - (v / maxKw) * ih;
@@ -153,7 +155,9 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
   const innerWidth = width - padding.left - padding.right;
   const innerHeight = height - padding.top - padding.bottom;
 
-  const maxKw = Math.max(60, ...data.map(d => Math.max(d.solar, d.load))) + 5;
+  // Fixed scale based on system capacity (PV 50 kW + margin) so the y-axis
+  // never jumps when sparse data is collected at high simulation speeds.
+  const maxKw = 60;
 
   const getX = (t: number) => padding.left + (t / 24) * innerWidth;
   const getY_Kw = (val: number) => padding.top + innerHeight - (val / maxKw) * innerHeight;
