@@ -1530,6 +1530,7 @@ export default function App() {
         body: JSON.stringify({
           minuteData: minuteDataRef.current,
           startDate: systemStartDate.current,
+          graphData: dailyGraphData,
         }),
       });
 
@@ -1614,7 +1615,7 @@ export default function App() {
 
         {/* Daily Energy Graph — full width below main panel */}
         <div className="w-full max-w-7xl px-2 pb-2">
-          <DailyEnergyGraph data={dailyGraphData} />
+          <DailyEnergyGraph data={dailyGraphData} dateLabel={currentDate.toISOString().slice(0, 10)} />
         </div>
       </main>
       

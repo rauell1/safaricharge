@@ -28,6 +28,13 @@ interface MinuteData {
   gridExportKWh: number;
 }
 
+interface GraphDataPoint {
+  timeOfDay: number;
+  solar: number;
+  load: number;
+  batSoc: number;
+}
+
 interface AggregatedData {
   period: string;
   totalSolarKWh: number;
@@ -79,7 +86,7 @@ function aggregateData(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { minuteData, startDate } = body as { minuteData: MinuteData[], startDate: string };
+    const { minuteData, startDate, graphData } = body as { minuteData: MinuteData[], startDate: string, graphData?: GraphDataPoint[] };
 
     if (!minuteData || !Array.isArray(minuteData) || minuteData.length === 0) {
       return NextResponse.json({ 
@@ -165,6 +172,21 @@ export async function POST(request: NextRequest) {
     writeSection('WEEKLY SUMMARY', weeklyData, 'Week');
     writeSection('MONTHLY SUMMARY', monthlyData, 'Month');
     writeSection('YEARLY SUMMARY', yearlyData, 'Year');
+
+    // Daily Energy Profile Snapshot (from live graph data)
+    if (graphData && graphData.length > 0) {
+      const hhmm = (t: number) => {
+        const h = Math.floor(t);
+        const m = Math.round((t - h) * 60);
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      };
+      csv += 'DAILY ENERGY PROFILE SNAPSHOT\n';
+      csv += 'Time,Solar Gen (kW),Total Load (kW),Battery SOC (%)\n';
+      graphData.forEach(p => {
+        csv += `${hhmm(p.timeOfDay)},${p.solar.toFixed(2)},${p.load.toFixed(2)},${p.batSoc.toFixed(1)}\n`;
+      });
+      csv += '\n';
+    }
 
     // Return CSV
     return new NextResponse(csv, {
