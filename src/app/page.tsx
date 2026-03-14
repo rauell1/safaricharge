@@ -839,7 +839,7 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
       uniqueMonths: months.size,
       uniqueYears: years.size,
     };
-  }, [minuteData]);
+  }, [minuteData, minuteData.length]);
 
   if (!isOpen) return null;
   
@@ -2017,41 +2017,147 @@ export default function App() {
   const handleExportReport = async () => {
     try {
       // Check if there's data to export
-      if (!minuteDataRef.current || minuteDataRef.current.length === 0) {
+      const minuteData = minuteDataRef.current;
+      if (!minuteData || minuteData.length === 0) {
         alert('No data to export. Please run the simulation first by clicking the Play button.');
         return;
       }
 
-      console.log(`Exporting ${minuteDataRef.current.length} data points...`);
-      
-      const response = await fetch('/api/export-report', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          minuteData: minuteDataRef.current,
-          startDate: systemStartDate.current,
-          graphData: dailyGraphData,
-        }),
-      });
+      console.log(`Exporting ${minuteData.length} data points...`);
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || `HTTP ${response.status}`);
+      // --- Client-side CSV generation (avoids server body-size limits) ---
+      type AggRow = {
+        period: string; totalSolarKWh: number; totalHomeLoadKWh: number;
+        totalEV1LoadKWh: number; totalEV2LoadKWh: number; totalGridImportKWh: number;
+        totalGridExportKWh: number; avgBatteryLevelPct: number; avgEV1SocPct: number;
+        avgEV2SocPct: number; totalSavingsKES: number; peakHoursCount: number;
+        offPeakHoursCount: number;
+      };
+      const aggregate = (keyFn: (d: typeof minuteData[0]) => string): AggRow[] => {
+        const groups = new Map<string, typeof minuteData>();
+        for (const d of minuteData) {
+          const k = keyFn(d);
+          if (!groups.has(k)) groups.set(k, []);
+          groups.get(k)!.push(d);
+        }
+        return Array.from(groups.entries()).map(([period, items]) => {
+          const c = items.length;
+          return {
+            period,
+            totalSolarKWh: items.reduce((s, d) => s + (d.solarEnergyKWh || 0), 0),
+            totalHomeLoadKWh: items.reduce((s, d) => s + (d.homeLoadKWh ?? (d.homeLoadKW || 0) * (24 / 420)), 0),
+            totalEV1LoadKWh: items.reduce((s, d) => s + (d.ev1LoadKWh ?? (d.ev1LoadKW || 0) * (24 / 420)), 0),
+            totalEV2LoadKWh: items.reduce((s, d) => s + (d.ev2LoadKWh ?? (d.ev2LoadKW || 0) * (24 / 420)), 0),
+            totalGridImportKWh: items.reduce((s, d) => s + (d.gridImportKWh || 0), 0),
+            totalGridExportKWh: items.reduce((s, d) => s + (d.gridExportKWh || 0), 0),
+            avgBatteryLevelPct: c > 0 ? items.reduce((s, d) => s + (d.batteryLevelPct || 0), 0) / c : 0,
+            avgEV1SocPct: c > 0 ? items.reduce((s, d) => s + (d.ev1SocPct || 0), 0) / c : 0,
+            avgEV2SocPct: c > 0 ? items.reduce((s, d) => s + (d.ev2SocPct || 0), 0) / c : 0,
+            totalSavingsKES: items.reduce((s, d) => s + (d.savingsKES || 0), 0),
+            peakHoursCount: items.filter(d => d.isPeakTime).length,
+            offPeakHoursCount: items.filter(d => !d.isPeakTime).length,
+          };
+        }).sort((a, b) => a.period.localeCompare(b.period));
+      };
+
+      const hourlyData = aggregate(d => `${d.date} ${String(d.hour).padStart(2, '0')}:00`);
+      const dailyData = aggregate(d => d.date);
+      const weeklyData = aggregate(d => `${d.year}-W${String(d.week).padStart(2, '0')}`);
+      const monthlyData = aggregate(d => `${d.year}-${String(d.month).padStart(2, '0')}`);
+      const yearlyData = aggregate(d => String(d.year));
+
+      const totalSolar = minuteData.reduce((s, d) => s + (d.solarEnergyKWh || 0), 0);
+      const totalGridImport = minuteData.reduce((s, d) => s + (d.gridImportKWh || 0), 0);
+      const totalGridExport = minuteData.reduce((s, d) => s + (d.gridExportKWh || 0), 0);
+      const totalSavings = minuteData.reduce((s, d) => s + (d.savingsKES || 0), 0);
+      const totalHomeLoad = minuteData.reduce((s, d) => s + (d.homeLoadKWh ?? (d.homeLoadKW || 0) * (24 / 420)), 0);
+      const totalEV1Load = minuteData.reduce((s, d) => s + (d.ev1LoadKWh ?? (d.ev1LoadKW || 0) * (24 / 420)), 0);
+      const totalEV2Load = minuteData.reduce((s, d) => s + (d.ev2LoadKWh ?? (d.ev2LoadKW || 0) * (24 / 420)), 0);
+      const totalLoad = totalHomeLoad + totalEV1Load + totalEV2Load;
+
+      const uniqueDays = new Set(minuteData.map(d => d.date)).size;
+      const uniqueWeeks = new Set(minuteData.map(d => `${d.year}-W${d.week}`)).size;
+      const uniqueMonths = new Set(minuteData.map(d => `${d.year}-${d.month}`)).size;
+      const uniqueYears = new Set(minuteData.map(d => d.year)).size;
+      const peakCount = minuteData.filter(d => d.isPeakTime).length;
+      const offPeakCount = minuteData.filter(d => !d.isPeakTime).length;
+
+      // Build CSV string
+      const parts: string[] = [];
+      parts.push('SAFARICHARGE ENERGY REPORT');
+      parts.push(`Generated,${new Date().toISOString()}`);
+      parts.push(`System Start Date,${systemStartDate.current || 'Unknown'}`);
+      parts.push(`Total Data Points,${minuteData.length}`);
+      parts.push(`Date Range,${minuteData[0]?.date || 'N/A'},to,${minuteData[minuteData.length - 1]?.date || 'N/A'}`);
+      parts.push('');
+      parts.push('OVERALL SUMMARY');
+      parts.push('Metric,Value,Unit');
+      parts.push(`Total Solar Generated,${totalSolar.toFixed(2)},kWh`);
+      parts.push(`Total Home Load,${totalHomeLoad.toFixed(2)},kWh`);
+      parts.push(`Total EV1 Load,${totalEV1Load.toFixed(2)},kWh`);
+      parts.push(`Total EV2 Load,${totalEV2Load.toFixed(2)},kWh`);
+      parts.push(`Total Grid Import,${totalGridImport.toFixed(2)},kWh`);
+      parts.push(`Total Grid Export,${totalGridExport.toFixed(2)},kWh`);
+      parts.push(`Total Savings,${totalSavings.toFixed(2)},KES`);
+      parts.push(`Net Energy,${(totalSolar - totalGridImport + totalGridExport).toFixed(2)},kWh`);
+      parts.push(`Self-Sufficiency Rate,${totalLoad > 0 ? ((totalSolar / totalLoad) * 100).toFixed(1) : 0},%`);
+      parts.push(`Unique Days Tracked,${uniqueDays},days`);
+      parts.push(`Unique Weeks Tracked,${uniqueWeeks},weeks`);
+      parts.push(`Unique Months Tracked,${uniqueMonths},months`);
+      parts.push(`Unique Years Tracked,${uniqueYears},years`);
+      parts.push(`Peak Time Records,${peakCount},records`);
+      parts.push(`Off-Peak Time Records,${offPeakCount},records`);
+      parts.push('');
+
+      // Minute-by-Minute Data
+      parts.push('MINUTE-BY-MINUTE DATA');
+      parts.push('Timestamp,Date,Year,Month,Week,Day,Hour,Minute,Solar (kW),Home Load (kW),EV1 Load (kW),EV2 Load (kW),Battery Power (kW),Battery Level (%),Grid Import (kW),Grid Export (kW),EV1 SoC (%),EV2 SoC (%),Tariff Rate (KES/kWh),Peak Time,Savings (KES),Solar Energy (kWh),Grid Import (kWh),Grid Export (kWh)');
+      for (const d of minuteData) {
+        parts.push(`${d.timestamp},${d.date},${d.year},${d.month},${d.week},${d.day},${d.hour},${d.minute},${(d.solarKW || 0).toFixed(2)},${(d.homeLoadKW || 0).toFixed(2)},${(d.ev1LoadKW || 0).toFixed(2)},${(d.ev2LoadKW || 0).toFixed(2)},${(d.batteryPowerKW || 0).toFixed(2)},${(d.batteryLevelPct || 0).toFixed(1)},${(d.gridImportKW || 0).toFixed(2)},${(d.gridExportKW || 0).toFixed(2)},${(d.ev1SocPct || 0).toFixed(1)},${(d.ev2SocPct || 0).toFixed(1)},${(d.tariffRate || 0).toFixed(2)},${d.isPeakTime ? 'Yes' : 'No'},${(d.savingsKES || 0).toFixed(2)},${(d.solarEnergyKWh || 0).toFixed(4)},${(d.gridImportKWh || 0).toFixed(4)},${(d.gridExportKWh || 0).toFixed(4)}`);
+      }
+      parts.push('');
+
+      // Aggregated section helper
+      const writeSection = (title: string, data: AggRow[], periodLabel: string) => {
+        parts.push(title);
+        parts.push(`${periodLabel},Total Solar (kWh),Total Home Load (kWh),Total EV1 Load (kWh),Total EV2 Load (kWh),Grid Import (kWh),Grid Export (kWh),Avg Battery (%),Avg EV1 SoC (%),Avg EV2 SoC (%),Savings (KES),Peak Count,Off-Peak Count`);
+        for (const d of data) {
+          parts.push(`${d.period},${d.totalSolarKWh.toFixed(2)},${d.totalHomeLoadKWh.toFixed(2)},${d.totalEV1LoadKWh.toFixed(2)},${d.totalEV2LoadKWh.toFixed(2)},${d.totalGridImportKWh.toFixed(2)},${d.totalGridExportKWh.toFixed(2)},${d.avgBatteryLevelPct.toFixed(1)},${d.avgEV1SocPct.toFixed(1)},${d.avgEV2SocPct.toFixed(1)},${d.totalSavingsKES.toFixed(2)},${d.peakHoursCount},${d.offPeakHoursCount}`);
+        }
+        parts.push('');
+      };
+      writeSection('HOURLY SUMMARY', hourlyData, 'Period');
+      writeSection('DAILY SUMMARY', dailyData, 'Date');
+      writeSection('WEEKLY SUMMARY', weeklyData, 'Week');
+      writeSection('MONTHLY SUMMARY', monthlyData, 'Month');
+      writeSection('YEARLY SUMMARY', yearlyData, 'Year');
+
+      // Daily Energy Profile Snapshot (from live graph data)
+      if (dailyGraphData && dailyGraphData.length > 0) {
+        const hhmm = (t: number) => {
+          const h = Math.floor(t);
+          const m = Math.round((t - h) * 60);
+          return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        };
+        parts.push('DAILY ENERGY PROFILE SNAPSHOT');
+        parts.push('Time,Solar Gen (kW),Total Load (kW),Battery SOC (%)');
+        for (const p of dailyGraphData) {
+          parts.push(`${hhmm(p.timeOfDay)},${p.solar.toFixed(2)},${p.load.toFixed(2)},${p.batSoc.toFixed(1)}`);
+        }
+        parts.push('');
       }
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const csv = parts.join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `SafariCharge_Report_${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      // Defer revoke so the browser has time to initiate the download
       const BLOB_REVOKE_DELAY_MS = 300;
-      setTimeout(() => window.URL.revokeObjectURL(url), BLOB_REVOKE_DELAY_MS);
+      setTimeout(() => URL.revokeObjectURL(url), BLOB_REVOKE_DELAY_MS);
       
       console.log('Export completed successfully!');
     } catch (error) {
@@ -2063,7 +2169,8 @@ export default function App() {
   // Formal PDF report
   const handleFormalReport = async () => {
     try {
-      if (!minuteDataRef.current || minuteDataRef.current.length === 0) {
+      const minuteData = minuteDataRef.current;
+      if (!minuteData || minuteData.length === 0) {
         alert('No data available. Please run the simulation first by clicking the Play button.');
         return;
       }
@@ -2078,13 +2185,62 @@ export default function App() {
       reportWindow.document.write('<html><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#0f172a;color:#94a3b8;"><p>Generating report\u2026</p></body></html>');
       reportWindow.document.close();
 
+      // Pre-aggregate data client-side to avoid sending the full minuteData
+      // array to the server (which can exceed Vercel's 4.5 MB body limit).
+      const totalSolar = minuteData.reduce((s, d) => s + (d.solarEnergyKWh ?? 0), 0);
+      const totalGridImport = minuteData.reduce((s, d) => s + (d.gridImportKWh ?? 0), 0);
+      const totalGridExport = minuteData.reduce((s, d) => s + (d.gridExportKWh ?? 0), 0);
+      const totalSavings = minuteData.reduce((s, d) => s + (d.savingsKES ?? 0), 0);
+      const totalHomeLoad = minuteData.reduce((s, d) => s + (d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (24 / 420)), 0);
+      const totalEV1 = minuteData.reduce((s, d) => s + (d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (24 / 420)), 0);
+      const totalEV2 = minuteData.reduce((s, d) => s + (d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (24 / 420)), 0);
+      const peakSolar = minuteData.filter(d => d.isPeakTime).reduce((s, d) => s + (d.solarEnergyKWh ?? 0), 0);
+      let peakGridImport = 0, peakInstantSolar = 0, peakEVLoad = 0;
+      for (const d of minuteData) {
+        const gi = d.gridImportKW ?? 0;
+        if (gi > peakGridImport) peakGridImport = gi;
+        const sk = d.solarKW ?? 0;
+        if (sk > peakInstantSolar) peakInstantSolar = sk;
+        const ev = (d.ev1LoadKW ?? 0) + (d.ev2LoadKW ?? 0);
+        if (ev > peakEVLoad) peakEVLoad = ev;
+      }
+      const avgBattery = minuteData.reduce((s, d) => s + (d.batteryLevelPct ?? 0), 0) / minuteData.length;
+
+      // Build daily aggregation
+      const dailyMap = new Map<string, {date: string; solar: number; gridImport: number; gridExport: number; savings: number; homeLoad: number; evLoad: number; ev1Load: number; ev2Load: number; avgBattery: number; batteryCount: number}>();
+      for (const d of minuteData) {
+        if (!dailyMap.has(d.date)) {
+          dailyMap.set(d.date, { date: d.date, solar: 0, gridImport: 0, gridExport: 0, savings: 0, homeLoad: 0, evLoad: 0, ev1Load: 0, ev2Load: 0, avgBattery: 0, batteryCount: 0 });
+        }
+        const a = dailyMap.get(d.date)!;
+        a.solar += d.solarEnergyKWh ?? 0;
+        a.gridImport += d.gridImportKWh ?? 0;
+        a.gridExport += d.gridExportKWh ?? 0;
+        a.savings += d.savingsKES ?? 0;
+        a.homeLoad += d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (24 / 420);
+        a.ev1Load += d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (24 / 420);
+        a.ev2Load += d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (24 / 420);
+        a.evLoad += (d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (24 / 420)) + (d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (24 / 420));
+        a.avgBattery += d.batteryLevelPct ?? 0;
+        a.batteryCount += 1;
+      }
+      const dailyAgg = Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+
       const response = await fetch('/api/formal-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          minuteData: minuteDataRef.current,
+          preAggregated: true,
           startDate: systemStartDate.current,
           reportDate: new Date().toLocaleDateString('en-KE', { year: 'numeric', month: 'long', day: 'numeric' }),
+          dateFrom: minuteData[0]?.date ?? systemStartDate.current,
+          dateTo: minuteData[minuteData.length - 1]?.date ?? systemStartDate.current,
+          totalDataPoints: minuteData.length,
+          totalSolar, totalGridImport, totalGridExport, totalSavings,
+          totalHomeLoad, totalEV1, totalEV2,
+          peakSolar, peakGridImport, avgBattery,
+          peakInstantSolar, peakEVLoad,
+          dailyAgg,
         }),
       });
 
