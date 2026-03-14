@@ -1157,7 +1157,8 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
   const gridFlowDir = data.netGridPower < 0 ? 'up' : 'down';
   
   return (
-    <div className="flex flex-col items-center w-full h-full p-6 bg-slate-50/50 rounded-3xl border border-slate-200 shadow-inner">
+    <div className="flex flex-col items-center w-full h-full p-2 md:p-6 bg-slate-50/50 rounded-3xl border border-slate-200 shadow-inner overflow-x-auto">
+      <div className="min-w-[620px] flex flex-col items-center w-full">
        <div className="mb-0"><SolarPanelProduct power={data.solarR} capacity={50.0} weather={weather} isNight={isNight} /></div>
        <div className="flex flex-col items-center">
           <RigidCable height={30} active={isSolarActive} color={isSolarActive ? "bg-green-500" : "bg-slate-300"} speed={simSpeed} arrowColor="text-green-100" />
@@ -1204,13 +1205,14 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
              />
           </div>
        </div>
-       <div className="flex gap-4 justify-between w-full max-w-[600px] mt-0">
+        <div className="flex gap-4 justify-between w-full max-w-[600px] mt-0">
           <div className="flex-1 flex justify-center scale-90"><GridProduct power={data.netGridPower} isImporting={data.netGridPower < 0} isExporting={data.netGridPower > 0} gridStatus={gridStatus} /></div>
           <div className="flex-1 flex justify-center scale-90"><HomeProduct power={data.homeLoad} /></div>
           <div className="flex-1 flex justify-center scale-90"><EVChargerProduct id={1} status={ev1Status} soc={data.ev1Soc} power={data.ev1Load} carName="EV 1 (Commuter)" capacity={evSpecs.ev1.capacity} maxRate={evSpecs.ev1.rate} onToggle={() => {}} v2g={data.ev1V2g} /></div>
           <div className="flex-1 flex justify-center scale-90"><EVChargerProduct id={2} status={ev2Status} soc={data.ev2Soc} power={data.ev2Load} carName="EV 2 (Uber)" capacity={evSpecs.ev2.capacity} maxRate={evSpecs.ev2.rate} onToggle={() => {}} v2g={data.ev2V2g} /></div>
           <div className="flex-1 flex justify-center scale-90"><BatteryProduct level={data.batteryLevel} status={data.batteryStatus} power={data.batteryPower} health={data.batteryHealth} cycles={data.batteryCycles} /></div>
-       </div>
+        </div>
+      </div>
     </div>
   );
 });
@@ -1255,6 +1257,7 @@ export default function App() {
     feedInEarnings: 0,
     ev1V2g: false,
     ev2V2g: false,
+    _graphPoint: null as GraphDataPoint | null,
   });
 
   const accumulators = useRef({ solar: 0, savings: 0, gridImport: 0, carbonOffset: 0, batDischargeKwh: 0, feedInEarnings: 0 });
@@ -1382,19 +1385,16 @@ export default function App() {
 
   // Compute physics state whenever timeOfDay changes, using refs for other params
   useEffect(() => {
-    // Skip if timeOfDay hasn't actually changed
-    if (lastProcessedTimeRef.current === timeOfDay) {
-      return;
-    }
+    if (lastProcessedTimeRef.current === timeOfDay) return;
     lastProcessedTimeRef.current = timeOfDay;
-    
-    const { simSpeed: currentSimSpeed, priorityMode: currentPriorityMode, isAutoMode: currentIsAutoMode, evSpecs: currentEvSpecs, currentDate: currentDateValue } = computeParamsRef.current;
-    
-    setData(prev => {
-      // Advance Brownian cloud walk (mean-reverting, bounded [-1, 1])
-      cloudNoiseRef.current += gaussianRandom(0, 0.05);
-      cloudNoiseRef.current = Math.max(-1, Math.min(1, cloudNoiseRef.current * 0.97));
 
+    const { simSpeed: currentSimSpeed, priorityMode: currentPriorityMode, isAutoMode: currentIsAutoMode, evSpecs: currentEvSpecs, currentDate: currentDateValue } = computeParamsRef.current;
+
+    // Advance Brownian cloud walk outside of setData (safe side-effect location)
+    cloudNoiseRef.current += gaussianRandom(0, 0.05);
+    cloudNoiseRef.current = Math.max(-1, Math.min(1, cloudNoiseRef.current * 0.97));
+
+    setData(prev => {
       const state = PhysicsEngine.calculateInstant(
           timeOfDay, 
           prev.batteryLevel / 100 * BATTERY_CAPACITY * batteryHealthRef.current, 
@@ -1409,15 +1409,12 @@ export default function App() {
       const timeStep = 0.05 * currentSimSpeed; 
       const solarConsumed = state.solar - (state.gridExport > 0 ? state.gridExport : 0);
       
-      // Calculate savings using weekend-aware Kenya Power tariff
       const currentHour = Math.floor(timeOfDay);
       const currentDayOfWeek = currentDateValue.getDay();
       const applicableRate = KPLC_TARIFF.getRateForTimeAndDay(currentHour, currentDayOfWeek);
       const moneySaved = solarConsumed * applicableRate * timeStep;
-      // Feed-in tariff earnings from grid export
       const feedInEarned = state.gridExport * FEED_IN_TARIFF_RATE * timeStep;
 
-      // Track monthly peak grid import for demand charge
       if (state.gridImport > monthlyPeakDemandRef.current) {
         monthlyPeakDemandRef.current = state.gridImport;
       }
@@ -1427,12 +1424,9 @@ export default function App() {
          accumulators.current.savings += moneySaved + feedInEarned;
          accumulators.current.feedInEarnings += feedInEarned;
          if (state.gridImport > 0) accumulators.current.gridImport += state.gridImport * timeStep;
-         // Carbon offset: CO₂ avoided by using solar instead of grid
          accumulators.current.carbonOffset += solarConsumed * GRID_EMISSION_FACTOR * timeStep;
-         // Track discharge for battery degradation cycle counting
          if (state.batDischargeKw > 0) accumulators.current.batDischargeKwh += state.batDischargeKw * timeStep;
-         
-         // Record minute-by-minute data for export
+
          const now = new Date(currentDateValue);
          now.setHours(Math.floor(timeOfDay), Math.floor((timeOfDay % 1) * 60), 0);
          const weekNum = getWeekNumber(now);
@@ -1463,15 +1457,6 @@ export default function App() {
            gridImportKWh: state.gridImport * timeStep,
            gridExportKWh: state.gridExport * timeStep,
          });
-
-         // Record for daily graph
-         todayGraphDataRef.current.push({
-           timeOfDay,
-           solar: state.solar,
-           load: state.load,
-           batSoc: (state.batKwh / (BATTERY_CAPACITY * batteryHealthRef.current)) * 100,
-         });
-         setDailyGraphData([...todayGraphDataRef.current]);
       }
 
       let effectivePriority = currentPriorityMode;
@@ -1504,9 +1489,25 @@ export default function App() {
          currentTariffRate: applicableRate,
          isPeakTime: KPLC_TARIFF.isPeakTime(currentHour),
          carbonOffset: accumulators.current.carbonOffset,
+         // embed graph point in data so it triggers one render
+         _graphPoint: currentIsAutoMode ? {
+           timeOfDay,
+           solar: state.solar,
+           load: state.load,
+           batSoc: (state.batKwh / (BATTERY_CAPACITY * batteryHealthRef.current)) * 100,
+         } : null,
       };
     });
-  }, [timeOfDay]); // Only depend on timeOfDay - other params are read from refs 
+  }, [timeOfDay]);
+
+  // Sync graph state: update dailyGraphData after each physics tick when in auto mode
+  useEffect(() => {
+    if (data._graphPoint) {
+      todayGraphDataRef.current.push(data._graphPoint as GraphDataPoint);
+      setDailyGraphData([...todayGraphDataRef.current]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data._graphPoint]);
 
   const isNight = timeOfDay < 6 || timeOfDay > 19;
   
@@ -1555,7 +1556,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-200 font-sans text-slate-900 overflow-hidden flex flex-col relative">
+    <div className="min-h-screen bg-slate-200 font-sans text-slate-900 flex flex-col relative">
       <Header onToggleAssistant={() => setIsAssistantOpen(!isAssistantOpen)} currentDate={currentDate} onReset={handleReset} />
       <SafariChargeAIAssistant isOpen={isAssistantOpen} onClose={() => setIsAssistantOpen(false)} data={data} timeOfDay={timeOfDay} weather={weather} />
       <EnergyReportModal 
@@ -1570,11 +1571,11 @@ export default function App() {
         carbonOffset={data.carbonOffset}
       />
 
-      <main className="flex-1 flex flex-col items-center justify-center p-4 gap-4">
-        <div className="w-full max-w-7xl h-full min-h-[600px] bg-slate-100 rounded-[30px] shadow-2xl border border-white relative flex flex-col lg:flex-row overflow-hidden">
+      <main className="flex-1 flex flex-col items-center justify-start p-2 md:p-4 gap-4 overflow-y-auto">
+        <div className="w-full max-w-7xl bg-slate-100 rounded-[30px] shadow-2xl border border-white relative flex flex-col lg:flex-row overflow-hidden">
           <div className="absolute inset-0 opacity-40 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
           
-          <div className="flex-1 p-4 flex items-center justify-center z-10 border-r border-slate-200/60 bg-slate-50/50">
+          <div className="flex-1 p-4 flex items-center justify-center z-10 border-b lg:border-b-0 lg:border-r border-slate-200/60 bg-slate-50/50">
              <div className="absolute bg-sky-500/5 blur-3xl w-3/4 h-3/4 rounded-full -z-10"></div>
              <CentralDisplay 
                data={data} 
