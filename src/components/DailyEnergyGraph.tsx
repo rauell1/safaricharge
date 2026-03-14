@@ -126,6 +126,13 @@ export function buildJPGBlob(svgStr: string, width = 820, height = 340): Promise
 }
 
 
+const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
+  data,
+  dateLabel,
+}: {
+  data: GraphDataPoint[];
+  dateLabel?: string;
+}) {
   const handleDownloadJPG = useCallback(() => {
     if (!data || data.length === 0) return;
     const svgStr = buildGraphSVG(data, dateLabel);
