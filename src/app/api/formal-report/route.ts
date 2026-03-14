@@ -378,7 +378,23 @@ export async function POST(request: NextRequest) {
     const batteryCycles = uniqueDays > 0 ? uniqueDays * 0.85 : 0;
     const batteryHealthPct = Math.max(100 - (batteryCycles / 4000) * 30, 70);
 
-    // --- Charts ---
+    // EV solar-powered charge share: ratio of solar consumed to total load charged
+    const solarConsumedKWh = totalSolar - totalGridExport;
+    const totalEVLoad = totalEV1 + totalEV2;
+    const evSolarShare = totalEVLoad > 0 && totalSolar > 0
+      ? Math.min((solarConsumedKWh / (totalEVLoad + totalHomeLoad)) * 100, 100)
+      : 0;
+
+    // Charger utilisation: actual charged vs theoretical max (EV1 7kW + EV2 22kW over simulation days)
+    const EV1_CHARGER_KW = 7;
+    const EV2_CHARGER_KW = 22;
+    const MAX_CHARGER_KWH = (EV1_CHARGER_KW + EV2_CHARGER_KW) * uniqueDays * 24;
+    // Multiply by 3 to normalise for typical daily charging window (~8h out of 24h)
+    const CHARGER_WINDOW_FACTOR = 3;
+    const chargerUtilisationPct = Math.min(
+      MAX_CHARGER_KWH > 0 ? ((totalEVLoad / MAX_CHARGER_KWH) * 100 * CHARGER_WINDOW_FACTOR) : 0,
+      100
+    );
     const dailyAgg = aggregateDaily(minuteData);
     const solarVsGridChart = buildSolarVsGridSVG(dailyAgg);
     const savingsTrendChart = buildSavingsTrendSVG(dailyAgg);
@@ -393,14 +409,14 @@ export async function POST(request: NextRequest) {
     const now = new Date();
     const reportRefId = `SCL-EPR-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-    // Dynamic recommendations
+    // Dynamic recommendations using template literals
     const recommendations: string[] = [];
-    if (selfSufficiency < 60) recommendations.push('Consider expanding battery capacity to increase self-sufficiency beyond 60%. Current rate of ' + selfSufficiency.toFixed(0) + '% indicates significant grid dependency.');
-    if (solarSelfConsumptionRate < 80) recommendations.push('Solar self-consumption rate of ' + solarSelfConsumptionRate.toFixed(0) + '% suggests excess generation. Explore feed-in tariff agreements with KPLC or additional EV charging capacity to utilise surplus.');
-    if (avgBattery < 40) recommendations.push('Average battery state-of-charge of ' + avgBattery.toFixed(0) + '% is below optimal. Review charge scheduling to maintain 40–80% SoC range for LiFePO4 longevity.');
-    if (totalGridImport > totalSolar * 0.3) recommendations.push('Grid import represents ' + ((totalGridImport / totalSolar) * 100).toFixed(0) + '% of solar generation. Shifting controllable loads to solar-peak hours (10:00–16:00) can reduce grid dependency.');
-    if (totalEV1 + totalEV2 < totalSolar * 0.2) recommendations.push('EV charging utilises only ' + (((totalEV1 + totalEV2) / totalSolar) * 100).toFixed(0) + '% of solar generation. Smart V2G scheduling during peak hours can maximise tariff savings.');
-    if (roiPct > 15) recommendations.push('Strong ROI of ' + roiPct.toFixed(1) + '% p.a. validates system economics. Consider phased expansion with an additional 30 kWp array and 40 kWh battery to serve additional fleet vehicles.');
+    if (selfSufficiency < 60) recommendations.push(`Consider expanding battery capacity to increase self-sufficiency beyond 60%. Current rate of ${selfSufficiency.toFixed(0)}% indicates significant grid dependency.`);
+    if (solarSelfConsumptionRate < 80) recommendations.push(`Solar self-consumption rate of ${solarSelfConsumptionRate.toFixed(0)}% suggests excess generation. Explore feed-in tariff agreements with KPLC or additional EV charging capacity to utilise surplus.`);
+    if (avgBattery < 40) recommendations.push(`Average battery state-of-charge of ${avgBattery.toFixed(0)}% is below optimal. Review charge scheduling to maintain 40–80% SoC range for LiFePO4 longevity.`);
+    if (totalGridImport > totalSolar * 0.3) recommendations.push(`Grid import represents ${((totalGridImport / totalSolar) * 100).toFixed(0)}% of solar generation. Shifting controllable loads to solar-peak hours (10:00–16:00) can reduce grid dependency.`);
+    if (totalEV1 + totalEV2 < totalSolar * 0.2) recommendations.push(`EV charging utilises only ${(((totalEV1 + totalEV2) / totalSolar) * 100).toFixed(0)}% of solar generation. Smart V2G scheduling during peak hours can maximise tariff savings.`);
+    if (roiPct > 15) recommendations.push(`Strong ROI of ${roiPct.toFixed(1)}% p.a. validates system economics. Consider phased expansion with an additional 30 kWp array and 40 kWh battery to serve additional fleet vehicles.`);
     if (recommendations.length === 0) recommendations.push('System is performing optimally. Maintain current operational parameters and schedule quarterly maintenance inspections for PV array cleaning and battery health checks.');
 
     // --- HTML ---
@@ -416,7 +432,7 @@ export async function POST(request: NextRequest) {
     size: A4;
     margin: 1.8cm 2.2cm;
     @bottom-center {
-      content: "SafariCharge Ltd · Confidential · Page " counter(page) " of " counter(pages);
+      content: "SafariCharge Ltd · Confidential · Page " counter(page);
       font-size: 7.5pt;
       color: #94a3b8;
       font-family: 'Poppins', sans-serif;
@@ -765,7 +781,7 @@ export async function POST(request: NextRequest) {
       <tr><td>Total Energy Charged</td><td class="num hi">${totalEV1.toFixed(2)} kWh</td><td class="num hi">${totalEV2.toFixed(2)} kWh</td><td class="num hi">${(totalEV1 + totalEV2).toFixed(2)} kWh</td></tr>
       <tr><td>Avg Daily Charge</td><td class="num">${uniqueDays > 0 ? (totalEV1 / uniqueDays).toFixed(2) : '0.00'} kWh</td><td class="num">${uniqueDays > 0 ? (totalEV2 / uniqueDays).toFixed(2) : '0.00'} kWh</td><td class="num">${uniqueDays > 0 ? ((totalEV1 + totalEV2) / uniqueDays).toFixed(2) : '0.00'} kWh</td></tr>
       <tr><td>Peak EV Load (instantaneous)</td><td class="num" colspan="2">${peakEVLoad.toFixed(2)} kW combined</td><td class="num">&ndash;</td></tr>
-      <tr><td>Solar-Powered Charge Share</td><td class="num" colspan="2">${(totalEV1 + totalEV2) > 0 && totalSolar > 0 ? Math.min(((totalSolar - totalGridExport) / (totalEV1 + totalEV2 + totalHomeLoad) * 100), 100).toFixed(1) : '0.0'}%</td><td class="num">&ndash;</td></tr>
+      <tr><td>Solar-Powered Charge Share</td><td class="num" colspan="2">${evSolarShare.toFixed(1)}%</td><td class="num">&ndash;</td></tr>
       <tr><td>V2G Standard</td><td class="num" colspan="2">IEC 62196 Type 2 (Bidirectional)</td><td class="num">&ndash;</td></tr>
       <tr><td>V2G / V2B Capability</td><td class="num" colspan="2">✓ Supported (peak shaving & grid services)</td><td class="num">&ndash;</td></tr>
     </tbody>
@@ -881,7 +897,7 @@ export async function POST(request: NextRequest) {
       <div class="spec-row"><span class="k">Total Charged</span><span class="v">${(totalEV1 + totalEV2).toFixed(1)} kWh</span></div>
       <div class="spec-row"><span class="k">Status</span><span class="v" style="color:#16a34a;">● Active</span></div>
       <div style="margin-top:6px;"><span style="font-size:7.5pt;color:#64748b;">Charger Utilisation</span>
-        <div class="health-bar-wrap"><div class="health-bar" style="width:${Math.min((totalEV1 + totalEV2) / ((7 + 22) * uniqueDays * 24) * 100 * 3, 100).toFixed(0)}%;background:linear-gradient(90deg,#0284c7,#0ea5e9);"></div></div>
+        <div class="health-bar-wrap"><div class="health-bar" style="width:${chargerUtilisationPct.toFixed(0)}%;background:linear-gradient(90deg,#0284c7,#0ea5e9);"></div></div>
       </div>
     </div>
   </div>

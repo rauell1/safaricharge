@@ -2049,7 +2049,8 @@ export default function App() {
       const blob = new Blob([html], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      // Revoke after 5 minutes to give the browser time to fully load the report
+      setTimeout(() => URL.revokeObjectURL(url), 300_000);
     } catch (error) {
       console.error('Formal report error:', error);
       alert(`Failed to generate report: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
