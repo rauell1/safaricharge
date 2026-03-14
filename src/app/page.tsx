@@ -1031,6 +1031,7 @@ export default function App() {
   }>>([]);
   
   const systemStartDate = useRef('2026-01-01'); // System start date for tracking
+  const lastProcessedTimeRef = useRef<number | null>(null);
 
   const handleReset = () => {
     setTimeOfDay(12);
@@ -1085,6 +1086,12 @@ export default function App() {
   }, [isAutoMode, simSpeed]); 
 
   useEffect(() => {
+    // Prevent infinite loop by checking if timeOfDay actually changed
+    if (lastProcessedTimeRef.current === timeOfDay) {
+      return;
+    }
+    lastProcessedTimeRef.current = timeOfDay;
+    
     setData(prev => {
       const state = PhysicsEngine.calculateInstant(
           timeOfDay, 
