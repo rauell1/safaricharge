@@ -1570,12 +1570,19 @@ export default function App() {
     setCurrentDate(nextDate);
     accumulators.current = { solar: 0, savings: 0, gridImport: 0, carbonOffset: 0, batDischargeKwh: 0, feedInEarnings: 0 };
 
-    // Archive completed day's graph before clearing
-    if (todayGraphDataRef.current.length > 0) {
-      const dateStr = currentDate.toISOString().slice(0, 10);
-      const snapshot = [...todayGraphDataRef.current];
-      setPastGraphs(prev => [...prev, { date: dateStr, data: snapshot }]);
-    }
+    // Archive completed day's graph before clearing.
+    // Use setTimeout to defer the setPastGraphs call so that any pending React
+    // state updates and physics useEffect callbacks (which populate
+    // todayGraphDataRef.current) have a chance to flush before the snapshot is
+    // committed to pastGraphs.  Without this deferral, at high simulation speeds
+    // the batched state updates haven't settled yet and the snapshot is empty.
+    const dateStr = currentDate.toISOString().slice(0, 10);
+    const snapshot = [...todayGraphDataRef.current];
+    setTimeout(() => {
+      if (snapshot.length > 0) {
+        setPastGraphs(prev => [...prev, { date: dateStr, data: snapshot }]);
+      }
+    }, 0);
 
     todayGraphDataRef.current = [];
     setDailyGraphData([]);
