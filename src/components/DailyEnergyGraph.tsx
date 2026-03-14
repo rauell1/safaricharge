@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { Download } from 'lucide-react';
 
 export interface GraphDataPoint {
@@ -11,32 +11,62 @@ export interface GraphDataPoint {
 }
 
 const DailyEnergyGraph = React.memo(({ data, dateLabel }: { data: GraphDataPoint[]; dateLabel?: string }) => {
-  const svgRef = useRef<SVGSVGElement>(null);
-
   const handleDownloadSVG = useCallback(() => {
-    if (!svgRef.current) return;
-    const svgEl = svgRef.current;
-    // Embed a white background so the SVG looks right outside the browser
-    const clone = svgEl.cloneNode(true) as SVGSVGElement;
-    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    bg.setAttribute('width', '100%');
-    bg.setAttribute('height', '100%');
-    bg.setAttribute('fill', 'white');
-    clone.insertBefore(bg, clone.firstChild);
+    if (!data || data.length === 0) return;
 
-    const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    title.setAttribute('x', '400');
-    title.setAttribute('y', '14');
-    title.setAttribute('text-anchor', 'middle');
-    title.setAttribute('font-size', '11');
-    title.setAttribute('font-weight', 'bold');
-    title.setAttribute('fill', '#334155');
-    title.textContent = `SafariCharge – Daily Energy Profile${dateLabel ? ` – ${dateLabel}` : ''}`;
-    clone.insertBefore(title, clone.children[1]);
+    // Build SVG as a string — more reliable than DOM cloning across all browsers
+    const w = 820;
+    const h = 340;
+    const pad = { top: 40, right: 60, bottom: 40, left: 60 };
+    const iw = w - pad.left - pad.right;
+    const ih = h - pad.top - pad.bottom;
+    const maxKw = Math.max(60, ...data.map((d: GraphDataPoint) => Math.max(d.solar, d.load))) + 5;
 
-    const serializer = new XMLSerializer();
-    const svgStr = serializer.serializeToString(clone);
-    const blob = new Blob([svgStr], { type: 'image/svg+xml' });
+    const gx = (t: number) => pad.left + (t / 24) * iw;
+    const gy = (v: number) => pad.top + ih - (v / maxKw) * ih;
+    const gs = (v: number) => pad.top + ih - (v / 100) * ih;
+
+    const solarPts = data.map((d: GraphDataPoint) => `${gx(d.timeOfDay).toFixed(1)},${gy(d.solar).toFixed(1)}`).join(' L ');
+    const loadPts  = data.map((d: GraphDataPoint) => `${gx(d.timeOfDay).toFixed(1)},${gy(d.load).toFixed(1)}`).join(' L ');
+    const socPts   = data.map((d: GraphDataPoint) => `${gx(d.timeOfDay).toFixed(1)},${gs(d.batSoc).toFixed(1)}`).join(' L ');
+    const areaD    = `M ${gx(data[0].timeOfDay).toFixed(1)},${pad.top + ih} L ${solarPts} L ${gx(data[data.length-1].timeOfDay).toFixed(1)},${pad.top + ih} Z`;
+
+    const gridLines = [0, 0.25, 0.5, 0.75, 1].map(r => {
+      const y = pad.top + ih * r;
+      const kw = Math.round(maxKw - r * maxKw);
+      const soc = Math.round(100 - r * 100);
+      return `<line x1="${pad.left}" y1="${y.toFixed(1)}" x2="${w - pad.right}" y2="${y.toFixed(1)}" stroke="#e2e8f0" stroke-dasharray="4 4"/>
+        <text x="${pad.left - 8}" y="${(y + 3).toFixed(1)}" text-anchor="end" fill="#64748b" font-size="9" font-weight="bold">${kw} kW</text>
+        <text x="${w - pad.right + 8}" y="${(y + 3).toFixed(1)}" text-anchor="start" fill="#8b5cf6" font-size="9" font-weight="bold">${soc}%</text>`;
+    }).join('\n');
+
+    const timeLines = [0, 3, 6, 9, 12, 15, 18, 21, 24].map(hr => {
+      const x = gx(hr);
+      return `<line x1="${x.toFixed(1)}" y1="${pad.top}" x2="${x.toFixed(1)}" y2="${pad.top + ih + 5}" stroke="#e2e8f0"/>
+        <text x="${x.toFixed(1)}" y="${pad.top + ih + 18}" text-anchor="middle" fill="#64748b" font-size="9">${hr.toString().padStart(2, '0')}:00</text>`;
+    }).join('\n');
+
+    const label = dateLabel ? ` – ${dateLabel}` : '';
+    const svgStr = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+  <rect width="${w}" height="${h}" fill="white"/>
+  <text x="${w/2}" y="22" text-anchor="middle" fill="#0f172a" font-size="13" font-weight="bold" font-family="monospace">SafariCharge – Daily Energy Profile${label}</text>
+  ${gridLines}
+  ${timeLines}
+  <path d="${areaD}" fill="rgba(34,197,94,0.12)"/>
+  <path d="M ${solarPts}" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M ${loadPts}" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M ${socPts}" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-dasharray="6 4" stroke-linejoin="round"/>
+  <!-- Legend -->
+  <rect x="${pad.left}" y="${h - 22}" width="12" height="12" fill="#22c55e" opacity="0.8"/>
+  <text x="${pad.left + 16}" y="${h - 12}" fill="#15803d" font-size="9" font-weight="bold">Solar Gen (kW)</text>
+  <line x1="${pad.left + 110}" y1="${h - 16}" x2="${pad.left + 126}" y2="${h - 16}" stroke="#ef4444" stroke-width="2.5"/>
+  <text x="${pad.left + 130}" y="${h - 12}" fill="#b91c1c" font-size="9" font-weight="bold">Total Load (kW)</text>
+  <line x1="${pad.left + 230}" y1="${h - 16}" x2="${pad.left + 246}" y2="${h - 16}" stroke="#8b5cf6" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="${pad.left + 250}" y="${h - 12}" fill="#7c3aed" font-size="9" font-weight="bold">Battery SOC (%)</text>
+</svg>`;
+
+    const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -44,9 +74,8 @@ const DailyEnergyGraph = React.memo(({ data, dateLabel }: { data: GraphDataPoint
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    // Delay revoke so the browser has time to start the download
-    setTimeout(() => URL.revokeObjectURL(url), 200);
-  }, [dateLabel]);
+    setTimeout(() => URL.revokeObjectURL(url), 300);
+  }, [data, dateLabel]);
 
   if (!data || data.length === 0) {
     return (
@@ -93,7 +122,7 @@ const DailyEnergyGraph = React.memo(({ data, dateLabel }: { data: GraphDataPoint
         </div>
       </div>
       <div className="min-w-[700px]">
-        <svg ref={svgRef} viewBox={`0 0 ${width} ${height}`} className="w-full h-auto font-mono">
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto font-mono">
           {/* Horizontal grid lines & dual axis labels */}
           {[0, 0.25, 0.5, 0.75, 1].map(ratio => {
             const y = padding.top + innerHeight * ratio;

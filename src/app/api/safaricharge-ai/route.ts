@@ -1,4 +1,4 @@
-import ZAI from 'z-ai-web-dev-sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 
 // ---------------------------------------------------------------------------
@@ -150,7 +150,10 @@ export async function POST(request: NextRequest) {
       systemContext: SystemContext;
     };
 
-    const zai = await ZAI.create();
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
+
+    const genAI = new GoogleGenerativeAI(apiKey);
 
     const systemInstruction = `You are SafariCharge AI — a highly intelligent, expert energy management assistant for the SafariCharge solar+EV charging facility in Nairobi, Kenya. You are embedded in a live simulation dashboard.
 
@@ -188,16 +191,20 @@ ${SOLAR_KNOWLEDGE}
 - Use emojis sparingly but helpfully (☀️ for solar, 🔋 for battery, ⚡ for grid, 🚗 for EV).
 - Never say "I don't know" — reason from first principles using your solar knowledge if needed.`;
 
-    // Build messages array with full conversation history
-    const messages: Array<{ role: string; content: string }> = [
-      { role: 'system', content: systemInstruction },
-      ...conversationHistory.slice(-10), // keep last 10 exchanges for context window
-      { role: 'user', content: userPrompt },
-    ];
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      systemInstruction,
+    });
 
-    const completion = await zai.chat.completions.create({ messages });
+    // Build Gemini chat history (must alternate user/model, no system role)
+    const geminiHistory = conversationHistory.slice(-10).map(m => ({
+      role: m.role === 'user' ? 'user' : 'model',
+      parts: [{ text: m.content }],
+    }));
 
-    const responseText = completion.choices?.[0]?.message?.content || 
+    const chat = model.startChat({ history: geminiHistory });
+    const result = await chat.sendMessage(userPrompt);
+    const responseText = result.response.text() ||
       "I'm having trouble processing that. Please try rephrasing your question.";
 
     return NextResponse.json({ response: responseText });
