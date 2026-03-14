@@ -1474,7 +1474,8 @@ export default function App() {
     todayGraphDataRef.current = [];
     setDailyGraphData([]);
     setPastGraphs([]);
-    minuteDataRef.current = [];({ ...prev, batteryLevel: 50, ev1Soc: 60, ev2Soc: 50, displaySavings: 0, carbonOffset: 0, batteryHealth: 1.0, batteryCycles: 0, monthlyPeakDemandKW: 0, estimatedDemandChargeKES: 0, feedInEarnings: 0, ev1V2g: false, ev2V2g: false }));
+    minuteDataRef.current = [];
+    setData(prev => ({ ...prev, batteryLevel: 50, ev1Soc: 60, ev2Soc: 50, displaySavings: 0, carbonOffset: 0, batteryHealth: 1.0, batteryCycles: 0, monthlyPeakDemandKW: 0, estimatedDemandChargeKES: 0, feedInEarnings: 0, ev1V2g: false, ev2V2g: false }));
     setIsAutoMode(false);
     dayScenarioRef.current = PhysicsEngine.generateDayScenario('Sunny', new Date('2026-01-01'), 1.0);
   };
