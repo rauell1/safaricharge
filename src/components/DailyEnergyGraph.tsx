@@ -43,8 +43,9 @@ const DailyEnergyGraph = React.memo(({ data, dateLabel }: { data: GraphDataPoint
     a.download = `SafariCharge_DailyGraph${dateLabel ? `_${dateLabel}` : ''}.svg`;
     document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
     document.body.removeChild(a);
+    // Delay revoke so the browser has time to start the download
+    setTimeout(() => URL.revokeObjectURL(url), 200);
   }, [dateLabel]);
 
   if (!data || data.length === 0) {
