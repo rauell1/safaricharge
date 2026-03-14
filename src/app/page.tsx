@@ -552,63 +552,223 @@ const HomeProduct = React.memo(({ power }: { power: number }) => (
 
 // --- 4. ADVANCED COMPONENTS ---
 
-const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather }: {
-  isOpen: boolean; onClose: () => void; data: any; timeOfDay: number; weather: string;
+const SUGGESTION_CHIPS = [
+  "How is my system performing right now?",
+  "Should I charge the EVs now or wait?",
+  "How can I reduce my KPLC bill?",
+  "What's the battery health impact of V2G?",
+  "Explain today's solar generation",
+  "When is the best time to charge?",
+  "How much CO₂ have I saved?",
+  "Tips for Nairobi rainy season?",
+];
+
+// Renders AI message text — converts **bold**, newlines, and bullet points
+const AIMessageText = ({ text }: { text: string }) => {
+  const lines = text.split('\n');
+  return (
+    <div className="space-y-1">
+      {lines.map((line, i) => {
+        if (!line.trim()) return <div key={i} className="h-1" />;
+        // bold: **text**
+        const parts = line.split(/(\*\*[^*]+\*\*)/g);
+        return (
+          <p key={i} className="leading-relaxed">
+            {parts.map((part, j) =>
+              part.startsWith('**') && part.endsWith('**')
+                ? <strong key={j}>{part.slice(2, -2)}</strong>
+                : part
+            )}
+          </p>
+        );
+      })}
+    </div>
+  );
+};
+
+const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, currentDate, isAutoMode }: {
+  isOpen: boolean; onClose: () => void; data: any; timeOfDay: number; weather: string; currentDate: Date; isAutoMode: boolean;
 }) => {
-  const [messages, setMessages] = useState([
-    { role: 'assistant', text: "Hello! I'm SafariCharge AI. I'm actively balancing your EV fleet to keep your grid bill at zero. How can I help?" }
+  const [messages, setMessages] = useState<Array<{ role: string; text: string }>>([
+    { role: 'assistant', text: "Hello! I'm **SafariCharge AI** — your intelligent solar energy advisor.\n\nI have live access to your system data and deep knowledge of solar, batteries, KPLC tariffs, and EV charging in Kenya. Ask me anything! ☀️🔋" }
   ]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
+  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [messages, isTyping]);
 
-  const handleSend = async () => {
-    if (!inputText.trim()) return;
-    const userMsg = { role: 'user', text: inputText };
+  const sendMessage = async (text: string) => {
+    if (!text.trim() || isTyping) return;
+    const userMsg = { role: 'user', text };
     setMessages(prev => [...prev, userMsg]);
     setInputText('');
     setIsTyping(true);
-    
-    // Simulate AI response
-    setTimeout(() => {
+    setError(null);
+
+    // Build rich live context for the API
+    const hh = Math.floor(timeOfDay).toString().padStart(2, '0');
+    const mm = Math.floor((timeOfDay % 1) * 60).toString().padStart(2, '0');
+    const systemContext = {
+      time: `${hh}:${mm}`,
+      date: currentDate.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+      weather,
+      solar: `${data.solarR.toFixed(1)} kW`,
+      solarTotal: data.totalSolar?.toFixed(1) ?? '0',
+      battery: `${data.batteryLevel.toFixed(1)}% SoC, ${data.batteryPower > 0 ? '+' : ''}${data.batteryPower.toFixed(1)} kW (${data.batteryStatus})`,
+      batteryHealth: `${((data.batteryHealth ?? 1) * 100).toFixed(1)}%`,
+      batteryCycles: data.batteryCycles ?? 0,
+      grid: `${data.netGridPower > 0 ? 'Importing' : data.netGridPower < 0 ? 'Exporting' : 'Balanced'} ${Math.abs(data.netGridPower).toFixed(1)} kW`,
+      savings: data.displaySavings?.toFixed(0) ?? '0',
+      feedInEarnings: data.feedInEarnings?.toFixed(0) ?? '0',
+      carbonOffset: data.carbonOffset?.toFixed(1) ?? '0',
+      peakTime: data.isPeakTime,
+      tariffRate: data.currentTariffRate?.toFixed(2) ?? '0',
+      ev1: `SoC ${data.ev1Soc?.toFixed(0)}%, ${data.ev1Load?.toFixed(1)} kW (${data.ev1Status})${data.ev1V2g ? ' [V2G active]' : ''}`,
+      ev2: `SoC ${data.ev2Soc?.toFixed(0)}%, ${data.ev2Load?.toFixed(1)} kW (${data.ev2Status})${data.ev2V2g ? ' [V2G active]' : ''}`,
+      v2gActive: data.ev1V2g || data.ev2V2g,
+      monthlyPeakDemand: `${data.monthlyPeakDemandKW?.toFixed(1) ?? '0'} kW (est. KES ${data.estimatedDemandChargeKES?.toFixed(0) ?? '0'})`,
+      priorityMode: data.effectivePriority,
+      simRunning: isAutoMode,
+    };
+
+    // Conversation history for the API (exclude welcome message, convert to API format)
+    const conversationHistory = messages
+      .slice(1) // skip the greeting
+      .map(m => ({ role: m.role as 'user' | 'assistant', content: m.text }));
+
+    try {
+      const res = await fetch('/api/safaricharge-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userPrompt: text, conversationHistory, systemContext }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'API error');
+      setMessages(prev => [...prev, { role: 'assistant', text: json.response }]);
+    } catch (err: any) {
+      setError(err.message || 'Failed to reach SafariCharge AI. Check your connection.');
+      setMessages(prev => [...prev, { role: 'assistant', text: "⚠️ I couldn't connect to the AI service right now. Please try again in a moment." }]);
+    } finally {
       setIsTyping(false);
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        text: `Based on current conditions: Solar at ${data.solarR.toFixed(1)}kW, Battery at ${data.batteryLevel.toFixed(1)}%. I recommend continuing current operation for optimal savings.` 
-      }]);
-    }, 1000);
+    }
   };
+
+  const handleSend = () => sendMessage(inputText);
+  const handleChip = (chip: string) => sendMessage(chip);
 
   if (!isOpen) return null;
 
+  const showChips = messages.length <= 2;
+
   return (
-    <div className="absolute right-0 top-16 bottom-0 w-full md:w-96 bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col animate-slide-in-right">
-      <div className="p-4 bg-slate-900 text-white flex justify-between items-center shadow-md">
+    <div className="absolute right-0 top-16 bottom-0 w-full md:w-96 bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
+      {/* Header */}
+      <div className="p-4 bg-slate-900 text-white flex justify-between items-center shadow-md flex-shrink-0">
         <div className="flex items-center gap-2">
           <Sparkles size={16} className="text-green-400" />
-          <h3 className="font-bold text-sm">SafariCharge AI</h3>
+          <div>
+            <h3 className="font-bold text-sm leading-none">SafariCharge AI</h3>
+            <p className="text-[10px] text-slate-400 mt-0.5">Powered by live simulation data</p>
+          </div>
         </div>
-        <button onClick={onClose} className="text-white hover:text-slate-300"><X size={20} /></button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 text-[10px] text-green-400">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            {isAutoMode ? 'Live' : 'Paused'}
+          </div>
+          <button onClick={onClose} className="text-white hover:text-slate-300"><X size={20} /></button>
+        </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+
+      {/* Live status bar */}
+      <div className="bg-slate-800 px-4 py-2 flex gap-4 text-[10px] font-mono text-slate-400 flex-shrink-0">
+        <span className="text-green-400">☀️ {data.solarR.toFixed(1)}kW</span>
+        <span className="text-purple-400">🔋 {data.batteryLevel.toFixed(0)}%</span>
+        <span className={data.netGridPower > 0.1 ? 'text-red-400' : 'text-sky-400'}>
+          ⚡ {data.netGridPower > 0.1 ? `Import ${data.netGridPower.toFixed(1)}kW` : data.netGridPower < -0.1 ? `Export ${Math.abs(data.netGridPower).toFixed(1)}kW` : 'Grid balanced'}
+        </span>
+        {(data.ev1V2g || data.ev2V2g) && <span className="text-orange-400">V2G↑</span>}
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
         {messages.map((msg, idx) => (
           <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-sky-500 text-white' : 'bg-white border text-slate-700'}`}>
-              {msg.text}
+            {msg.role === 'assistant' && (
+              <div className="w-6 h-6 rounded-full bg-slate-900 flex items-center justify-center mr-2 flex-shrink-0 mt-0.5">
+                <Sparkles size={12} className="text-green-400" />
+              </div>
+            )}
+            <div className={`max-w-[85%] p-3 rounded-2xl text-sm shadow-sm ${
+              msg.role === 'user'
+                ? 'bg-sky-500 text-white rounded-br-sm'
+                : 'bg-white border border-slate-200 text-slate-700 rounded-bl-sm'
+            }`}>
+              {msg.role === 'assistant' ? <AIMessageText text={msg.text} /> : msg.text}
             </div>
           </div>
         ))}
-        {isTyping && <div className="text-slate-400 text-xs ml-4">Thinking...</div>}
+
+        {/* Typing indicator */}
+        {isTyping && (
+          <div className="flex justify-start items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-slate-900 flex items-center justify-center flex-shrink-0">
+              <Sparkles size={12} className="text-green-400" />
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1">
+              <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+          </div>
+        )}
+
+        {/* Suggestion chips — shown only at start */}
+        {showChips && !isTyping && (
+          <div className="pt-2">
+            <p className="text-[10px] text-slate-400 font-mono mb-2 ml-8">Suggested questions:</p>
+            <div className="flex flex-wrap gap-2 ml-8">
+              {SUGGESTION_CHIPS.map(chip => (
+                <button
+                  key={chip}
+                  onClick={() => handleChip(chip)}
+                  className="text-[11px] bg-white border border-sky-200 text-sky-700 px-3 py-1.5 rounded-full hover:bg-sky-50 hover:border-sky-400 transition-colors shadow-sm font-medium"
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="text-[10px] text-red-500 text-center bg-red-50 rounded-lg p-2 border border-red-200">
+            {error}
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
-      <div className="p-4 bg-white border-t border-slate-200 flex gap-2">
+
+      {/* Input */}
+      <div className="p-3 bg-white border-t border-slate-200 flex gap-2 flex-shrink-0">
         <input 
-          type="text" value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-          placeholder="Ask SafariCharge AI..." className="flex-1 bg-slate-100 rounded-full px-4 text-sm outline-none focus:ring-2 focus:ring-sky-500"
+          type="text"
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
+          placeholder="Ask about your solar system..."
+          disabled={isTyping}
+          className="flex-1 bg-slate-100 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500 disabled:opacity-60"
         />
-        <button onClick={handleSend} disabled={!inputText.trim()} className="p-2 bg-sky-500 text-white rounded-full disabled:opacity-50"><Send size={18} /></button>
+        <button
+          onClick={handleSend}
+          disabled={!inputText.trim() || isTyping}
+          className="p-2.5 bg-sky-500 text-white rounded-full disabled:opacity-50 hover:bg-sky-600 transition-colors"
+        >
+          <Send size={16} />
+        </button>
       </div>
     </div>
   );
@@ -1559,7 +1719,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-200 font-sans text-slate-900 flex flex-col relative">
       <Header onToggleAssistant={() => setIsAssistantOpen(!isAssistantOpen)} currentDate={currentDate} onReset={handleReset} />
-      <SafariChargeAIAssistant isOpen={isAssistantOpen} onClose={() => setIsAssistantOpen(false)} data={data} timeOfDay={timeOfDay} weather={weather} />
+      <SafariChargeAIAssistant isOpen={isAssistantOpen} onClose={() => setIsAssistantOpen(false)} data={data} timeOfDay={timeOfDay} weather={weather} currentDate={currentDate} isAutoMode={isAutoMode} />
       <EnergyReportModal 
         isOpen={isReportOpen} 
         onClose={() => setIsReportOpen(false)} 
