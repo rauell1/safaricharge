@@ -78,7 +78,7 @@ git clone https://github.com/YOUR_USERNAME/YOUR_REPOSITORY_NAME.git
 Navigate to the project folder:
 
 ```bash
-cd SafariCharge Solar Dashboard
+cd dashboard
 ```
 
 ---
@@ -103,17 +103,14 @@ Copy the provided template and fill in your values:
 cp .env.example .env
 ```
 
-Then open `.env` and populate the required variables:
+Next.js loads both `.env` and `.env.local`; use `.env.local` for local overrides (it is gitignored).
 
 | Variable | Required | Description |
 |---|---|---|
-| `DATABASE_URL` | ✅ Yes | Prisma database connection string, e.g. `file:./dev.db` |
-| `GEMINI_API_KEY` | ⚠️ Optional | Google Gemini API key for the AI assistant. Obtain one at <https://aistudio.google.com/apikey>. Without it the app falls back to the built-in Z.AI SDK automatically. |
+| `DATABASE_URL` | Yes | Prisma database connection string, e.g. `file:./dev.db` |
+| `GEMINI_API_KEY` | Optional | Google Gemini API key for SafariCharge AI. Get one at [aistudio.google.com/apikey](https://aistudio.google.com/apikey). Without it the app falls back to the Z.AI SDK. |
 
-> **Gemini troubleshooting**: If the AI assistant returns errors even after setting `GEMINI_API_KEY`:
-> 1. Make sure the key is in **`.env`** (not `.env.local` or another file) and that the server has been **restarted** after the change.
-> 2. Verify the key is active at <https://aistudio.google.com/apikey>.
-> 3. The app tries `gemini-2.0-flash` → `gemini-1.5-flash` → `gemini-1.5-flash-latest` on the `v1beta` endpoint in order. If all three fail the Z.AI SDK takes over automatically.
+**Gemini AI**: The app tries, in order: `gemini-2.5-flash`, `gemini-2.5-flash-lite`, `gemini-1.5-flash`, `gemini-1.5-pro`, `gemini-2.0-flash`. If all fail, the Z.AI SDK is used. Restart the dev server after changing the key. For "Model unavailable" or key errors, create a new key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
 
 ---
 
@@ -176,23 +173,16 @@ npm start
 # 📁 Project Structure
 
 ```
-SafariCharge Solar Dashboard
-│
-├── prisma/          Database schema and migrations
-├── src/             Main application source code
-│   ├── app/         Next.js App Router pages
+dashboard/
+├── prisma/           Database schema and migrations
+├── src/
+│   ├── app/         Next.js App Router (pages, API routes)
 │   ├── components/  Reusable UI components
-│   ├── hooks/       Custom React hooks
-│   └── lib/         Utility functions and configurations
-│
-├── public/          Static assets
-├── db/              Local database files
-├── upload/          Uploaded files storage
-├── download/        Generated export files
-│
-├── package.json     Project dependencies and scripts
-├── next.config.ts   Next.js configuration
-├── tailwind.config.ts  Tailwind configuration
+│   └── lib/         Utilities and config
+├── public/           Static assets
+├── .env.example      Environment template
+├── package.json      Dependencies and scripts
+├── next.config.ts    Next.js config
 └── README.md
 ```
 
@@ -249,16 +239,15 @@ Because simulation state is isolated in each user's browser:
 
 ---
 
-# 🌍 Deployment
+# Deployment
 
-The dashboard can be deployed using platforms such as:
+Deploy the dashboard to any Node.js host:
 
-* **Vercel**
-* **Docker containers**
-* **Cloud virtual machines**
-* **Self-hosted Node.js servers**
+* **Vercel** – Connect the repo and set `DATABASE_URL` and optional `GEMINI_API_KEY`. Use Vercel Postgres or an external DB for production.
+* **Docker** – Use the project Dockerfile (if present) or run `npm run build && npm start` in a Node image.
+* **VPS / self-hosted** – Run `npm run build`, then `npm start` (or use the standalone output). Set env vars and use a process manager (e.g. PM2).
 
-Ensure environment variables and database connections are properly configured in the deployment environment.
+Ensure `DATABASE_URL` and, for the AI assistant, `GEMINI_API_KEY` are set in the deployment environment.
 
 ---
 
