@@ -7,6 +7,7 @@ out
 
 # environment
 .env
+.env.example
 .env.local
 .env.*.local
 

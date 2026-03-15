@@ -105,7 +105,7 @@ const getSeasonalPeakHour = (month: number): number => {
  * then applies the standard temperature coefficient.
  */
 const getPanelTempEffect = (irradFraction: number, month: number): number => {
-  // Nairobi ambient: ~22°C avg, peaks ~30°C in hot months (Oct–Mar)
+  // Nairobi ambient: ~22°C avg, peaks ~30°C in hot months (Oct-Mar)
   const ambientTemp = 22 + 8 * Math.sin(((month - 3) / 12) * 2 * Math.PI);
   const panelTemp = ambientTemp + irradFraction * 28; // simplified NOCT model
   const excess = Math.max(0, panelTemp - 25);
@@ -133,7 +133,7 @@ const getBatteryEfficiency = (rateFraction: number): number => {
 };
 
 /**
- * Tapered EV charging above 80% SOC — realistic Li-ion CC/CV behavior.
+ * Tapered EV charging above 80% SOC: realistic Li-ion CC/CV behavior.
  * Full rate below 80%, linearly reduced to 0 at 100%.
  */
 const getEVTaperedRate = (soc: number, maxRate: number): number => {
@@ -231,7 +231,7 @@ const PhysicsEngine = {
     const peakHour: number = scenario.peakSolarHour || 12.75;
     const soiling: number = scenario.soilingFactor ?? 1.0;
 
-    // A. Solar — seasonal peak hour, temperature coefficient, soiling/dust
+    // A. Solar: seasonal peak hour, temperature coefficient, soiling/dust
     let solar = 0;
     if (t > 6.2 && t < 18.8) { 
         // Seasonal Gaussian width: wider in dry months (Jan-Feb, Jul-Aug), narrower in rainy months
@@ -563,7 +563,7 @@ const SUGGESTION_CHIPS = [
   "Tips for Nairobi rainy season?",
 ];
 
-// Renders AI message text — converts **bold**, newlines, and bullet points
+// Renders AI message text: converts **bold**, newlines, and bullet points
 const AIMessageText = ({ text }: { text: string }) => {
   const lines = text.split('\n');
   return (
@@ -725,7 +725,7 @@ const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, cu
           </div>
         )}
 
-        {/* Suggestion chips — shown only at start */}
+        {/* Suggestion chips: shown only at start */}
         {showChips && !isTyping && (
           <div className="pt-2">
             <p className="text-[10px] text-slate-400 font-mono mb-2 ml-8">Suggested questions:</p>
@@ -744,7 +744,7 @@ const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, cu
         )}
 
         {error && (
-          <div className="text-[10px] text-red-500 text-center bg-red-50 rounded-lg p-2 border border-red-200">
+          <div className="text-xs text-red-600 text-center bg-red-50 rounded-lg p-3 border border-red-200 break-words">
             {error}
           </div>
         )}
@@ -840,7 +840,7 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
       uniqueYears: years.size,
     };
   // minuteData.length is included because the array is mutated in place (push),
-  // so the reference never changes — length is what actually triggers recomputation.
+  // so the reference never changes; length is what actually triggers recomputation.
   }, [minuteData, minuteData.length]);
 
   if (!isOpen) return null;
@@ -1046,7 +1046,7 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
             <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs text-slate-500">
               <strong>Simulation Physics:</strong> Solar model uses Nairobi latitude (1.29°S) seasonal peak hour,
               panel temperature coefficient (−0.5%/°C above 25°C), soiling/dust accumulation (reset by rain),
-              inverter efficiency curve (82–97%), and variable battery round-trip efficiency (85–95%).
+              inverter efficiency curve (82-97%), and variable battery round-trip efficiency (85-95%).
             </div>
           </div>
           )}
@@ -1215,7 +1215,7 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
                 </p>
               ) : (
                 <p className="text-xs text-slate-500 mt-2 text-center">
-                  Opens in new tab — use browser Print (Ctrl+P) to save as PDF
+                  Opens in new tab: use browser Print (Ctrl+P) to save as PDF
                 </p>
               )}
             </div>
@@ -1636,7 +1636,7 @@ export default function App() {
   const systemStartDate = useRef('2026-01-01'); // System start date for tracking
   const lastProcessedTimeRef = useRef<number | null>(null);
 
-  // Physics state refs — keep the authoritative simulation state outside React
+  // Physics state refs: keep the authoritative simulation state outside React
   // so the interval can sub-step at fixed (24/420)-hour steps regardless of speed.
   // Starting at t=0 (midnight) ensures every simulated day is a full 24-hour
   // cycle → exactly 420 data points per day for all simulation speeds.
@@ -1926,7 +1926,7 @@ export default function App() {
 
     const { priorityMode: currentPriorityMode, isAutoMode: currentIsAutoMode, evSpecs: currentEvSpecs, currentDate: currentDateValue } = computeParamsRef.current;
 
-    // Skip in auto mode — the interval loop handles all physics + graph data.
+    // Skip in auto mode: the interval loop handles all physics + graph data.
     if (currentIsAutoMode) return;
 
     // Advance Brownian cloud walk outside of setData (safe side-effect location)
@@ -2322,12 +2322,12 @@ export default function App() {
           </div>
         </div>
 
-        {/* Daily Energy Graph — full width below main panel */}
+        {/* Daily Energy Graph: full width below main panel */}
         <div className="w-full max-w-7xl px-2 pb-2">
           <DailyEnergyGraph data={dailyGraphData} dateLabel={currentDate.toISOString().slice(0, 10)} />
         </div>
 
-        {/* Past Days Graph Archive — horizontally scrollable legend */}
+        {/* Past Days Graph Archive: horizontally scrollable legend */}
         {pastGraphs.length > 0 && (
           <div className="w-full max-w-7xl px-2 pb-4">
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
@@ -2336,7 +2336,7 @@ export default function App() {
                 <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2">
                   <span>📅 Past Days: Energy Profiles</span>
                   <span className="text-[9px] font-normal text-slate-400 normal-case">
-                    ({pastGraphs.length} day{pastGraphs.length !== 1 ? 's' : ''} archived — scroll →)
+                    ({pastGraphs.length} day{pastGraphs.length !== 1 ? 's' : ''} archived; scroll to view)
                   </span>
                 </h3>
                 <PastDaysZipButton pastGraphs={pastGraphs} />

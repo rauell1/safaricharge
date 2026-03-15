@@ -101,7 +101,7 @@ export function triggerJPGDownload(svgStr: string, filename: string, width = 820
   img.src = url;
 }
 
-// Renders SVG to a JPG Blob — used by the ZIP download
+// Renders SVG to a JPG Blob; used by the ZIP download
 export function buildJPGBlob(svgStr: string, width = 820, height = 340): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });

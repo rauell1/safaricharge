@@ -350,7 +350,7 @@ export async function POST(request: NextRequest) {
     let totalDataPoints: number;
 
     if (preAggregated) {
-      // Client already aggregated the data — use the compact payload directly.
+      // Client already aggregated the data; use the compact payload directly.
       totalSolar = body.totalSolar ?? 0;
       totalGridImport = body.totalGridImport ?? 0;
       totalGridExport = body.totalGridExport ?? 0;
@@ -459,8 +459,8 @@ export async function POST(request: NextRequest) {
     const recommendations: string[] = [];
     if (selfSufficiency < 60) recommendations.push(`Consider expanding battery capacity to increase self-sufficiency beyond 60%. Current rate of ${selfSufficiency.toFixed(0)}% indicates significant grid dependency.`);
     if (solarSelfConsumptionRate < 80) recommendations.push(`Solar self-consumption rate of ${solarSelfConsumptionRate.toFixed(0)}% suggests excess generation. Explore feed-in tariff agreements with KPLC or additional EV charging capacity to utilise surplus.`);
-    if (avgBattery < 40) recommendations.push(`Average battery state-of-charge of ${avgBattery.toFixed(0)}% is below optimal. Review charge scheduling to maintain 40–80% SoC range for LiFePO4 longevity.`);
-    if (totalGridImport > totalSolar * 0.3) recommendations.push(`Grid import represents ${((totalGridImport / totalSolar) * 100).toFixed(0)}% of solar generation. Shifting controllable loads to solar-peak hours (10:00–16:00) can reduce grid dependency.`);
+    if (avgBattery < 40) recommendations.push(`Average battery state-of-charge of ${avgBattery.toFixed(0)}% is below optimal. Review charge scheduling to maintain 40-80% SoC range for LiFePO4 longevity.`);
+    if (totalGridImport > totalSolar * 0.3) recommendations.push(`Grid import represents ${((totalGridImport / totalSolar) * 100).toFixed(0)}% of solar generation. Shifting controllable loads to solar-peak hours (10:00-16:00) can reduce grid dependency.`);
     if (totalEV1 + totalEV2 < totalSolar * 0.2) recommendations.push(`EV charging utilises only ${(((totalEV1 + totalEV2) / totalSolar) * 100).toFixed(0)}% of solar generation. Smart V2G scheduling during peak hours can maximise tariff savings.`);
     if (roiPct > 15) recommendations.push(`Strong ROI of ${roiPct.toFixed(1)}% p.a. validates system economics. Consider phased expansion with an additional 30 kWp array and 40 kWh battery to serve additional fleet vehicles.`);
     if (recommendations.length === 0) recommendations.push('System is performing optimally. Maintain current operational parameters and schedule quarterly maintenance inspections for PV array cleaning and battery health checks.');
@@ -471,7 +471,7 @@ export async function POST(request: NextRequest) {
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>SafariCharge Ltd — Energy Performance Report</title>
+<title>SafariCharge Ltd - Energy Performance Report</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
   @page {
@@ -622,7 +622,7 @@ export async function POST(request: NextRequest) {
   <div class="report-meta">
     <strong>ENERGY PERFORMANCE REPORT</strong>
     <div>Prepared: ${reportDate}</div>
-    <div>Period: ${dateFrom} — ${dateTo}</div>
+    <div>Period: ${dateFrom} - ${dateTo}</div>
     <div class="ref">Ref: ${reportRefId}</div>
     <div style="margin-top:5px;">
       <span class="status-ok">✓ System Active</span>
@@ -656,7 +656,7 @@ export async function POST(request: NextRequest) {
     annualised saving of <strong>KES ${annualisedSavings.toLocaleString('en-KE', { maximumFractionDigits: 0 })}</strong>.
     The 60 kWh LiFePO4 battery maintained an average state-of-charge of <strong>${avgBattery.toFixed(0)}%</strong>,
     supporting both peak shaving and EV overnight charging. Carbon emissions avoided stand at
-    <strong>${co2Avoided.toFixed(1)} kg CO₂</strong> — equivalent to planting <strong>${(co2Avoided / 21.77).toFixed(0)} trees</strong>.
+    <strong>${co2Avoided.toFixed(1)} kg CO₂</strong> (equivalent to planting <strong>${(co2Avoided / 21.77).toFixed(0)} trees</strong>).
     Based on an estimated system cost of <strong>KES ${(estimatedSystemCost / 1_000_000).toFixed(1)}M</strong>, the
     projected simple payback period is <strong>${simplePaybackYears.toFixed(1)} years</strong> with an annualised ROI of
     <strong>${roiPct.toFixed(1)}%</strong>, making this a compelling investment for EV fleet operators and property owners alike.
@@ -751,7 +751,7 @@ export async function POST(request: NextRequest) {
   <div class="chart-wrap">
     <div class="chart-title">Daily Savings Trend (KES)</div>
     ${savingsTrendChart}
-    <p class="chart-note">Savings calculated using KPLC Commercial E-Mobility tariff (Feb 2026 rates) — peak KES 24.83/kWh, off-peak KES 15.09/kWh</p>
+    <p class="chart-note">Savings calculated using KPLC Commercial E-Mobility tariff (Feb 2026 rates): peak KES 24.83/kWh, off-peak KES 15.09/kWh</p>
   </div>
 
   <table>
@@ -783,7 +783,7 @@ export async function POST(request: NextRequest) {
   <div class="chart-wrap">
     <div class="chart-title">Average Daily Battery State-of-Charge (%)</div>
     ${batterySoCChart}
-    <p class="chart-note">LiFePO4 chemistry · 60 kWh capacity · Optimal range: 20–95% SoC for longevity</p>
+    <p class="chart-note">LiFePO4 chemistry · 60 kWh capacity · Optimal range: 20-95% SoC for longevity</p>
   </div>
 
   <table>
@@ -812,7 +812,7 @@ export async function POST(request: NextRequest) {
   </div>
 
   <div class="chart-wrap">
-    <div class="chart-title">Daily EV Energy Consumed (kWh) — EV#1 (Commuter) &amp; EV#2 (Uber Fleet)</div>
+    <div class="chart-title">Daily EV Energy Consumed (kWh): EV#1 (Commuter) and EV#2 (Uber Fleet)</div>
     ${evChargingChart}
     <p class="chart-note">■ Blue = EV #1 Commuter (80 kWh) &nbsp;■ Purple = EV #2 Uber (118 kWh)</p>
   </div>
@@ -895,8 +895,8 @@ export async function POST(request: NextRequest) {
     for tropical hardwood species. Vehicle emissions are modelled on the average petrol passenger car at <strong>0.21 kgCO₂/km</strong>
     (UNEP 2023). Coal offset uses a conversion factor of <strong>12 kgCO₂/kg coal</strong>.
     Over the simulation period of ${uniqueDays} days, the SafariCharge system has displaced
-    <strong>${(co2Avoided / uniqueDays).toFixed(2)} kgCO₂/day</strong> on average — equivalent to an annualised
-    avoidance of <strong>${((co2Avoided / uniqueDays) * 365).toFixed(0)} kgCO₂/year</strong>.
+    <strong>${(co2Avoided / uniqueDays).toFixed(2)} kgCO₂/day</strong> on average (equivalent to an annualised
+    avoidance of <strong>${((co2Avoided / uniqueDays) * 365).toFixed(0)} kgCO₂/year</strong>).
   </p>
 </div>
 
@@ -986,7 +986,7 @@ export async function POST(request: NextRequest) {
 <div class="section pb-before">
   <div class="section-hdr" style="--c:#334155;">
     <div class="num">A</div>
-    <h3>Appendix — Detailed Metrics Summary</h3>
+    <h3>Appendix: Detailed Metrics Summary</h3>
   </div>
 
   <table>
@@ -1033,7 +1033,7 @@ export async function POST(request: NextRequest) {
   <div class="left">
     <strong>SafariCharge Ltd</strong><br/>
     Nairobi, Kenya &nbsp;|&nbsp; www.safaricharge.co.ke &nbsp;|&nbsp; info@safaricharge.co.ke<br/>
-    <em style="font-size:7.5pt;">Confidential — Prepared for investor and management use only. Not for public distribution.</em>
+    <em style="font-size:7.5pt;">Confidential: Prepared for investor and management use only. Not for public distribution.</em>
   </div>
   <div class="right">
     Report Date: ${reportDate}<br/>

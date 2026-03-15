@@ -9,13 +9,13 @@ const SOLAR_KNOWLEDGE = `
 • Thin-film panels: ~10-13% efficiency.
 
 === NAIROBI SOLAR CONDITIONS ===
-• Peak Sun Hours: 5.5–6.5 hours/day
+• Peak Sun Hours: 5.5-6.5 hours/day
 • Global Horizontal Irradiance: ~2,000 kWh/m²/year
-• Dust can reduce output 2–8% if panels aren't cleaned.
+• Dust can reduce output 2-8% if panels aren't cleaned.
 
 === BATTERY STORAGE ===
-• LiFePO4 batteries: 3000–6000 cycles
-• Optimal SoC range: 20–90%
+• LiFePO4 batteries: 3000-6000 cycles
+• Optimal SoC range: 20-90%
 • Round trip efficiency: ~95%
 
 === GRID & TARIFFS ===
@@ -24,9 +24,9 @@ const SOLAR_KNOWLEDGE = `
 • Solar + storage can reduce bills by 40-70% in Nairobi.
 
 === EV CHARGING ===
-• Level 2 AC charging ≈ 7–22 kW
-• DC fast charging ≈ 50–350 kW
-• EV charging efficiency ≈ 90–93%
+• Level 2 AC charging ≈ 7-22 kW
+• DC fast charging ≈ 50-350 kW
+• EV charging efficiency ≈ 90-93%
 `;
 
 interface Message {
@@ -133,17 +133,18 @@ Respond clearly with actionable insights.
         }
       };
 
-      // Use v1beta which fully supports system_instruction for all current models.
+      // Prefer current stable models; fall back to older IDs if the key has limited access
       const models = [
-        "gemini-2.0-flash",
+        "gemini-2.5-flash",
+        "gemini-2.5-flash-lite",
         "gemini-1.5-flash",
-        "gemini-1.5-flash-latest"
+        "gemini-1.5-pro",
+        "gemini-2.0-flash"
       ];
 
+      let lastGeminiError: string | null = null;
+
       for (const model of models) {
-        // Per-request 10-second timeout so one slow/failed Gemini call does not
-        // block the response indefinitely (important when multiple users are
-        // hitting the AI endpoint concurrently).
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10_000);
 
@@ -169,19 +170,37 @@ Respond clearly with actionable insights.
 
           const errText = await res.text();
           console.error(`Gemini ${model} error (${res.status}):`, errText);
+
+          try {
+            const errJson = JSON.parse(errText) as { error?: { message?: string; status?: string } };
+            const msg = errJson?.error?.message ?? errText.slice(0, 120);
+            if (msg.includes("API key") || msg.includes("invalid") || msg.includes("403")) lastGeminiError = "API key invalid or not enabled. Check https://aistudio.google.com/apikey";
+            else if (msg.includes("429") || msg.includes("quota") || msg.includes("Resource has been exhausted")) lastGeminiError = "Quota exceeded. Try again later or check your Google Cloud quota.";
+            else if (msg.includes("404") || msg.includes("not found")) lastGeminiError = "Model unavailable. Try again later.";
+            else lastGeminiError = msg;
+          } catch {
+            lastGeminiError = res.status === 403 ? "API key invalid or not enabled." : res.status === 429 ? "Quota exceeded." : `Gemini returned ${res.status}.`;
+          }
         } catch (fetchErr: unknown) {
           const isAbort = fetchErr instanceof Error && fetchErr.name === 'AbortError';
           console.error(`Gemini ${model} ${isAbort ? 'timed out' : 'fetch error'}:`, fetchErr);
+          lastGeminiError = isAbort ? "Request timed out. Try again." : "Network or server error. Try again.";
         } finally {
           clearTimeout(timeoutId);
         }
       }
+
+      if (lastGeminiError) {
+        return NextResponse.json(
+          { error: `AI service unavailable. ${lastGeminiError} See https://aistudio.google.com/apikey` },
+          { status: 502 }
+        );
+      }
     }
 
-    // --- Fall back to Z.AI SDK ---
+    // --- Fall back to Z.AI SDK (typically works in browser; may fail in server context) ---
     try {
       const zai = await ZAI.create();
-      // Build messages including conversation history for context continuity.
       const zaiHistory = conversationHistory.slice(-12).map(msg => ({
         role: msg.role as 'user' | 'assistant',
         content: msg.content
@@ -199,8 +218,12 @@ Respond clearly with actionable insights.
       console.error("Z.AI fallback error:", zaiError);
     }
 
+    // No provider succeeded: return a clear message so the user can fix config
+    const hint = !geminiKey
+      ? " Add GEMINI_API_KEY to your .env file (see .env.example) to enable SafariCharge AI."
+      : " Check that GEMINI_API_KEY is valid and has quota at https://aistudio.google.com/apikey.";
     return NextResponse.json(
-      { error: "AI service unavailable." },
+      { error: `AI service unavailable.${hint}` },
       { status: 502 }
     );
 

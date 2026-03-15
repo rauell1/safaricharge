@@ -9,12 +9,12 @@ Built using a modern full-stack JavaScript architecture, the dashboard is design
 
 # 🚀 Key Features
 
-* 📊 **Solar Data Visualization** – Interactive charts and tables for monitoring system performance
-* 📁 **File Upload & Download Management** – Store and retrieve solar monitoring data
-* 🗄️ **Database Integration** – Structured data storage using Prisma ORM
-* ⚡ **Modern Dashboard UI** – Built with Tailwind CSS and reusable UI components
-* 📱 **Responsive Design** – Works across desktop, tablet, and mobile devices
-* 🔄 **Scalable Architecture** – Built using Next.js App Router for modern web applications
+* 📊 **Solar Data Visualization** - Interactive charts and tables for monitoring system performance
+* 📁 **File Upload & Download Management** - Store and retrieve solar monitoring data
+* 🗄️ **Database Integration** - Structured data storage using Prisma ORM
+* ⚡ **Modern Dashboard UI** - Built with Tailwind CSS and reusable UI components
+* 📱 **Responsive Design** - Works across desktop, tablet, and mobile devices
+* 🔄 **Scalable Architecture** - Built using Next.js App Router for modern web applications
 
 ---
 
@@ -22,30 +22,30 @@ Built using a modern full-stack JavaScript architecture, the dashboard is design
 
 ## Core Framework
 
-* **Next.js** – Production-ready React framework with App Router
-* **TypeScript** – Type-safe JavaScript for improved maintainability
-* **Node.js** – Runtime environment
+* **Next.js** - Production-ready React framework with App Router
+* **TypeScript** - Type-safe JavaScript for improved maintainability
+* **Node.js** - Runtime environment
 
 ## UI & Frontend
 
-* **Tailwind CSS** – Utility-first styling framework
-* **shadcn/ui** – Accessible, reusable component library
-* **Lucide React** – Modern icon library
-* **Framer Motion** – Smooth animations and transitions
+* **Tailwind CSS** - Utility-first styling framework
+* **shadcn/ui** - Accessible, reusable component library
+* **Lucide React** - Modern icon library
+* **Framer Motion** - Smooth animations and transitions
 
 ## State Management & Data Fetching
 
-* **Zustand** – Lightweight global state management
-* **TanStack Query** – Efficient server state synchronization
+* **Zustand** - Lightweight global state management
+* **TanStack Query** - Efficient server state synchronization
 
 ## Data & Backend
 
-* **Prisma ORM** – Type-safe database access
-* **SQLite / Configurable Database** – Local or remote database via Prisma
+* **Prisma ORM** - Type-safe database access
+* **SQLite / Configurable Database** - Local or remote database via Prisma
 
 ## Data Visualization
 
-* **Recharts** – Interactive charts and dashboards
+* **Recharts** - Interactive charts and dashboards
 
 ---
 
@@ -110,7 +110,7 @@ Then open `.env` and populate the required variables:
 | `DATABASE_URL` | ✅ Yes | Prisma database connection string, e.g. `file:./dev.db` |
 | `GEMINI_API_KEY` | ⚠️ Optional | Google Gemini API key for the AI assistant. Obtain one at <https://aistudio.google.com/apikey>. Without it the app falls back to the built-in Z.AI SDK automatically. |
 
-> **Gemini troubleshooting** – If the AI assistant returns errors even after setting `GEMINI_API_KEY`:
+> **Gemini troubleshooting**: If the AI assistant returns errors even after setting `GEMINI_API_KEY`:
 > 1. Make sure the key is in **`.env`** (not `.env.local` or another file) and that the server has been **restarted** after the change.
 > 2. Verify the key is active at <https://aistudio.google.com/apikey>.
 > 3. The app tries `gemini-2.0-flash` → `gemini-1.5-flash` → `gemini-1.5-flash-latest` on the `v1beta` endpoint in order. If all three fail the Z.AI SDK takes over automatically.
@@ -212,7 +212,7 @@ These will be created automatically during development.
 
 ---
 
-# ⚡ Simulation Design — 420 Data Points Per Day
+# ⚡ Simulation Design: 420 Data Points Per Day
 
 The physics simulation uses a fixed time step of **24 h ÷ 420 = ~3.43 minutes** per sample.  
 This gives exactly **420 data points per simulated day** for every simulation speed:
@@ -225,7 +225,7 @@ This gives exactly **420 data points per simulated day** for every simulation sp
 | x100 | 100 | ~4 |
 | x1000 | 420 | 1 |
 
-The simulation always starts at **midnight (00:00)** so that every simulated day — including the very first one — is a complete 24-hour cycle.  
+The simulation always starts at **midnight (00:00)** so that every simulated day (including the very first one) is a complete 24-hour cycle.  
 Report generation and energy calculations use the same `24/420` constant, keeping kWh totals consistent regardless of the speed chosen.
 
 ---
