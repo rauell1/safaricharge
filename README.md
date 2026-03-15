@@ -72,13 +72,13 @@ npm -v
 ## 1. Clone the Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/YOUR_REPOSITORY_NAME.git
+git clone https://github.com/rauell1/Personal-Projects.git
 ```
 
 Navigate to the project folder:
 
 ```bash
-cd dashboard
+cd Personal-Projects/SafariCharge/dashboard
 ```
 
 ---
