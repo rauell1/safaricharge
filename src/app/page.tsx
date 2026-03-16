@@ -7,9 +7,10 @@ import {
   Sparkles, Loader2, Sliders, Play, Pause, FastForward, ChevronDown, 
   ChevronUp, MapPin, Table, FileText, PieChart, Settings, Calendar, 
   CloudRain, Moon, Download, RotateCcw, AlertTriangle, DollarSign,
-  Cpu, Car, ZapOff, FileSpreadsheet
+  Cpu, Car, ZapOff, FileSpreadsheet, ExternalLink
 } from 'lucide-react';
 import DailyEnergyGraph, { type GraphDataPoint, buildGraphSVG, triggerJPGDownload, buildJPGBlob } from '@/components/DailyEnergyGraph';
+import PortfolioProjects from '@/components/PortfolioProjects';
 
 // --- CONFIGURATION - Kenya Power Commercial Tariff (E-Mobility) ---
 // Based on actual KPLC bill for ROAM ELECTRIC LIMITED - February 2026
@@ -1338,6 +1339,14 @@ const Header = ({ onToggleAssistant, currentDate, onReset }: {
       </div>
       <div className="flex items-center gap-6">
          <button onClick={onReset} className="text-slate-400 hover:text-red-500 transition-colors" title="Reset Simulation"><RotateCcw size={16} /></button>
+         <a
+           href="https://v0-personal-projects-lac.vercel.app"
+           target="_blank"
+           rel="noopener noreferrer"
+           className="hidden md:flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-sky-600 bg-slate-100 hover:bg-sky-50 border border-transparent hover:border-sky-200 px-3 py-1.5 rounded-full transition-colors"
+         >
+           <ExternalLink size={12} /> Portfolio
+         </a>
          <div className="hidden md:flex items-center gap-2 text-slate-500 text-xs font-medium bg-slate-100 px-3 py-1 rounded-full">
             <Calendar size={14} className="text-slate-400" /> {formatDate(currentDate)}
          </div>
@@ -2382,6 +2391,8 @@ export default function App() {
             </div>
           </div>
         )}
+        {/* Portfolio Projects: linked from the personal portfolio */}
+        <PortfolioProjects />
       </main>
       
       <div className="fixed bottom-2 right-4 text-[9px] text-slate-400 font-mono">
