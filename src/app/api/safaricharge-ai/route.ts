@@ -57,13 +57,34 @@ interface SystemContext {
   simRunning: boolean;
 }
 
+// Maximum allowed request body size (32 KB) – prevents oversized payloads
+// from exhausting server memory when many users are active concurrently.
+const MAX_BODY_BYTES = 32 * 1024;
+
 export async function POST(request: NextRequest) {
+  // Reject requests that are clearly too large before reading the body.
+  const contentLength = request.headers.get('content-length');
+  if (contentLength && parseInt(contentLength, 10) > MAX_BODY_BYTES) {
+    return NextResponse.json(
+      { error: 'Request body too large.' },
+      { status: 413 }
+    );
+  }
+
   try {
     const { userPrompt, conversationHistory, systemContext } = await request.json() as {
       userPrompt: string;
       conversationHistory: Message[];
       systemContext: SystemContext;
     };
+
+    // Basic input validation.
+    if (!userPrompt || typeof userPrompt !== 'string' || userPrompt.trim().length === 0) {
+      return NextResponse.json({ error: 'userPrompt is required.' }, { status: 400 });
+    }
+    if (userPrompt.length > 2000) {
+      return NextResponse.json({ error: 'userPrompt exceeds the 2000-character limit.' }, { status: 400 });
+    }
 
     const systemInstruction = `
 You are SafariCharge AI, an intelligent solar and EV energy advisor for a charging facility in Nairobi.
