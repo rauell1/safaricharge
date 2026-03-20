@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Enable gzip/brotli compression to reduce bandwidth under heavy traffic.
+  compress: true,
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -15,6 +17,28 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Immutable cache for hashed static assets – browsers never re-fetch
+        // these under high traffic, dramatically reducing origin requests.
+        source: "/_next/static/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        // Cache public static files (images, icons, robots.txt, etc.).
+        source: "/public/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=3600",
+          },
+        ],
+      },
+      {
+        // Security headers for all routes.
         source: "/(.*)",
         headers: [
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
@@ -37,8 +61,11 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // API routes must not be cached by shared proxies; each response is
+        // user-specific or dynamically generated.
         source: "/api/(.*)",
         headers: [
+          { key: "Cache-Control", value: "no-store" },
           { key: "Access-Control-Allow-Origin", value: "same-origin" },
           { key: "Access-Control-Allow-Methods", value: "GET,POST,OPTIONS" },
           { key: "Access-Control-Allow-Headers", value: "Content-Type" },
