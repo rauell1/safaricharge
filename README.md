@@ -1,159 +1,135 @@
 # SafariCharge Solar Dashboard
 
-A production-grade web dashboard for monitoring, managing, and simulating solar energy systems, battery storage, and EV charging at a commercial facility in Nairobi, Kenya.
+Production-grade Next.js dashboard for simulating and monitoring solar PV, battery storage, and EV charging performance for a Nairobi commercial site.
 
-**Live demo:** https://sc-solar-dashboard.vercel.app/
+## Overview
+- Real-time simulation of PV + battery + dual EV chargers with tariff-aware optimisation.
+- CSV/HTML report generation with sanitised exports to avoid spreadsheet injection.
+- AI advisor endpoint with Gemini-first, Z.AI fallback and strict payload validation.
+- In-memory rate limiting, CORS allowlist, bearer-token auth, optional RBAC, and webhook signature checks on all API routes.
+- Environment validation at startup and health endpoint for liveness probes.
 
----
-
-## Features
-
-- **Real-time solar simulation** – physics-based PV generation model with seasonal variation, temperature derating, soiling losses, and weather effects
-- **Battery storage management** – LiFePO4 charge/discharge optimisation, health tracking, and cycle counting
-- **EV charging optimisation** – two-vehicle support with time-of-use tariff awareness and V2G capability
-- **Kenya Power (KPLC) tariff engine** – full Commercial E-Mobility tariff including fuel, forex, inflation levies, and VAT
-- **AI energy advisor** – SafariCharge AI powered by Google Gemini (falls back to Z.AI)
-- **Report generation** – HTML/SVG formal reports and multi-period CSV exports
-- **Rate limiting** – per-IP sliding-window protection on all API endpoints
-
----
-
-## Tech stack
-
+## Tech Stack
 | Layer | Technology |
-|---|---|
+| --- | --- |
 | Framework | Next.js 16 (App Router) + TypeScript |
 | UI | Tailwind CSS 4 + shadcn/ui + Recharts |
-| State | Zustand + TanStack React Query |
-| Database | Prisma + SQLite (dev) / PostgreSQL (prod) |
-| AI | Google Gemini API + Z.AI SDK fallback |
-| Auth | next-auth |
-| Deployment | Vercel / standalone Node.js + Caddy |
+| State/Data | Zustand + TanStack Query |
+| Backend | Next server routes + Prisma (SQLite dev / Postgres prod) |
+| Auth/Security | Bearer token + optional RBAC header + rate limiting + HMAC |
+| AI | Google Gemini API (primary) + Z.AI SDK (fallback) |
 
----
-
-## Folder structure
-
+## Folder Structure
+Current (selected)
 ```
 src/
-├── app/
-│   ├── api/
-│   │   ├── health/          # GET  – liveness probe
-│   │   ├── safaricharge-ai/ # POST – AI energy advisor
-│   │   ├── formal-report/   # POST – HTML/SVG report generation
-│   │   └── export-report/   # POST – CSV data export
-│   ├── layout.tsx
-│   ├── page.tsx             # Main dashboard + simulation engine
-│   └── globals.css
-├── components/
-│   ├── DailyEnergyGraph.tsx
-│   └── ui/                  # shadcn/ui primitives
-├── hooks/
-│   ├── use-mobile.ts
-│   └── use-toast.ts
-├── lib/
-│   ├── config.ts            # System constants & tariff parameters
-│   ├── db.ts                # Prisma client singleton
-│   ├── utils.ts
-│   └── validateEnv.ts       # Startup environment validation
-├── instrumentation.ts       # Next.js startup hook
-└── middleware.ts            # Rate limiting
+├── app/               # Routes, layouts, API handlers
+├── components/        # UI primitives + charts
+├── hooks/             # Reusable client hooks
+├── lib/               # Config, db client, env validation, security helpers
+└── middleware.ts      # Rate limiting
 ```
 
----
+Proposed feature-based layout (before → after)
+```
+src/
+├── app/                          # Routing shell only
+├── features/
+│   ├── simulation/
+│   │   ├── components/           # Graphs, controls
+│   │   ├── services/             # Physics engine, tariff logic
+│   │   ├── hooks/                # Simulation state
+│   │   ├── utils/                # Math helpers, constants
+│   │   └── types/
+│   ├── ai/
+│   │   ├── services/             # Gemini/Z.AI clients
+│   │   ├── utils/                # Prompt builders, validation
+│   │   └── types/
+│   ├── reports/
+│   │   ├── services/             # CSV/HTML rendering, aggregation
+│   │   ├── utils/                # Sanitizers, formatters
+│   │   └── types/
+│   └── security/
+│       ├── services/             # CORS, auth, RBAC, signatures
+│       └── types/
+└── lib/                          # Cross-cutting helpers (db, env, config)
+```
 
-## Environment variables
-
-Copy `.env.example` to `.env` and fill in the values:
-
-| Variable | Required | Description |
-|---|---|---|
-| `DATABASE_URL` | Yes | Prisma connection string. Use `file:./dev.db` for SQLite (development) or a PostgreSQL URL for production. |
-| `GEMINI_API_KEY` | Optional | Google Gemini API key. Get one at https://aistudio.google.com/apikey. SafariCharge AI falls back to the Z.AI SDK if this is absent. |
-| `NEXT_TELEMETRY_DISABLED` | Optional | Set to `1` to disable Next.js anonymous telemetry. |
-
-The server validates required variables at startup via `src/instrumentation.ts` and exits with a clear error message if any are missing.
-
----
-
-## Run locally
-
+## Getting Started
+1) Install dependencies  
 ```bash
-# 1. Install dependencies
 npm install
-
-# 2. Configure environment
-cp .env.example .env
-# Edit .env and set DATABASE_URL (and optionally GEMINI_API_KEY)
-
-# 3. Set up the database
-npm run db:push
-
-# 4. Start the dev server
-npm run dev
 ```
 
-Open http://localhost:3000
+2) Configure environment  
+```bash
+cp .env.example .env
+# set DATABASE_URL, GEMINI_API_KEY (optional), and security envs below
+```
 
----
+3) Initialise database  
+```bash
+npm run db:push
+```
 
-## Available scripts
+4) Run locally  
+```bash
+npm run dev
+# http://localhost:3000
+```
 
-| Script | Description |
-|---|---|
-| `npm run dev` | Start Next.js development server on port 3000 |
-| `npm run build` | Production build (standalone output) |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint |
-| `npm run db:push` | Apply Prisma schema to the database |
-| `npm run db:generate` | Regenerate Prisma client |
-| `npm run db:migrate` | Run database migrations |
+## Environment Variables
+| Name | Required | Description |
+| --- | --- | --- |
+| `DATABASE_URL` | Yes | Prisma connection string (`file:./dev.db` for SQLite dev; PostgreSQL for prod). |
+| `GEMINI_API_KEY` | Recommended | Google Gemini key for the AI endpoint. |
+| `API_SERVICE_TOKEN` | Recommended | Bearer token required by API routes (`Authorization: Bearer <token>`). |
+| `WEBHOOK_SECRET` | Optional | HMAC secret for verifying `X-SC-Signature` on POST bodies. |
+| `API_ALLOWED_ORIGINS` | Optional | Comma-separated origins allowed for CORS (default: prod + localhost). |
+| `ENABLE_RBAC` | Optional | `true` to enforce `x-sc-role` header roles (`viewer|operator|analyst|admin`). |
+| `API_ROLE_HEADER` | Optional | Override role header name (default `x-sc-role`). |
+| `NEXT_TELEMETRY_DISABLED` | Optional | Set `1` to disable Next telemetry. |
 
----
+## Scripts
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start development server. |
+| `npm run build` | Production build (standalone output). |
+| `npm run start` | Run standalone server (uses Bun). |
+| `npm run lint` | ESLint with Next rules. |
+| `npm run db:push` | Apply Prisma schema. |
+| `npm run db:migrate` | Create a migration in dev. |
 
-## API endpoints
-
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/health` | Liveness probe – returns `{ status: "ok" }` |
-| POST | `/api/safaricharge-ai` | AI energy advisor (rate-limited: 10 req/min) |
-| POST | `/api/formal-report` | HTML/SVG formal report (rate-limited: 5 req/min) |
-| POST | `/api/export-report` | CSV data export (rate-limited: 5 req/min) |
-
----
+## Security Hardening
+- **Rate limiting**: in-memory sliding window on all API routes (`src/middleware.ts`).
+- **CORS**: allowlist with per-origin echo + OPTIONS handling in `src/lib/security.ts`.
+- **Authentication**: Bearer token enforcement when `API_SERVICE_TOKEN` is set.
+- **RBAC**: Optional `x-sc-role` header check when `ENABLE_RBAC=true`.
+- **Webhook signatures**: HMAC-SHA256 validation using `WEBHOOK_SECRET`.
+- **Input validation**: Zod schemas on AI, export, and formal-report endpoints; request size caps.
+- **Env validation**: `src/instrumentation.ts` calls `validateEnv` at startup.
+- **Error boundaries**: `src/app/error.tsx` catches client render failures.
+- **Sanitised exports**: CSV generation neutralises formula injection.
 
 ## Deployment
+### Vercel
+1. Connect repo to Vercel.  
+2. Set env vars (`DATABASE_URL`, `GEMINI_API_KEY`, `API_SERVICE_TOKEN`, `WEBHOOK_SECRET`, `API_ALLOWED_ORIGINS`).  
+3. Deploy – Next standalone output is produced by the build script.
 
-### Vercel (recommended)
-
-1. Connect the repository to a Vercel project
-2. Set environment variables in the Vercel dashboard (`DATABASE_URL`, `GEMINI_API_KEY`)
-3. Deploy – Vercel handles builds automatically on every push
-
-### Self-hosted (standalone + Caddy)
-
+### Self-hosted
 ```bash
-# Build
 npm run build
-
-# Start (uses bun; requires DATABASE_URL in environment)
-npm run start
+npm run start  # requires Bun and env vars above
 ```
+Use `Caddyfile.txt` as a reverse-proxy template (TLS + compression).
 
-Use `Caddyfile.txt` as a starting point for the Caddy reverse-proxy configuration.
+## Operations
+- Health check: `GET /api/health`.
+- Logs: `npm run start` pipes to `server.log` via Bun.
+- Scaling tips:
+  - Enable a shared rate-limit store (Redis) for multi-instance deployments.
+  - Use Postgres in production with connection pooling.
+  - Keep `API_ALLOWED_ORIGINS` narrow and enforce bearer tokens for server-to-server calls.
+  - Prefer background jobs/queues for heavy tasks (report generation, notifications).
 
----
-
-## Security
-
-- Rate limiting on all API routes (in-memory; replace with Upstash Redis for multi-instance deployments)
-- Security headers on every response (CSP, X-Frame-Options, etc.)
-- API keys are server-side only – never exposed to the browser
-- CSV export sanitises cell values to prevent spreadsheet formula injection
-- Environment variable validation prevents silent misconfiguration
-
----
-
-## License
-
-Intended for research, development, and renewable energy monitoring applications.

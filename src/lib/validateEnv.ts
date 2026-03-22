@@ -28,6 +28,26 @@ const ENV_SPECS: EnvSpec[] = [
     required: false,
     description: 'Google Gemini API key – SafariCharge AI will fall back to Z.AI SDK when absent',
   },
+  {
+    name: 'API_SERVICE_TOKEN',
+    required: false,
+    description: 'Shared bearer token for protected API routes (recommended for server-to-server calls)',
+  },
+  {
+    name: 'WEBHOOK_SECRET',
+    required: false,
+    description: 'HMAC secret for validating incoming webhook-style requests',
+  },
+  {
+    name: 'API_ALLOWED_ORIGINS',
+    required: false,
+    description: 'Comma-separated list of origins permitted to call API routes',
+  },
+  {
+    name: 'ENABLE_RBAC',
+    required: false,
+    description: 'Set to true to enforce role-based access control via the x-sc-role header',
+  },
 ];
 
 export function validateEnv(): void {

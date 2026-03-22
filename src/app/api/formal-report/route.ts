@@ -1,4 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import {
+  buildCorsHeaders,
+  enforceBodySize,
+  enforceRbac,
+  enforceServiceAuth,
+  jsonResponse,
+  readJsonWithRaw,
+  verifyRequestSignature,
+} from '@/lib/security';
 
 interface MinuteData {
   date: string;
@@ -41,6 +51,36 @@ interface DailyAgg {
   avgBattery: number;
   batteryCount: number;
 }
+
+const FORMAL_REPORT_MAX_BYTES = 8 * 1024 * 1024;
+
+const minuteDataSchema = z.object({
+  date: z.string(),
+  year: z.number(),
+  month: z.number(),
+  week: z.number(),
+  hour: z.number(),
+  minute: z.number().optional(),
+  solarKW: z.number(),
+  homeLoadKW: z.number(),
+  ev1LoadKW: z.number(),
+  ev2LoadKW: z.number(),
+  batteryPowerKW: z.number(),
+  batteryLevelPct: z.number(),
+  gridImportKW: z.number(),
+  gridExportKW: z.number(),
+  ev1SocPct: z.number(),
+  ev2SocPct: z.number(),
+  tariffRate: z.number(),
+  isPeakTime: z.boolean(),
+  savingsKES: z.number(),
+  solarEnergyKWh: z.number(),
+  gridImportKWh: z.number(),
+  gridExportKWh: z.number(),
+  homeLoadKWh: z.number().optional(),
+  ev1LoadKWh: z.number().optional(),
+  ev2LoadKWh: z.number().optional(),
+});
 
 function aggregateDaily(data: MinuteData[]): DailyAgg[] {
   const map = new Map<string, DailyAgg>();
@@ -332,12 +372,36 @@ const LOGO_SVG = `<svg viewBox="0 0 100 100" width="56" height="56" xmlns="http:
 </svg>`;
 
 export async function POST(request: NextRequest) {
+  const { preflight, headers } = buildCorsHeaders(request, { methods: ['POST', 'OPTIONS'] });
+  if (preflight) return preflight;
+
+  const sizeError = enforceBodySize(request, FORMAL_REPORT_MAX_BYTES, headers);
+  if (sizeError) return sizeError;
+
+  const authError = enforceServiceAuth(request, headers);
+  if (authError) return authError;
+
+  const rbacError = enforceRbac(request, headers, ['analyst', 'admin']);
+  if (rbacError) return rbacError;
+
+  let parsed: { raw: Buffer; data: unknown };
   try {
-    const body = await request.json();
+    parsed = await readJsonWithRaw<unknown>(request);
+  } catch {
+    return jsonResponse({ error: 'Invalid JSON payload.' }, { status: 400, headers });
+  }
+
+  const signatureError = verifyRequestSignature(request, parsed.raw, headers);
+  if (signatureError) return signatureError;
+
+  const body = parsed.data as Record<string, unknown>;
+
+  try {
 
     // Support pre-aggregated payloads (sent by the client to avoid exceeding
     // Vercel's 4.5 MB body size limit) as well as legacy full minuteData payloads.
-    const preAggregated = body.preAggregated === true;
+    const payload: any = body;
+    const preAggregated = payload.preAggregated === true;
 
     let totalSolar: number, totalGridImport: number, totalGridExport: number, totalSavings: number;
     let totalHomeLoad: number, totalEV1: number, totalEV2: number;
@@ -351,41 +415,53 @@ export async function POST(request: NextRequest) {
 
     if (preAggregated) {
       // Client already aggregated the data; use the compact payload directly.
-      totalSolar = body.totalSolar ?? 0;
-      totalGridImport = body.totalGridImport ?? 0;
-      totalGridExport = body.totalGridExport ?? 0;
-      totalSavings = body.totalSavings ?? 0;
-      totalHomeLoad = body.totalHomeLoad ?? 0;
-      totalEV1 = body.totalEV1 ?? 0;
-      totalEV2 = body.totalEV2 ?? 0;
-      peakSolar = body.peakSolar ?? 0;
-      peakGridImport = body.peakGridImport ?? 0;
-      avgBattery = body.avgBattery ?? 0;
-      peakInstantSolar = body.peakInstantSolar ?? 0;
-      peakEVLoad = body.peakEVLoad ?? 0;
-      dailyAgg = (body.dailyAgg ?? []) as DailyAgg[];
+      totalSolar = payload.totalSolar ?? 0;
+      totalGridImport = payload.totalGridImport ?? 0;
+      totalGridExport = payload.totalGridExport ?? 0;
+      totalSavings = payload.totalSavings ?? 0;
+      totalHomeLoad = payload.totalHomeLoad ?? 0;
+      totalEV1 = payload.totalEV1 ?? 0;
+      totalEV2 = payload.totalEV2 ?? 0;
+      peakSolar = payload.peakSolar ?? 0;
+      peakGridImport = payload.peakGridImport ?? 0;
+      avgBattery = payload.avgBattery ?? 0;
+      peakInstantSolar = payload.peakInstantSolar ?? 0;
+      peakEVLoad = payload.peakEVLoad ?? 0;
+      dailyAgg = (payload.dailyAgg ?? []) as DailyAgg[];
       uniqueDays = dailyAgg.length;
-      dateFrom = body.dateFrom ?? body.startDate ?? '';
-      dateTo = body.dateTo ?? body.startDate ?? '';
-      startDate = body.startDate ?? '';
-      reportDate = body.reportDate ?? '';
-      systemCostKES = body.systemCostKES;
-      totalDataPoints = body.totalDataPoints ?? 0;
+      dateFrom = payload.dateFrom ?? payload.startDate ?? '';
+      dateTo = payload.dateTo ?? payload.startDate ?? '';
+      startDate = payload.startDate ?? '';
+      reportDate = payload.reportDate ?? '';
+      systemCostKES = payload.systemCostKES;
+      totalDataPoints = payload.totalDataPoints ?? 0;
     } else {
       // Legacy path: full minuteData array.
-      const { minuteData } = body as { minuteData: MinuteData[] };
-      startDate = body.startDate ?? '';
-      reportDate = body.reportDate ?? '';
-      systemCostKES = body.systemCostKES;
+      const minuteDataCandidate = (payload as { minuteData?: MinuteData[] }).minuteData;
+      startDate = payload.startDate ?? '';
+      reportDate = payload.reportDate ?? '';
+      systemCostKES = payload.systemCostKES;
 
-      if (!minuteData || minuteData.length === 0) {
-        return NextResponse.json({ error: 'No simulation data available.' }, { status: 400 });
+      if (!minuteDataCandidate || minuteDataCandidate.length === 0) {
+        return jsonResponse({ error: 'No simulation data available.' }, { status: 400, headers });
       }
       const MAX_DATA_POINTS = 420 * 365 * 25;
+      const parsedMinuteData = z.array(minuteDataSchema).safeParse(minuteDataCandidate);
+      if (!parsedMinuteData.success) {
+        return jsonResponse(
+          { error: 'Invalid minuteData payload.', details: parsedMinuteData.error.flatten() },
+          { status: 400, headers }
+        );
+      }
+      const minuteData = parsedMinuteData.data;
+
       if (minuteData.length > MAX_DATA_POINTS) {
-        return NextResponse.json({
-          error: `Dataset too large (${minuteData.length.toLocaleString()} records). Maximum is ${MAX_DATA_POINTS.toLocaleString()} records (~25 years).`
-        }, { status: 413 });
+        return jsonResponse(
+          {
+            error: `Dataset too large (${minuteData.length.toLocaleString()} records). Maximum is ${MAX_DATA_POINTS.toLocaleString()} records (~25 years).`
+          },
+          { status: 413, headers }
+        );
       }
 
       totalDataPoints = minuteData.length;
@@ -1045,18 +1121,19 @@ export async function POST(request: NextRequest) {
 </body>
 </html>`;
 
+    const responseHeaders = new Headers(headers);
+    responseHeaders.set('Content-Type', 'text/html; charset=utf-8');
+    responseHeaders.set('Cache-Control', 'no-store');
+
     return new NextResponse(html, {
       status: 200,
-      headers: {
-        'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': 'no-store',
-      },
+      headers: responseHeaders,
     });
   } catch (error) {
     console.error('Formal report error:', error);
-    return NextResponse.json(
+    return jsonResponse(
       { error: 'Failed to generate report', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
+      { status: 500, headers }
     );
   }
 }

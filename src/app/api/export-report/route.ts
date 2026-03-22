@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { MAX_EXPORT_DATA_POINTS } from '@/lib/config';
+import {
+  buildCorsHeaders,
+  enforceBodySize,
+  enforceRbac,
+  enforceServiceAuth,
+  jsonResponse,
+  readJsonWithRaw,
+  verifyRequestSignature,
+} from '@/lib/security';
 
 /**
  * Sanitise a value before writing it into a CSV cell.
@@ -113,25 +123,97 @@ function aggregateData(
   }).sort((a, b) => a.period.localeCompare(b.period));
 }
 
+const EXPORT_MAX_BODY_BYTES = 8 * 1024 * 1024; // 8 MB hard cap to protect memory under load
+
+const minuteDataSchema = z.object({
+  timestamp: z.string(),
+  date: z.string(),
+  year: z.number(),
+  month: z.number(),
+  week: z.number(),
+  day: z.number(),
+  hour: z.number(),
+  minute: z.number(),
+  solarKW: z.number(),
+  homeLoadKW: z.number(),
+  ev1LoadKW: z.number(),
+  ev2LoadKW: z.number(),
+  batteryPowerKW: z.number(),
+  batteryLevelPct: z.number(),
+  gridImportKW: z.number(),
+  gridExportKW: z.number(),
+  ev1SocPct: z.number(),
+  ev2SocPct: z.number(),
+  tariffRate: z.number(),
+  isPeakTime: z.boolean(),
+  savingsKES: z.number(),
+  solarEnergyKWh: z.number(),
+  homeLoadKWh: z.number().optional(),
+  ev1LoadKWh: z.number().optional(),
+  ev2LoadKWh: z.number().optional(),
+  gridImportKWh: z.number(),
+  gridExportKWh: z.number(),
+});
+
+const graphDataPointSchema = z.object({
+  timeOfDay: z.number(),
+  solar: z.number(),
+  load: z.number(),
+  batSoc: z.number(),
+});
+
+const exportRequestSchema = z.object({
+  minuteData: z.array(minuteDataSchema).min(1),
+  startDate: z.string(),
+  graphData: z.array(graphDataPointSchema).optional(),
+});
+
 export async function POST(request: NextRequest) {
+  const { preflight, headers } = buildCorsHeaders(request, { methods: ['POST', 'OPTIONS'] });
+  if (preflight) return preflight;
+
+  const sizeError = enforceBodySize(request, EXPORT_MAX_BODY_BYTES, headers);
+  if (sizeError) return sizeError;
+
+  const authError = enforceServiceAuth(request, headers);
+  if (authError) return authError;
+
+  const rbacError = enforceRbac(request, headers, ['analyst', 'admin']);
+  if (rbacError) return rbacError;
+
+  let parsed: { raw: Buffer; data: unknown };
   try {
-    const body = await request.json();
-    const { minuteData, startDate, graphData } = body as { minuteData: MinuteData[], startDate: string, graphData?: GraphDataPoint[] };
+    parsed = await readJsonWithRaw<unknown>(request);
+  } catch {
+    return jsonResponse({ error: 'Invalid JSON payload.' }, { status: 400, headers });
+  }
 
-    if (!minuteData || !Array.isArray(minuteData) || minuteData.length === 0) {
-      return NextResponse.json({ 
-        error: 'No data to export. Run simulation first to collect data.' 
-      }, { status: 400 });
-    }
+  const signatureError = verifyRequestSignature(request, parsed.raw, headers);
+  if (signatureError) return signatureError;
 
-    // Guard against excessively large payloads that could exhaust server memory
-    // when multiple users export simultaneously.
-    // 420 points/day × 365 days × 25 years ≈ 3.8 M records is the practical max.
-    if (minuteData.length > MAX_EXPORT_DATA_POINTS) {
-      return NextResponse.json({
+  const validation = exportRequestSchema.safeParse(parsed.data);
+  if (!validation.success) {
+    return jsonResponse(
+      { error: 'Invalid payload.', details: validation.error.flatten() },
+      { status: 400, headers }
+    );
+  }
+
+  const { minuteData, startDate, graphData } = validation.data;
+
+  // Guard against excessively large payloads that could exhaust server memory
+  // when multiple users export simultaneously.
+  // 420 points/day × 365 days × 25 years ≈ 3.8 M records is the practical max.
+  if (minuteData.length > MAX_EXPORT_DATA_POINTS) {
+    return jsonResponse(
+      {
         error: `Dataset too large (${minuteData.length.toLocaleString()} records). Maximum is ${MAX_EXPORT_DATA_POINTS.toLocaleString()} records (~25 years).`
-      }, { status: 413 });
-    }
+      },
+      { status: 413, headers }
+    );
+  }
+
+  try {
 
     // Aggregate data by different time periods
     const hourlyData = aggregateData(minuteData, d => `${d.date} ${String(d.hour).padStart(2, '0')}:00`);
@@ -267,19 +349,26 @@ export async function POST(request: NextRequest) {
     }
 
     // Return CSV
+    const responseHeaders = new Headers(headers);
+    responseHeaders.set('Content-Type', 'text/csv; charset=utf-8');
+    responseHeaders.set(
+      'Content-Disposition',
+      `attachment; filename="SafariCharge_Report_${new Date().toISOString().split('T')[0]}.csv"`
+    );
+
     return new NextResponse(csv, {
       status: 200,
-      headers: {
-        'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="SafariCharge_Report_${new Date().toISOString().split('T')[0]}.csv"`,
-      },
+      headers: responseHeaders,
     });
 
   } catch (error) {
     console.error('Export error:', error);
-    return NextResponse.json({ 
-      error: 'Failed to generate report', 
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return jsonResponse(
+      { 
+        error: 'Failed to generate report', 
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500, headers }
+    );
   }
 }
