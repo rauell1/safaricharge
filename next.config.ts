@@ -66,9 +66,17 @@ const nextConfig: NextConfig = {
         source: "/api/(.*)",
         headers: [
           { key: "Cache-Control", value: "no-store" },
-          { key: "Access-Control-Allow-Origin", value: "same-origin" },
+          {
+            key: "Access-Control-Allow-Origin",
+            value: (process.env.API_ALLOWED_ORIGINS ?? "").includes("*")
+              ? "*"
+              : "same-origin",
+          },
           { key: "Access-Control-Allow-Methods", value: "GET,POST,OPTIONS" },
-          { key: "Access-Control-Allow-Headers", value: "Content-Type" },
+          {
+            key: "Access-Control-Allow-Headers",
+            value: "Content-Type, Authorization, X-SC-Role, X-SC-Signature",
+          },
         ],
       },
     ];

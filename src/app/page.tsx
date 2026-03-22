@@ -2010,7 +2010,6 @@ export default function App() {
       todayGraphDataRef.current.push(data._graphPoint as GraphDataPoint);
       setDailyGraphData([...todayGraphDataRef.current]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data._graphPoint]);
 
   const isNight = timeOfDay < 6 || timeOfDay > 19;

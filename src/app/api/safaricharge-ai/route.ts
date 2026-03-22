@@ -1,11 +1,22 @@
+import { NextRequest } from 'next/server';
 import ZAI from 'z-ai-web-dev-sdk';
-import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import {
   AI_MAX_BODY_BYTES,
-  AI_MAX_PROMPT_CHARS,
   AI_MAX_HISTORY_TURNS,
+  AI_MAX_PROMPT_CHARS,
   GEMINI_TIMEOUT_MS,
 } from '@/lib/config';
+import {
+  buildCorsHeaders,
+  enforceBodySize,
+  enforceRbac,
+  enforceServiceAuth,
+  jsonResponse,
+  readJsonWithRaw,
+  verifyRequestSignature,
+  withTimeout,
+} from '@/lib/security';
 
 const SOLAR_KNOWLEDGE = `
 === SOLAR ENERGY FUNDAMENTALS ===
@@ -35,232 +46,230 @@ const SOLAR_KNOWLEDGE = `
 • EV charging efficiency ≈ 90-93%
 `;
 
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-}
+const messageSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  content: z.string().min(1).max(AI_MAX_PROMPT_CHARS),
+});
 
-interface SystemContext {
-  time: string;
-  date: string;
-  weather: string;
-  solar: string;
-  solarTotal: string;
-  battery: string;
-  batteryHealth: string;
-  batteryCycles: number;
-  grid: string;
-  savings: string;
-  feedInEarnings: string;
-  carbonOffset: string;
-  peakTime: boolean;
-  tariffRate: string;
-  ev1: string;
-  ev2: string;
-  v2gActive: boolean;
-  monthlyPeakDemand: string;
-  priorityMode: string;
-  simRunning: boolean;
-}
+const systemContextSchema = z.object({
+  time: z.string(),
+  date: z.string(),
+  weather: z.string(),
+  solar: z.string(),
+  solarTotal: z.string(),
+  battery: z.string(),
+  batteryHealth: z.string(),
+  batteryCycles: z.number(),
+  grid: z.string(),
+  savings: z.string(),
+  feedInEarnings: z.string(),
+  carbonOffset: z.string(),
+  peakTime: z.boolean(),
+  tariffRate: z.string(),
+  ev1: z.string(),
+  ev2: z.string(),
+  v2gActive: z.boolean(),
+  monthlyPeakDemand: z.string(),
+  priorityMode: z.string(),
+  simRunning: z.boolean(),
+});
 
-// Maximum allowed request body size – prevents oversized payloads
-// from exhausting server memory when many users are active concurrently.
-const MAX_BODY_BYTES = AI_MAX_BODY_BYTES;
+const aiRequestSchema = z.object({
+  userPrompt: z.string().min(1).max(AI_MAX_PROMPT_CHARS),
+  conversationHistory: z.array(messageSchema).max(AI_MAX_HISTORY_TURNS * 2).default([]),
+  systemContext: systemContextSchema,
+});
 
-export async function POST(request: NextRequest) {
-  // Reject requests that are clearly too large before reading the body.
-  const contentLength = request.headers.get('content-length');
-  if (contentLength && parseInt(contentLength, 10) > MAX_BODY_BYTES) {
-    return NextResponse.json(
-      { error: 'Request body too large.' },
-      { status: 413 }
-    );
-  }
+type AiRequest = z.infer<typeof aiRequestSchema>;
 
-  try {
-    const { userPrompt, conversationHistory, systemContext } = await request.json() as {
-      userPrompt: string;
-      conversationHistory: Message[];
-      systemContext: SystemContext;
-    };
+const GEMINI_MODELS = [
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+  'gemini-1.5-flash',
+  'gemini-1.5-pro',
+  'gemini-2.0-flash',
+];
 
-    // Basic input validation.
-    if (!userPrompt || typeof userPrompt !== 'string' || userPrompt.trim().length === 0) {
-      return NextResponse.json({ error: 'userPrompt is required.' }, { status: 400 });
-    }
-    if (userPrompt.length > AI_MAX_PROMPT_CHARS) {
-      return NextResponse.json({ error: `userPrompt exceeds the ${AI_MAX_PROMPT_CHARS}-character limit.` }, { status: 400 });
-    }
-
-    const systemInstruction = `
+function buildSystemInstruction(context: AiRequest['systemContext']) {
+  return `
 You are SafariCharge AI, an intelligent solar and EV energy advisor for a charging facility in Nairobi.
 
-You specialize in:
+You specialise in:
 • Solar PV systems
 • Battery storage
 • EV charging
-• Energy optimization
+• Energy optimisation
 • Kenya electricity tariffs
 
 ${SOLAR_KNOWLEDGE}
 
 CURRENT SYSTEM STATE
-Time: ${systemContext.time}
-Date: ${systemContext.date}
-Weather: ${systemContext.weather}
+Time: ${context.time}
+Date: ${context.date}
+Weather: ${context.weather}
 
-Solar Output: ${systemContext.solar}
-Solar Generated Today: ${systemContext.solarTotal}
+Solar Output: ${context.solar}
+Solar Generated Today: ${context.solarTotal}
 
-Battery: ${systemContext.battery}
-Battery Health: ${systemContext.batteryHealth}
-Battery Cycles: ${systemContext.batteryCycles}
+Battery: ${context.battery}
+Battery Health: ${context.batteryHealth}
+Battery Cycles: ${context.batteryCycles}
 
-Grid Status: ${systemContext.grid}
-Tariff Rate: ${systemContext.tariffRate} KES/kWh
-Peak Tariff: ${systemContext.peakTime}
+Grid Status: ${context.grid}
+Tariff Rate: ${context.tariffRate} KES/kWh
+Peak Tariff: ${context.peakTime}
 
-EV1: ${systemContext.ev1}
-EV2: ${systemContext.ev2}
+EV1: ${context.ev1}
+EV2: ${context.ev2}
 
-V2G Active: ${systemContext.v2gActive}
+V2G Active: ${context.v2gActive}
 
-Savings: ${systemContext.savings} KES
-Feed-in Earnings: ${systemContext.feedInEarnings} KES
-Carbon Offset: ${systemContext.carbonOffset}
+Savings: ${context.savings} KES
+Feed-in Earnings: ${context.feedInEarnings} KES
+Carbon Offset: ${context.carbonOffset}
 
-Priority Mode: ${systemContext.priorityMode}
-Simulation Running: ${systemContext.simRunning}
+Priority Mode: ${context.priorityMode}
+Monthly Peak Demand: ${context.monthlyPeakDemand}
+Simulation Running: ${context.simRunning}
 
-Respond clearly with actionable insights.
-`;
+Respond clearly with actionable insights.`;
+}
 
-    // --- Try Gemini API first ---
-    const geminiKey = process.env.GEMINI_API_KEY;
-    const history = conversationHistory.slice(-AI_MAX_HISTORY_TURNS).map(msg => ({
+function buildGeminiBody(payload: AiRequest, systemInstruction: string) {
+  const history = payload.conversationHistory
+    .slice(-AI_MAX_HISTORY_TURNS)
+    .map((msg) => ({
       role: msg.role === 'user' ? 'user' : 'model',
-      parts: [{ text: msg.content }]
+      parts: [{ text: msg.content }],
     }));
 
-    if (geminiKey) {
-      const body = {
-        system_instruction: {
-          parts: [{ text: systemInstruction }]
-        },
-        contents: [
-          ...history,
-          {
-            role: 'user',
-            parts: [{ text: userPrompt }]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 1024
-        }
-      };
+  return {
+    system_instruction: { parts: [{ text: systemInstruction }] },
+    contents: [
+      ...history,
+      {
+        role: 'user',
+        parts: [{ text: payload.userPrompt }],
+      },
+    ],
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 1024,
+    },
+  };
+}
 
-      // Prefer current stable models; fall back to older IDs if the key has limited access
-      const models = [
-        "gemini-2.5-flash",
-        "gemini-2.5-flash-lite",
-        "gemini-1.5-flash",
-        "gemini-1.5-pro",
-        "gemini-2.0-flash"
-      ];
+async function callGemini(payload: AiRequest, systemInstruction: string) {
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (!geminiKey) return { text: null as string | null, error: 'GEMINI_API_KEY missing' };
 
-      let lastGeminiError: string | null = null;
+  const requestBody = buildGeminiBody(payload, systemInstruction);
+  let lastError = 'Gemini unavailable';
 
-      for (const model of models) {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
-
-        try {
-          const res = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(body),
-              signal: controller.signal,
-            }
-          );
-
-          if (res.ok) {
-            clearTimeout(timeoutId);
-            const data = await res.json();
-            const text =
-              data?.candidates?.[0]?.content?.parts?.[0]?.text ??
-              "I couldn't generate a response.";
-            return NextResponse.json({ response: text });
-          }
-
-          const errText = await res.text();
-          console.error(`Gemini ${model} error (${res.status}):`, errText);
-
-          try {
-            const errJson = JSON.parse(errText) as { error?: { message?: string; status?: string } };
-            const msg = errJson?.error?.message ?? errText.slice(0, 120);
-            if (msg.includes("API key") || msg.includes("invalid") || msg.includes("403")) lastGeminiError = "API key invalid or not enabled. Check https://aistudio.google.com/apikey";
-            else if (msg.includes("429") || msg.includes("quota") || msg.includes("Resource has been exhausted")) lastGeminiError = "Quota exceeded. Try again later or check your Google Cloud quota.";
-            else if (msg.includes("404") || msg.includes("not found")) lastGeminiError = "Model unavailable. Try again later.";
-            else lastGeminiError = msg;
-          } catch {
-            lastGeminiError = res.status === 403 ? "API key invalid or not enabled." : res.status === 429 ? "Quota exceeded." : `Gemini returned ${res.status}.`;
-          }
-        } catch (fetchErr: unknown) {
-          const isAbort = fetchErr instanceof Error && fetchErr.name === 'AbortError';
-          console.error(`Gemini ${model} ${isAbort ? 'timed out' : 'fetch error'}:`, fetchErr);
-          lastGeminiError = isAbort ? "Request timed out. Try again." : "Network or server error. Try again.";
-        } finally {
-          clearTimeout(timeoutId);
-        }
-      }
-
-      if (lastGeminiError) {
-        return NextResponse.json(
-          { error: `AI service unavailable. ${lastGeminiError} See https://aistudio.google.com/apikey` },
-          { status: 502 }
-        );
-      }
-    }
-
-    // --- Fall back to Z.AI SDK (typically works in browser; may fail in server context) ---
+  for (const model of GEMINI_MODELS) {
     try {
-      const zai = await ZAI.create();
-      const zaiHistory = conversationHistory.slice(-AI_MAX_HISTORY_TURNS).map(msg => ({
-        role: msg.role as 'user' | 'assistant',
-        content: msg.content
-      }));
-      const completion = await zai.chat.completions.create({
-        messages: [
-          { role: 'system', content: systemInstruction },
-          ...zaiHistory,
-          { role: 'user', content: userPrompt }
-        ]
-      });
-      const responseText = completion.choices?.[0]?.message?.content || "I couldn't generate a response.";
-      return NextResponse.json({ response: responseText });
-    } catch (zaiError) {
-      console.error("Z.AI fallback error:", zaiError);
+      const res = await withTimeout(
+        fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody),
+          }
+        ),
+        GEMINI_TIMEOUT_MS
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+        const text =
+          data?.candidates?.[0]?.content?.parts?.[0]?.text ??
+          "I couldn't generate a response.";
+        return { text, error: null as string | null };
+      }
+
+      const errText = await res.text();
+      lastError = `Gemini ${model} ${res.status}: ${errText.slice(0, 160)}`;
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : 'Gemini request failed';
     }
+  }
 
-    // No provider succeeded: return a clear message so the user can fix config
-    const hint = !geminiKey
-      ? " Add GEMINI_API_KEY to your .env file (see .env.example) to enable SafariCharge AI."
-      : " Check that GEMINI_API_KEY is valid and has quota at https://aistudio.google.com/apikey.";
-    return NextResponse.json(
-      { error: `AI service unavailable.${hint}` },
-      { status: 502 }
-    );
+  return { text: null as string | null, error: lastError };
+}
 
-  } catch (error) {
+async function callZaiFallback(payload: AiRequest, systemInstruction: string) {
+  try {
+    const zai = await ZAI.create();
+    const zaiHistory = payload.conversationHistory.slice(-AI_MAX_HISTORY_TURNS);
+    const completion = await zai.chat.completions.create({
+      messages: [
+        { role: 'system', content: systemInstruction },
+        ...zaiHistory,
+        { role: 'user', content: payload.userPrompt },
+      ],
+    });
+    const responseText =
+      completion.choices?.[0]?.message?.content || "I couldn't generate a response.";
+    return { text: responseText, error: null as string | null };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Z.AI fallback failed';
+    return { text: null as string | null, error: message };
+  }
+}
 
-    console.error("SafariCharge AI error:", error);
+export async function POST(request: NextRequest) {
+  const { preflight, headers } = buildCorsHeaders(request, {
+    methods: ['POST', 'OPTIONS'],
+  });
+  if (preflight) return preflight;
 
-    return NextResponse.json(
-      { error: "Internal AI error" },
-      { status: 500 }
+  const sizeError = enforceBodySize(request, AI_MAX_BODY_BYTES, headers);
+  if (sizeError) return sizeError;
+
+  const authError = enforceServiceAuth(request, headers);
+  if (authError) return authError;
+
+  const rbacError = enforceRbac(request, headers, ['operator', 'analyst', 'admin', 'viewer']);
+  if (rbacError) return rbacError;
+
+  let parsed: { data: unknown; raw: Buffer };
+  try {
+    parsed = await readJsonWithRaw<unknown>(request);
+  } catch {
+    return jsonResponse({ error: 'Invalid JSON payload.' }, { status: 400, headers });
+  }
+
+  const signatureError = verifyRequestSignature(request, parsed.raw, headers);
+  if (signatureError) return signatureError;
+
+  const validation = aiRequestSchema.safeParse(parsed.data);
+  if (!validation.success) {
+    return jsonResponse(
+      { error: 'Invalid payload.', details: validation.error.flatten() },
+      { status: 400, headers }
     );
   }
+
+  const payload = validation.data;
+  const systemInstruction = buildSystemInstruction(payload.systemContext);
+
+  const geminiResult = await callGemini(payload, systemInstruction);
+  if (geminiResult.text) {
+    return jsonResponse({ response: geminiResult.text }, { status: 200, headers });
+  }
+
+  const zaiResult = await callZaiFallback(payload, systemInstruction);
+  if (zaiResult.text) {
+    return jsonResponse({ response: zaiResult.text }, { status: 200, headers });
+  }
+
+  const hint = !process.env.GEMINI_API_KEY
+    ? 'Add GEMINI_API_KEY to your environment to enable SafariCharge AI.'
+    : 'Gemini and Z.AI are unavailable. Check API keys and quotas.';
+
+  return jsonResponse(
+    { error: 'AI service unavailable.', hint, details: [geminiResult.error, zaiResult.error] },
+    { status: 502, headers }
+  );
 }
