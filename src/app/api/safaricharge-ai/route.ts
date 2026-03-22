@@ -1,5 +1,11 @@
 import ZAI from 'z-ai-web-dev-sdk';
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  AI_MAX_BODY_BYTES,
+  AI_MAX_PROMPT_CHARS,
+  AI_MAX_HISTORY_TURNS,
+  GEMINI_TIMEOUT_MS,
+} from '@/lib/config';
 
 const SOLAR_KNOWLEDGE = `
 === SOLAR ENERGY FUNDAMENTALS ===
@@ -57,9 +63,9 @@ interface SystemContext {
   simRunning: boolean;
 }
 
-// Maximum allowed request body size (32 KB) – prevents oversized payloads
+// Maximum allowed request body size – prevents oversized payloads
 // from exhausting server memory when many users are active concurrently.
-const MAX_BODY_BYTES = 32 * 1024;
+const MAX_BODY_BYTES = AI_MAX_BODY_BYTES;
 
 export async function POST(request: NextRequest) {
   // Reject requests that are clearly too large before reading the body.
@@ -82,8 +88,8 @@ export async function POST(request: NextRequest) {
     if (!userPrompt || typeof userPrompt !== 'string' || userPrompt.trim().length === 0) {
       return NextResponse.json({ error: 'userPrompt is required.' }, { status: 400 });
     }
-    if (userPrompt.length > 2000) {
-      return NextResponse.json({ error: 'userPrompt exceeds the 2000-character limit.' }, { status: 400 });
+    if (userPrompt.length > AI_MAX_PROMPT_CHARS) {
+      return NextResponse.json({ error: `userPrompt exceeds the ${AI_MAX_PROMPT_CHARS}-character limit.` }, { status: 400 });
     }
 
     const systemInstruction = `
@@ -131,7 +137,7 @@ Respond clearly with actionable insights.
 
     // --- Try Gemini API first ---
     const geminiKey = process.env.GEMINI_API_KEY;
-    const history = conversationHistory.slice(-12).map(msg => ({
+    const history = conversationHistory.slice(-AI_MAX_HISTORY_TURNS).map(msg => ({
       role: msg.role === 'user' ? 'user' : 'model',
       parts: [{ text: msg.content }]
     }));
@@ -167,7 +173,7 @@ Respond clearly with actionable insights.
 
       for (const model of models) {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10_000);
+        const timeoutId = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
 
         try {
           const res = await fetch(
@@ -222,7 +228,7 @@ Respond clearly with actionable insights.
     // --- Fall back to Z.AI SDK (typically works in browser; may fail in server context) ---
     try {
       const zai = await ZAI.create();
-      const zaiHistory = conversationHistory.slice(-12).map(msg => ({
+      const zaiHistory = conversationHistory.slice(-AI_MAX_HISTORY_TURNS).map(msg => ({
         role: msg.role as 'user' | 'assistant',
         content: msg.content
       }));

@@ -1,4 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { MAX_EXPORT_DATA_POINTS } from '@/lib/config';
+
+/**
+ * Sanitise a value before writing it into a CSV cell.
+ *
+ * Spreadsheet applications (Excel, LibreOffice Calc, Google Sheets) will
+ * execute a cell as a formula when its content starts with =, +, -, @, TAB,
+ * or CARRIAGE RETURN.  An attacker who can influence the simulation data could
+ * craft values that trigger remote-code execution inside the analyst's
+ * spreadsheet (CSV injection / formula injection).
+ *
+ * This function:
+ *   1. Converts the value to a string.
+ *   2. Strips CRLF/LF/TAB characters that would break CSV row boundaries.
+ *   3. Prefixes dangerous leading characters with a single quote so the
+ *      spreadsheet treats the cell as plain text.
+ */
+function sanitiseCsvCell(value: string | number | boolean): string {
+  const str = String(value);
+  // Remove control characters that could break CSV structure.
+  const cleaned = str.replace(/[\r\n\t]/g, ' ');
+  // Neutralise formula-injection prefixes.
+  if (/^[=+\-@|%]/.test(cleaned)) {
+    return `'${cleaned}`;
+  }
+  return cleaned;
+}
 
 // Flexible interface that matches client data
 interface MinuteData {
@@ -100,10 +127,9 @@ export async function POST(request: NextRequest) {
     // Guard against excessively large payloads that could exhaust server memory
     // when multiple users export simultaneously.
     // 420 points/day × 365 days × 25 years ≈ 3.8 M records is the practical max.
-    const MAX_DATA_POINTS = 420 * 365 * 25; // ~3,832,500
-    if (minuteData.length > MAX_DATA_POINTS) {
+    if (minuteData.length > MAX_EXPORT_DATA_POINTS) {
       return NextResponse.json({
-        error: `Dataset too large (${minuteData.length.toLocaleString()} records). Maximum is ${MAX_DATA_POINTS.toLocaleString()} records (~25 years).`
+        error: `Dataset too large (${minuteData.length.toLocaleString()} records). Maximum is ${MAX_EXPORT_DATA_POINTS.toLocaleString()} records (~25 years).`
       }, { status: 413 });
     }
 
@@ -138,9 +164,9 @@ export async function POST(request: NextRequest) {
     // Header
     csv += 'SAFARICHARGE ENERGY REPORT\n';
     csv += `Generated,${new Date().toISOString()}\n`;
-    csv += `System Start Date,${startDate || 'Unknown'}\n`;
+    csv += `System Start Date,${sanitiseCsvCell(startDate || 'Unknown')}\n`;
     csv += `Total Data Points,${minuteData.length}\n`;
-    csv += `Date Range,${minuteData[0]?.date || 'N/A'},to,${minuteData[minuteData.length - 1]?.date || 'N/A'}\n\n`;
+    csv += `Date Range,${sanitiseCsvCell(minuteData[0]?.date || 'N/A')},to,${sanitiseCsvCell(minuteData[minuteData.length - 1]?.date || 'N/A')}\n\n`;
 
     // Overall Summary
     csv += 'OVERALL SUMMARY\n';
@@ -166,7 +192,32 @@ export async function POST(request: NextRequest) {
     csv += 'Timestamp,Date,Year,Month,Week,Day,Hour,Minute,Solar (kW),Home Load (kW),EV1 Load (kW),EV2 Load (kW),Battery Power (kW),Battery Level (%),Grid Import (kW),Grid Export (kW),EV1 SoC (%),EV2 SoC (%),Tariff Rate (KES/kWh),Peak Time,Savings (KES),Solar Energy (kWh),Grid Import (kWh),Grid Export (kWh)\n';
     
     minuteData.forEach(d => {
-      csv += `${d.timestamp},${d.date},${d.year},${d.month},${d.week},${d.day},${d.hour},${d.minute},${(d.solarKW || 0).toFixed(2)},${(d.homeLoadKW || 0).toFixed(2)},${(d.ev1LoadKW || 0).toFixed(2)},${(d.ev2LoadKW || 0).toFixed(2)},${(d.batteryPowerKW || 0).toFixed(2)},${(d.batteryLevelPct || 0).toFixed(1)},${(d.gridImportKW || 0).toFixed(2)},${(d.gridExportKW || 0).toFixed(2)},${(d.ev1SocPct || 0).toFixed(1)},${(d.ev2SocPct || 0).toFixed(1)},${(d.tariffRate || 0).toFixed(2)},${d.isPeakTime ? 'Yes' : 'No'},${(d.savingsKES || 0).toFixed(2)},${(d.solarEnergyKWh || 0).toFixed(4)},${(d.gridImportKWh || 0).toFixed(4)},${(d.gridExportKWh || 0).toFixed(4)}\n`;
+      csv += [
+        sanitiseCsvCell(d.timestamp),
+        sanitiseCsvCell(d.date),
+        sanitiseCsvCell(d.year),
+        sanitiseCsvCell(d.month),
+        sanitiseCsvCell(d.week),
+        sanitiseCsvCell(d.day),
+        sanitiseCsvCell(d.hour),
+        sanitiseCsvCell(d.minute),
+        (d.solarKW || 0).toFixed(2),
+        (d.homeLoadKW || 0).toFixed(2),
+        (d.ev1LoadKW || 0).toFixed(2),
+        (d.ev2LoadKW || 0).toFixed(2),
+        (d.batteryPowerKW || 0).toFixed(2),
+        (d.batteryLevelPct || 0).toFixed(1),
+        (d.gridImportKW || 0).toFixed(2),
+        (d.gridExportKW || 0).toFixed(2),
+        (d.ev1SocPct || 0).toFixed(1),
+        (d.ev2SocPct || 0).toFixed(1),
+        (d.tariffRate || 0).toFixed(2),
+        d.isPeakTime ? 'Yes' : 'No',
+        (d.savingsKES || 0).toFixed(2),
+        (d.solarEnergyKWh || 0).toFixed(4),
+        (d.gridImportKWh || 0).toFixed(4),
+        (d.gridExportKWh || 0).toFixed(4),
+      ].join(',') + '\n';
     });
     csv += '\n';
 
@@ -175,7 +226,21 @@ export async function POST(request: NextRequest) {
       csv += `${title}\n`;
       csv += `${periodLabel},Total Solar (kWh),Total Home Load (kWh),Total EV1 Load (kWh),Total EV2 Load (kWh),Grid Import (kWh),Grid Export (kWh),Avg Battery (%),Avg EV1 SoC (%),Avg EV2 SoC (%),Savings (KES),Peak Count,Off-Peak Count\n`;
       data.forEach(d => {
-        csv += `${d.period},${d.totalSolarKWh.toFixed(2)},${d.totalHomeLoadKWh.toFixed(2)},${d.totalEV1LoadKWh.toFixed(2)},${d.totalEV2LoadKWh.toFixed(2)},${d.totalGridImportKWh.toFixed(2)},${d.totalGridExportKWh.toFixed(2)},${d.avgBatteryLevelPct.toFixed(1)},${d.avgEV1SocPct.toFixed(1)},${d.avgEV2SocPct.toFixed(1)},${d.totalSavingsKES.toFixed(2)},${d.peakHoursCount},${d.offPeakHoursCount}\n`;
+        csv += [
+          sanitiseCsvCell(d.period),
+          d.totalSolarKWh.toFixed(2),
+          d.totalHomeLoadKWh.toFixed(2),
+          d.totalEV1LoadKWh.toFixed(2),
+          d.totalEV2LoadKWh.toFixed(2),
+          d.totalGridImportKWh.toFixed(2),
+          d.totalGridExportKWh.toFixed(2),
+          d.avgBatteryLevelPct.toFixed(1),
+          d.avgEV1SocPct.toFixed(1),
+          d.avgEV2SocPct.toFixed(1),
+          d.totalSavingsKES.toFixed(2),
+          d.peakHoursCount,
+          d.offPeakHoursCount,
+        ].join(',') + '\n';
       });
       csv += '\n';
     };

@@ -7,17 +7,24 @@ out
 
 # environment
 .env
-.env.example
+!.env.example
 .env.local
 .env.*.local
 
 # logs
 npm-debug.log*
 yarn-debug.log*
+server.log
 
 # misc
 .DS_Store
 
-#upload/download logs
+# upload/download logs
 upload
 download
+
+# SQLite development database (use DATABASE_URL to point to it; don't commit)
+db/*.db
+db/*.db-journal
+db/*.db-shm
+db/*.db-waltsconfig.tsbuildinfo
