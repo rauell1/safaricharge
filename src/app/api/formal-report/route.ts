@@ -895,7 +895,7 @@ function generateReportHTML(data: ReportRequest): string {
           </tr>
         </tbody>
       </table>
-      <div style="font-size:12px;color:#64748b;margin-top:8px;">Peak/off-peak windows follow the tariff schedule captured in the simulation; savings align to those time blocks.</div>
+      <div style="font-size:12px;color:#64748b;margin-top:8px;">Peak/off-peak windows follow the tariff schedule captured in the simulation; savings align to those time blocks. Peak hours captured ${fmt(peakSolarShare, 1)}% of solar generation and ${fmt(peakSavingsShare, 1)}% of total savings.</div>
     </div>
 
     <!-- Financial Analysis -->
