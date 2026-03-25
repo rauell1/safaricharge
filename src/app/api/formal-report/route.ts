@@ -81,6 +81,19 @@ function toNumber(value: unknown, fallback = 0): number {
   return Number.isFinite(num) ? num : fallback;
 }
 
+/**
+ * Safely format a number with locale-specific grouping separators.
+ * Falls back to string conversion if locale formatting fails.
+ */
+function formatNumber(value: number): string {
+  if (!Number.isFinite(value)) return '0';
+  try {
+    return value.toLocaleString();
+  } catch {
+    return String(value);
+  }
+}
+
 const minuteDataSchema = z.object({
   date: z.string(),
   year: z.number(),
@@ -142,7 +155,7 @@ function buildSolarVsGridSVG(days: DailyAgg[], maxDays = 30): string {
   const chartW = W - PAD.left - PAD.right;
   const chartH = H - PAD.top - PAD.bottom;
 
-  const maxVal = Math.max(...show.map(d => Math.max(d.solar, d.gridImport, 0.1)), 0.1);
+  const maxVal = Math.max(...show.map(d => Math.max(d.solar, d.gridImport, 0.1)).filter(v => Number.isFinite(v)), 0.1);
   const slotW = chartW / Math.max(show.length, 1);
   const barW = Math.max(Math.floor(slotW / 2) - 2, 2);
 
@@ -155,7 +168,7 @@ function buildSolarVsGridSVG(days: DailyAgg[], maxDays = 30): string {
     bars += `<rect x="${x}" y="${PAD.top + chartH - sH}" width="${barW}" height="${sH}" fill="#22c55e" rx="2"/>`;
     bars += `<rect x="${x + barW + 2}" y="${PAD.top + chartH - iH}" width="${barW}" height="${iH}" fill="#f97316" rx="2" opacity="0.85"/>`;
     if (show.length <= 14 || i % Math.ceil(show.length / 7) === 0) {
-      labels += `<text x="${x + barW}" y="${PAD.top + chartH + 18}" text-anchor="middle" font-size="9" fill="#64748b">${d.date.slice(5)}</text>`;
+      labels += `<text x="${x + barW}" y="${PAD.top + chartH + 18}" text-anchor="middle" font-size="9" fill="#64748b">${d.date && d.date.length >= 5 ? d.date.slice(5) : d.date}</text>`;
     }
   });
 
@@ -188,7 +201,7 @@ function buildSavingsTrendSVG(days: DailyAgg[], maxDays = 30): string {
   const chartW = W - PAD.left - PAD.right;
   const chartH = H - PAD.top - PAD.bottom;
 
-  const maxSav = Math.max(...show.map(d => d.savings), 1);
+  const maxSav = Math.max(...show.map(d => d.savings).filter(v => Number.isFinite(v)), 1);
   const pts = show.map((d, i) => {
     const x = PAD.left + (i / Math.max(show.length - 1, 1)) * chartW;
     const y = PAD.top + chartH - (d.savings / maxSav) * chartH;
@@ -209,7 +222,7 @@ function buildSavingsTrendSVG(days: DailyAgg[], maxDays = 30): string {
   show.forEach((d, i) => {
     if (show.length <= 14 || i % Math.ceil(show.length / 7) === 0) {
       const x = PAD.left + (i / Math.max(show.length - 1, 1)) * chartW;
-      labels += `<text x="${x}" y="${PAD.top + chartH + 16}" text-anchor="middle" font-size="9" fill="#64748b">${d.date.slice(5)}</text>`;
+      labels += `<text x="${x}" y="${PAD.top + chartH + 16}" text-anchor="middle" font-size="9" fill="#64748b">${d.date && d.date.length >= 5 ? d.date.slice(5) : d.date}</text>`;
     }
   });
 
@@ -258,7 +271,7 @@ function buildBatterySoCTrendSVG(days: DailyAgg[], maxDays = 30): string {
   show.forEach((d, i) => {
     if (show.length <= 14 || i % Math.ceil(show.length / 7) === 0) {
       const x = PAD.left + (i / Math.max(show.length - 1, 1)) * chartW;
-      labels += `<text x="${x}" y="${PAD.top + chartH + 16}" text-anchor="middle" font-size="9" fill="#64748b">${d.date.slice(5)}</text>`;
+      labels += `<text x="${x}" y="${PAD.top + chartH + 16}" text-anchor="middle" font-size="9" fill="#64748b">${d.date && d.date.length >= 5 ? d.date.slice(5) : d.date}</text>`;
     }
   });
 
@@ -285,7 +298,7 @@ function buildEVChargingBarSVG(days: DailyAgg[], maxDays = 30): string {
   const chartW = W - PAD.left - PAD.right;
   const chartH = H - PAD.top - PAD.bottom;
 
-  const maxVal = Math.max(...show.map(d => d.ev1Load + d.ev2Load), 0.1);
+  const maxVal = Math.max(...show.map(d => d.ev1Load + d.ev2Load).filter(v => Number.isFinite(v)), 0.1);
   const slotW = chartW / Math.max(show.length, 1);
   const barW = Math.max(Math.floor(slotW * 0.7), 2);
 
@@ -298,7 +311,7 @@ function buildEVChargingBarSVG(days: DailyAgg[], maxDays = 30): string {
     bars += `<rect x="${x}" y="${PAD.top + chartH - ev1H}" width="${barW}" height="${ev1H}" fill="#0ea5e9" rx="2"/>`;
     bars += `<rect x="${x}" y="${PAD.top + chartH - ev1H - ev2H}" width="${barW}" height="${ev2H}" fill="#7c3aed" rx="2" opacity="0.85"/>`;
     if (show.length <= 14 || i % Math.ceil(show.length / 7) === 0) {
-      labels += `<text x="${x + barW / 2}" y="${PAD.top + chartH + 16}" text-anchor="middle" font-size="9" fill="#64748b">${d.date.slice(5)}</text>`;
+      labels += `<text x="${x + barW / 2}" y="${PAD.top + chartH + 16}" text-anchor="middle" font-size="9" fill="#64748b">${d.date && d.date.length >= 5 ? d.date.slice(5) : d.date}</text>`;
     }
   });
 
@@ -331,7 +344,7 @@ function buildGridInteractionSVG(days: DailyAgg[], maxDays = 30): string {
   const chartW = W - PAD.left - PAD.right;
   const chartH = H - PAD.top - PAD.bottom;
 
-  const maxVal = Math.max(...show.map(d => Math.max(d.gridImport, d.gridExport, 0.1)), 0.1);
+  const maxVal = Math.max(...show.map(d => Math.max(d.gridImport, d.gridExport, 0.1)).filter(v => Number.isFinite(v)), 0.1);
   const slotW = chartW / Math.max(show.length, 1);
   const barW = Math.max(Math.floor(slotW / 2) - 2, 2);
 
@@ -344,7 +357,7 @@ function buildGridInteractionSVG(days: DailyAgg[], maxDays = 30): string {
     bars += `<rect x="${x}" y="${PAD.top + chartH - iH}" width="${barW}" height="${iH}" fill="#ef4444" rx="2" opacity="0.8"/>`;
     bars += `<rect x="${x + barW + 2}" y="${PAD.top + chartH - eH}" width="${barW}" height="${eH}" fill="#10b981" rx="2" opacity="0.8"/>`;
     if (show.length <= 14 || i % Math.ceil(show.length / 7) === 0) {
-      labels += `<text x="${x + barW}" y="${PAD.top + chartH + 16}" text-anchor="middle" font-size="9" fill="#64748b">${d.date.slice(5)}</text>`;
+      labels += `<text x="${x + barW}" y="${PAD.top + chartH + 16}" text-anchor="middle" font-size="9" fill="#64748b">${d.date && d.date.length >= 5 ? d.date.slice(5) : d.date}</text>`;
     }
   });
 
@@ -734,7 +747,7 @@ export async function POST(request: NextRequest) {
 <div class="print-toolbar">
   <span class="title">☀️ SafariCharge — Energy Performance Report</span>
   <span class="hint">Use the button to save as a PDF file → choose "Save as PDF" in the print dialog</span>
-  <button class="print-btn" onclick="window.print()">
+  <button class="print-btn" id="printBtn">
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
     🖨️ Print / Download PDF
   </button>
@@ -1133,7 +1146,7 @@ export async function POST(request: NextRequest) {
       <tr><td>Report Period Start</td><td class="num">${dateFrom}</td><td class="num">&ndash;</td><td>&ndash;</td></tr>
       <tr><td>Report Period End</td><td class="num">${dateTo}</td><td class="num">&ndash;</td><td>&ndash;</td></tr>
       <tr><td>Total Days Simulated</td><td class="num">${uniqueDays}</td><td class="num">days</td><td>Unique calendar dates</td></tr>
-      <tr><td>Total Data Points</td><td class="num">${totalDataPoints.toLocaleString()}</td><td class="num">records</td><td>420 samples per day (~3.4 min interval)</td></tr>
+      <tr><td>Total Data Points</td><td class="num">${formatNumber(totalDataPoints)}</td><td class="num">records</td><td>420 samples per day (~3.4 min interval)</td></tr>
       <tr><td colspan="4" style="background:#f1f5f9;font-weight:700;font-size:8pt;text-transform:uppercase;letter-spacing:0.05em;color:#475569;padding:6px 10px;">Energy Flows</td></tr>
       <tr><td>Total Solar Generated</td><td class="num">${totalSolar.toFixed(3)}</td><td class="num">kWh</td><td>AC output post-inverter</td></tr>
       <tr><td>Total Home Load</td><td class="num">${totalHomeLoad.toFixed(3)}</td><td class="num">kWh</td><td>Residential consumption</td></tr>
@@ -1176,6 +1189,12 @@ export async function POST(request: NextRequest) {
 </div>
 
 </div><!-- /.report-wrap -->
+
+<script>
+  document.getElementById('printBtn')?.addEventListener('click', function() {
+    window.print();
+  });
+</script>
 
 </body>
 </html>`;
