@@ -2280,7 +2280,9 @@ export default function App() {
         const ev = (d.ev1LoadKW ?? 0) + (d.ev2LoadKW ?? 0);
         if (ev > peakEVLoad) peakEVLoad = ev;
       }
-      const avgBattery = minuteData.reduce((s, d) => s + (d.batteryLevelPct ?? 0), 0) / minuteData.length;
+      const avgBattery = minuteData.length > 0
+        ? minuteData.reduce((s, d) => s + (d.batteryLevelPct ?? 0), 0) / minuteData.length
+        : 0;
 
       // Build daily aggregation
       const dailyMap = new Map<string, {date: string; solar: number; gridImport: number; gridExport: number; savings: number; homeLoad: number; evLoad: number; ev1Load: number; ev2Load: number; avgBattery: number; batteryCount: number}>();
