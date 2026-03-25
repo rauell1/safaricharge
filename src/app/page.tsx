@@ -1749,31 +1749,30 @@ export default function App() {
   });
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isAutoMode) {
-      // Sub-step through a fixed physics step for all simulation speeds so
-      // that the graph always accumulates exactly 420 data points per simulated
-      // day regardless of speed:
-      //   x1   →   1 step  of (24/420) h per tick
-      //   x5   →   5 steps of (24/420) h per tick
-      //   x20  →  20 steps of (24/420) h per tick
-      //   x100 → 100 steps of (24/420) h per tick
-      //   x1000→ 420 steps of (24/420) h per tick (full day)
-      // This keeps graph resolution consistent (420 data points/day) for all
-      // simulation types and is capped at 24 h to ensure at most one
-      // day-boundary crossing per tick.
+    let interval: NodeJS.Timeout | null = null;
+    let rafId: number | null = null;
+    let cancelled = false;
+    let isProcessing = false;
+
+    const processTick = () => {
+      const { simSpeed: spd, priorityMode: curPriority, evSpecs: curEvSpecs } = computeParamsRef.current;
       const GRAPH_STEP_H = 24 / 420;
-      interval = setInterval(() => {
-        const { simSpeed: spd, priorityMode: curPriority, evSpecs: curEvSpecs } = computeParamsRef.current;
-        const totalAdvance = Math.min(24.0, GRAPH_STEP_H * spd);
-        const numSteps = Math.max(1, Math.ceil(totalAdvance / GRAPH_STEP_H));
-        const actualStep = totalAdvance / numSteps;
+      const totalAdvance = Math.min(24.0, GRAPH_STEP_H * spd);
+      const numSteps = Math.max(1, Math.ceil(totalAdvance / GRAPH_STEP_H));
+      const actualStep = totalAdvance / numSteps;
+      // Maintain fixed-resolution sub-steps (420 points/day) while chunking
+      // work across animation frames so x1000 simulations don't block the UI.
 
-        let lastState: ReturnType<typeof PhysicsEngine.calculateInstant> | null = null;
-        let lastApplicableRate = KPLC_TARIFF.getLowRateWithVAT();
-        const newGraphPoints: GraphDataPoint[] = [];
+      let lastState: ReturnType<typeof PhysicsEngine.calculateInstant> | null = null;
+      let lastApplicableRate = KPLC_TARIFF.getLowRateWithVAT();
+      const newGraphPoints: GraphDataPoint[] = [];
+      let processed = 0;
 
-        for (let i = 0; i < numSteps; i++) {
+      const processChunk = () => {
+        const budgetMs = spd >= 1000 ? 12 : spd >= 100 ? 10 : 8;
+        const chunkStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
+
+        while (processed < numSteps && !cancelled) {
           const nextT = timeOfDayRef.current + actualStep;
 
           if (nextT >= 24) {
@@ -1895,6 +1894,20 @@ export default function App() {
 
           lastState = state;
           lastApplicableRate = applicableRate;
+          processed++;
+
+          const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+          if (now - chunkStart > budgetMs) break;
+        }
+
+        if (cancelled) {
+          isProcessing = false;
+          return;
+        }
+
+        if (processed < numSteps) {
+          rafId = requestAnimationFrame(processChunk);
+          return;
         }
 
         if (lastState) {
@@ -1950,9 +1963,25 @@ export default function App() {
             };
           });
         }
+        isProcessing = false;
+      };
+
+      processChunk();
+    };
+
+    if (isAutoMode) {
+      interval = setInterval(() => {
+        if (isProcessing) return;
+        isProcessing = true;
+        processTick();
       }, 100);
     }
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+      if (interval) clearInterval(interval);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      isProcessing = false;
+    };
   }, [isAutoMode, simSpeed]);
 
   // Use a ref to store computation parameters to avoid dependency issues
