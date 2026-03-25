@@ -2169,6 +2169,7 @@ export default function App() {
 
   // Formal PDF report
   const handleFormalReport = async () => {
+    let reportWindow: Window | null = null;
     try {
       const minuteData = minuteDataRef.current;
       if (!minuteData || minuteData.length === 0) {
@@ -2177,7 +2178,7 @@ export default function App() {
       }
 
       // Open the window synchronously (before any await) so popup blockers don't block it.
-      const reportWindow = window.open('', '_blank');
+      reportWindow = window.open('', '_blank');
       if (!reportWindow) {
         alert('Unable to open the report. Please allow pop-ups for this site and try again.');
         return;
@@ -2246,9 +2247,26 @@ export default function App() {
       });
 
       if (!response.ok) {
+        const fallback = `HTTP ${response.status}`;
+        const rawError = await response.text().catch(() => '');
+        let parsedMessage = fallback;
+        if (rawError) {
+          try {
+            const errorData = JSON.parse(rawError) as { error?: string; message?: string; details?: string };
+            parsedMessage = errorData.error || errorData.message || fallback;
+            if (errorData.details && errorData.details !== parsedMessage) {
+              parsedMessage = `${parsedMessage}: ${errorData.details}`;
+            }
+          } catch {
+            const textOnly = rawError
+              .replace(/<[^>]*>/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim();
+            if (textOnly) parsedMessage = textOnly.slice(0, 180);
+          }
+        }
         reportWindow.close();
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || `HTTP ${response.status}`);
+        throw new Error(parsedMessage);
       }
 
       const html = await response.text();
@@ -2258,6 +2276,9 @@ export default function App() {
       reportWindow.document.write(html);
       reportWindow.document.close();
     } catch (error) {
+      if (reportWindow && !reportWindow.closed) {
+        reportWindow.close();
+      }
       console.error('Formal report error:', error);
       alert(`Failed to generate report: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
     }
