@@ -828,11 +828,12 @@ function generateReportHTML(data: ReportRequest): string {
 }
 
 export async function POST(req: NextRequest) {
-  const headers = buildCorsHeaders(req);
+  const { preflight, headers } = buildCorsHeaders(req, { methods: ['POST', 'OPTIONS'] });
+  if (preflight) return preflight;
 
   try {
     // Enforce body size limit
-    const sizeCheck = await enforceBodySize(req, FORMAL_REPORT_MAX_BYTES);
+    const sizeCheck = enforceBodySize(req, FORMAL_REPORT_MAX_BYTES, headers);
     if (sizeCheck) return sizeCheck;
 
     // Parse and validate request body
