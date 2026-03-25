@@ -2170,6 +2170,7 @@ export default function App() {
   // Formal PDF report
   const handleFormalReport = async () => {
     let reportWindow: Window | null = null;
+    let blobUrlCleanupTimer: ReturnType<typeof setTimeout> | null = null;
     try {
       const minuteData = minuteDataRef.current;
       if (!minuteData || minuteData.length === 0) {
@@ -2275,12 +2276,23 @@ export default function App() {
       }
 
       const html = await response.text();
-      // Write the HTML directly into the already-opened window to avoid blob: URL
-      // navigation, which can be blocked by popup blockers and CSP policies.
-      reportWindow.document.open();
-      reportWindow.document.write(html);
-      reportWindow.document.close();
+      // Navigate the already-open window to a blob URL so the report renders
+      // without inheriting the opener's Content-Security-Policy.  This allows
+      // external resources (e.g. Google Fonts) to load correctly and avoids
+      // cross-browser quirks with document.write() on existing popups.
+      // Using location.href on an already-open window is NOT blocked by popup
+      // blockers (only window.open() calls after async work are blocked).
+      const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
+      const blobUrl = URL.createObjectURL(blob);
+      reportWindow.location.href = blobUrl;
+      // Revoke the object URL after the browser has had time to fully load the
+      // page (fonts, styles, etc.).  60 s is a generous budget for slow
+      // connections; the URL cannot be re-used after revocation but the already-
+      // rendered page is unaffected.
+      const BLOB_CLEANUP_DELAY_MS = 60_000;
+      blobUrlCleanupTimer = setTimeout(() => URL.revokeObjectURL(blobUrl), BLOB_CLEANUP_DELAY_MS);
     } catch (error) {
+      if (blobUrlCleanupTimer !== null) clearTimeout(blobUrlCleanupTimer);
       if (reportWindow && !reportWindow.closed) {
         reportWindow.close();
       }

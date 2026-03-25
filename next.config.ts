@@ -51,10 +51,10 @@ const nextConfig: NextConfig = {
             value: [
               "default-src 'self' blob:",
               "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
-              "style-src 'self' 'unsafe-inline'",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: blob: https://www.transparenttextures.com",
               "connect-src 'self' https://generativelanguage.googleapis.com https://vitals.vercel-insights.com https://va.vercel-scripts.com",
-              "font-src 'self'",
+              "font-src 'self' https://fonts.gstatic.com",
               "worker-src blob:",
             ].join("; "),
           },
