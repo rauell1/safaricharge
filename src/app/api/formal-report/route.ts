@@ -547,8 +547,8 @@ export async function POST(request: NextRequest) {
     if (selfSufficiency < 60) recommendations.push(`Consider expanding battery capacity to increase self-sufficiency beyond 60%. Current rate of ${selfSufficiency.toFixed(0)}% indicates significant grid dependency.`);
     if (solarSelfConsumptionRate < 80) recommendations.push(`Solar self-consumption rate of ${solarSelfConsumptionRate.toFixed(0)}% suggests excess generation. Explore feed-in tariff agreements with KPLC or additional EV charging capacity to utilise surplus.`);
     if (avgBattery < 40) recommendations.push(`Average battery state-of-charge of ${avgBattery.toFixed(0)}% is below optimal. Review charge scheduling to maintain 40-80% SoC range for LiFePO4 longevity.`);
-    if (totalGridImport > totalSolar * 0.3) recommendations.push(`Grid import represents ${((totalGridImport / totalSolar) * 100).toFixed(0)}% of solar generation. Shifting controllable loads to solar-peak hours (10:00-16:00) can reduce grid dependency.`);
-    if (totalEV1 + totalEV2 < totalSolar * 0.2) recommendations.push(`EV charging utilises only ${(((totalEV1 + totalEV2) / totalSolar) * 100).toFixed(0)}% of solar generation. Smart V2G scheduling during peak hours can maximise tariff savings.`);
+    if (totalSolar > 0 && totalGridImport > totalSolar * 0.3) recommendations.push(`Grid import represents ${((totalGridImport / totalSolar) * 100).toFixed(0)}% of solar generation. Shifting controllable loads to solar-peak hours (10:00-16:00) can reduce grid dependency.`);
+    if (totalSolar > 0 && totalEV1 + totalEV2 < totalSolar * 0.2) recommendations.push(`EV charging utilises only ${(((totalEV1 + totalEV2) / totalSolar) * 100).toFixed(0)}% of solar generation. Smart V2G scheduling during peak hours can maximise tariff savings.`);
     if (roiPct > 15) recommendations.push(`Strong ROI of ${roiPct.toFixed(1)}% p.a. validates system economics. Consider phased expansion with an additional 30 kWp array and 40 kWh battery to serve additional fleet vehicles.`);
     if (recommendations.length === 0) recommendations.push('System is performing optimally. Maintain current operational parameters and schedule quarterly maintenance inspections for PV array cleaning and battery health checks.');
 
@@ -573,6 +573,18 @@ export async function POST(request: NextRequest) {
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'Poppins','Helvetica Neue',Arial,sans-serif;color:#1e293b;font-size:10pt;line-height:1.55;background:#fff;}
+
+  /* ── Print toolbar (hidden when printing) ── */
+  .print-toolbar{position:fixed;top:0;left:0;right:0;z-index:9999;background:#0f172a;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:10px 20px;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,0.4);font-family:'Poppins',sans-serif;}
+  .print-toolbar .title{font-size:12pt;font-weight:700;color:#38bdf8;letter-spacing:0.03em;}
+  .print-toolbar .hint{font-size:8.5pt;color:#94a3b8;}
+  .print-btn{background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;border:none;border-radius:8px;padding:9px 22px;font-size:10pt;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;transition:transform 0.1s,box-shadow 0.1s;box-shadow:0 2px 8px rgba(14,165,233,0.4);}
+  .print-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(14,165,233,0.5);}
+  .print-btn:active{transform:translateY(0);}
+  @media print{.print-toolbar{display:none!important;}}
+  /* Push content below the toolbar when not printing */
+  @media screen{body>*:not(.print-toolbar){margin-top:54px;}}
+  @media screen{.report-wrap{padding:20px 24px;}}
 
   /* ── Letterhead ── */
   .letterhead{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #0ea5e9;padding-bottom:14px;margin-bottom:22px;}
@@ -675,8 +687,7 @@ export async function POST(request: NextRequest) {
   .pb-before{page-break-before:always;}
 
   /* ── Print button ── */
-  .print-btn{position:fixed;bottom:20px;right:20px;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:white;border:none;border-radius:8px;padding:12px 22px;font-size:11pt;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(14,165,233,0.45);z-index:999;font-family:'Poppins',sans-serif;display:flex;align-items:center;gap:8px;}
-  .print-btn:hover{box-shadow:0 6px 20px rgba(14,165,233,0.55);}
+  .no-print{display:none;} /* legacy class; toolbar is hidden via @media print */
 
   /* ── Print media ── */
   @media print{
@@ -691,10 +702,17 @@ export async function POST(request: NextRequest) {
 </head>
 <body>
 
-<button class="print-btn no-print" onclick="window.print()">
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-  Print / Save PDF
-</button>
+<!-- ── Print toolbar (hidden when printing via @media print) ── -->
+<div class="print-toolbar">
+  <span class="title">☀️ SafariCharge — Energy Performance Report</span>
+  <span class="hint">Use the button to save as a PDF file → choose "Save as PDF" in the print dialog</span>
+  <button class="print-btn" onclick="window.print()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+    🖨️ Print / Download PDF
+  </button>
+</div>
+
+<div class="report-wrap">
 
 <!-- ════════════ LETTERHEAD ════════════ -->
 <div class="letterhead">
@@ -1128,6 +1146,8 @@ export async function POST(request: NextRequest) {
     Generated by SafariCharge Dashboard v2
   </div>
 </div>
+
+</div><!-- /.report-wrap -->
 
 </body>
 </html>`;
