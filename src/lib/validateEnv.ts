@@ -20,8 +20,9 @@ interface EnvSpec {
 const ENV_SPECS: EnvSpec[] = [
   {
     name: 'DATABASE_URL',
-    required: true,
-    description: 'Prisma database connection string (e.g. file:./dev.db or a PostgreSQL URL)',
+    required: false,
+    description:
+      'Prisma database connection string (e.g. file:./dev.db or a PostgreSQL URL). Defaults to SQLite dev db when absent.',
   },
   {
     name: 'GEMINI_API_KEY',
@@ -53,6 +54,15 @@ const ENV_SPECS: EnvSpec[] = [
 export function validateEnv(): void {
   const missing: string[] = [];
   const warnings: string[] = [];
+
+  // Provide a safe default for local/dev so the server does not crash when
+  // DATABASE_URL is unset. Prisma will connect to a local SQLite file.
+  if (!process.env.DATABASE_URL || process.env.DATABASE_URL.trim() === '') {
+    process.env.DATABASE_URL = 'file:./dev.db';
+    warnings.push(
+      '  ⚠ DATABASE_URL is not set – defaulting to local SQLite (file:./dev.db). Set a Postgres URL in production.'
+    );
+  }
 
   for (const spec of ENV_SPECS) {
     const value = process.env[spec.name];
