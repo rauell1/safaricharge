@@ -225,7 +225,7 @@ const PhysicsEngine = {
     };
   },
 
-  calculateInstant: (t: number, prevBatKwh: number, prevEv1Soc: number, prevEv2Soc: number, scenario: any, evSpecs: any, cloudNoise = 0, batteryHealth = 1.0, actualTimeStep = 5/60) => {
+  calculateInstant: (t: number, prevBatKwh: number, prevEv1Soc: number, prevEv2Soc: number, scenario: any, evSpecs: any, cloudNoise = 0, batteryHealth = 1.0, actualTimeStep = 5/60, priorityMode = 'load') => {
     const timeStep = actualTimeStep;
     const month: number = scenario.month || 1;
     const peakHour: number = scenario.peakSolarHour || 12.75;
@@ -332,18 +332,36 @@ const PhysicsEngine = {
     }
     const augmentedSolar = effectiveSolar + v2gKw;
 
+    // Energy balance with priority mode support
     if (augmentedSolar >= totalLoad) {
+        // Surplus: prioritize based on mode
         let excess = augmentedSolar - totalLoad;
-        if (newBatKwh < effectiveCapacity) {
-            const capRem = effectiveCapacity - newBatKwh;
-            const chargeFraction = Math.min(excess, MAX_BAT_CHARGE_RATE) / MAX_BAT_CHARGE_RATE;
-            const batEff = getBatteryEfficiency(chargeFraction);
-            batCharge = Math.min(excess, MAX_BAT_CHARGE_RATE, (capRem / batEff) / timeStep);
-            newBatKwh += batCharge * timeStep * batEff;
-            excess -= batCharge;
+
+        if (priorityMode === 'battery') {
+            // Battery-first: charge battery before serving loads
+            if (newBatKwh < effectiveCapacity) {
+                const capRem = effectiveCapacity - newBatKwh;
+                const chargeFraction = Math.min(excess, MAX_BAT_CHARGE_RATE) / MAX_BAT_CHARGE_RATE;
+                const batEff = getBatteryEfficiency(chargeFraction);
+                batCharge = Math.min(excess, MAX_BAT_CHARGE_RATE, (capRem / batEff) / timeStep);
+                newBatKwh += batCharge * timeStep * batEff;
+                excess -= batCharge;
+            }
+            gridExport = excess;
+        } else {
+            // Load-first (default): charge battery with excess after loads
+            if (newBatKwh < effectiveCapacity) {
+                const capRem = effectiveCapacity - newBatKwh;
+                const chargeFraction = Math.min(excess, MAX_BAT_CHARGE_RATE) / MAX_BAT_CHARGE_RATE;
+                const batEff = getBatteryEfficiency(chargeFraction);
+                batCharge = Math.min(excess, MAX_BAT_CHARGE_RATE, (capRem / batEff) / timeStep);
+                newBatKwh += batCharge * timeStep * batEff;
+                excess -= batCharge;
+            }
+            gridExport = excess;
         }
-        gridExport = excess;
     } else {
+        // Deficit: discharge battery then import from grid
         let deficit = totalLoad - augmentedSolar;
         if (newBatKwh > effectiveReserve) {
             const enAvail = newBatKwh - effectiveReserve;
@@ -1378,7 +1396,7 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
              <button onClick={onToggleAuto} className={`p-2 rounded-full transition-colors ${isAutoMode ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
                 {isAutoMode ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
              </button>
-             <input type="range" min="0" max="24" step="0.08" value={timeOfDay} onChange={(e) => { onTimeChange(parseFloat(e.target.value)); if(isAutoMode) onToggleAuto(); }} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-500" />
+             <input type="range" min="0" max="24" step="0.08" value={timeOfDay} onChange={(e) => { onTimeChange(parseFloat(e.target.value)); if(isAutoMode) onToggleAuto(); }} disabled={isAutoMode} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-500 disabled:opacity-50 disabled:cursor-not-allowed" />
           </div>
 
           <div className="flex justify-center gap-2 mt-3 pt-2 border-t border-slate-100 flex-wrap">
@@ -1400,7 +1418,7 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
            
            <div className="grid grid-cols-2 gap-2">
              <button onClick={onTogglePriority} className="bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg p-2 flex items-center justify-center text-xs gap-2 transition-colors">
-               <span className={`font-bold ${displayPriority === 'load' ? 'text-sky-600' : 'text-green-600'}`}>{displayPriority === 'load' ? 'Load First' : 'Charge First'}</span>
+               <span className={`font-bold ${displayPriority === 'battery' ? 'text-green-600' : 'text-sky-600'}`}>{displayPriority === 'battery' ? 'Charge First' : 'Load First'}</span>
                {priorityMode === 'auto' && <span className="text-[8px] bg-purple-100 text-purple-600 px-1 rounded font-bold">AUTO</span>}
              </button>
              <button onClick={onToggleGrid} className={`border rounded-lg p-2 flex items-center justify-center text-xs gap-2 ${gridStatus === 'Online' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700 animate-pulse'}`}>
@@ -1448,12 +1466,12 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
             
             <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700 space-y-2">
                <div className="flex justify-between items-center text-xs">
-                 <span className="text-slate-300">1. {displayPriority === 'load' ? 'Loads' : 'Battery'}</span>
-                 <span className="text-white font-bold">{displayPriority === 'load' ? `${Math.min(data.solarR, data.homeLoad + data.ev1Load + data.ev2Load).toFixed(1)} kW` : (data.batteryStatus === 'Charging' ? `${Math.abs(data.batteryPower).toFixed(1)} kW` : '0.0 kW')}</span>
+                 <span className="text-slate-300">1. {displayPriority === 'battery' ? 'Battery' : 'Loads'}</span>
+                 <span className="text-white font-bold">{displayPriority === 'battery' ? (data.batteryStatus === 'Charging' ? `${Math.abs(data.batteryPower).toFixed(1)} kW` : '0.0 kW') : `${Math.min(data.solarR, data.homeLoad + data.ev1Load + data.ev2Load).toFixed(1)} kW`}</span>
                </div>
                <div className="flex justify-between items-center text-xs">
-                 <span className="text-slate-300">2. {displayPriority === 'load' ? 'Battery' : 'Loads'}</span>
-                 <span className="text-white font-bold">{displayPriority === 'load' ? (data.batteryStatus === 'Charging' ? `${Math.abs(data.batteryPower).toFixed(1)} kW` : '0.0 kW') : `${Math.min(data.solarR, data.homeLoad + data.ev1Load + data.ev2Load).toFixed(1)} kW`}</span>
+                 <span className="text-slate-300">2. {displayPriority === 'battery' ? 'Loads' : 'Battery'}</span>
+                 <span className="text-white font-bold">{displayPriority === 'battery' ? `${Math.min(data.solarR, data.homeLoad + data.ev1Load + data.ev2Load).toFixed(1)} kW` : (data.batteryStatus === 'Charging' ? `${Math.abs(data.batteryPower).toFixed(1)} kW` : '0.0 kW')}</span>
                </div>
                <div className="flex justify-between items-center text-xs border-t border-slate-700 pt-1 mt-1">
                  <span className="text-slate-300">3. Grid Backup</span>
@@ -1778,7 +1796,8 @@ export default function App() {
             curEvSpecs,
             cloudNoiseRef.current,
             batteryHealthRef.current,
-            actualStep
+            actualStep,
+            curPriority
           );
 
           // Update authoritative physics refs.
@@ -1946,7 +1965,8 @@ export default function App() {
       currentEvSpecs,
       cloudNoiseRef.current,
       batteryHealthRef.current,
-      physicsTimeStep
+      physicsTimeStep,
+      currentPriorityMode
     );
 
     // Keep refs in sync with the freshly-computed state.
@@ -2170,7 +2190,6 @@ export default function App() {
   // Formal PDF report
   const handleFormalReport = async () => {
     let reportWindow: Window | null = null;
-    let blobUrlCleanupTimer: ReturnType<typeof setTimeout> | null = null;
     try {
       const minuteData = minuteDataRef.current;
       if (!minuteData || minuteData.length === 0) {
@@ -2276,23 +2295,12 @@ export default function App() {
       }
 
       const html = await response.text();
-      // Navigate the already-open window to a blob URL so the report renders
-      // without inheriting the opener's Content-Security-Policy.  This allows
-      // external resources (e.g. Google Fonts) to load correctly and avoids
-      // cross-browser quirks with document.write() on existing popups.
-      // Using location.href on an already-open window is NOT blocked by popup
-      // blockers (only window.open() calls after async work are blocked).
-      const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
-      const blobUrl = URL.createObjectURL(blob);
-      reportWindow.location.href = blobUrl;
-      // Revoke the object URL after the browser has had time to fully load the
-      // page (fonts, styles, etc.).  60 s is a generous budget for slow
-      // connections; the URL cannot be re-used after revocation but the already-
-      // rendered page is unaffected.
-      const BLOB_CLEANUP_DELAY_MS = 60_000;
-      blobUrlCleanupTimer = setTimeout(() => URL.revokeObjectURL(blobUrl), BLOB_CLEANUP_DELAY_MS);
+      // Write the HTML directly into the already-opened window to avoid blob: URL
+      // navigation, which can be blocked by popup blockers and CSP policies.
+      reportWindow.document.open();
+      reportWindow.document.write(html);
+      reportWindow.document.close();
     } catch (error) {
-      if (blobUrlCleanupTimer !== null) clearTimeout(blobUrlCleanupTimer);
       if (reportWindow && !reportWindow.closed) {
         reportWindow.close();
       }
