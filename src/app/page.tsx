@@ -2270,19 +2270,35 @@ export default function App() {
       const totalHomeLoad = minuteData.reduce((s, d) => s + (d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (24 / 420)), 0);
       const totalEV1 = minuteData.reduce((s, d) => s + (d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (24 / 420)), 0);
       const totalEV2 = minuteData.reduce((s, d) => s + (d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (24 / 420)), 0);
-      const peakSolar = minuteData.filter(d => d.isPeakTime).reduce((s, d) => s + (d.solarEnergyKWh ?? 0), 0);
       let peakGridImport = 0, peakInstantSolar = 0, peakEVLoad = 0;
+      let batterySum = 0;
+      const peakBreakdown = { records: 0, solar: 0, gridImport: 0, gridExport: 0, savings: 0, homeLoad: 0, evLoad: 0 };
+      const offPeakBreakdown = { records: 0, solar: 0, gridImport: 0, gridExport: 0, savings: 0, homeLoad: 0, evLoad: 0 };
       for (const d of minuteData) {
+        const isPeak = Boolean(d.isPeakTime);
         const gi = d.gridImportKW ?? 0;
         if (gi > peakGridImport) peakGridImport = gi;
         const sk = d.solarKW ?? 0;
         if (sk > peakInstantSolar) peakInstantSolar = sk;
         const ev = (d.ev1LoadKW ?? 0) + (d.ev2LoadKW ?? 0);
         if (ev > peakEVLoad) peakEVLoad = ev;
+        const solarEnergy = d.solarEnergyKWh ?? 0;
+        const gridImportEnergy = d.gridImportKWh ?? 0;
+        const gridExportEnergy = d.gridExportKWh ?? 0;
+        const homeEnergy = d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (24 / 420);
+        const evEnergy = (d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (24 / 420)) + (d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (24 / 420));
+        const target = isPeak ? peakBreakdown : offPeakBreakdown;
+        target.records += 1;
+        target.solar += solarEnergy;
+        target.gridImport += gridImportEnergy;
+        target.gridExport += gridExportEnergy;
+        target.savings += d.savingsKES ?? 0;
+        target.homeLoad += homeEnergy;
+        target.evLoad += evEnergy;
+        batterySum += d.batteryLevelPct ?? 0;
       }
-      const avgBattery = minuteData.length > 0
-        ? minuteData.reduce((s, d) => s + (d.batteryLevelPct ?? 0), 0) / minuteData.length
-        : 0;
+      const avgBattery = minuteData.length > 0 ? batterySum / minuteData.length : 0;
+      const peakSolar = peakBreakdown.solar;
 
       // Build daily aggregation
       const dailyMap = new Map<string, {date: string; solar: number; gridImport: number; gridExport: number; savings: number; homeLoad: number; evLoad: number; ev1Load: number; ev2Load: number; avgBattery: number; batteryCount: number}>();
@@ -2327,6 +2343,7 @@ export default function App() {
           totalHomeLoad, totalEV1, totalEV2,
           peakSolar, peakGridImport, avgBattery,
           peakInstantSolar, peakEVLoad,
+          peakBreakdown, offPeakBreakdown,
           uniqueDays,
           dailyAgg: dailyAggCharts,
         }),
