@@ -72,6 +72,15 @@ function formatKES(value: number, maximumFractionDigits: number): string {
   }
 }
 
+/**
+ * Safely coerce incoming values to finite numbers to avoid runtime errors when
+ * rendering the report (e.g. calling toFixed on a string or undefined).
+ */
+function toNumber(value: unknown, fallback = 0): number {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+}
+
 const minuteDataSchema = z.object({
   date: z.string(),
   year: z.number(),
@@ -424,28 +433,47 @@ export async function POST(request: NextRequest) {
 
     if (preAggregated) {
       // Client already aggregated the data; use the compact payload directly.
-      totalSolar = payload.totalSolar ?? 0;
-      totalGridImport = payload.totalGridImport ?? 0;
-      totalGridExport = payload.totalGridExport ?? 0;
-      totalSavings = payload.totalSavings ?? 0;
-      totalHomeLoad = payload.totalHomeLoad ?? 0;
-      totalEV1 = payload.totalEV1 ?? 0;
-      totalEV2 = payload.totalEV2 ?? 0;
-      peakSolar = payload.peakSolar ?? 0;
-      peakGridImport = payload.peakGridImport ?? 0;
-      avgBattery = payload.avgBattery ?? 0;
-      peakInstantSolar = payload.peakInstantSolar ?? 0;
-      peakEVLoad = payload.peakEVLoad ?? 0;
-      dailyAgg = (payload.dailyAgg ?? []) as DailyAgg[];
+      totalSolar = toNumber(payload.totalSolar);
+      totalGridImport = toNumber(payload.totalGridImport);
+      totalGridExport = toNumber(payload.totalGridExport);
+      totalSavings = toNumber(payload.totalSavings);
+      totalHomeLoad = toNumber(payload.totalHomeLoad);
+      totalEV1 = toNumber(payload.totalEV1);
+      totalEV2 = toNumber(payload.totalEV2);
+      peakSolar = toNumber(payload.peakSolar);
+      peakGridImport = toNumber(payload.peakGridImport);
+      avgBattery = toNumber(payload.avgBattery);
+      peakInstantSolar = toNumber(payload.peakInstantSolar);
+      peakEVLoad = toNumber(payload.peakEVLoad);
+      dailyAgg = Array.isArray(payload.dailyAgg)
+        ? (payload.dailyAgg as DailyAgg[]).map((entry) => ({
+            date: typeof entry?.date === 'string' ? entry.date : '',
+            solar: toNumber((entry as DailyAgg).solar),
+            gridImport: toNumber((entry as DailyAgg).gridImport),
+            gridExport: toNumber((entry as DailyAgg).gridExport),
+            savings: toNumber((entry as DailyAgg).savings),
+            homeLoad: toNumber((entry as DailyAgg).homeLoad),
+            evLoad: toNumber((entry as DailyAgg).evLoad),
+            ev1Load: toNumber((entry as DailyAgg).ev1Load),
+            ev2Load: toNumber((entry as DailyAgg).ev2Load),
+            avgBattery: toNumber((entry as DailyAgg).avgBattery),
+            batteryCount: toNumber((entry as DailyAgg).batteryCount, 0),
+          }))
+        : [];
       // Client sends only the last N days for charting; keep full-history
       // metrics using payload.uniqueDays when present.
       uniqueDays = typeof payload.uniqueDays === 'number' ? payload.uniqueDays : dailyAgg.length;
-      dateFrom = payload.dateFrom ?? payload.startDate ?? '';
-      dateTo = payload.dateTo ?? payload.startDate ?? '';
-      startDate = payload.startDate ?? '';
-      reportDate = payload.reportDate ?? '';
-      systemCostKES = payload.systemCostKES;
-      totalDataPoints = payload.totalDataPoints ?? 0;
+      dateFrom = typeof payload.dateFrom === 'string'
+        ? payload.dateFrom
+        : (typeof payload.startDate === 'string' ? payload.startDate : '');
+      dateTo = typeof payload.dateTo === 'string'
+        ? payload.dateTo
+        : (typeof payload.startDate === 'string' ? payload.startDate : '');
+      startDate = typeof payload.startDate === 'string' ? payload.startDate : '';
+      reportDate = typeof payload.reportDate === 'string' ? payload.reportDate : '';
+      const parsedCost = toNumber(payload.systemCostKES, NaN);
+      systemCostKES = Number.isFinite(parsedCost) ? parsedCost : undefined;
+      totalDataPoints = toNumber(payload.totalDataPoints);
     } else {
       // Legacy path: full minuteData array.
       const minuteDataCandidate = (payload as { minuteData?: MinuteData[] }).minuteData;
