@@ -62,21 +62,11 @@ const nextConfig: NextConfig = {
       },
       {
         // API routes must not be cached by shared proxies; each response is
-        // user-specific or dynamically generated.
+        // user-specific or dynamically generated. CORS is handled per-route
+        // via buildCorsHeaders to avoid conflicting Access-Control headers.
         source: "/api/(.*)",
         headers: [
           { key: "Cache-Control", value: "no-store" },
-          {
-            key: "Access-Control-Allow-Origin",
-            value: (process.env.API_ALLOWED_ORIGINS ?? "").includes("*")
-              ? "*"
-              : "same-origin",
-          },
-          { key: "Access-Control-Allow-Methods", value: "GET,POST,OPTIONS" },
-          {
-            key: "Access-Control-Allow-Headers",
-            value: "Content-Type, Authorization, X-SC-Role, X-SC-Signature",
-          },
         ],
       },
     ];
