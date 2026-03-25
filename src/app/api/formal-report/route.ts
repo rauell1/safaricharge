@@ -28,6 +28,24 @@ const reportRequestSchema = z.object({
   avgBattery: z.number(),
   peakInstantSolar: z.number(),
   peakEVLoad: z.number(),
+  peakBreakdown: z.object({
+    records: z.number(),
+    solar: z.number(),
+    gridImport: z.number(),
+    gridExport: z.number(),
+    savings: z.number(),
+    homeLoad: z.number(),
+    evLoad: z.number(),
+  }),
+  offPeakBreakdown: z.object({
+    records: z.number(),
+    solar: z.number(),
+    gridImport: z.number(),
+    gridExport: z.number(),
+    savings: z.number(),
+    homeLoad: z.number(),
+    evLoad: z.number(),
+  }),
   uniqueDays: z.number(),
   dailyAgg: z.array(z.object({
     date: z.string(),
@@ -247,6 +265,25 @@ function generateReportHTML(data: ReportRequest): string {
   const selfSufficiency = totalLoad > 0 ? (data.totalSolar / totalLoad * 100) : 0;
   const gridDependency = totalLoad > 0 ? (data.totalGridImport / totalLoad * 100) : 0;
   const solarSelfConsumption = data.totalSolar > 0 ? ((data.totalSolar - data.totalGridExport) / data.totalSolar * 100) : 0;
+  const totalEVLoad = data.totalEV1 + data.totalEV2;
+
+  const avgDailySolar = data.uniqueDays > 0 ? data.totalSolar / data.uniqueDays : 0;
+  const avgDailyLoad = data.uniqueDays > 0 ? totalLoad / data.uniqueDays : 0;
+  const avgDailyGridImport = data.uniqueDays > 0 ? data.totalGridImport / data.uniqueDays : 0;
+  const avgDailyGridExport = data.uniqueDays > 0 ? data.totalGridExport / data.uniqueDays : 0;
+  const avgDailyEV = data.uniqueDays > 0 ? totalEVLoad / data.uniqueDays : 0;
+  const avgDailyEV1 = data.uniqueDays > 0 ? data.totalEV1 / data.uniqueDays : 0;
+  const avgDailyEV2 = data.uniqueDays > 0 ? data.totalEV2 / data.uniqueDays : 0;
+  const avgDailyHome = data.uniqueDays > 0 ? data.totalHomeLoad / data.uniqueDays : 0;
+
+  const evLoadShare = totalLoad > 0 ? (totalEVLoad / totalLoad * 100) : 0;
+  const homeLoadShare = totalLoad > 0 ? (data.totalHomeLoad / totalLoad * 100) : 0;
+  const exportRate = data.totalSolar > 0 ? (data.totalGridExport / data.totalSolar * 100) : 0;
+  const netEnergyBalance = data.totalSolar - data.totalGridImport + data.totalGridExport;
+
+  const avgRecordsPerDay = data.uniqueDays > 0 ? data.totalDataPoints / data.uniqueDays : 0;
+  const chartCoverageBaseline = Math.max(1, Math.min(data.uniqueDays, 30));
+  const last30CoveragePct = data.dailyAgg.length > 0 ? (data.dailyAgg.length / chartCoverageBaseline * 100) : 0;
 
   const avgDailySavings = data.uniqueDays > 0 ? data.totalSavings / data.uniqueDays : 0;
   const annualSavings = avgDailySavings * 365;
@@ -266,6 +303,23 @@ function generateReportHTML(data: ReportRequest): string {
   const co2Avoided = data.totalSolar * 0.47; // 0.47 kg CO2 per kWh
   const treeEquivalent = co2Avoided / 21.77;
   const kmNotDriven = co2Avoided / 0.21;
+
+  // Time-of-use breakdown
+  const peakImportShare = data.totalGridImport > 0 ? (data.peakBreakdown.gridImport / data.totalGridImport * 100) : 0;
+  const peakSolarShare = data.totalSolar > 0 ? (data.peakBreakdown.solar / data.totalSolar * 100) : 0;
+  const peakSavingsShare = data.totalSavings > 0 ? (data.peakBreakdown.savings / data.totalSavings * 100) : 0;
+  const offPeakImportShare = data.totalGridImport > 0 ? (data.offPeakBreakdown.gridImport / data.totalGridImport * 100) : 0;
+
+  // Operational highlights (last 30 days in payload)
+  type NumericDailyKey = 'solar' | 'savings' | 'gridImport' | 'evLoad';
+  const pickMaxDay = (key: NumericDailyKey) =>
+    data.dailyAgg.length > 0
+      ? data.dailyAgg.reduce((best, day) => day[key] > best[key] ? day : best, data.dailyAgg[0])
+      : null;
+  const topSolarDay = pickMaxDay('solar');
+  const topSavingsDay = pickMaxDay('savings');
+  const topGridImportDay = pickMaxDay('gridImport');
+  const topEvDay = pickMaxDay('evLoad');
 
   const reportRef = `SC-${Date.now().toString(36).toUpperCase()}`;
 
@@ -514,16 +568,59 @@ function generateReportHTML(data: ReportRequest): string {
         </div>
 
         <div class="metric-card">
-          <div class="metric-label">Grid Import Avoided</div>
-          <div class="metric-value">${fmt(data.totalSolar - data.totalGridExport, 1)} <span class="metric-unit">kWh</span></div>
+          <div class="metric-label">Average Daily Load</div>
+          <div class="metric-value">${fmt(avgDailyLoad, 1)} <span class="metric-unit">kWh/day</span></div>
         </div>
       </div>
+    </div>
+
+    <!-- Data Coverage -->
+    <div class="section">
+      <div class="section-title">
+        <span class="section-number">2</span>
+        <span>Data Coverage & Quality</span>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Coverage Metric</th>
+            <th class="num">Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Reporting Window</td>
+            <td class="num">${data.dateFrom} to ${data.dateTo}</td>
+          </tr>
+          <tr>
+            <td>Days Tracked</td>
+            <td class="num">${fmt(data.uniqueDays, 0)} days</td>
+          </tr>
+          <tr>
+            <td>Total Data Points</td>
+            <td class="num">${fmtNum(data.totalDataPoints)}</td>
+          </tr>
+          <tr>
+            <td>Average Records per Day</td>
+            <td class="num">${fmt(avgRecordsPerDay, 0)}</td>
+          </tr>
+          <tr>
+            <td>Days in Chart Window</td>
+            <td class="num">${fmt(data.dailyAgg.length, 0)} of ${fmt(Math.min(data.uniqueDays, 30), 0)} days</td>
+          </tr>
+          <tr>
+            <td>Coverage of Last 30 Days</td>
+            <td class="num">${fmt(last30CoveragePct, 1)}%</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <!-- Energy Performance -->
     <div class="section">
       <div class="section-title">
-        <span class="section-number">2</span>
+        <span class="section-number">3</span>
         <span>Energy Performance</span>
       </div>
 
@@ -562,6 +659,26 @@ function generateReportHTML(data: ReportRequest): string {
             <td>kWh</td>
           </tr>
           <tr>
+            <td>Average Daily Solar</td>
+            <td class="num">${fmt(avgDailySolar, 2)}</td>
+            <td>kWh/day</td>
+          </tr>
+          <tr>
+            <td>Average Daily Load</td>
+            <td class="num">${fmt(avgDailyLoad, 2)}</td>
+            <td>kWh/day</td>
+          </tr>
+          <tr>
+            <td>Average Daily Grid Import</td>
+            <td class="num">${fmt(avgDailyGridImport, 2)}</td>
+            <td>kWh/day</td>
+          </tr>
+          <tr>
+            <td>Average Daily Grid Export</td>
+            <td class="num">${fmt(avgDailyGridExport, 2)}</td>
+            <td>kWh/day</td>
+          </tr>
+          <tr>
             <td>Grid Import</td>
             <td class="num">${fmt(data.totalGridImport, 2)}</td>
             <td>kWh</td>
@@ -569,6 +686,11 @@ function generateReportHTML(data: ReportRequest): string {
           <tr>
             <td>Grid Export</td>
             <td class="num">${fmt(data.totalGridExport, 2)}</td>
+            <td>kWh</td>
+          </tr>
+          <tr>
+            <td>Net Energy Balance</td>
+            <td class="num">${fmt(netEnergyBalance, 2)}</td>
             <td>kWh</td>
           </tr>
           <tr style="background:#e0f2fe;font-weight:600;">
@@ -584,6 +706,11 @@ function generateReportHTML(data: ReportRequest): string {
           <tr>
             <td>Solar Self-Consumption</td>
             <td class="num">${fmt(solarSelfConsumption, 2)}</td>
+            <td>%</td>
+          </tr>
+          <tr>
+            <td>Solar Export Rate</td>
+            <td class="num">${fmt(exportRate, 2)}</td>
             <td>%</td>
           </tr>
           <tr>
@@ -613,12 +740,168 @@ function generateReportHTML(data: ReportRequest): string {
         <div class="chart-title">Daily Solar Generation vs Grid Import (Last 30 Days)</div>
         ${solarVsGridSVG}
       </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Performance Highlight (Last 30 Days)</th>
+            <th>Date</th>
+            <th class="num">Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${topSolarDay ? `
+          <tr>
+            <td>Highest Solar Day</td>
+            <td>${topSolarDay.date}</td>
+            <td class="num">${fmt(topSolarDay.solar, 2)} kWh</td>
+          </tr>` : ''}
+          ${topSavingsDay ? `
+          <tr>
+            <td>Highest Savings Day</td>
+            <td>${topSavingsDay.date}</td>
+            <td class="num">${fmt(topSavingsDay.savings, 2)} KES</td>
+          </tr>` : ''}
+          ${topGridImportDay ? `
+          <tr>
+            <td>Heaviest Grid Import Day</td>
+            <td>${topGridImportDay.date}</td>
+            <td class="num">${fmt(topGridImportDay.gridImport, 2)} kWh</td>
+          </tr>` : ''}
+          ${topEvDay ? `
+          <tr>
+            <td>Highest EV Load Day</td>
+            <td>${topEvDay.date}</td>
+            <td class="num">${fmt(topEvDay.evLoad, 2)} kWh</td>
+          </tr>` : ''}
+          ${(topSolarDay || topSavingsDay || topGridImportDay || topEvDay) ? '' : `
+          <tr>
+            <td colspan="3" style="text-align:center;color:#64748b;">No daily records available.</td>
+          </tr>`}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Load & Charging Insights -->
+    <div class="section">
+      <div class="section-title">
+        <span class="section-number">4</span>
+        <span>Load & Charging Insights</span>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Home Load Share</div>
+          <div class="metric-value">${fmt(homeLoadShare, 1)} <span class="metric-unit">%</span></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">EV Load Share</div>
+          <div class="metric-value">${fmt(evLoadShare, 1)} <span class="metric-unit">%</span></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Avg Daily Home Load</div>
+          <div class="metric-value">${fmt(avgDailyHome, 1)} <span class="metric-unit">kWh/day</span></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Avg Daily EV Load</div>
+          <div class="metric-value">${fmt(avgDailyEV, 1)} <span class="metric-unit">kWh/day</span></div>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Load Segment</th>
+            <th class="num">Total</th>
+            <th class="num">Share of Load</th>
+            <th class="num">Avg Daily</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Home Load</td>
+            <td class="num">${fmt(data.totalHomeLoad, 2)} kWh</td>
+            <td class="num">${fmt(homeLoadShare, 1)}%</td>
+            <td class="num">${fmt(avgDailyHome, 2)} kWh/day</td>
+          </tr>
+          <tr>
+            <td>EV #1 Load</td>
+            <td class="num">${fmt(data.totalEV1, 2)} kWh</td>
+            <td class="num">${fmt(totalLoad > 0 ? (data.totalEV1 / totalLoad * 100) : 0, 1)}%</td>
+            <td class="num">${fmt(avgDailyEV1, 2)} kWh/day</td>
+          </tr>
+          <tr>
+            <td>EV #2 Load</td>
+            <td class="num">${fmt(data.totalEV2, 2)} kWh</td>
+            <td class="num">${fmt(totalLoad > 0 ? (data.totalEV2 / totalLoad * 100) : 0, 1)}%</td>
+            <td class="num">${fmt(avgDailyEV2, 2)} kWh/day</td>
+          </tr>
+          <tr>
+            <td>Combined EV Load</td>
+            <td class="num">${fmt(totalEVLoad, 2)} kWh</td>
+            <td class="num">${fmt(evLoadShare, 1)}%</td>
+            <td class="num">${fmt(avgDailyEV, 2)} kWh/day</td>
+          </tr>
+          <tr style="background:#e0f2fe;font-weight:600;">
+            <td>Total Combined Load</td>
+            <td class="num">${fmt(totalLoad, 2)} kWh</td>
+            <td class="num">100%</td>
+            <td class="num">${fmt(avgDailyLoad, 2)} kWh/day</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Time-of-Use Analysis -->
+    <div class="section">
+      <div class="section-title">
+        <span class="section-number">5</span>
+        <span>Time-of-Use Analysis</span>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Window</th>
+            <th class="num">Records</th>
+            <th class="num">Solar (kWh)</th>
+            <th class="num">Grid Import (kWh)</th>
+            <th class="num">Grid Export (kWh)</th>
+            <th class="num">Savings (KES)</th>
+            <th class="num">Share of Grid Import</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Peak</td>
+            <td class="num">${fmt(data.peakBreakdown.records, 0)}</td>
+            <td class="num">${fmt(data.peakBreakdown.solar, 2)}</td>
+            <td class="num">${fmt(data.peakBreakdown.gridImport, 2)}</td>
+            <td class="num">${fmt(data.peakBreakdown.gridExport, 2)}</td>
+            <td class="num">${fmt(data.peakBreakdown.savings, 2)}</td>
+            <td class="num">${fmt(peakImportShare, 1)}%</td>
+          </tr>
+          <tr>
+            <td>Off-Peak</td>
+            <td class="num">${fmt(data.offPeakBreakdown.records, 0)}</td>
+            <td class="num">${fmt(data.offPeakBreakdown.solar, 2)}</td>
+            <td class="num">${fmt(data.offPeakBreakdown.gridImport, 2)}</td>
+            <td class="num">${fmt(data.offPeakBreakdown.gridExport, 2)}</td>
+            <td class="num">${fmt(data.offPeakBreakdown.savings, 2)}</td>
+            <td class="num">${fmt(offPeakImportShare, 1)}%</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="font-size:12px;color:#64748b;margin-top:8px;">Peak/off-peak windows follow the tariff schedule captured in the simulation; savings align to those time blocks. Peak hours captured ${fmt(peakSolarShare, 1)}% of solar generation and ${fmt(peakSavingsShare, 1)}% of total savings.</div>
     </div>
 
     <!-- Financial Analysis -->
     <div class="section">
       <div class="section-title">
-        <span class="section-number">3</span>
+        <span class="section-number">6</span>
         <span>Financial Analysis</span>
       </div>
 
@@ -700,7 +983,7 @@ function generateReportHTML(data: ReportRequest): string {
     <!-- Battery Performance -->
     <div class="section">
       <div class="section-title">
-        <span class="section-number">4</span>
+        <span class="section-number">7</span>
         <span>Battery Performance</span>
       </div>
 
@@ -725,7 +1008,7 @@ function generateReportHTML(data: ReportRequest): string {
     <!-- Environmental Impact -->
     <div class="section">
       <div class="section-title">
-        <span class="section-number">5</span>
+        <span class="section-number">8</span>
         <span>Environmental Impact</span>
       </div>
 
@@ -781,7 +1064,7 @@ function generateReportHTML(data: ReportRequest): string {
     <!-- Daily Summary Table -->
     <div class="section">
       <div class="section-title">
-        <span class="section-number">6</span>
+        <span class="section-number">9</span>
         <span>Daily Summary</span>
       </div>
 
