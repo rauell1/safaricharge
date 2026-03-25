@@ -437,7 +437,9 @@ export async function POST(request: NextRequest) {
       peakInstantSolar = payload.peakInstantSolar ?? 0;
       peakEVLoad = payload.peakEVLoad ?? 0;
       dailyAgg = (payload.dailyAgg ?? []) as DailyAgg[];
-      uniqueDays = dailyAgg.length;
+      // Client sends only the last N days for charting; keep full-history
+      // metrics using payload.uniqueDays when present.
+      uniqueDays = typeof payload.uniqueDays === 'number' ? payload.uniqueDays : dailyAgg.length;
       dateFrom = payload.dateFrom ?? payload.startDate ?? '';
       dateTo = payload.dateTo ?? payload.startDate ?? '';
       startDate = payload.startDate ?? '';
@@ -800,7 +802,7 @@ export async function POST(request: NextRequest) {
   </div>
 
   <div class="chart-wrap">
-    <div class="chart-title">Daily Solar Generation vs Grid Import (Last ${Math.min(dailyAgg.length, 30)} Days)</div>
+    <div class="chart-title">Daily Solar Generation vs Grid Import (Last ${Math.min(uniqueDays, 30)} Days)</div>
     <div class="chart-row">
       <div style="flex:1;">${solarVsGridChart}</div>
       <div style="text-align:center;flex-shrink:0;">${donut}<p style="font-size:8pt;color:#64748b;margin-top:4px;font-weight:600;">Energy Mix</p></div>

@@ -2227,6 +2227,10 @@ export default function App() {
         a.batteryCount += 1;
       }
       const dailyAgg = Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+      const uniqueDays = dailyAgg.length;
+      // Charts only display the last ~30 days; sending the full daily history can
+      // push the JSON payload over server/body-size limits and trigger 5xx errors.
+      const dailyAggCharts = dailyAgg.slice(-30);
 
       const response = await fetch('/api/formal-report', {
         method: 'POST',
@@ -2242,7 +2246,8 @@ export default function App() {
           totalHomeLoad, totalEV1, totalEV2,
           peakSolar, peakGridImport, avgBattery,
           peakInstantSolar, peakEVLoad,
-          dailyAgg,
+          uniqueDays,
+          dailyAgg: dailyAggCharts,
         }),
       });
 
