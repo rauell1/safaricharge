@@ -1707,7 +1707,15 @@ export default function App() {
     }, 0);
 
     todayGraphDataRef.current = [];
-    setDailyGraphData([]);
+    // At high simulation speeds (x100, x1000) only ~1 point is added to the
+    // new day before the interval tick ends, making the graph appear empty.
+    // Keep the completed day's snapshot visible until enough new-day data
+    // accumulates (interval below checks length before overwriting this).
+    if (snapshot.length > 0) {
+      setDailyGraphData(snapshot);
+    } else {
+      setDailyGraphData([]);
+    }
 
     // Markov chain weather transition (day-to-day persistence)
     const newWeather = nextWeatherMarkov(weatherRef.current);
@@ -1832,18 +1840,22 @@ export default function App() {
           }
 
           // Minute-data log: one entry per sub-step (covers actualStep simulated hours).
-          const nowTs = new Date(computeParamsRef.current.currentDate);
-          nowTs.setHours(currentHour, Math.floor((timeOfDayRef.current % 1) * 60), 0);
-          const weekNum = getWeekNumber(nowTs);
+          // Pre-compute date fields once per sub-step to avoid repeated Date allocations.
+          const simDate = computeParamsRef.current.currentDate;
+          const minuteFrac = Math.floor((timeOfDayRef.current % 1) * 60);
+          const weekNum = getWeekNumber(simDate);
+          const dateStr = simDate.toISOString().split('T')[0];
+          const tsHours = simDate.getTime() + currentHour * 3600000 + minuteFrac * 60000;
+          const timestamp = new Date(tsHours).toISOString();
           minuteDataRef.current.push({
-            timestamp: nowTs.toISOString(),
-            date: nowTs.toISOString().split('T')[0],
-            year: nowTs.getFullYear(),
-            month: nowTs.getMonth() + 1,
+            timestamp,
+            date: dateStr,
+            year: simDate.getFullYear(),
+            month: simDate.getMonth() + 1,
             week: weekNum,
-            day: nowTs.getDate(),
+            day: simDate.getDate(),
             hour: currentHour,
-            minute: Math.floor((timeOfDayRef.current % 1) * 60),
+            minute: minuteFrac,
             solarKW: state.solar,
             homeLoadKW: state.houseLoad,
             ev1LoadKW: state.ev1Kw,
@@ -1864,6 +1876,14 @@ export default function App() {
             gridImportKWh: state.gridImport * actualStep,
             gridExportKWh: state.gridExport * actualStep,
           });
+          // Cap minuteDataRef to ~2 years of data (~305,760 records) to prevent
+          // unbounded memory growth during long x1000 sessions.  Excess records
+          // are trimmed from the front (oldest data) so totals are preserved
+          // through the running accumulators instead of this array.
+          const MAX_MINUTE_RECORDS = 420 * 365 * 2;
+          if (minuteDataRef.current.length > MAX_MINUTE_RECORDS) {
+            minuteDataRef.current.splice(0, minuteDataRef.current.length - MAX_MINUTE_RECORDS);
+          }
 
           // Collect one graph data point per sub-step.
           newGraphPoints.push({
@@ -1879,8 +1899,13 @@ export default function App() {
 
         if (lastState) {
           // Append graph points and refresh the graph once per interval tick.
+          // Only overwrite the displayed graph when the new day has accumulated
+          // enough points; otherwise the completed-day snapshot set by
+          // handleNewDay stays visible (prevents empty graph at x1000).
           todayGraphDataRef.current.push(...newGraphPoints);
-          setDailyGraphData([...todayGraphDataRef.current]);
+          if (todayGraphDataRef.current.length > 5) {
+            setDailyGraphData([...todayGraphDataRef.current]);
+          }
 
           // Single React state update per tick for all display values.
           setTimeOfDay(timeOfDayRef.current);
@@ -2246,7 +2271,12 @@ export default function App() {
         a.avgBattery += d.batteryLevelPct ?? 0;
         a.batteryCount += 1;
       }
-      const dailyAgg = Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+      const dailyAgg = Array.from(dailyMap.values())
+        // Compute the true average battery SoC for each day (was being sent as a
+        // raw sum which caused the battery chart in the PDF report to render at
+        // wildly incorrect Y coordinates).
+        .map(r => ({ ...r, avgBattery: r.batteryCount > 0 ? r.avgBattery / r.batteryCount : 0 }))
+        .sort((a, b) => a.date.localeCompare(b.date));
       const uniqueDays = dailyAgg.length;
       // Charts only display the last ~30 days; sending the full daily history can
       // push the JSON payload over server/body-size limits and trigger 5xx errors.
@@ -2295,11 +2325,14 @@ export default function App() {
       }
 
       const html = await response.text();
-      // Write the HTML directly into the already-opened window to avoid blob: URL
-      // navigation, which can be blocked by popup blockers and CSP policies.
-      reportWindow.document.open();
-      reportWindow.document.write(html);
-      reportWindow.document.close();
+      // Navigate the popup to a blob URL containing the full HTML report.
+      // blob: is permitted by the CSP (default-src includes blob:) and this
+      // approach is more reliable than document.open/write across browsers.
+      const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
+      const blobUrl = URL.createObjectURL(blob);
+      reportWindow.location.href = blobUrl;
+      // Revoke the object URL after the window has had time to load it.
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
     } catch (error) {
       if (reportWindow && !reportWindow.closed) {
         reportWindow.close();
