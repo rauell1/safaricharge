@@ -1,15 +1,18 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffect } from 'react';
-import { 
-  Sun, Cloud, Factory, Home, Building2, Battery, UtilityPole, Wifi, 
-  Clock, Smartphone, Zap, ArrowDown, ArrowUp, MessageSquare, X, Send, 
-  Sparkles, Loader2, Sliders, Play, Pause, FastForward, ChevronDown, 
-  ChevronUp, MapPin, Table, FileText, PieChart, Settings, Calendar, 
+import {
+  Sun, Cloud, Factory, Home, Building2, Battery, UtilityPole, Wifi,
+  Clock, Smartphone, Zap, ArrowDown, ArrowUp, MessageSquare, X, Send,
+  Sparkles, Loader2, Sliders, Play, Pause, FastForward, ChevronDown,
+  ChevronUp, MapPin, Table, FileText, PieChart, Settings, Calendar,
   CloudRain, Moon, Download, RotateCcw, AlertTriangle, DollarSign,
-  Cpu, Car, ZapOff, FileSpreadsheet
+  Cpu, Car, ZapOff, FileSpreadsheet, Target
 } from 'lucide-react';
 import DailyEnergyGraph, { type GraphDataPoint, buildGraphSVG, triggerJPGDownload, buildJPGBlob } from '@/components/DailyEnergyGraph';
+import { LocationSelector, RecommendationPanel } from '@/components/RecommendationComponents';
+import type { LocationCoordinates, SolarIrradianceData } from '@/lib/nasa-power-api';
+import { KENYA_LOCATIONS } from '@/lib/nasa-power-api';
 
 // --- CONFIGURATION - Kenya Power Commercial Tariff (E-Mobility) ---
 // Based on actual KPLC bill for ROAM ELECTRIC LIMITED - February 2026
@@ -1337,8 +1340,8 @@ const PastDaysZipButton = ({ pastGraphs }: { pastGraphs: Array<{ date: string; d
   );
 };
 
-const Header = ({ onToggleAssistant, currentDate, onReset }: {
-  onToggleAssistant: () => void; currentDate: Date; onReset: () => void;
+const Header = ({ onToggleAssistant, currentDate, onReset, currentLocation, onLocationSelected, onOpenRecommendation }: {
+  onToggleAssistant: () => void; currentDate: Date; onReset: () => void; currentLocation: LocationCoordinates; onLocationSelected: (location: LocationCoordinates, solarData: SolarIrradianceData) => void; onOpenRecommendation: () => void;
 }) => (
   <div className="w-full bg-white relative z-50 shadow-sm">
     <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
@@ -1359,9 +1362,12 @@ const Header = ({ onToggleAssistant, currentDate, onReset }: {
          <div className="hidden md:flex items-center gap-2 text-slate-500 text-xs font-medium bg-slate-100 px-3 py-1 rounded-full">
             <Calendar size={14} className="text-slate-400" /> {formatDate(currentDate)}
          </div>
-         <div className="hidden md:flex items-center gap-2 text-slate-500 text-xs font-medium bg-slate-100 px-3 py-1 rounded-full">
-            <MapPin size={14} className="text-sky-500" /> Nairobi, KE
+         <div className="hidden md:block">
+            <LocationSelector currentLocation={currentLocation} onLocationSelected={onLocationSelected} />
          </div>
+         <button onClick={onOpenRecommendation} className="hidden md:flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-2 rounded-full text-xs font-bold hover:from-green-700 hover:to-emerald-700 transition-colors shadow-lg">
+           <Target size={14} /> Get Recommendation
+         </button>
          <button onClick={onToggleAssistant} className="bg-slate-900 text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 hover:bg-slate-800 transition-colors shadow-lg border border-slate-700">
            <Sparkles size={14} className="text-green-400" /> SafariCharge AI
          </button>
@@ -1566,14 +1572,27 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
 // --- 6. APP COMPONENT ---
 
 export default function App() {
+  // Location and solar data state
+  const [currentLocation, setCurrentLocation] = useState<LocationCoordinates>(KENYA_LOCATIONS[0]); // Default to Nairobi
+  const [solarData, setSolarData] = useState<SolarIrradianceData>({
+    latitude: -1.2921,
+    longitude: 36.8219,
+    location: 'Nairobi',
+    monthlyAverage: [5.5, 5.8, 5.6, 5.4, 5.2, 5.1, 5.0, 5.3, 5.7, 5.8, 5.4, 5.3],
+    annualAverage: 5.4,
+    monthlyTemperature: [22, 23, 24, 23, 22, 21, 20, 21, 22, 23, 22, 22],
+    peakSunHours: [5.5, 5.8, 5.6, 5.4, 5.2, 5.1, 5.0, 5.3, 5.7, 5.8, 5.4, 5.3],
+  });
+  const [isRecommendationOpen, setIsRecommendationOpen] = useState(false);
+
   // Start at midnight so the very first simulated day runs midnight→midnight
   // and accumulates the full 420 data points like every subsequent day.
   const [timeOfDay, setTimeOfDay] = useState(0);
   const [currentDate, setCurrentDate] = useState(new Date('2026-01-01T00:00:00'));
   const [isAutoMode, setIsAutoMode] = useState(false);
-  const [simSpeed, setSimSpeed] = useState(1); 
+  const [simSpeed, setSimSpeed] = useState(1);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
-  const [isReportOpen, setIsReportOpen] = useState(false); 
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const [priorityMode, setPriorityMode] = useState('auto');
   const [gridStatus, setGridStatus] = useState('Online');
   const [weather, setWeather] = useState('Sunny');
@@ -2087,7 +2106,19 @@ export default function App() {
   }, [data._graphPoint]);
 
   const isNight = timeOfDay < 6 || timeOfDay > 19;
-  
+
+  // Handle location change
+  const handleLocationChange = useCallback((location: LocationCoordinates, newSolarData: SolarIrradianceData) => {
+    setCurrentLocation(location);
+    setSolarData(newSolarData);
+    console.log(`Location changed to ${location.name}. Solar data:`, newSolarData);
+  }, []);
+
+  // Handle opening recommendation panel
+  const handleOpenRecommendation = useCallback(() => {
+    setIsRecommendationOpen(true);
+  }, []);
+
   // Export function for downloading report
   const handleExportReport = async () => {
     try {
@@ -2392,8 +2423,22 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-200 font-sans text-slate-900 flex flex-col relative">
-      <Header onToggleAssistant={() => setIsAssistantOpen(!isAssistantOpen)} currentDate={currentDate} onReset={handleReset} />
+      <Header
+        onToggleAssistant={() => setIsAssistantOpen(!isAssistantOpen)}
+        currentDate={currentDate}
+        onReset={handleReset}
+        currentLocation={currentLocation}
+        onLocationSelected={handleLocationChange}
+        onOpenRecommendation={handleOpenRecommendation}
+      />
       <SafariChargeAIAssistant isOpen={isAssistantOpen} onClose={() => setIsAssistantOpen(false)} data={data} timeOfDay={timeOfDay} weather={weather} currentDate={currentDate} isAutoMode={isAutoMode} />
+      <RecommendationPanel
+        isOpen={isRecommendationOpen}
+        onClose={() => setIsRecommendationOpen(false)}
+        simulationData={minuteDataRef.current}
+        solarData={solarData}
+        currentLocation={currentLocation}
+      />
       <EnergyReportModal 
         isOpen={isReportOpen} 
         onClose={() => setIsReportOpen(false)} 
