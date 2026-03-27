@@ -28,6 +28,7 @@ import {
   fetchSolarData,
   getSolarDataForLocation
 } from '@/lib/nasa-power-api';
+import { fetchSolarDataWithFallback } from '@/lib/meteonorm-api';
 import {
   generateRecommendation,
   createLoadProfileFromSimulation,
@@ -48,16 +49,20 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [customCoords, setCustomCoords] = useState({ lat: '', lon: '' });
   const [error, setError] = useState<string | null>(null);
+  const [dataSource, setDataSource] = useState<string>('');
 
   const handleLocationSelect = async (location: LocationCoordinates) => {
     setIsLoading(true);
     setError(null);
+    setDataSource('');
     try {
-      const solarData = await fetchSolarData(location.latitude, location.longitude, location.name);
-      onLocationSelected(location, solarData);
+      // Use new multi-API approach with automatic fallback
+      const result = await fetchSolarDataWithFallback(location.latitude, location.longitude, location.name);
+      setDataSource(`Data from: ${result.source === 'nasa' ? 'NASA POWER' : result.source === 'meteonorm' ? 'Open-Meteo' : 'Fallback'}`);
+      onLocationSelected(location, result.data);
       setIsOpen(false);
     } catch (err) {
-      setError('Failed to fetch solar data. Using fallback values.');
+      setError('Failed to fetch solar data from all sources. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -86,11 +91,17 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 text-slate-500 text-xs font-medium bg-slate-100 px-3 py-1 rounded-full hover:bg-slate-200 transition-colors"
+        title={dataSource || 'Click to select location'}
       >
         <MapPin size={14} className="text-sky-500" />
         {currentLocation.name}
         {isOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
       </button>
+      {dataSource && (
+        <div className="absolute top-full right-0 mt-1 text-[10px] text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-200 whitespace-nowrap">
+          {dataSource}
+        </div>
+      )}
 
       {isOpen && (
         <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-slate-200 z-50 overflow-hidden">
