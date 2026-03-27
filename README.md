@@ -9,6 +9,11 @@ Production-grade Next.js dashboard for simulating and monitoring solar PV, batte
 - In-memory rate limiting, CORS allowlist, bearer-token auth, optional RBAC, and webhook signature checks on all API routes.
 - Environment validation at startup and health endpoint for liveness probes.
 
+## Prerequisites
+- Node.js 20+ (dev/build) and npm.
+- Bun available in production if you use `npm run start`.
+- SQLite works by default for local dev; set `DATABASE_URL` to Postgres in production.
+
 ## Tech Stack
 | Layer | Technology |
 | --- | --- |
@@ -78,6 +83,12 @@ npm run dev
 # http://localhost:3000
 ```
 
+5) Lint / build checks  
+```bash
+npm run lint
+npm run build
+```
+
 ## Environment Variables
 | Name | Required | Description |
 | --- | --- | --- |
@@ -100,6 +111,14 @@ npm run dev
 | `npm run db:push` | Apply Prisma schema. |
 | `npm run db:migrate` | Create a migration in dev. |
 
+## API Routes
+| Method | Path | Description | Auth / Limits |
+| --- | --- | --- | --- |
+| `GET` | `/api/health` | Liveness probe returning JSON. | None. |
+| `POST` | `/api/export-report` | Accepts minute-level simulation data and returns a sanitised CSV export. 8 MB body cap. | `Authorization: Bearer <token>` when `API_SERVICE_TOKEN` is set; optional HMAC via `WEBHOOK_SECRET`. Rate limit: 5/min. |
+| `POST` | `/api/formal-report` | Accepts aggregated simulation totals/breakdowns and returns HTML for PDF printing. 8 MB body cap. | Same auth/signature rules as export. Rate limit: 5/min. |
+| `POST` | `/api/safaricharge-ai` | AI assistant (Gemini primary, Z.AI fallback) with Zod-validated prompts/responses. | Bearer token if configured. Rate limit: 10/min. |
+
 ## Security Hardening
 - **Rate limiting**: in-memory sliding window on all API routes (`src/middleware.ts`).
 - **CORS**: allowlist with per-origin echo + OPTIONS handling in `src/lib/security.ts`.
@@ -110,6 +129,8 @@ npm run dev
 - **Env validation**: `src/instrumentation.ts` calls `validateEnv` at startup.
 - **Error boundaries**: `src/app/error.tsx` catches client render failures.
 - **Sanitised exports**: CSV generation neutralises formula injection.
+- **Content security**: CSP and header hardening live in `next.config.ts`; CORS and body-size enforcement are per-route.
+- **Rate limits by endpoint**: AI (10/min), formal report (5/min), export report (5/min), other API routes (60/min).
 
 ## Deployment
 ### Vercel
@@ -132,4 +153,3 @@ Use `Caddyfile.txt` as a reverse-proxy template (TLS + compression).
   - Use Postgres in production with connection pooling.
   - Keep `API_ALLOWED_ORIGINS` narrow and enforce bearer tokens for server-to-server calls.
   - Prefer background jobs/queues for heavy tasks (report generation, notifications).
-
