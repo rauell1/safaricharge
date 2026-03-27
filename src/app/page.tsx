@@ -93,23 +93,29 @@ const SOILING_LOSS_PER_DAY = 0.005; // 0.5% dust loss per day (≈3.5% per week)
 const SOILING_MIN_FACTOR = 0.70; // Maximum soiling derating (30% loss before rain cleans)
 
 /**
- * Seasonal solar peak hour for Nairobi (1.29°S latitude).
- * Sun is slightly north of zenith in June ("winter") → earlier peak ~11:00.
- * Sun is slightly south of zenith in December ("summer") → later peak ~13:00.
+ * Seasonal solar peak hour - Uses dynamic location data
+ * Sun position varies by latitude and season
  */
-const getSeasonalPeakHour = (month: number): number => {
+const getSeasonalPeakHour = (month: number, latitude: number = -1.2921): number => {
+  // Simplified seasonal variation based on latitude
+  // Sun is slightly north/south of zenith depending on season
+  const basePeak = 12.75; // ~12:45 PM local time (solar noon)
   const phaseRad = ((month - 6) / 12) * 2 * Math.PI;
-  return 12.0 + Math.cos(phaseRad) * 1.0;
+  // Latitude effect: more variation at higher latitudes
+  const seasonalShift = -0.25 * Math.cos(phaseRad) * (Math.abs(latitude) / 2);
+  return basePeak + seasonalShift;
 };
 
 /**
- * Panel temperature derating using NOCT model.
- * Estimates panel temperature from ambient (seasonal for Nairobi) + solar heating,
- * then applies the standard temperature coefficient.
+ * Panel temperature derating using NOCT model - UPDATED TO USE DYNAMIC TEMPERATURE DATA
+ * Estimates panel temperature from ambient temperature + solar heating
  */
-const getPanelTempEffect = (irradFraction: number, month: number): number => {
-  // Nairobi ambient: ~22°C avg, peaks ~30°C in hot months (Oct-Mar)
-  const ambientTemp = 22 + 8 * Math.sin(((month - 3) / 12) * 2 * Math.PI);
+const getPanelTempEffect = (irradFraction: number, month: number, monthlyTemps?: number[]): number => {
+  // Use provided monthly temperatures or fallback to Nairobi-like pattern
+  const ambientTemp = monthlyTemps && monthlyTemps[month - 1]
+    ? monthlyTemps[month - 1]
+    : 22 + 8 * Math.sin(((month - 3) / 12) * 2 * Math.PI);
+
   const panelTemp = ambientTemp + irradFraction * 28; // simplified NOCT model
   const excess = Math.max(0, panelTemp - 25);
   return Math.max(0.70, 1.0 + excess * PANEL_TEMP_COEFFICIENT);
@@ -174,11 +180,12 @@ const nextWeatherMarkov = (current: string): string => {
 
 // --- 1. PHYSICS ENGINE (Shared Logic) ---
 const PhysicsEngine = {
-  generateDayScenario: (weather: string, date: Date = new Date('2026-01-01'), soilingFactor: number = 1.0) => {
+  generateDayScenario: (weather: string, date: Date = new Date('2026-01-01'), soilingFactor: number = 1.0, solarData?: SolarIrradianceData) => {
     const month = date.getMonth() + 1;
     const dayOfWeek = date.getDay();
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-    const peakSolarHour = getSeasonalPeakHour(month);
+    const latitude = solarData?.latitude ?? -1.2921;
+    const peakSolarHour = getSeasonalPeakHour(month, latitude);
     // Weather-dependent HVAC base load (sunny/hot days drive more cooling demand)
     const hvacBase = weather === 'Sunny' ? 3.5 : weather === 'Cloudy' ? 2.0 : 0.5;
 
@@ -189,6 +196,8 @@ const PhysicsEngine = {
       isWeekend,
       peakSolarHour,
       soilingFactor,
+      latitude,
+      monthlyTemperature: solarData?.monthlyTemperature,
       ev1: {
         startSoc: 40 + Math.random() * 30,
         depart: 7.5 + gaussianRandom(0, 0.2),
@@ -242,7 +251,7 @@ const PhysicsEngine = {
         // Brownian cloud noise (passed in from external walk, bounded [-1,1])
         const noise = cloudNoise * 0.15;
         const irradFraction = Math.max(0, Math.exp(-Math.pow(t - peakHour, 2) / width));
-        const tempEffect = getPanelTempEffect(irradFraction * scenario.weatherFactor, month);
+        const tempEffect = getPanelTempEffect(irradFraction * scenario.weatherFactor, month, scenario.monthlyTemperature);
         solar = PV_CAPACITY * irradFraction * (scenario.weatherFactor + noise) * soiling * tempEffect;
         solar = Math.max(0, solar);
     }
@@ -1637,7 +1646,7 @@ export default function App() {
   const todayGraphDataRef = useRef<GraphDataPoint[]>([]);
   const [dailyGraphData, setDailyGraphData] = useState<GraphDataPoint[]>([]);
   const [pastGraphs, setPastGraphs] = useState<Array<{ date: string; data: GraphDataPoint[] }>>([]);
-  const dayScenarioRef = useRef(PhysicsEngine.generateDayScenario('Sunny', new Date('2026-01-01'), 1.0));
+  const dayScenarioRef = useRef(PhysicsEngine.generateDayScenario('Sunny', new Date('2026-01-01'), 1.0, solarData));
   
   // Comprehensive data tracking for export - stores all minute-by-minute data
   const minuteDataRef = useRef<Array<{
@@ -1698,7 +1707,7 @@ export default function App() {
     minuteDataRef.current = [];
     setData(prev => ({ ...prev, batteryLevel: 50, ev1Soc: 60, ev2Soc: 50, displaySavings: 0, carbonOffset: 0, batteryHealth: 1.0, batteryCycles: 0, monthlyPeakDemandKW: 0, estimatedDemandChargeKES: 0, feedInEarnings: 0, ev1V2g: false, ev2V2g: false }));
     setIsAutoMode(false);
-    dayScenarioRef.current = PhysicsEngine.generateDayScenario('Sunny', new Date('2026-01-01'), 1.0);
+    dayScenarioRef.current = PhysicsEngine.generateDayScenario('Sunny', new Date('2026-01-01'), 1.0, solarData);
     timeOfDayRef.current = 0;
     batKwhRef.current = BATTERY_CAPACITY * 0.5;
     ev1SocRef.current = dayScenarioRef.current.ev1.startSoc;
@@ -1754,7 +1763,7 @@ export default function App() {
       soilingFactorRef.current = Math.max(SOILING_MIN_FACTOR, soilingFactorRef.current - SOILING_LOSS_PER_DAY);
     }
 
-    dayScenarioRef.current = PhysicsEngine.generateDayScenario(newWeather, nextDate, soilingFactorRef.current);
+    dayScenarioRef.current = PhysicsEngine.generateDayScenario(newWeather, nextDate, soilingFactorRef.current, solarData);
     ev1SocRef.current = dayScenarioRef.current.ev1.startSoc;
     ev2SocRef.current = dayScenarioRef.current.ev2.startSoc;
     setData(prev => ({ ...prev, ev1Soc: dayScenarioRef.current.ev1.startSoc, ev2Soc: dayScenarioRef.current.ev2.startSoc }));
