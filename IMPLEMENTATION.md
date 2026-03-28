@@ -213,6 +213,11 @@ roi25Years = (netSavings25Years / totalInvestment) * 100;
 
 **Location:** `src/lib/recommendation-engine.ts:76-233`
 
+### Formal Report Alignment ✅
+
+- The PDF report's **Financial Analysis (Section 6)** now pulls CapEx, monthly/annual savings, payback, 25-year ROI, and 25-year net savings directly from the recommendation engine so it mirrors the system recommendation for the current simulation. If no recommendation accompanies the request, it falls back to simulation-derived savings with a conservative default CapEx.
+- Payback is labelled **"Not viable"** when the computed period exceeds 40 years or savings are non-positive, preventing misleading 99-year values.
+
 ---
 
 ## Location Data & APIs
