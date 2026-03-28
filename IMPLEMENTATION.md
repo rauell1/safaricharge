@@ -2,9 +2,9 @@
 
 This document serves as a reference point for understanding the SafariCharge solar simulation system. It tracks key improvements, calculations, and architectural decisions.
 
-**Last Updated:** 2026-03-27
+**Last Updated:** 2026-03-28
 **Status:** Active Development
-**Branch:** `claude/add-midional-api-integration`
+**Branch:** `claude/average-energy-production-calculation`
 
 ---
 
@@ -80,6 +80,78 @@ Required Panels = 30 / 2.27 ≈ 13 panels
 ```
 
 **Location:** `src/lib/recommendation-engine.ts:272-307`
+
+---
+
+### The Inflated Recommendations Bug - FIXED ✅
+
+**Problem:** System recommendations showing unrealistic values (15 MW systems, 28,000 panels, 85,000 kWh batteries costing billions of KES) when viewing multi-day simulation data.
+
+**Root Cause:** The `createLoadProfileFromSimulation()` function was summing ALL energy across all simulation timesteps and treating it as "daily consumption" instead of calculating the AVERAGE daily consumption.
+
+**Example of the Bug:**
+```
+Simulation: 730 days (2 years)
+Real daily load: 150 kWh/day
+Total energy across 730 days: 109,500 kWh
+
+BUG: dailyConsumption = 109,500 kWh (wrong!)
+CORRECT: dailyConsumption = 109,500 / 730 = 150 kWh/day
+
+Result of bug:
+- System sized for 109,500 kWh "daily" load
+- Solar: 109,500 / (5.5 × 0.75) ≈ 26,545 kW (instead of 36 kW)
+- Inflated by 730x!
+```
+
+**The Fix:**
+
+```typescript
+// BEFORE (WRONG):
+const totalLoad = simulationData.reduce(
+  (sum, d) => sum + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh, 0
+);
+const dailyConsumption = totalLoad; // ❌ Treats total as daily!
+
+// AFTER (CORRECT):
+const totalLoad = simulationData.reduce(
+  (sum, d) => sum + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh, 0
+);
+
+// Calculate number of days from timesteps (420 timesteps per day)
+const TIMESTEPS_PER_DAY = 420;
+const numberOfDays = Math.max(1, Math.round(simulationData.length / TIMESTEPS_PER_DAY));
+const dailyConsumption = totalLoad / numberOfDays; // ✅ Average per day!
+```
+
+**Additional Fixes Applied:**
+
+1. **EV Load Typo Bug** - Fixed night power calculation that was counting `ev2LoadKWh` twice and ignoring `ev1LoadKWh`:
+   ```typescript
+   // BEFORE:
+   nightData.reduce((sum, d) => sum + d.homeLoadKWh + d.ev2LoadKWh + d.ev2LoadKWh, 0)
+
+   // AFTER:
+   nightData.reduce((sum, d) => sum + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh, 0)
+   ```
+
+2. **Sanity Checks** - Added validation to warn about unrealistic system sizes:
+   - Alert if solar capacity > 1 MW (suggests calculation error)
+   - Alert if battery capacity > 5 MWh (suggests calculation error)
+   - Alert if total investment > 1 billion KES (suggests data issue)
+   - Warnings are logged to console and added to recommendation notes
+
+3. **PDF Report Integration** - Recommendations now included in formal PDF reports as Section 9 with:
+   - Hardware specifications (solar, battery, inverter)
+   - Financial projections (25-year ROI, payback period, net savings)
+   - Performance metrics (daily generation, grid reduction, CO₂ savings)
+   - Important notes and warnings
+
+**Impact:** System recommendations are now accurate and investor-grade, showing realistic system sizes regardless of simulation duration.
+
+**Location:** `src/lib/recommendation-engine.ts:476-533`, `src/app/page.tsx:2372-2379`, `src/app/api/formal-report/route.ts:62-102, 1105-1243`
+
+**Commit:** `d7d7b5a` (2026-03-28)
 
 ---
 
