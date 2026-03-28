@@ -554,7 +554,7 @@ const GridProduct = React.memo(({ power, isImporting, isExporting, gridStatus }:
         )}
         {gridStatus === 'Online' && (isImporting || isExporting) && (
            <div className={`absolute top-0 right-0 p-1 rounded bg-white border border-slate-200 shadow-sm flex items-center gap-1 ${isImporting ? 'text-sky-600' : 'text-green-500'}`}>
-              {isImporting ? <ArrowDown size={10} /> : <ArrowUp size={10} />}
+              {isImporting ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
               <span className="text-[9px] font-bold">{Math.abs(power).toFixed(1)} kW</span>
            </div>
         )}
@@ -1397,7 +1397,17 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
 
         <div className="mt-3 sm:mt-4 bg-white p-3 sm:p-4 rounded-xl shadow-md border border-slate-200 w-full max-w-sm mx-auto relative overflow-hidden">
           <div className="absolute top-2 right-2 text-[10px] sm:text-xs text-slate-400 font-bold flex items-center gap-1 bg-slate-50 px-2 py-1 rounded transition-colors duration-500">
-             {isNight ? (<><Moon size={12} className="text-indigo-400" /> <span className="hidden xs:inline">Night</span></>) : (<>{weather === 'Sunny' && <Sun size={12} className="text-orange-500" />}<span className="hidden xs:inline">{weather}</span></>)}
+             {isNight ? (
+               <>
+                 <Moon size={12} className="text-indigo-400" /> <span className="hidden xs:inline">Night</span>
+               </>
+             ) : (
+               <>
+                 {weather === 'Sunny' && <Sun size={12} className="text-orange-500" />}
+                 <span className="hidden xs:inline">{weather}</span>
+               </>
+             )}
+             <span className="font-mono text-[9px] sm:text-[10px] text-slate-500">{formatTime(timeOfDay)}</span>
           </div>
 
           <div className="flex justify-between items-center mb-2">
