@@ -73,18 +73,20 @@ export interface HardwareRecommendation {
   notes: string[];
 }
 
-// Kenya market pricing (2026 estimates in KES) - UPDATED WITH REALISTIC RATES
+// Kenya market pricing (2026 Nairobi benchmarks) - UPDATED WITH ACTUAL SUPPLIER PRICES
+// Pricing based on verified Nairobi suppliers (Jinko panels, Deye/Solis inverters, Dyness batteries)
+// Base supplier costs with 1.5x markup for proper margin
 const PRICING = {
-  // Solar panels (per watt) - Based on current Kenya market
-  SOLAR_PER_WATT_KES: 65, // KES 60-70/W for quality Tier-1 panels (increased from 55)
+  // Solar panels (per watt) - Based on Jinko 585W/620W @ 18 KES/W supplier cost
+  SOLAR_PER_WATT_KES: 27, // 18 KES/W base * 1.5x markup = 27 KES/W
 
-  // Battery storage - Realistic market prices
-  LIFEPO4_PER_KWH_KES: 55000, // Premium LiFePO4 (increased from 45000 - reflects actual 2026 prices)
-  LEAD_ACID_PER_KWH_KES: 22000, // AGM/Gel Lead-Acid (increased from 18000)
+  // Battery storage - Based on Dyness LiFePO4 5.12kWh @ 85,000 KES (16,602 KES/kWh supplier cost)
+  LIFEPO4_PER_KWH_KES: 25000, // 16,602 KES/kWh base * 1.5x markup ≈ 25,000 KES/kWh
+  LEAD_ACID_PER_KWH_KES: 15000, // Proportionally adjusted from LiFePO4 pricing (60% of LiFePO4 cost)
 
-  // Inverters (per kW) - Current market rates
-  HYBRID_INVERTER_PER_KW_KES: 42000, // Hybrid grid-tie with backup (increased from 35000)
-  GRID_TIE_INVERTER_PER_KW_KES: 28000, // Grid-tie only (increased from 22000)
+  // Inverters (per kW) - Based on Deye/Solis pricing (avg ~20,000 KES/kW supplier cost)
+  HYBRID_INVERTER_PER_KW_KES: 30000, // 20,000 KES/kW base * 1.5x markup = 30,000 KES/kW
+  GRID_TIE_INVERTER_PER_KW_KES: 20000, // Grid-tie only (proportionally lower at ~67% of hybrid cost)
 
   // Installation (percentage of equipment cost)
   INSTALLATION_PCT: 0.20, // 20% for labor, mounting, wiring, permits (increased from 15%)
