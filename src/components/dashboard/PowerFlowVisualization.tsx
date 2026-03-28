@@ -174,7 +174,7 @@ export function PowerFlowVisualization({
         </div>
 
         {/* Real-time Values Summary */}
-        <div className="mt-6 grid grid-cols-3 gap-4 rounded-lg bg-primary-900 p-4">
+        <div className="mt-6 grid grid-cols-3 gap-4 rounded-lg bg-primary p-4">
           <div className="text-center">
             <div className="text-xs text-dark-text-tertiary">Solar Power</div>
             <div className="text-lg font-bold text-accent-solar">{solarPower.toFixed(2)} kW</div>

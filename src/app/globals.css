@@ -14,7 +14,7 @@
 
 /* Dark theme base styles */
 body {
-  @apply bg-primary-900 text-dark-text-primary;
+  @apply bg-primary text-dark-text-primary;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

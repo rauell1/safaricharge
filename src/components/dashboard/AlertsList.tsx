@@ -106,7 +106,7 @@ export function AlertsList({ alerts = defaultAlerts }: AlertsListProps) {
               </Badge>
             )}
             {warningCount > 0 && (
-              <Badge className="bg-accent-solar text-primary-900">
+              <Badge className="bg-accent-solar text-primary">
                 {warningCount} Warning{warningCount !== 1 ? 's' : ''}
               </Badge>
             )}
@@ -126,7 +126,7 @@ export function AlertsList({ alerts = defaultAlerts }: AlertsListProps) {
             alerts.map((alert) => (
               <div
                 key={alert.id}
-                className="flex items-start gap-3 rounded-lg border border-dark-border bg-primary-900 p-4 transition-all duration-300 hover:border-dark-border/80 hover:bg-primary-900/80 group"
+                className="flex items-start gap-3 rounded-lg border border-dark-border bg-primary p-4 transition-all duration-300 hover:border-dark-border/80 hover:bg-primary/80 group"
               >
                 <div className="mt-0.5">
                   <AlertIcon type={alert.type} />
