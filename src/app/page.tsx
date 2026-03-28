@@ -1353,32 +1353,33 @@ const Header = ({ onToggleAssistant, currentDate, onReset, currentLocation, onLo
   onToggleAssistant: () => void; currentDate: Date; onReset: () => void; currentLocation: LocationCoordinates; onLocationSelected: (location: LocationCoordinates, solarData: SolarIrradianceData) => void; onOpenRecommendation: () => void;
 }) => (
   <div className="w-full bg-white relative z-50 shadow-sm">
-    <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-      <div className="flex items-center gap-3">
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+      <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
          <div className="flex items-center gap-2">
-            <svg viewBox="0 0 100 100" className="w-8 h-8 fill-sky-500">
+            <svg viewBox="0 0 100 100" className="w-7 h-7 sm:w-8 sm:h-8 fill-sky-500">
               <path d="M50 0 L90 40 L75 40 L50 15 L25 40 L10 40 Z" />
               <path d="M10 50 L35 75 L50 90 L65 75 L90 50 L75 50 L50 75 L25 50 Z" />
             </svg>
             <div className="flex flex-col">
-               <h1 className="text-xl font-black tracking-wide text-sky-500 uppercase leading-none">SAFARI<span className="text-slate-800">CHARGE</span></h1>
-               <span className="text-[10px] font-bold tracking-[0.2em] text-slate-400">LIMITED</span>
+               <h1 className="text-lg sm:text-xl font-black tracking-wide text-sky-500 uppercase leading-none">SAFARI<span className="text-slate-800">CHARGE</span></h1>
+               <span className="text-[9px] sm:text-[10px] font-bold tracking-[0.2em] text-slate-400">LIMITED</span>
             </div>
          </div>
+         <button onClick={onReset} className="text-slate-400 hover:text-red-500 transition-colors sm:hidden" title="Reset Simulation"><RotateCcw size={18} /></button>
       </div>
-      <div className="flex items-center gap-6">
-         <button onClick={onReset} className="text-slate-400 hover:text-red-500 transition-colors" title="Reset Simulation"><RotateCcw size={16} /></button>
-         <div className="hidden md:flex items-center gap-2 text-slate-500 text-xs font-medium bg-slate-100 px-3 py-1 rounded-full">
-            <Calendar size={14} className="text-slate-400" /> {formatDate(currentDate)}
+      <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto flex-wrap justify-center sm:justify-end">
+         <button onClick={onReset} className="hidden sm:block text-slate-400 hover:text-red-500 transition-colors" title="Reset Simulation"><RotateCcw size={16} /></button>
+         <div className="flex items-center gap-2 text-slate-500 text-[10px] sm:text-xs font-medium bg-slate-100 px-2 sm:px-3 py-1 rounded-full">
+            <Calendar size={12} className="text-slate-400" /> <span className="hidden xs:inline">{formatDate(currentDate)}</span><span className="xs:hidden">{currentDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
          </div>
-         <div className="hidden md:block">
+         <div className="block">
             <LocationSelector currentLocation={currentLocation} onLocationSelected={onLocationSelected} />
          </div>
-         <button onClick={onOpenRecommendation} className="hidden md:flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-2 rounded-full text-xs font-bold hover:from-green-700 hover:to-emerald-700 transition-colors shadow-lg">
-           <Target size={14} /> Get Recommendation
+         <button onClick={onOpenRecommendation} className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold hover:from-green-700 hover:to-emerald-700 transition-colors shadow-lg whitespace-nowrap">
+           <Target size={12} /> <span className="hidden sm:inline">Get Recommendation</span><span className="sm:hidden">Recommend</span>
          </button>
-         <button onClick={onToggleAssistant} className="bg-slate-900 text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 hover:bg-slate-800 transition-colors shadow-lg border border-slate-700">
-           <Sparkles size={14} className="text-green-400" /> SafariCharge AI
+         <button onClick={onToggleAssistant} className="bg-slate-900 text-white px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold flex items-center gap-1.5 sm:gap-2 hover:bg-slate-800 transition-colors shadow-lg border border-slate-700 whitespace-nowrap">
+           <Sparkles size={12} className="text-green-400" /> <span className="hidden sm:inline">SafariCharge AI</span><span className="sm:hidden">AI</span>
          </button>
       </div>
     </div>
@@ -1390,54 +1391,55 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
   data: any; timeOfDay: number; onTimeChange: (t: number) => void; isAutoMode: boolean; onToggleAuto: () => void; simSpeed: number; onSpeedChange: (s: number) => void; onOpenReport: () => void; priorityMode: string; onTogglePriority: () => void; weather: string; isNight: boolean; gridStatus: string; onToggleGrid: () => void; displayPriority: string; ev1Status: string; ev2Status: string;
 }) => {
   return (
-    <div className="relative flex flex-col items-center justify-center w-full h-full p-6">
-      <div className="text-center mb-6 w-full">
-        <h2 className="text-2xl font-black text-slate-800 leading-tight">SIMULATION <span className="text-sky-500">CONTROLS</span></h2>
-        
-        <div className="mt-4 bg-white p-4 rounded-xl shadow-md border border-slate-200 w-full max-w-sm mx-auto relative overflow-hidden">
-          <div className="absolute top-2 right-2 text-xs text-slate-400 font-bold flex items-center gap-1 bg-slate-50 px-2 py-1 rounded transition-colors duration-500">
-             {isNight ? (<><Moon size={14} className="text-indigo-400" /> Night</>) : (<>{weather === 'Sunny' && <Sun size={14} className="text-orange-500" />}{weather}</>)}
+    <div className="relative flex flex-col items-center justify-center w-full h-full p-3 sm:p-6">
+      <div className="text-center mb-4 sm:mb-6 w-full">
+        <h2 className="text-lg sm:text-2xl font-black text-slate-800 leading-tight">SIMULATION <span className="text-sky-500">CONTROLS</span></h2>
+
+        <div className="mt-3 sm:mt-4 bg-white p-3 sm:p-4 rounded-xl shadow-md border border-slate-200 w-full max-w-sm mx-auto relative overflow-hidden">
+          <div className="absolute top-2 right-2 text-[10px] sm:text-xs text-slate-400 font-bold flex items-center gap-1 bg-slate-50 px-2 py-1 rounded transition-colors duration-500">
+             {isNight ? (<><Moon size={12} className="text-indigo-400" /> <span className="hidden xs:inline">Night</span></>) : (<>{weather === 'Sunny' && <Sun size={12} className="text-orange-500" />}<span className="hidden xs:inline">{weather}</span></>)}
           </div>
 
           <div className="flex justify-between items-center mb-2">
-            <div className="flex items-center gap-2">
-               <span className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1"><Clock size={12}/> Time</span>
-               {isAutoMode && <span className="text-[9px] bg-green-500 text-white px-1.5 rounded animate-pulse">LIVE</span>}
+            <div className="flex items-center gap-1.5 sm:gap-2">
+               <span className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase flex items-center gap-1"><Clock size={10} className="sm:hidden"/><Clock size={12} className="hidden sm:block"/> <span className="hidden xs:inline">Time</span></span>
+               {isAutoMode && <span className="text-[8px] sm:text-[9px] bg-green-500 text-white px-1 sm:px-1.5 rounded animate-pulse">LIVE</span>}
             </div>
-            <span className="text-sm font-mono font-bold text-slate-800">{formatTime(timeOfDay)}</span>
+            <span className="text-xs sm:text-sm font-mono font-bold text-slate-800">{formatTime(timeOfDay)}</span>
           </div>
-          
-          <div className="flex items-center gap-3">
-             <button onClick={onToggleAuto} className={`p-2 rounded-full transition-colors ${isAutoMode ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
-                {isAutoMode ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
+
+          <div className="flex items-center gap-2 sm:gap-3">
+             <button onClick={onToggleAuto} className={`p-1.5 sm:p-2 rounded-full transition-colors ${isAutoMode ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                {isAutoMode ? <Pause size={14} className="sm:hidden" fill="currentColor" /> : <Play size={14} className="sm:hidden" fill="currentColor" />}
+                {isAutoMode ? <Pause size={16} className="hidden sm:block" fill="currentColor" /> : <Play size={16} className="hidden sm:block" fill="currentColor" />}
              </button>
              <input type="range" min="0" max="24" step="0.08" value={timeOfDay} onChange={(e) => { onTimeChange(parseFloat(e.target.value)); if(isAutoMode) onToggleAuto(); }} disabled={isAutoMode} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-500 disabled:opacity-50 disabled:cursor-not-allowed" />
           </div>
 
-          <div className="flex justify-center gap-2 mt-3 pt-2 border-t border-slate-100 flex-wrap">
+          <div className="flex justify-center gap-1.5 sm:gap-2 mt-2 sm:mt-3 pt-2 border-t border-slate-100 flex-wrap">
              {[1, 5, 20, 100, 1000].map(speed => (
-               <button key={speed} onClick={() => onSpeedChange(speed)} className={`text-[9px] px-2 py-1 rounded font-bold transition-all ${simSpeed === speed ? 'bg-slate-800 text-white scale-110' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>x{speed}</button>
+               <button key={speed} onClick={() => onSpeedChange(speed)} className={`text-[8px] sm:text-[9px] px-1.5 sm:px-2 py-1 rounded font-bold transition-all ${simSpeed === speed ? 'bg-slate-800 text-white scale-110' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>x{speed}</button>
              ))}
           </div>
         </div>
 
-        <div className="mt-4 flex flex-col gap-2 w-full max-w-sm mx-auto">
+        <div className="mt-3 sm:mt-4 flex flex-col gap-2 w-full max-w-sm mx-auto">
            <div className="flex justify-center gap-2">
-             <div className={`px-3 py-2 rounded-lg border text-[10px] font-bold flex items-center gap-1 w-32 justify-center transition-all ${ev1Status === 'Charging' ? 'bg-sky-50 border-sky-200 text-sky-700 ring-2 ring-sky-500' : ev1Status === 'Away' ? 'bg-slate-50 border-slate-200 text-red-400' : 'bg-green-50 border-green-200 text-green-700'}`}>
-               EV #1: {ev1Status}
+             <div className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border text-[9px] sm:text-[10px] font-bold flex items-center gap-1 flex-1 sm:w-32 justify-center transition-all ${ev1Status === 'Charging' ? 'bg-sky-50 border-sky-200 text-sky-700 ring-2 ring-sky-500' : ev1Status === 'Away' ? 'bg-slate-50 border-slate-200 text-red-400' : 'bg-green-50 border-green-200 text-green-700'}`}>
+               <span className="hidden xs:inline">EV #1: </span><span className="xs:hidden">EV1: </span>{ev1Status}
              </div>
-             <div className={`px-3 py-2 rounded-lg border text-[10px] font-bold flex items-center gap-1 w-32 justify-center transition-all ${ev2Status === 'Charging' ? 'bg-sky-50 border-sky-200 text-sky-700 ring-2 ring-sky-500' : ev2Status === 'Away' ? 'bg-slate-50 border-slate-200 text-red-400' : 'bg-green-50 border-green-200 text-green-700'}`}>
-               EV #2: {ev2Status}
+             <div className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border text-[9px] sm:text-[10px] font-bold flex items-center gap-1 flex-1 sm:w-32 justify-center transition-all ${ev2Status === 'Charging' ? 'bg-sky-50 border-sky-200 text-sky-700 ring-2 ring-sky-500' : ev2Status === 'Away' ? 'bg-slate-50 border-slate-200 text-red-400' : 'bg-green-50 border-green-200 text-green-700'}`}>
+               <span className="hidden xs:inline">EV #2: </span><span className="xs:hidden">EV2: </span>{ev2Status}
              </div>
            </div>
-           
+
            <div className="grid grid-cols-2 gap-2">
-             <button onClick={onTogglePriority} className="bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg p-2 flex items-center justify-center text-xs gap-2 transition-colors">
-               <span className={`font-bold ${displayPriority === 'battery' ? 'text-green-600' : 'text-sky-600'}`}>{displayPriority === 'battery' ? 'Charge First' : 'Load First'}</span>
-               {priorityMode === 'auto' && <span className="text-[8px] bg-purple-100 text-purple-600 px-1 rounded font-bold">AUTO</span>}
+             <button onClick={onTogglePriority} className="bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg p-1.5 sm:p-2 flex items-center justify-center text-[10px] sm:text-xs gap-1 sm:gap-2 transition-colors">
+               <span className={`font-bold ${displayPriority === 'battery' ? 'text-green-600' : 'text-sky-600'}`}><span className="hidden sm:inline">{displayPriority === 'battery' ? 'Charge First' : 'Load First'}</span><span className="sm:hidden">{displayPriority === 'battery' ? 'Charge' : 'Load'}</span></span>
+               {priorityMode === 'auto' && <span className="text-[7px] sm:text-[8px] bg-purple-100 text-purple-600 px-1 rounded font-bold">AUTO</span>}
              </button>
-             <button onClick={onToggleGrid} className={`border rounded-lg p-2 flex items-center justify-center text-xs gap-2 ${gridStatus === 'Online' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700 animate-pulse'}`}>
-               <Zap size={12} fill="currentColor" /> {gridStatus === 'Online' ? 'Grid OK' : 'Outage'}
+             <button onClick={onToggleGrid} className={`border rounded-lg p-1.5 sm:p-2 flex items-center justify-center text-[10px] sm:text-xs gap-1 sm:gap-2 ${gridStatus === 'Online' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700 animate-pulse'}`}>
+               <Zap size={10} className="sm:hidden" fill="currentColor" /><Zap size={12} className="hidden sm:block" fill="currentColor" /> {gridStatus === 'Online' ? 'Grid OK' : 'Outage'}
              </button>
            </div>
         </div>
@@ -1445,61 +1447,62 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
       
       {/* Financial/Flow Widget */}
       <div className="bg-slate-900 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-700 relative">
-         <div className="p-6 relative z-10">
+         <div className="p-3 sm:p-6 relative z-10">
             {/* Current Tariff Rate Display */}
-            <div className="mb-4 pb-3 border-b border-slate-700">
-               <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                     <DollarSign size={14} className="text-yellow-400" />
-                     <span className="text-[10px] uppercase tracking-wider text-slate-400">Current Tariff</span>
+            <div className="mb-3 sm:mb-4 pb-2 sm:pb-3 border-b border-slate-700">
+               <div className="flex justify-between items-center flex-wrap gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                     <DollarSign size={12} className="text-yellow-400 sm:hidden" />
+                     <DollarSign size={14} className="text-yellow-400 hidden sm:block" />
+                     <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-slate-400">Current Tariff</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                     <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${data.isPeakTime ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400'}`}>
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                     <span className={`px-1.5 sm:px-2 py-0.5 rounded text-[8px] sm:text-[9px] font-bold ${data.isPeakTime ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400'}`}>
                        {data.isPeakTime ? 'PEAK' : 'OFF-PEAK'}
                      </span>
-                     <span className="text-white font-bold text-sm">KES {data.currentTariffRate.toFixed(2)}/kWh</span>
+                     <span className="text-white font-bold text-xs sm:text-sm">KES {data.currentTariffRate.toFixed(2)}/kWh</span>
                   </div>
                </div>
             </div>
-            
-            <div className="flex justify-between items-center mb-4">
-               <div>
-                  <div className="text-slate-400 text-[10px] uppercase tracking-wider">Today&apos;s Savings</div>
-                  <div className="text-2xl font-light text-white flex items-center gap-1">
-                    <span className="text-green-400 font-bold">KES {data.displaySavings.toFixed(0)}</span>
+
+            <div className="flex justify-between items-center mb-3 sm:mb-4 gap-2">
+               <div className="flex-1 min-w-0">
+                  <div className="text-slate-400 text-[9px] sm:text-[10px] uppercase tracking-wider">Today&apos;s Savings</div>
+                  <div className="text-xl sm:text-2xl font-light text-white flex items-center gap-1">
+                    <span className="text-green-400 font-bold truncate">KES {data.displaySavings.toFixed(0)}</span>
                   </div>
                   {data.carbonOffset > 0 && (
-                    <div className="text-[9px] text-green-300 mt-0.5 flex items-center gap-1">
+                    <div className="text-[8px] sm:text-[9px] text-green-300 mt-0.5 flex items-center gap-1">
                       🌿 {data.carbonOffset.toFixed(2)} kg CO₂ avoided
                     </div>
                   )}
                </div>
-               <button onClick={onOpenReport} className="text-[10px] bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded flex items-center gap-1 transition-colors">
-                   <Table size={10} /> View Report
+               <button onClick={onOpenReport} className="text-[9px] sm:text-[10px] bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded flex items-center gap-1 transition-colors whitespace-nowrap flex-shrink-0">
+                   <Table size={9} className="sm:hidden" /><Table size={10} className="hidden sm:block" /> <span className="hidden xs:inline">View</span> Report
                </button>
             </div>
-            
-            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700 space-y-2">
-               <div className="flex justify-between items-center text-xs">
+
+            <div className="bg-slate-800/50 rounded-lg p-2 sm:p-3 border border-slate-700 space-y-1.5 sm:space-y-2">
+               <div className="flex justify-between items-center text-[10px] sm:text-xs">
                  <span className="text-slate-300">1. {displayPriority === 'battery' ? 'Battery' : 'Loads'}</span>
                  <span className="text-white font-bold">{displayPriority === 'battery' ? (data.batteryStatus === 'Charging' ? `${Math.abs(data.batteryPower).toFixed(1)} kW` : '0.0 kW') : `${Math.min(data.solarR, data.homeLoad + data.ev1Load + data.ev2Load).toFixed(1)} kW`}</span>
                </div>
-               <div className="flex justify-between items-center text-xs">
+               <div className="flex justify-between items-center text-[10px] sm:text-xs">
                  <span className="text-slate-300">2. {displayPriority === 'battery' ? 'Loads' : 'Battery'}</span>
                  <span className="text-white font-bold">{displayPriority === 'battery' ? `${Math.min(data.solarR, data.homeLoad + data.ev1Load + data.ev2Load).toFixed(1)} kW` : (data.batteryStatus === 'Charging' ? `${Math.abs(data.batteryPower).toFixed(1)} kW` : '0.0 kW')}</span>
                </div>
-               <div className="flex justify-between items-center text-xs border-t border-slate-700 pt-1 mt-1">
+               <div className="flex justify-between items-center text-[10px] sm:text-xs border-t border-slate-700 pt-1 mt-1">
                  <span className="text-slate-300">3. Grid Backup</span>
                  <span className={`${data.netGridPower < 0 ? 'text-red-400' : 'text-green-400'} font-bold`}>{data.netGridPower < 0 ? `${Math.abs(data.netGridPower).toFixed(1)} kW (In)` : `${Math.abs(data.netGridPower).toFixed(1)} kW (Out)`}</span>
                </div>
                {data.estimatedDemandChargeKES > 0 && (
-               <div className="flex justify-between items-center text-xs border-t border-slate-600 pt-1 mt-1">
+               <div className="flex justify-between items-center text-[10px] sm:text-xs border-t border-slate-600 pt-1 mt-1">
                  <span className="text-amber-400">⚡ Peak Demand</span>
                  <span className="text-amber-300 font-bold">{data.monthlyPeakDemandKW?.toFixed(1)} kW → KES {data.estimatedDemandChargeKES?.toFixed(0)}/mo</span>
                </div>
                )}
                {data.feedInEarnings > 0 && (
-               <div className="flex justify-between items-center text-xs">
+               <div className="flex justify-between items-center text-[10px] sm:text-xs">
                  <span className="text-green-400">↑ Feed-in Earned</span>
                  <span className="text-green-300 font-bold">KES {data.feedInEarnings?.toFixed(1)}</span>
                </div>
@@ -1516,10 +1519,10 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
 }) => {
   const isSolarActive = data.solarR > 0.1;
   const gridFlowDir = data.netGridPower < 0 ? 'up' : 'down';
-  
+
   return (
-    <div className="flex flex-col items-center w-full h-full p-2 md:p-6 bg-slate-50/50 rounded-3xl border border-slate-200 shadow-inner overflow-x-auto">
-      <div className="min-w-[620px] flex flex-col items-center w-full">
+    <div className="flex flex-col items-center w-full h-full p-1 sm:p-2 md:p-6 bg-slate-50/50 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-inner overflow-x-auto">
+      <div className="min-w-[500px] sm:min-w-[620px] flex flex-col items-center w-full">
        <div className="mb-0"><SolarPanelProduct power={data.solarR} capacity={50.0} weather={weather} isNight={isNight} /></div>
        <div className="flex flex-col items-center">
           <RigidCable height={30} active={isSolarActive} color={isSolarActive ? "bg-green-500" : "bg-slate-300"} speed={simSpeed} arrowColor="text-green-100" />
@@ -2471,11 +2474,11 @@ export default function App() {
         carbonOffset={data.carbonOffset}
       />
 
-      <main className="flex-1 flex flex-col items-center justify-start p-2 md:p-4 gap-4 overflow-y-auto">
-        <div className="w-full max-w-7xl bg-slate-100 rounded-[30px] shadow-2xl border border-white relative flex flex-col lg:flex-row overflow-hidden">
+      <main className="flex-1 flex flex-col items-center justify-start p-2 md:p-4 gap-3 md:gap-4 overflow-y-auto">
+        <div className="w-full max-w-7xl bg-slate-100 rounded-[20px] sm:rounded-[30px] shadow-2xl border border-white relative flex flex-col lg:flex-row overflow-hidden">
           <div className="absolute inset-0 opacity-40 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
-          
-          <div className="flex-1 p-4 flex items-center justify-center z-10 border-b lg:border-b-0 lg:border-r border-slate-200/60 bg-slate-50/50">
+
+          <div className="flex-1 p-2 sm:p-4 flex items-center justify-center z-10 border-b lg:border-b-0 lg:border-r border-slate-200/60 bg-slate-50/50">
              <div className="absolute bg-sky-500/5 blur-3xl w-3/4 h-3/4 rounded-full -z-10"></div>
              <CentralDisplay 
                data={data} 
@@ -2498,7 +2501,7 @@ export default function App() {
              />
           </div>
 
-          <div className="flex-[2] p-4 bg-gradient-to-br from-slate-50 to-slate-100 relative">
+          <div className="flex-[2] p-2 sm:p-4 bg-gradient-to-br from-slate-50 to-slate-100 relative">
             <ResidentialPanel 
               data={data} 
               simSpeed={simSpeed} 
