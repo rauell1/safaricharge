@@ -258,6 +258,46 @@ export function generateRecommendation(
   // Confidence assessment
   const confidence = assessConfidence(loadProfile, solarData, budgetConstraint);
 
+  // SANITY CHECKS: Warn if system size is unrealistic
+  const warnings: string[] = [];
+
+  // Typical residential: 3-15 kW, Commercial small: 50-300 kW, Industrial: 1-5 MW
+  if (actualSolarKw > 1000) {
+    warnings.push(`⚠️ ALERT: System size (${actualSolarKw.toFixed(0)} kW) is extremely large. This suggests a potential calculation error. Please verify simulation data covers the intended time period.`);
+    console.error('SANITY CHECK FAILED: System size > 1 MW', {
+      solarCapacityKw: actualSolarKw,
+      dailyConsumption: loadProfile.dailyConsumption,
+      numberOfPanels,
+      batteryKwh,
+    });
+  } else if (actualSolarKw > 500) {
+    warnings.push(`⚠️ CAUTION: Large industrial-scale system (${actualSolarKw.toFixed(0)} kW). Verify this matches your facility requirements.`);
+  }
+
+  if (batteryKwh > 5000) {
+    warnings.push(`⚠️ ALERT: Battery capacity (${batteryKwh.toFixed(0)} kWh) is extremely large. This suggests a potential calculation error.`);
+    console.error('SANITY CHECK FAILED: Battery > 5 MWh', {
+      batteryKwh,
+      avgNightPower: loadProfile.avgNightPower,
+      autonomyDays,
+    });
+  }
+
+  if (totalInvestment > 1000000000) { // 1 billion KES
+    warnings.push(`⚠️ ALERT: Investment cost (KES ${(totalInvestment / 1000000000).toFixed(2)}B) is unrealistically high. Please check input data.`);
+    console.error('SANITY CHECK FAILED: Cost > 1 billion KES', {
+      totalInvestment,
+      equipmentCost,
+      actualSolarKw,
+      batteryKwh,
+    });
+  }
+
+  // Add warnings to notes if any exist
+  if (warnings.length > 0) {
+    notes.unshift(...warnings);
+  }
+
   return {
     solarPanels: {
       totalCapacityKw: parseFloat(actualSolarKw.toFixed(2)),
@@ -496,7 +536,13 @@ export function createLoadProfileFromSimulation(simulationData: Array<{
     (sum, d) => sum + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh,
     0
   );
-  const dailyConsumption = totalLoad;
+
+  // CRITICAL FIX: Calculate AVERAGE daily consumption, not total
+  // Determine number of unique days in simulation
+  // Each day has 420 timesteps (24h * 60min / (24/420))
+  const TIMESTEPS_PER_DAY = 420;
+  const numberOfDays = Math.max(1, Math.round(simulationData.length / TIMESTEPS_PER_DAY));
+  const dailyConsumption = totalLoad / numberOfDays;
 
   // Find peak power (convert kWh to kW based on timestep)
   const timeStepHours = 24 / simulationData.length;
@@ -513,7 +559,7 @@ export function createLoadProfileFromSimulation(simulationData: Array<{
     dayData.length /
     timeStepHours;
   const avgNightPower =
-    nightData.reduce((sum, d) => sum + d.homeLoadKWh + d.ev2LoadKWh + d.ev2LoadKWh, 0) /
+    nightData.reduce((sum, d) => sum + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh, 0) /
     nightData.length /
     timeStepHours;
 
