@@ -59,6 +59,47 @@ const reportRequestSchema = z.object({
     ev2Load: z.number(),
     avgBattery: z.number(),
   })),
+  recommendation: z.object({
+    solarPanels: z.object({
+      totalCapacityKw: z.number(),
+      numberOfPanels: z.number(),
+      panelWattage: z.number(),
+      estimatedCostKES: z.number(),
+      monthlySavingsKES: z.number(),
+    }),
+    battery: z.object({
+      capacityKwh: z.number(),
+      typeRecommended: z.string(),
+      numberOfBatteries: z.number(),
+      batteryCapacityAhPer: z.number(),
+      voltageSystem: z.number(),
+      estimatedCostKES: z.number(),
+    }),
+    inverter: z.object({
+      ratedCapacityKw: z.number(),
+      typeRecommended: z.string(),
+      estimatedCostKES: z.number(),
+    }),
+    financial: z.object({
+      totalSystemCostKES: z.number(),
+      installationCostKES: z.number(),
+      totalInvestmentKES: z.number(),
+      monthlyGridSavingsKES: z.number(),
+      annualGridSavingsKES: z.number(),
+      paybackPeriodYears: z.number(),
+      roi25YearsPct: z.number(),
+      netSavings25YearsKES: z.number(),
+    }),
+    performance: z.object({
+      dailySolarGenerationKwh: z.number(),
+      gridDependencyReductionPct: z.number(),
+      annualCO2SavingsKg: z.number(),
+      equivalentTreesPlanted: z.number(),
+    }),
+    summary: z.string(),
+    confidence: z.enum(['high', 'medium', 'low']),
+    notes: z.array(z.string()),
+  }).optional(),
 });
 
 type ReportRequest = z.infer<typeof reportRequestSchema>;
@@ -1061,10 +1102,150 @@ function generateReportHTML(data: ReportRequest): string {
       </table>
     </div>
 
-    <!-- Daily Summary Table -->
+    ${data.recommendation ? `
+    <!-- Hardware Recommendations -->
     <div class="section">
       <div class="section-title">
         <span class="section-number">9</span>
+        <span>System Recommendation</span>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #0c4a6e 0%, #075985 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+        <h3 style="margin: 0 0 10px 0; font-size: 18px;">Investment Summary</h3>
+        <p style="margin: 0; font-size: 16px; line-height: 1.6;">${data.recommendation.summary}</p>
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
+          <span style="font-size: 14px; opacity: 0.9;">Confidence Level: <strong>${data.recommendation.confidence.toUpperCase()}</strong></span>
+        </div>
+      </div>
+
+      <h4 style="color: #0c4a6e; margin: 25px 0 15px 0; font-size: 16px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">Solar Panel System</h4>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">System Capacity</div>
+          <div class="metric-value">${fmt(data.recommendation.solarPanels.totalCapacityKw, 2)} <span class="metric-unit">kW</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Number of Panels</div>
+          <div class="metric-value">${data.recommendation.solarPanels.numberOfPanels} <span class="metric-unit">× ${data.recommendation.solarPanels.panelWattage}W</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Estimated Cost</div>
+          <div class="metric-value">KES ${fmtNum(data.recommendation.solarPanels.estimatedCostKES)}</div>
+        </div>
+      </div>
+
+      <h4 style="color: #0c4a6e; margin: 25px 0 15px 0; font-size: 16px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">Battery Storage</h4>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Capacity</div>
+          <div class="metric-value">${fmt(data.recommendation.battery.capacityKwh, 2)} <span class="metric-unit">kWh</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Configuration</div>
+          <div class="metric-value">${data.recommendation.battery.numberOfBatteries} <span class="metric-unit">× ${data.recommendation.battery.batteryCapacityAhPer}Ah @ ${data.recommendation.battery.voltageSystem}V</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Battery Type</div>
+          <div class="metric-value" style="font-size: 14px;">${data.recommendation.battery.typeRecommended}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Estimated Cost</div>
+          <div class="metric-value">KES ${fmtNum(data.recommendation.battery.estimatedCostKES)}</div>
+        </div>
+      </div>
+
+      <h4 style="color: #0c4a6e; margin: 25px 0 15px 0; font-size: 16px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">Inverter</h4>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Rated Capacity</div>
+          <div class="metric-value">${fmt(data.recommendation.inverter.ratedCapacityKw, 1)} <span class="metric-unit">kW</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Type</div>
+          <div class="metric-value" style="font-size: 14px;">${data.recommendation.inverter.typeRecommended}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Estimated Cost</div>
+          <div class="metric-value">KES ${fmtNum(data.recommendation.inverter.estimatedCostKES)}</div>
+        </div>
+      </div>
+
+      <h4 style="color: #0c4a6e; margin: 25px 0 15px 0; font-size: 16px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">Financial Projections (25-Year Analysis)</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>Financial Metric</th>
+            <th class="num">Value</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Total Investment</strong></td>
+            <td class="num"><strong>KES ${fmtNum(data.recommendation.financial.totalInvestmentKES)}</strong></td>
+            <td>Equipment + Installation (${fmtNum(data.recommendation.financial.installationCostKES)} KES)</td>
+          </tr>
+          <tr>
+            <td>Monthly Grid Savings</td>
+            <td class="num">KES ${fmtNum(data.recommendation.financial.monthlyGridSavingsKES)}</td>
+            <td>Based on current KPLC tariffs</td>
+          </tr>
+          <tr>
+            <td>Annual Grid Savings (Year 1)</td>
+            <td class="num">KES ${fmtNum(data.recommendation.financial.annualGridSavingsKES)}</td>
+            <td>Escalates 6% annually</td>
+          </tr>
+          <tr style="background-color: #f0f9ff;">
+            <td><strong>Payback Period</strong></td>
+            <td class="num"><strong>${fmt(data.recommendation.financial.paybackPeriodYears, 1)} years</strong></td>
+            <td>Including maintenance costs</td>
+          </tr>
+          <tr style="background-color: #ecfdf5;">
+            <td><strong>25-Year ROI</strong></td>
+            <td class="num"><strong>${fmt(data.recommendation.financial.roi25YearsPct, 1)}%</strong></td>
+            <td>Including battery replacements</td>
+          </tr>
+          <tr style="background-color: #ecfdf5;">
+            <td><strong>Net Savings (25 years)</strong></td>
+            <td class="num"><strong>KES ${fmtNum(data.recommendation.financial.netSavings25YearsKES)}</strong></td>
+            <td>After all costs</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h4 style="color: #0c4a6e; margin: 25px 0 15px 0; font-size: 16px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">Performance Metrics</h4>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Daily Solar Generation</div>
+          <div class="metric-value">${fmt(data.recommendation.performance.dailySolarGenerationKwh, 1)} <span class="metric-unit">kWh/day</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Grid Reduction</div>
+          <div class="metric-value">${fmt(data.recommendation.performance.gridDependencyReductionPct, 1)} <span class="metric-unit">%</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Annual CO₂ Savings</div>
+          <div class="metric-value">${fmtNum(data.recommendation.performance.annualCO2SavingsKg)} <span class="metric-unit">kg</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Tree Equivalent</div>
+          <div class="metric-value">${data.recommendation.performance.equivalentTreesPlanted} <span class="metric-unit">trees/year</span></div>
+        </div>
+      </div>
+
+      ${data.recommendation.notes && data.recommendation.notes.length > 0 ? `
+      <h4 style="color: #0c4a6e; margin: 25px 0 15px 0; font-size: 16px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">Important Notes</h4>
+      <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
+        ${data.recommendation.notes.map(note => `<li style="margin-bottom: 8px;">${note}</li>`).join('')}
+      </ul>
+      ` : ''}
+    </div>
+    ` : ''}
+
+    <!-- Daily Summary Table -->
+    <div class="section">
+      <div class="section-title">
+        <span class="section-number">${data.recommendation ? '10' : '9'}</span>
         <span>Daily Summary</span>
       </div>
 

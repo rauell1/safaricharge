@@ -2369,6 +2369,15 @@ export default function App() {
       // push the JSON payload over server/body-size limits and trigger 5xx errors.
       const dailyAggCharts = dailyAgg.slice(-30);
 
+      // Generate hardware recommendations for inclusion in the PDF report
+      const { createLoadProfileFromSimulation, generateRecommendation } = await import('@/lib/recommendation-engine');
+      const loadProfile = createLoadProfileFromSimulation(minuteData);
+      const recommendation = generateRecommendation(loadProfile, solarData, {
+        batteryPreference: 'auto',
+        gridBackupRequired: true,
+        autonomyDays: 1.5,
+      });
+
       const response = await fetch('/api/formal-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2386,6 +2395,7 @@ export default function App() {
           peakBreakdown, offPeakBreakdown,
           uniqueDays,
           dailyAgg: dailyAggCharts,
+          recommendation, // Include hardware recommendations in PDF
         }),
       });
 
