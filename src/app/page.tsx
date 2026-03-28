@@ -12,6 +12,8 @@ import {
 import DailyEnergyGraph, { type GraphDataPoint, buildGraphSVG, triggerJPGDownload, buildJPGBlob } from '@/components/DailyEnergyGraph';
 import { LocationSelector, RecommendationPanel } from '@/components/RecommendationComponents';
 import type { LocationCoordinates, SolarIrradianceData } from '@/lib/nasa-power-api';
+import FinancialDashboard from '@/components/FinancialDashboard';
+import { buildFinancialSnapshot, type FinancialInputs } from '@/lib/financial-dashboard';
 import { KENYA_LOCATIONS } from '@/lib/nasa-power-api';
 
 // --- CONFIGURATION - Kenya Power Commercial Tariff (E-Mobility) ---
@@ -1620,6 +1622,13 @@ export default function App() {
   const [priorityMode, setPriorityMode] = useState('auto');
   const [gridStatus, setGridStatus] = useState('Online');
   const [weather, setWeather] = useState('Sunny');
+  const [financialInputs, setFinancialInputs] = useState<FinancialInputs>({
+    chargingTariffKes: 45,
+    discountRatePct: 12,
+    stationCount: 3,
+    targetUtilizationPct: 55,
+    projectYears: 20,
+  });
   // weatherRef mirrors weather state for use inside callbacks without stale closures
   const weatherRef = useRef('Sunny');
   weatherRef.current = weather;
@@ -1696,6 +1705,15 @@ export default function App() {
   
   const systemStartDate = useRef('2026-01-01'); // System start date for tracking
   const lastProcessedTimeRef = useRef<number | null>(null);
+  const financialSnapshot = useMemo(
+    () => buildFinancialSnapshot({
+      minuteData: minuteDataRef.current,
+      solarData,
+      inputs: financialInputs,
+      evCapacityKw: evSpecs.ev1.rate + evSpecs.ev2.rate,
+    }),
+    [financialInputs, solarData, evSpecs, timeOfDay]
+  );
 
   // Physics state refs: keep the authoritative simulation state outside React
   // so the interval can sub-step at fixed (24/420)-hour steps regardless of speed.
@@ -1728,6 +1746,10 @@ export default function App() {
     ev1SocRef.current = dayScenarioRef.current.ev1.startSoc;
     ev2SocRef.current = dayScenarioRef.current.ev2.startSoc;
   };
+
+  const handleFinancialInputsChange = useCallback((next: FinancialInputs) => {
+    setFinancialInputs(next);
+  }, []);
 
   const handleNewDay = useCallback(() => {
     const nextDate = new Date(currentDate);
@@ -2485,6 +2507,14 @@ export default function App() {
         onFormalReport={handleFormalReport}
         carbonOffset={data.carbonOffset}
       />
+
+      <div className="w-full flex justify-center px-2 md:px-4 pb-2 md:pb-4">
+        <FinancialDashboard
+          snapshot={financialSnapshot}
+          inputs={financialInputs}
+          onInputsChange={handleFinancialInputsChange}
+        />
+      </div>
 
       <main className="flex-1 flex flex-col items-center justify-start p-2 md:p-4 gap-3 md:gap-4 overflow-y-auto">
         <div className="w-full max-w-7xl bg-slate-100 rounded-[20px] sm:rounded-[30px] shadow-2xl border border-white relative flex flex-col lg:flex-row overflow-hidden">
