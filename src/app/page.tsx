@@ -889,7 +889,7 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
     : 'No data yet';
 
   return (
-    <div className="absolute inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-slide-in-right">
         <div className="p-4 bg-slate-900 text-white flex justify-between items-center">
           <div className="flex items-center gap-2">
@@ -1396,18 +1396,20 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
         <h2 className="text-lg sm:text-2xl font-black text-slate-800 leading-tight">SIMULATION <span className="text-sky-500">CONTROLS</span></h2>
 
         <div className="mt-3 sm:mt-4 bg-white p-3 sm:p-4 rounded-xl shadow-md border border-slate-200 w-full max-w-sm mx-auto relative overflow-hidden">
-          <div className="absolute top-2 right-2 text-[10px] sm:text-xs text-slate-400 font-bold flex items-center gap-1 bg-slate-50 px-2 py-1 rounded transition-colors duration-500">
-             {isNight ? (
-               <>
-                 <Moon size={12} className="text-indigo-400" /> <span className="hidden xs:inline">Night</span>
-               </>
-             ) : (
-               <>
-                 {weather === 'Sunny' && <Sun size={12} className="text-orange-500" />}
-                 <span className="hidden xs:inline">{weather}</span>
-               </>
-             )}
-             <span className="font-mono text-[9px] sm:text-[10px] text-slate-500">{formatTime(timeOfDay)}</span>
+          <div className="flex justify-end mb-2">
+            <div className="text-[10px] sm:text-xs text-slate-500 font-bold flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded transition-colors duration-500 shadow-sm whitespace-nowrap">
+              {isNight ? (
+                <>
+                  <Moon size={12} className="text-indigo-400" /> <span className="hidden xs:inline">Night</span>
+                </>
+              ) : (
+                <>
+                  {weather === 'Sunny' && <Sun size={12} className="text-orange-500" />}
+                  <span className="hidden xs:inline">{weather}</span>
+                </>
+              )}
+              <span className="font-mono text-[9px] sm:text-[10px] text-slate-600">{formatTime(timeOfDay)}</span>
+            </div>
           </div>
 
           <div className="flex justify-between items-center mb-2">
@@ -1531,8 +1533,8 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
   const gridFlowDir = data.netGridPower < 0 ? 'up' : 'down';
 
   return (
-    <div className="flex flex-col items-center w-full h-full p-1 sm:p-2 md:p-6 bg-slate-50/50 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-inner overflow-x-auto">
-      <div className="min-w-[500px] sm:min-w-[620px] flex flex-col items-center w-full">
+    <div className="flex flex-col items-center w-full h-full p-2 sm:p-3 md:p-6 bg-slate-50/50 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-inner overflow-x-auto">
+      <div className="min-w-[360px] sm:min-w-[540px] lg:min-w-[620px] flex flex-col items-center w-full px-1 sm:px-2">
        <div className="mb-0"><SolarPanelProduct power={data.solarR} capacity={50.0} weather={weather} isNight={isNight} /></div>
        <div className="flex flex-col items-center">
           <RigidCable height={30} active={isSolarActive} color={isSolarActive ? "bg-green-500" : "bg-slate-300"} speed={simSpeed} arrowColor="text-green-100" />
@@ -1579,7 +1581,7 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
              />
           </div>
        </div>
-        <div className="flex gap-4 justify-between w-full max-w-[600px] mt-0">
+        <div className="flex gap-3 sm:gap-4 justify-between w-full max-w-[600px] mt-0">
           <div className="flex-1 flex justify-center scale-90"><GridProduct power={data.netGridPower} isImporting={data.netGridPower < 0} isExporting={data.netGridPower > 0} gridStatus={gridStatus} /></div>
           <div className="flex-1 flex justify-center scale-90"><HomeProduct power={data.homeLoad} /></div>
           <div className="flex-1 flex justify-center scale-90"><EVChargerProduct id={1} status={ev1Status} soc={data.ev1Soc} power={data.ev1Load} carName="EV 1 (Commuter)" capacity={evSpecs.ev1.capacity} maxRate={evSpecs.ev1.rate} onToggle={() => {}} v2g={data.ev1V2g} /></div>
