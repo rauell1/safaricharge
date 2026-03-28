@@ -76,14 +76,76 @@ const KPLC_TARIFF = {
   }
 };
 
-// System specifications
-const PV_CAPACITY = 50.0; 
-const INVERTER_CAPACITY = 48.0; 
-const BATTERY_CAPACITY = 60.0; 
-const BATTERY_EFFICIENCY = 0.96;
-const EV_CHARGER_RATE = 22.0; 
-const MAX_BAT_CHARGE_RATE = 30.0; 
-const MAX_BAT_DISCHARGE_RATE = 40.0; 
+type SystemConfig = {
+  mode: 'auto' | 'advanced';
+  panelCount: number;
+  panelWatt: number;
+  inverterKw: number;
+  batteryKwh: number;
+  maxChargeKw: number;
+  maxDischargeKw: number;
+  evChargerKw: number;
+  loadScale: number;
+  evCommuterScale: number;
+  evFleetScale: number;
+};
+
+type DerivedSystemConfig = SystemConfig & { pvCapacityKw: number };
+
+const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
+  mode: 'auto',
+  panelCount: 120,
+  panelWatt: 420,
+  inverterKw: 48,
+  batteryKwh: 60,
+  maxChargeKw: 30,
+  maxDischargeKw: 40,
+  evChargerKw: 22,
+  loadScale: 1,
+  evCommuterScale: 1,
+  evFleetScale: 1,
+};
+
+const derivePvCapacity = (config: SystemConfig): number => {
+  const kw = (config.panelCount * config.panelWatt) / 1000;
+  return Math.max(0, Math.round(kw * 100) / 100);
+};
+
+const SYSTEM_PRESETS: Record<'conservative' | 'expected' | 'aggressive', Partial<SystemConfig>> = {
+  conservative: {
+    panelCount: 96,
+    panelWatt: 420,
+    inverterKw: 40,
+    batteryKwh: 48,
+    maxChargeKw: 24,
+    maxDischargeKw: 32,
+    loadScale: 0.9,
+    evCommuterScale: 0.9,
+    evFleetScale: 0.9,
+  },
+  expected: {
+    panelCount: 120,
+    panelWatt: 420,
+    inverterKw: 48,
+    batteryKwh: 60,
+    maxChargeKw: 30,
+    maxDischargeKw: 40,
+    loadScale: 1,
+    evCommuterScale: 1,
+    evFleetScale: 1,
+  },
+  aggressive: {
+    panelCount: 140,
+    panelWatt: 430,
+    inverterKw: 55,
+    batteryKwh: 72,
+    maxChargeKw: 36,
+    maxDischargeKw: 48,
+    loadScale: 1.1,
+    evCommuterScale: 1.1,
+    evFleetScale: 1.1,
+  },
+};
 
 // --- PHYSICS HELPERS ---
 // Average Kenya grid emission factor (mix of hydro + thermal generation)
@@ -182,7 +244,13 @@ const nextWeatherMarkov = (current: string): string => {
 
 // --- 1. PHYSICS ENGINE (Shared Logic) ---
 const PhysicsEngine = {
-  generateDayScenario: (weather: string, date: Date = new Date('2026-01-01'), soilingFactor: number = 1.0, solarData?: SolarIrradianceData) => {
+  generateDayScenario: (
+    weather: string,
+    date: Date = new Date('2026-01-01'),
+    soilingFactor: number = 1.0,
+    solarData?: SolarIrradianceData,
+    systemConfig?: DerivedSystemConfig
+  ) => {
     const month = date.getMonth() + 1;
     const dayOfWeek = date.getDay();
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
@@ -205,9 +273,9 @@ const PhysicsEngine = {
         depart: 7.5 + gaussianRandom(0, 0.2),
         return: 18.0 + gaussianRandom(0, 0.4),
         emergency: Math.random() < 0.2 ? { start: 20.0 + Math.random()*0.5, end: 21.0 + Math.random()*0.5 } : null,
-        drainRate: 0.5,
+        drainRate: 0.5 * (systemConfig?.evCommuterScale ?? 1),
         cap: 80,
-        onboard: 7
+        onboard: 7 * (systemConfig?.evCommuterScale ?? 1)
       },
       ev2: {
         startSoc: 15 + Math.random() * 25,
@@ -215,9 +283,9 @@ const PhysicsEngine = {
         lunchStart: 12.5 + Math.random() * 0.5,    
         lunchEnd: 14.0 + Math.random() * 0.5,      
         return: 22.0 + gaussianRandom(0, 0.4),
-        drainRate: 0.8,
+        drainRate: 0.8 * (systemConfig?.evFleetScale ?? 1),
         cap: 118,
-        onboard: 22
+        onboard: 22 * (systemConfig?.evFleetScale ?? 1)
       },
       weatherFactor: weather === 'Sunny' ? 1.0 : weather === 'Cloudy' ? 0.6 : 0.2,
       cloudNoiseSeed: Math.random(),
@@ -235,11 +303,23 @@ const PhysicsEngine = {
           if (h >= 18 && h < 22) return 6.0 + Math.random() * 3;
           return 0.8;
         }
-      })
+      }).map(v => v * (systemConfig?.loadScale ?? 1))
     };
   },
 
-  calculateInstant: (t: number, prevBatKwh: number, prevEv1Soc: number, prevEv2Soc: number, scenario: any, evSpecs: any, cloudNoise = 0, batteryHealth = 1.0, actualTimeStep = 5/60, priorityMode = 'load') => {
+  calculateInstant: (
+    t: number,
+    prevBatKwh: number,
+    prevEv1Soc: number,
+    prevEv2Soc: number,
+    scenario: any,
+    evSpecs: any,
+    systemConfig: DerivedSystemConfig,
+    cloudNoise = 0,
+    batteryHealth = 1.0,
+    actualTimeStep = 5/60,
+    priorityMode = 'load'
+  ) => {
     const timeStep = actualTimeStep;
     const month: number = scenario.month || 1;
     const peakHour: number = scenario.peakSolarHour || 12.75;
@@ -254,7 +334,7 @@ const PhysicsEngine = {
         const noise = cloudNoise * 0.15;
         const irradFraction = Math.max(0, Math.exp(-Math.pow(t - peakHour, 2) / width));
         const tempEffect = getPanelTempEffect(irradFraction * scenario.weatherFactor, month, scenario.monthlyTemperature);
-        solar = PV_CAPACITY * irradFraction * (scenario.weatherFactor + noise) * soiling * tempEffect;
+        solar = systemConfig.pvCapacityKw * irradFraction * (scenario.weatherFactor + noise) * soiling * tempEffect;
         solar = Math.max(0, solar);
     }
 
@@ -262,8 +342,8 @@ const PhysicsEngine = {
     const hIdx = Math.floor(t);
     const houseLoad = scenario.houseLoadProfile[hIdx % 24] * Math.max(0.5, 1 + gaussianRandom(0, 0.08));
     // Effective battery capacity and reserve accounting for degradation
-    const effectiveCapacity = BATTERY_CAPACITY * batteryHealth;
-    const effectiveReserve = 12.0 * batteryHealth;
+    const effectiveCapacity = systemConfig.batteryKwh * batteryHealth;
+    const effectiveReserve = Math.max(systemConfig.batteryKwh * 0.15, 8) * batteryHealth;
 
     // C. EV Logic with tapered charging above 80% SOC
     let ev1Load = 0;
@@ -275,12 +355,15 @@ const PhysicsEngine = {
     if ((t > scenario.ev1.depart && t < scenario.ev1.return) || 
         (scenario.ev1.emergency && t > scenario.ev1.emergency.start && t < scenario.ev1.emergency.end)) {
         ev1IsHome = false;
-        prevEv1Soc = Math.max(5, prevEv1Soc - (evSpecs.ev1.drainRate * timeStep / evSpecs.ev1.cap * 100));
+        prevEv1Soc = Math.max(5, prevEv1Soc - (evSpecs.ev1.drainRate * (systemConfig.evCommuterScale ?? 1) * timeStep / evSpecs.ev1.cap * 100));
     } else {
         if (prevEv1Soc < 100) {
-            const taperedRate = getEVTaperedRate(prevEv1Soc, Math.min(EV_CHARGER_RATE, evSpecs.ev1.onboard));
+            const taperedRate = getEVTaperedRate(
+              prevEv1Soc,
+              Math.min(systemConfig.evChargerKw, evSpecs.ev1.onboard) * (systemConfig.evCommuterScale ?? 1)
+            );
             const needed = (100 - prevEv1Soc) / 100 * evSpecs.ev1.cap;
-            ev1Load = Math.min(taperedRate, needed / timeStep);
+            ev1Load = Math.min(taperedRate, needed / timeStep) * (systemConfig.evCommuterScale ?? 1);
         }
     }
 
@@ -288,29 +371,32 @@ const PhysicsEngine = {
     if ((t > scenario.ev2.depart && t < scenario.ev2.lunchStart) || 
         (t > scenario.ev2.lunchEnd && t < scenario.ev2.return)) {
         ev2IsHome = false;
-        prevEv2Soc = Math.max(5, prevEv2Soc - (evSpecs.ev2.drainRate * timeStep / evSpecs.ev2.cap * 100));
+        prevEv2Soc = Math.max(5, prevEv2Soc - (evSpecs.ev2.drainRate * (systemConfig.evFleetScale ?? 1) * timeStep / evSpecs.ev2.cap * 100));
     } else {
         if (prevEv2Soc < 100) {
-            const taperedRate = getEVTaperedRate(prevEv2Soc, Math.min(EV_CHARGER_RATE, evSpecs.ev2.onboard));
+            const taperedRate = getEVTaperedRate(
+              prevEv2Soc,
+              Math.min(systemConfig.evChargerKw, evSpecs.ev2.onboard) * (systemConfig.evFleetScale ?? 1)
+            );
             const needed = (100 - prevEv2Soc) / 100 * evSpecs.ev2.cap;
-            ev2Load = Math.min(taperedRate, needed / timeStep);
+            ev2Load = Math.min(taperedRate, needed / timeStep) * (systemConfig.evFleetScale ?? 1);
         }
     }
 
     // Load Management
     let totalLoad = houseLoad + ev1Load + ev2Load;
-    if (totalLoad > INVERTER_CAPACITY) {
-        const available = Math.max(0, INVERTER_CAPACITY - houseLoad);
+    if (totalLoad > systemConfig.inverterKw) {
+        const available = Math.max(0, systemConfig.inverterKw - houseLoad);
         if (ev1Load + ev2Load > 0) {
             const factor = available / (ev1Load + ev2Load);
             ev1Load *= factor;
             ev2Load *= factor;
-            totalLoad = INVERTER_CAPACITY;
+            totalLoad = systemConfig.inverterKw;
         }
     }
 
     // Apply inverter efficiency: DC solar → AC bus
-    const inverterEff = getInverterEfficiency(totalLoad / INVERTER_CAPACITY);
+    const inverterEff = getInverterEfficiency(totalLoad / systemConfig.inverterKw);
     const effectiveSolar = solar * inverterEff;
 
     // Apply Charge to SOC
@@ -355,9 +441,9 @@ const PhysicsEngine = {
             // Battery-first: charge battery before serving loads
             if (newBatKwh < effectiveCapacity) {
                 const capRem = effectiveCapacity - newBatKwh;
-                const chargeFraction = Math.min(excess, MAX_BAT_CHARGE_RATE) / MAX_BAT_CHARGE_RATE;
+                const chargeFraction = Math.min(excess, systemConfig.maxChargeKw) / systemConfig.maxChargeKw;
                 const batEff = getBatteryEfficiency(chargeFraction);
-                batCharge = Math.min(excess, MAX_BAT_CHARGE_RATE, (capRem / batEff) / timeStep);
+                batCharge = Math.min(excess, systemConfig.maxChargeKw, (capRem / batEff) / timeStep);
                 newBatKwh += batCharge * timeStep * batEff;
                 excess -= batCharge;
             }
@@ -366,9 +452,9 @@ const PhysicsEngine = {
             // Load-first (default): charge battery with excess after loads
             if (newBatKwh < effectiveCapacity) {
                 const capRem = effectiveCapacity - newBatKwh;
-                const chargeFraction = Math.min(excess, MAX_BAT_CHARGE_RATE) / MAX_BAT_CHARGE_RATE;
+                const chargeFraction = Math.min(excess, systemConfig.maxChargeKw) / systemConfig.maxChargeKw;
                 const batEff = getBatteryEfficiency(chargeFraction);
-                batCharge = Math.min(excess, MAX_BAT_CHARGE_RATE, (capRem / batEff) / timeStep);
+                batCharge = Math.min(excess, systemConfig.maxChargeKw, (capRem / batEff) / timeStep);
                 newBatKwh += batCharge * timeStep * batEff;
                 excess -= batCharge;
             }
@@ -379,9 +465,9 @@ const PhysicsEngine = {
         let deficit = totalLoad - augmentedSolar;
         if (newBatKwh > effectiveReserve) {
             const enAvail = newBatKwh - effectiveReserve;
-            const dischargeFraction = Math.min(deficit, MAX_BAT_DISCHARGE_RATE) / MAX_BAT_DISCHARGE_RATE;
+            const dischargeFraction = Math.min(deficit, systemConfig.maxDischargeKw) / systemConfig.maxDischargeKw;
             const batEff = getBatteryEfficiency(dischargeFraction);
-            batDischarge = Math.min(deficit, MAX_BAT_DISCHARGE_RATE, (enAvail * batEff) / timeStep);
+            batDischarge = Math.min(deficit, systemConfig.maxDischargeKw, (enAvail * batEff) / timeStep);
             newBatKwh -= (batDischarge * timeStep) / batEff;
             deficit -= batDischarge;
         }
@@ -1260,7 +1346,58 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
               </p>
             </div>
           </div>
-          )}
+            )}
+         </div>
+      </div>
+      
+      {/* Mobile sticky controls for Android/iOS */}
+      <div className="sm:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-50 w-[min(480px,calc(100%-16px))] space-y-2 drop-shadow-2xl">
+        <div className="bg-white/95 backdrop-blur-lg border border-slate-200 rounded-2xl px-3 py-2 flex items-center gap-2">
+          <button
+            onClick={onToggleAuto}
+            className={`w-10 h-10 flex items-center justify-center rounded-full border font-bold ${
+              isAutoMode ? 'bg-green-100 border-green-200 text-green-600' : 'bg-slate-100 border-slate-200 text-slate-700'
+            }`}
+            aria-label={isAutoMode ? 'Pause simulation' : 'Play simulation'}
+          >
+            {isAutoMode ? <Pause size={18} /> : <Play size={18} />}
+          </button>
+          <div className="flex items-center gap-1 flex-1">
+            {[1, 20, 1000].map(speed => (
+              <button
+                key={speed}
+                onClick={() => onSpeedChange(speed)}
+                className={`px-3 py-2 rounded-xl text-[11px] font-bold border transition-colors flex-1 ${
+                  simSpeed === speed ? 'bg-sky-600 text-white border-sky-600' : 'bg-slate-50 border-slate-200 text-slate-700'
+                }`}
+              >
+                x{speed}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={onOpenReport}
+            className="w-10 h-10 flex items-center justify-center rounded-full border border-slate-200 bg-slate-900 text-white"
+            aria-label="Open report"
+          >
+            <Table size={16} />
+          </button>
+        </div>
+        <div className="bg-white/95 backdrop-blur-lg border border-slate-200 rounded-2xl px-3 py-2">
+          <div className="flex items-center justify-between text-[10px] font-semibold text-slate-600 mb-1">
+            <span>Timeline</span>
+            <span className="font-mono">{formatTime(timeOfDay)}</span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="24"
+            step="0.08"
+            value={timeOfDay}
+            onChange={(e) => { onTimeChange(parseFloat(e.target.value)); if (isAutoMode) onToggleAuto(); }}
+            disabled={isAutoMode}
+            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          />
         </div>
       </div>
     </div>
@@ -1388,6 +1525,211 @@ const Header = ({ onToggleAssistant, currentDate, onReset, currentLocation, onLo
     <div className="h-0.5 w-full bg-gradient-to-r from-sky-500 to-green-500 shadow-[0_0_15px_rgba(14,165,233,0.5)]"></div>
   </div>
 );
+
+const StatPill = ({ label, value, sub }: { label: string; value: string; sub?: string }) => (
+  <div className="flex flex-col bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">{label}</span>
+    <span className="text-sm font-black text-slate-900">{value}</span>
+    {sub && <span className="text-[10px] text-slate-400">{sub}</span>}
+  </div>
+);
+
+const SystemConfigPanel = ({
+  config,
+  onChange,
+  onModeChange,
+  onPreset,
+}: {
+  config: DerivedSystemConfig;
+  onChange: (next: SystemConfig) => void;
+  onModeChange: (mode: SystemConfig['mode']) => void;
+  onPreset: (preset: keyof typeof SYSTEM_PRESETS) => void;
+}) => {
+  const isAdvanced = config.mode === 'advanced';
+  const { pvCapacityKw, ...baseConfig } = config;
+
+  const updateField = (key: keyof SystemConfig, value: number) => {
+    const safeNumber = Number.isFinite(value) ? Math.max(0, value) : 0;
+    onChange({ ...baseConfig, [key]: safeNumber, mode: 'advanced' });
+  };
+
+  return (
+    <div className="w-full max-w-7xl bg-white border border-slate-200 rounded-2xl shadow-sm p-3 sm:p-4">
+      <div className="flex flex-col sm:flex-row justify-between gap-3 sm:items-center">
+        <div>
+          <div className="flex items-center gap-2 text-slate-700 font-black text-sm sm:text-base uppercase tracking-wide">
+            <Settings size={16} className="text-slate-400" />
+            System Configuration
+          </div>
+          <p className="text-[11px] sm:text-xs text-slate-500 mt-1">
+            Switch to advanced mode to tweak panel count, inverter, battery, and load splits. Values feed directly into the live simulation.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="bg-slate-100 rounded-full p-1 flex gap-1 text-[11px]">
+            <button
+              onClick={() => onModeChange('auto')}
+              className={`px-3 py-1 rounded-full font-bold transition-colors ${config.mode === 'auto' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white'}`}
+            >
+              Auto
+            </button>
+            <button
+              onClick={() => onModeChange('advanced')}
+              className={`px-3 py-1 rounded-full font-bold transition-colors ${isAdvanced ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white'}`}
+            >
+              Advanced
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-semibold text-slate-500 uppercase">Panel Count</label>
+          <input
+            type="number"
+            min={0}
+            value={config.panelCount}
+            onChange={(e) => updateField('panelCount', parseFloat(e.target.value))}
+            className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-50"
+            disabled={!isAdvanced}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-semibold text-slate-500 uppercase">Panel Wattage (W)</label>
+          <input
+            type="number"
+            min={0}
+            value={config.panelWatt}
+            onChange={(e) => updateField('panelWatt', parseFloat(e.target.value))}
+            className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-50"
+            disabled={!isAdvanced}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-semibold text-slate-500 uppercase">Inverter Size (kW)</label>
+          <input
+            type="number"
+            min={0}
+            value={config.inverterKw}
+            onChange={(e) => updateField('inverterKw', parseFloat(e.target.value))}
+            className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-50"
+            disabled={!isAdvanced}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-semibold text-slate-500 uppercase">Battery Size (kWh)</label>
+          <input
+            type="number"
+            min={0}
+            value={config.batteryKwh}
+            onChange={(e) => updateField('batteryKwh', parseFloat(e.target.value))}
+            className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-50"
+            disabled={!isAdvanced}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-semibold text-slate-500 uppercase">Max Charge (kW)</label>
+          <input
+            type="number"
+            min={0}
+            value={config.maxChargeKw}
+            onChange={(e) => updateField('maxChargeKw', parseFloat(e.target.value))}
+            className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-50"
+            disabled={!isAdvanced}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-semibold text-slate-500 uppercase">Max Discharge (kW)</label>
+          <input
+            type="number"
+            min={0}
+            value={config.maxDischargeKw}
+            onChange={(e) => updateField('maxDischargeKw', parseFloat(e.target.value))}
+            className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-50"
+            disabled={!isAdvanced}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-semibold text-slate-500 uppercase">EV Charger Rate (kW)</label>
+          <input
+            type="number"
+            min={0}
+            value={config.evChargerKw}
+            onChange={(e) => updateField('evChargerKw', parseFloat(e.target.value))}
+            className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-50"
+            disabled={!isAdvanced}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-semibold text-slate-500 uppercase">Base Load Scale</label>
+          <input
+            type="number"
+            min={0}
+            step="0.05"
+            value={config.loadScale}
+            onChange={(e) => updateField('loadScale', parseFloat(e.target.value))}
+            className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-50"
+            disabled={!isAdvanced}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-semibold text-slate-500 uppercase">EV #1 (Commuter) Scale</label>
+          <input
+            type="number"
+            min={0}
+            step="0.05"
+            value={config.evCommuterScale}
+            onChange={(e) => updateField('evCommuterScale', parseFloat(e.target.value))}
+            className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-50"
+            disabled={!isAdvanced}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-semibold text-slate-500 uppercase">EV #2 (Fleet) Scale</label>
+          <input
+            type="number"
+            min={0}
+            step="0.05"
+            value={config.evFleetScale}
+            onChange={(e) => updateField('evFleetScale', parseFloat(e.target.value))}
+            className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-50"
+            disabled={!isAdvanced}
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mt-3">
+        <div className="flex flex-wrap gap-2">
+          <StatPill label="PV Array" value={`${pvCapacityKw.toFixed(1)} kW`} sub={`${config.panelCount}x ${config.panelWatt}W`} />
+          <StatPill label="Inverter" value={`${config.inverterKw.toFixed(1)} kW`} />
+          <StatPill label="Battery" value={`${config.batteryKwh.toFixed(1)} kWh`} sub={`${config.maxChargeKw.toFixed(0)} kW charge / ${config.maxDischargeKw.toFixed(0)} kW discharge`} />
+          <StatPill label="Loads" value={`${(config.loadScale * 100).toFixed(0)}%`} sub="Home + HVAC base" />
+        </div>
+        {isAdvanced && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-semibold text-slate-500 uppercase">Presets</span>
+            {(['conservative', 'expected', 'aggressive'] as const).map((preset) => (
+              <button
+                key={preset}
+                onClick={() => onPreset(preset)}
+                className="px-3 py-1.5 rounded-full text-[11px] font-bold border border-slate-200 bg-slate-50 hover:border-sky-300 hover:text-sky-700 transition-colors"
+              >
+                {preset === 'expected' ? 'Expected' : preset === 'aggressive' ? 'Aggressive' : 'Conservative'}
+              </button>
+            ))}
+            <button
+              onClick={() => onChange({ ...DEFAULT_SYSTEM_CONFIG, mode: 'auto' })}
+              className="px-3 py-1.5 rounded-full text-[11px] font-bold border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+            >
+              Reset to Auto
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAuto, simSpeed, onSpeedChange, onOpenReport, priorityMode, onTogglePriority, weather, isNight, gridStatus, onToggleGrid, displayPriority, ev1Status, ev2Status }: {
   data: any; timeOfDay: number; onTimeChange: (t: number) => void; isAutoMode: boolean; onToggleAuto: () => void; simSpeed: number; onSpeedChange: (s: number) => void; onOpenReport: () => void; priorityMode: string; onTogglePriority: () => void; weather: string; isNight: boolean; gridStatus: string; onToggleGrid: () => void; displayPriority: string; ev1Status: string; ev2Status: string;
@@ -1610,6 +1952,15 @@ export default function App() {
     peakSunHours: [5.5, 5.8, 5.6, 5.4, 5.2, 5.1, 5.0, 5.3, 5.7, 5.8, 5.4, 5.3],
   });
   const [isRecommendationOpen, setIsRecommendationOpen] = useState(false);
+  const [systemConfig, setSystemConfig] = useState<SystemConfig>(DEFAULT_SYSTEM_CONFIG);
+  const derivedSystemConfig = useMemo<DerivedSystemConfig>(
+    () => ({ ...systemConfig, pvCapacityKw: derivePvCapacity(systemConfig) }),
+    [systemConfig]
+  );
+  const systemConfigRef = useRef<DerivedSystemConfig>({ ...DEFAULT_SYSTEM_CONFIG, pvCapacityKw: derivePvCapacity(DEFAULT_SYSTEM_CONFIG) });
+  useEffect(() => {
+    systemConfigRef.current = derivedSystemConfig;
+  }, [derivedSystemConfig]);
 
   // Start at midnight so the very first simulated day runs midnight→midnight
   // and accumulates the full 420 data points like every subsequent day.
@@ -1670,7 +2021,9 @@ export default function App() {
   const todayGraphDataRef = useRef<GraphDataPoint[]>([]);
   const [dailyGraphData, setDailyGraphData] = useState<GraphDataPoint[]>([]);
   const [pastGraphs, setPastGraphs] = useState<Array<{ date: string; data: GraphDataPoint[] }>>([]);
-  const dayScenarioRef = useRef(PhysicsEngine.generateDayScenario('Sunny', new Date('2026-01-01'), 1.0, solarData));
+  const dayScenarioRef = useRef(
+    PhysicsEngine.generateDayScenario('Sunny', new Date('2026-01-01'), 1.0, solarData, systemConfigRef.current)
+  );
   
   // Comprehensive data tracking for export - stores all minute-by-minute data
   const minuteDataRef = useRef<Array<{
@@ -1720,7 +2073,7 @@ export default function App() {
   // Starting at t=0 (midnight) ensures every simulated day is a full 24-hour
   // cycle → exactly 420 data points per day for all simulation speeds.
   const timeOfDayRef = useRef(0);
-  const batKwhRef = useRef(BATTERY_CAPACITY * 0.5);
+  const batKwhRef = useRef(systemConfigRef.current.batteryKwh * 0.5);
   const ev1SocRef = useRef(60);
   const ev2SocRef = useRef(50);
 
@@ -1740,9 +2093,9 @@ export default function App() {
     minuteDataRef.current = [];
     setData(prev => ({ ...prev, batteryLevel: 50, ev1Soc: 60, ev2Soc: 50, displaySavings: 0, carbonOffset: 0, batteryHealth: 1.0, batteryCycles: 0, monthlyPeakDemandKW: 0, estimatedDemandChargeKES: 0, feedInEarnings: 0, ev1V2g: false, ev2V2g: false }));
     setIsAutoMode(false);
-    dayScenarioRef.current = PhysicsEngine.generateDayScenario('Sunny', new Date('2026-01-01'), 1.0, solarData);
+    dayScenarioRef.current = PhysicsEngine.generateDayScenario('Sunny', new Date('2026-01-01'), 1.0, solarData, systemConfigRef.current);
     timeOfDayRef.current = 0;
-    batKwhRef.current = BATTERY_CAPACITY * 0.5;
+    batKwhRef.current = systemConfigRef.current.batteryKwh * 0.5;
     ev1SocRef.current = dayScenarioRef.current.ev1.startSoc;
     ev2SocRef.current = dayScenarioRef.current.ev2.startSoc;
   };
@@ -1750,6 +2103,26 @@ export default function App() {
   const handleFinancialInputsChange = useCallback((next: FinancialInputs) => {
     setFinancialInputs(next);
   }, []);
+
+  useEffect(() => {
+    const updatedScenario = PhysicsEngine.generateDayScenario(
+      weatherRef.current,
+      currentDate,
+      soilingFactorRef.current,
+      solarData,
+      systemConfigRef.current
+    );
+    dayScenarioRef.current = updatedScenario;
+    const cappedEnergy = Math.min(
+      batKwhRef.current,
+      systemConfigRef.current.batteryKwh * batteryHealthRef.current
+    );
+    batKwhRef.current = cappedEnergy;
+    setData(prev => ({
+      ...prev,
+      batteryLevel: (batKwhRef.current / (systemConfigRef.current.batteryKwh * batteryHealthRef.current)) * 100,
+    }));
+  }, [derivedSystemConfig, solarData, currentDate]);
 
   const handleNewDay = useCallback(() => {
     const nextDate = new Date(currentDate);
@@ -1800,7 +2173,7 @@ export default function App() {
       soilingFactorRef.current = Math.max(SOILING_MIN_FACTOR, soilingFactorRef.current - SOILING_LOSS_PER_DAY);
     }
 
-    dayScenarioRef.current = PhysicsEngine.generateDayScenario(newWeather, nextDate, soilingFactorRef.current, solarData);
+    dayScenarioRef.current = PhysicsEngine.generateDayScenario(newWeather, nextDate, soilingFactorRef.current, solarData, systemConfigRef.current);
     ev1SocRef.current = dayScenarioRef.current.ev1.startSoc;
     ev2SocRef.current = dayScenarioRef.current.ev2.startSoc;
     setData(prev => ({ ...prev, ev1Soc: dayScenarioRef.current.ev1.startSoc, ev2Soc: dayScenarioRef.current.ev2.startSoc }));
@@ -1820,7 +2193,7 @@ export default function App() {
     let isProcessing = false;
 
     const processTick = () => {
-      const { simSpeed: spd, priorityMode: curPriority, evSpecs: curEvSpecs } = computeParamsRef.current;
+      const { simSpeed: spd, priorityMode: curPriority, evSpecs: curEvSpecs, systemConfig: curSystemConfig } = computeParamsRef.current;
       const GRAPH_STEP_H = 24 / 420;
       const totalAdvance = Math.min(24.0, GRAPH_STEP_H * spd);
       const numSteps = Math.max(1, Math.ceil(totalAdvance / GRAPH_STEP_H));
@@ -1866,6 +2239,7 @@ export default function App() {
             ev2SocRef.current,
             dayScenarioRef.current,
             curEvSpecs,
+            curSystemConfig,
             cloudNoiseRef.current,
             batteryHealthRef.current,
             actualStep,
@@ -1895,11 +2269,13 @@ export default function App() {
             monthlyPeakDemandRef.current = state.gridImport;
           }
 
+          const effectiveCapacity = curSystemConfig.batteryKwh * batteryHealthRef.current;
+
           if (state.batDischargeKw > 0) {
             const dischargedKwh = state.batDischargeKw * actualStep;
             accumulators.current.batDischargeKwh += dischargedKwh;
             cumulativeDischargeRef.current += dischargedKwh;
-            batteryCyclesRef.current = cumulativeDischargeRef.current / Math.max(1, BATTERY_CAPACITY * batteryHealthRef.current);
+            batteryCyclesRef.current = cumulativeDischargeRef.current / Math.max(1, curSystemConfig.batteryKwh * batteryHealthRef.current);
             batteryHealthRef.current = Math.max(0.70, 1.0 - (batteryCyclesRef.current / 4000) * 0.30);
           }
 
@@ -1925,7 +2301,7 @@ export default function App() {
             ev1LoadKW: state.ev1Kw,
             ev2LoadKW: state.ev2Kw,
             batteryPowerKW: state.batPower,
-            batteryLevelPct: (state.batKwh / BATTERY_CAPACITY) * 100,
+            batteryLevelPct: (state.batKwh / curSystemConfig.batteryKwh) * 100,
             gridImportKW: state.gridImport,
             gridExportKW: state.gridExport,
             ev1SocPct: state.ev1Soc,
@@ -1954,7 +2330,7 @@ export default function App() {
             timeOfDay: timeOfDayRef.current,
             solar: state.solar,
             load: state.load,
-            batSoc: (state.batKwh / (BATTERY_CAPACITY * batteryHealthRef.current)) * 100,
+            batSoc: (state.batKwh / (curSystemConfig.batteryKwh * batteryHealthRef.current)) * 100,
           });
 
           lastState = state;
@@ -1988,7 +2364,7 @@ export default function App() {
           // Single React state update per tick for all display values.
           setTimeOfDay(timeOfDayRef.current);
           const finalState = lastState;
-          const effectiveCapacity = BATTERY_CAPACITY * batteryHealthRef.current;
+          const effectiveCapacity = curSystemConfig.batteryKwh * batteryHealthRef.current;
           setData(prev => {
             let effectivePriority = curPriority;
             if (curPriority === 'auto') {
@@ -2050,10 +2426,10 @@ export default function App() {
   }, [isAutoMode, simSpeed]);
 
   // Use a ref to store computation parameters to avoid dependency issues
-  const computeParamsRef = useRef({ simSpeed, priorityMode, isAutoMode, evSpecs, currentDate });
+  const computeParamsRef = useRef({ simSpeed, priorityMode, isAutoMode, evSpecs, currentDate, systemConfig: systemConfigRef.current });
   useEffect(() => {
-    computeParamsRef.current = { simSpeed, priorityMode, isAutoMode, evSpecs, currentDate };
-  }, [simSpeed, priorityMode, isAutoMode, evSpecs, currentDate]);
+    computeParamsRef.current = { simSpeed, priorityMode, isAutoMode, evSpecs, currentDate, systemConfig: systemConfigRef.current };
+  }, [simSpeed, priorityMode, isAutoMode, evSpecs, currentDate, derivedSystemConfig]);
 
   // Compute physics state whenever timeOfDay changes (manual mode only).
   // Auto mode is handled entirely by the interval above, which sub-steps at
@@ -2062,7 +2438,13 @@ export default function App() {
     if (lastProcessedTimeRef.current === timeOfDay) return;
     lastProcessedTimeRef.current = timeOfDay;
 
-    const { priorityMode: currentPriorityMode, isAutoMode: currentIsAutoMode, evSpecs: currentEvSpecs, currentDate: currentDateValue } = computeParamsRef.current;
+    const {
+      priorityMode: currentPriorityMode,
+      isAutoMode: currentIsAutoMode,
+      evSpecs: currentEvSpecs,
+      currentDate: currentDateValue,
+      systemConfig: currentSystemConfig
+    } = computeParamsRef.current;
 
     // Skip in auto mode: the interval loop handles all physics + graph data.
     if (currentIsAutoMode) return;
@@ -2082,6 +2464,7 @@ export default function App() {
       ev2SocRef.current,
       dayScenarioRef.current,
       currentEvSpecs,
+      currentSystemConfig,
       cloudNoiseRef.current,
       batteryHealthRef.current,
       physicsTimeStep,
@@ -2110,7 +2493,7 @@ export default function App() {
       let effectivePriority = currentPriorityMode;
       if (currentPriorityMode === 'auto') {
          effectivePriority = 'load'; 
-         if (state.batKwh / BATTERY_CAPACITY * 100 < 40) effectivePriority = 'battery'; 
+         if (state.batKwh / currentSystemConfig.batteryKwh * 100 < 40) effectivePriority = 'battery'; 
       }
 
       return {
@@ -2123,7 +2506,7 @@ export default function App() {
          ev2V2g: state.ev2V2g ?? false,
          batteryPower: state.batPower,
          batteryStatus: state.batPower > 0.1 ? 'Charging' : (state.batPower < -0.1 ? 'Discharging' : 'Idle'),
-         batteryLevel: (state.batKwh / (BATTERY_CAPACITY * batteryHealthRef.current)) * 100,
+         batteryLevel: (state.batKwh / (currentSystemConfig.batteryKwh * batteryHealthRef.current)) * 100,
          batteryHealth: batteryHealthRef.current,
          batteryCycles: Math.round(batteryCyclesRef.current * 10) / 10,
          netGridPower: state.gridExport > 0 ? state.gridExport : -state.gridImport,
@@ -2477,6 +2860,22 @@ export default function App() {
     }
   };
 
+  const handleSystemModeChange = useCallback((mode: SystemConfig['mode']) => {
+    if (mode === 'auto') {
+      setSystemConfig({ ...DEFAULT_SYSTEM_CONFIG, mode: 'auto' });
+    } else {
+      setSystemConfig(prev => ({ ...prev, mode: 'advanced' }));
+    }
+  }, []);
+
+  const handleSystemConfigChange = useCallback((next: SystemConfig) => {
+    setSystemConfig(next);
+  }, []);
+
+  const handlePresetSelect = useCallback((preset: keyof typeof SYSTEM_PRESETS) => {
+    setSystemConfig(prev => ({ ...prev, ...SYSTEM_PRESETS[preset], mode: 'advanced' }));
+  }, []);
+
   return (
     <div className="min-h-screen bg-slate-200 font-sans text-slate-900 flex flex-col relative">
       <Header
@@ -2507,6 +2906,15 @@ export default function App() {
         onFormalReport={handleFormalReport}
         carbonOffset={data.carbonOffset}
       />
+
+      <div className="w-full flex justify-center px-2 md:px-4 pt-2">
+        <SystemConfigPanel
+          config={derivedSystemConfig}
+          onChange={handleSystemConfigChange}
+          onModeChange={handleSystemModeChange}
+          onPreset={handlePresetSelect}
+        />
+      </div>
 
       <div className="w-full flex justify-center px-2 md:px-4 pb-2 md:pb-4">
         <FinancialDashboard
