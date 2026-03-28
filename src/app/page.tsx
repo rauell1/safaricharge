@@ -626,13 +626,17 @@ const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, cu
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const MAX_MESSAGES = 200;
+  const pushMessage = useCallback((msg: { role: string; text: string }) => {
+    setMessages(prev => [...prev.slice(-(MAX_MESSAGES - 1)), msg]);
+  }, []);
   
   useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [messages, isTyping]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isTyping) return;
     const userMsg = { role: 'user', text };
-    setMessages(prev => [...prev, userMsg]);
+    pushMessage(userMsg);
     setInputText('');
     setIsTyping(true);
     setError(null);
@@ -676,10 +680,10 @@ const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, cu
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'API error');
-      setMessages(prev => [...prev, { role: 'assistant', text: json.response }]);
+      pushMessage({ role: 'assistant', text: json.response });
     } catch (err: any) {
       setError(err.message || 'Failed to reach SafariCharge AI. Check your connection.');
-      setMessages(prev => [...prev, { role: 'assistant', text: "⚠️ I couldn't connect to the AI service right now. Please try again in a moment." }]);
+      pushMessage({ role: 'assistant', text: "⚠️ I couldn't connect to the AI service right now. Please try again in a moment." });
     } finally {
       setIsTyping(false);
     }
@@ -693,9 +697,9 @@ const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, cu
   const showChips = messages.length <= 2;
 
   return (
-    <div className="absolute right-0 top-16 bottom-0 w-full md:w-96 bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
+    <div className="fixed right-3 sm:right-6 left-3 sm:left-auto top-20 sm:top-24 bottom-4 sm:bottom-6 sm:w-96 w-[min(520px,calc(100vw-1.5rem))] max-h-[calc(100vh-5rem)] bg-white shadow-2xl border border-slate-200 z-50 flex flex-col rounded-2xl overflow-hidden backdrop-blur">
       {/* Header */}
-      <div className="p-4 bg-slate-900 text-white flex justify-between items-center shadow-md flex-shrink-0">
+      <div className="p-4 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex justify-between items-center shadow-md flex-shrink-0">
         <div className="flex items-center gap-2">
           <Sparkles size={16} className="text-green-400" />
           <div>
@@ -1612,6 +1616,7 @@ export default function App() {
   // Start at midnight so the very first simulated day runs midnight→midnight
   // and accumulates the full 420 data points like every subsequent day.
   const [timeOfDay, setTimeOfDay] = useState(0);
+  const [uiTimeOfDay, setUiTimeOfDay] = useState(0);
   const [currentDate, setCurrentDate] = useState(new Date('2026-01-01T00:00:00'));
   const [isAutoMode, setIsAutoMode] = useState(false);
   const [simSpeed, setSimSpeed] = useState(1);
@@ -1702,6 +1707,7 @@ export default function App() {
   // Starting at t=0 (midnight) ensures every simulated day is a full 24-hour
   // cycle → exactly 420 data points per day for all simulation speeds.
   const timeOfDayRef = useRef(0);
+  const uiTimeRef = useRef(0);
   const batKwhRef = useRef(BATTERY_CAPACITY * 0.5);
   const ev1SocRef = useRef(60);
   const ev2SocRef = useRef(50);
@@ -2032,6 +2038,30 @@ export default function App() {
   useEffect(() => {
     computeParamsRef.current = { simSpeed, priorityMode, isAutoMode, evSpecs, currentDate };
   }, [simSpeed, priorityMode, isAutoMode, evSpecs, currentDate]);
+
+  useEffect(() => {
+    uiTimeRef.current = timeOfDay;
+    setUiTimeOfDay(timeOfDay);
+  }, [timeOfDay]);
+
+  useEffect(() => {
+    if (!isAutoMode || simSpeed < 100) return;
+    let rafId: number;
+    const syncUiTime = () => {
+      const target = timeOfDayRef.current;
+      let current = uiTimeRef.current;
+      let delta = target - current;
+      if (delta > 12) delta -= 24;
+      if (delta < -12) delta += 24;
+      const smoothing = simSpeed >= 1000 ? 0.45 : 0.3;
+      current = (current + delta * smoothing + 24) % 24;
+      uiTimeRef.current = current;
+      setUiTimeOfDay(current);
+      rafId = requestAnimationFrame(syncUiTime);
+    };
+    rafId = requestAnimationFrame(syncUiTime);
+    return () => cancelAnimationFrame(rafId);
+  }, [isAutoMode, simSpeed]);
 
   // Compute physics state whenever timeOfDay changes (manual mode only).
   // Auto mode is handled entirely by the interval above, which sub-steps at
@@ -2494,7 +2524,7 @@ export default function App() {
              <div className="absolute bg-sky-500/5 blur-3xl w-3/4 h-3/4 rounded-full -z-10"></div>
              <CentralDisplay 
                data={data} 
-               timeOfDay={timeOfDay} 
+               timeOfDay={uiTimeOfDay} 
                onTimeChange={setTimeOfDay}
                isAutoMode={isAutoMode}
                onToggleAuto={() => setIsAutoMode(!isAutoMode)}
