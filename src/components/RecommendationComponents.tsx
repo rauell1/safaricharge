@@ -253,7 +253,7 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
   };
 
   return (
-    <div className="absolute inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="p-4 bg-gradient-to-r from-sky-600 to-sky-700 text-white flex justify-between items-center">

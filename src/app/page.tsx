@@ -695,7 +695,7 @@ const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, cu
   const showChips = messages.length <= 2;
 
   return (
-    <div className="absolute right-0 top-16 bottom-0 w-full md:w-96 bg-white shadow-2xl border-l border-slate-200 z-50 flex flex-col">
+    <div className="fixed right-0 top-16 bottom-0 w-full md:w-96 bg-white shadow-2xl border-l border-slate-200 z-[200] flex flex-col">
       {/* Header */}
       <div className="p-4 bg-slate-900 text-white flex justify-between items-center shadow-md flex-shrink-0">
         <div className="flex items-center gap-2">
@@ -1712,7 +1712,7 @@ export default function App() {
       inputs: financialInputs,
       evCapacityKw: evSpecs.ev1.rate + evSpecs.ev2.rate,
     }),
-    [financialInputs, solarData, evSpecs, timeOfDay]
+    [financialInputs, solarData, evSpecs, minuteDataRef.current.length]
   );
 
   // Physics state refs: keep the authoritative simulation state outside React
