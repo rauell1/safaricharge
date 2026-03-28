@@ -56,7 +56,7 @@ export function DashboardSidebar({
       <SidebarHeader className="border-b border-dark-border p-6">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-accent-solar to-accent-energy shadow-glow-solar">
-            <Zap className="h-6 w-6 text-primary-900" />
+            <Zap className="h-6 w-6 text-primary" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-dark-text-primary">SafariCharge</h1>

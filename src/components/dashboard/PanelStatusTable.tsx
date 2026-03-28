@@ -127,7 +127,7 @@ export function PanelStatusTable({ panels = defaultPanels }: PanelStatusTablePro
         <div className="rounded-lg border border-dark-border overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow className="border-dark-border bg-primary-900 hover:bg-primary-900">
+              <TableRow className="border-dark-border bg-primary hover:bg-primary">
                 <TableHead className="text-dark-text-secondary font-semibold">Panel ID</TableHead>
                 <TableHead className="text-dark-text-secondary font-semibold">Output (W)</TableHead>
                 <TableHead className="text-dark-text-secondary font-semibold">Voltage (V)</TableHead>

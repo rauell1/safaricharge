@@ -13,7 +13,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="flex min-h-screen w-full bg-primary-900">
+      <div className="flex min-h-screen w-full bg-primary">
         <DashboardSidebar
           activeSection={activeSection}
           onSectionChange={setActiveSection}

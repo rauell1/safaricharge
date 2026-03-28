@@ -32,7 +32,7 @@ export function TimeRangeSwitcher({ selectedRange, onRangeChange }: TimeRangeSwi
             onClick={() => onRangeChange(range.id)}
             className={`text-xs transition-all duration-200 ${
               selectedRange === range.id
-                ? 'bg-accent-energy hover:bg-accent-energy/90 text-primary-900 shadow-glow-sm'
+                ? 'bg-accent-energy hover:bg-accent-energy/90 text-primary shadow-glow-sm'
                 : 'text-dark-text-secondary hover:text-dark-text-primary hover:bg-secondary-800'
             }`}
           >
