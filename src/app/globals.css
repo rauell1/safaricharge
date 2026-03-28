@@ -67,6 +67,34 @@ body {
   animation: flow-horizontal 2s ease-in-out infinite;
 }
 
+@keyframes flow-down {
+  0% { top: -40%; opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+@keyframes flow-up {
+  0% { top: 100%; opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { top: -40%; opacity: 0; }
+}
+
+@keyframes flow-left-to-right {
+  0% { left: -40%; opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { left: 100%; opacity: 0; }
+}
+
+@keyframes flow-right-to-left {
+  0% { right: -40%; opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { right: 100%; opacity: 0; }
+}
+
 /* Ensure smooth transitions */
 * {
   transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;

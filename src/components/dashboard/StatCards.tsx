@@ -48,6 +48,20 @@ function StatCard({ title, value, unit, subtitle, icon, trend, trendValue, accen
   return (
     <Card className={`relative overflow-hidden border-dark-border bg-secondary-900 transition-all duration-300 hover:-translate-y-1 ${colors.glow}`}>
       <CardContent className="p-6">
+        {/* % change badge top-right */}
+        {trend && trendValue && (
+          <div className={`absolute top-3 right-3 flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+            trend === 'up'
+              ? 'bg-accent-energy-transparent text-accent-energy'
+              : trend === 'down'
+              ? 'bg-accent-alert-transparent text-accent-alert'
+              : 'bg-dark-border text-dark-text-secondary'
+          }`}>
+            {trend === 'up' && <TrendingUp className="h-2.5 w-2.5" />}
+            {trend === 'down' && <TrendingDown className="h-2.5 w-2.5" />}
+            {trendValue}
+          </div>
+        )}
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <p className="text-sm font-medium text-dark-text-secondary mb-1">
@@ -67,13 +81,6 @@ function StatCard({ title, value, unit, subtitle, icon, trend, trendValue, accen
               <p className="text-xs text-dark-text-tertiary mt-1">
                 {subtitle}
               </p>
-            )}
-            {trend && trendValue && (
-              <div className={`flex items-center gap-1 mt-2 text-xs ${trend === 'up' ? 'text-accent-energy' : trend === 'down' ? 'text-accent-alert' : 'text-dark-text-secondary'}`}>
-                {trend === 'up' && <TrendingUp className="h-3 w-3" />}
-                {trend === 'down' && <TrendingDown className="h-3 w-3" />}
-                <span>{trendValue}</span>
-              </div>
             )}
           </div>
           <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${colors.bg}`}>
