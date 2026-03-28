@@ -547,7 +547,8 @@ export function createLoadProfileFromSimulation(simulationData: Array<{
   const dailyConsumption = totalLoad / numberOfDays;
 
   // Find peak power (convert kWh to kW based on timestep)
-  const timeStepHours = 24 / simulationData.length;
+  // CRITICAL FIX: timeStepHours should be per-timestep (24/420), NOT based on total simulation length
+  const timeStepHours = 24 / TIMESTEPS_PER_DAY; // ~0.0571 hours per timestep (~3.43 minutes)
   const peakPower = Math.max(
     ...simulationData.map(d => (d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh) / timeStepHours)
   );

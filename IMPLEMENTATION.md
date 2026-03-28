@@ -155,6 +155,74 @@ const dailyConsumption = totalLoad / numberOfDays; // ✅ Average per day!
 
 ---
 
+### The Battery & Inverter Oversizing Bug - FIXED ✅
+
+**Problem:** Battery and inverter capacity calculations were incorrectly sized based on cumulative multi-day data instead of single-day demand patterns, leading to oversized and unnecessarily expensive systems.
+
+**Root Cause:** The `timeStepHours` calculation in `createLoadProfileFromSimulation()` was using `24 / simulationData.length` instead of `24 / TIMESTEPS_PER_DAY`, causing peak power and average power calculations to be wrong for multi-day simulations.
+
+**Example of the Bug:**
+```
+Simulation: 730 days (306,600 timesteps)
+Real peak power: 40 kW
+Real avg night power: 5 kW
+
+BUG: timeStepHours = 24 / 306,600 ≈ 0.000078 hours
+     peakPower = energyKWh / 0.000078 ≈ HUGE VALUE (wrong!)
+     avgNightPower = totalNightEnergy / nightSteps / 0.000078 ≈ HUGE VALUE (wrong!)
+
+Result of bug:
+- Inverter sized for inflated peak: 40,000 kW instead of 40 kW (1000x!)
+- Battery sized for inflated night load: 60,000 kWh instead of 60 kWh (1000x!)
+```
+
+**The Fix:**
+
+```typescript
+// BEFORE (WRONG):
+const timeStepHours = 24 / simulationData.length; // ❌ Wrong for multi-day!
+const peakPower = Math.max(
+  ...simulationData.map(d => (d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh) / timeStepHours)
+);
+
+// AFTER (CORRECT):
+const TIMESTEPS_PER_DAY = 420;
+const timeStepHours = 24 / TIMESTEPS_PER_DAY; // ✅ Consistent ~3.43 minutes per step
+const peakPower = Math.max(
+  ...simulationData.map(d => (d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh) / timeStepHours)
+);
+```
+
+**Impact:**
+- **Inverter Sizing:** Now correctly based on single-day peak power demand with 25% safety margin
+- **Battery Sizing:** Now correctly based on single-night consumption or autonomy days of average consumption
+- **Financial Analysis:** Recommendations now reflect properly-sized systems with accurate ROI and payback calculations
+
+**How Battery Sizing Works (Post-Fix):**
+```typescript
+// Battery capacity = max(nightConsumption * 1.3, dailyConsumption * autonomyDays)
+// Capped at 2x daily consumption for cost-effectiveness
+
+nightConsumption = avgNightPowerKw * 12 hours
+minCapacity = nightConsumption * 1.3  // 1 night + 30% margin
+targetCapacity = dailyConsumptionKwh * autonomyDays  // Full autonomy
+batteryCapacity = min(max(minCapacity, targetCapacity), dailyConsumption * 2)
+```
+
+**How Inverter Sizing Works (Post-Fix):**
+```typescript
+// Inverter capacity = peak power + 25% safety margin
+// Rounded to nearest 0.5 kW
+
+inverterKw = ceil(peakPower * 1.25 * 2) / 2
+```
+
+**Location:** `src/lib/recommendation-engine.ts:550-567`
+
+**Commit:** Current (2026-03-28)
+
+---
+
 ## Financial Model
 
 ### Realistic Market Rates (2026 Kenya)
