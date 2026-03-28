@@ -126,14 +126,14 @@ export function AlertsList({ alerts = defaultAlerts }: AlertsListProps) {
             alerts.map((alert) => (
               <div
                 key={alert.id}
-                className="flex items-start gap-3 rounded-lg border border-dark-border bg-primary p-4 transition-all duration-300 hover:border-dark-border/80 hover:bg-primary/80 group"
+                className="flex items-start gap-3 rounded-xl border border-dark-border bg-primary p-4 transition-all duration-200 hover:scale-[1.02] hover:border-dark-border/60 hover:bg-secondary-900 cursor-default group"
               >
-                <div className="mt-0.5">
+                <div className="mt-0.5 flex-shrink-0">
                   <AlertIcon type={alert.type} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-1">
-                    <h4 className="text-sm font-semibold text-dark-text-primary group-hover:text-dark-text-primary/90">
+                    <h4 className="text-sm font-semibold text-dark-text-primary">
                       {alert.title}
                     </h4>
                     <AlertTypeBadge type={alert.type} />
