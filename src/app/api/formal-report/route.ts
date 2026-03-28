@@ -327,18 +327,30 @@ function generateReportHTML(data: ReportRequest): string {
   const last30CoveragePct = data.dailyAgg.length > 0 ? (data.dailyAgg.length / chartCoverageBaseline * 100) : 0;
 
   const avgDailySavings = data.uniqueDays > 0 ? data.totalSavings / data.uniqueDays : 0;
-  const annualSavings = avgDailySavings * 365;
+  const simAnnualSavings = avgDailySavings * 365;
 
-  // Financial calculations (assuming CapEx of 2.5M KES)
-  const capex = 2500000;
-  const paybackYears = annualSavings > 0 ? capex / annualSavings : 0;
-  const roi = capex > 0 ? (annualSavings / capex * 100) : 0;
+  // Financial calculations aligned to the SafariCharge recommendation (Kenya pricing)
+  const recommendationFinancial = data.recommendation?.financial;
+  const capex = recommendationFinancial?.totalInvestmentKES ?? 2500000;
+  const monthlySavings = recommendationFinancial?.monthlyGridSavingsKES ?? (simAnnualSavings / 12);
+  const annualSavings = recommendationFinancial?.annualGridSavingsKES ?? simAnnualSavings;
+  const paybackYearsRaw = recommendationFinancial?.paybackPeriodYears ?? (annualSavings > 0 ? capex / annualSavings : Number.POSITIVE_INFINITY);
+  const paybackYears = Number.isFinite(paybackYearsRaw) ? paybackYearsRaw : 0;
+  const isPaybackViable = paybackYears > 0 && paybackYears < 40;
+  const roi25Years = recommendationFinancial?.roi25YearsPct ?? (annualSavings > 0 && capex > 0 ? ((annualSavings * 25 - capex) / capex) * 100 : 0);
+  const roiLabel = recommendationFinancial ? '25-Year ROI' : 'Return on Investment (ROI)';
+  const netSavings25Years = recommendationFinancial?.netSavings25YearsKES ?? (annualSavings * 25 - capex);
 
-  // NPV calculation (10 years, 10% discount rate)
+  // NPV calculation (10 years, 10% discount rate) with tariff escalation mirroring Kenya assumptions (≈6%)
   let npv = -capex;
+  let projectedAnnualSavings = annualSavings;
   for (let year = 1; year <= 10; year++) {
-    npv += annualSavings / Math.pow(1.1, year);
+    if (year > 1) {
+      projectedAnnualSavings *= 1.06;
+    }
+    npv += projectedAnnualSavings / Math.pow(1.1, year);
   }
+  const dailySavings = recommendationFinancial ? monthlySavings / 30 : avgDailySavings;
 
   // Environmental impact
   const co2Avoided = data.totalSolar * 0.47; // 0.47 kg CO2 per kWh
@@ -954,7 +966,7 @@ function generateReportHTML(data: ReportRequest): string {
 
         <div class="metric-card">
           <div class="metric-label">Daily Average</div>
-          <div class="metric-value">${fmt(avgDailySavings, 0)} <span class="metric-unit">KES/day</span></div>
+          <div class="metric-value">${fmt(dailySavings, 0)} <span class="metric-unit">KES/day</span></div>
         </div>
 
         <div class="metric-card">
@@ -964,7 +976,12 @@ function generateReportHTML(data: ReportRequest): string {
 
         <div class="metric-card">
           <div class="metric-label">Payback Period</div>
-          <div class="metric-value">${fmt(paybackYears, 1)} <span class="metric-unit">years</span></div>
+          <div class="metric-value">
+            ${isPaybackViable
+              ? `${fmt(paybackYears, 1)} <span class="metric-unit">years</span>`
+              : `<span class="metric-unit">Not viable</span>`
+            }
+          </div>
         </div>
       </div>
 
@@ -984,7 +1001,7 @@ function generateReportHTML(data: ReportRequest): string {
           </tr>
           <tr>
             <td>Average Daily Savings</td>
-            <td class="num">${fmt(avgDailySavings, 2)}</td>
+            <td class="num">${fmt(dailySavings, 2)}</td>
             <td>KES/day</td>
           </tr>
           <tr>
@@ -993,19 +1010,24 @@ function generateReportHTML(data: ReportRequest): string {
             <td>KES/year</td>
           </tr>
           <tr>
-            <td>System CapEx (Estimate)</td>
+            <td>System CapEx (equipment + install)</td>
             <td class="num">${fmtNum(capex)}</td>
             <td>KES</td>
           </tr>
           <tr style="background:#e0f2fe;font-weight:600;">
             <td>Simple Payback Period</td>
-            <td class="num">${fmt(paybackYears, 2)}</td>
-            <td>years</td>
+            <td class="num">${isPaybackViable ? fmt(paybackYears, 2) : 'Not viable'}</td>
+            <td>${isPaybackViable ? 'years' : ''}</td>
           </tr>
           <tr>
-            <td>Return on Investment (ROI)</td>
-            <td class="num">${fmt(roi, 2)}</td>
+            <td>${roiLabel}</td>
+            <td class="num">${fmt(roi25Years, 1)}</td>
             <td>%</td>
+          </tr>
+          <tr>
+            <td>Net Savings (25 Years)</td>
+            <td class="num">${fmtNum(netSavings25Years)}</td>
+            <td>KES</td>
           </tr>
           <tr>
             <td>10-Year NPV (10% discount)</td>
