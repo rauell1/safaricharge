@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { DollarSign, Gauge, LineChart, PieChart, Sparkles, TrendingUp } from 'lucide-react';
+import { DollarSign, Gauge, LineChart, PieChart, Play, Sparkles, TrendingUp } from 'lucide-react';
 import type { FinancialInputs, FinancialSnapshot } from '@/lib/financial-dashboard';
 import { simulateScenario } from '@/lib/financial-dashboard';
 
@@ -9,6 +9,8 @@ type Props = {
   snapshot: FinancialSnapshot;
   inputs: FinancialInputs;
   onInputsChange: (next: FinancialInputs) => void;
+  hasSimulationData?: boolean;
+  onRunSimulation?: () => void;
 };
 
 const formatCurrency = (value: number, digits = 0) =>
@@ -26,7 +28,7 @@ const ProgressBar = ({ value }: { value: number }) => (
   </div>
 );
 
-export default function FinancialDashboard({ snapshot, inputs, onInputsChange }: Props) {
+export default function FinancialDashboard({ snapshot, inputs, onInputsChange, hasSimulationData = true, onRunSimulation }: Props) {
   const [scenario, setScenario] = useState({
     chargingTariffKes: inputs.chargingTariffKes,
     utilizationPct: snapshot.utilizationPct || inputs.targetUtilizationPct || 45,
@@ -62,7 +64,29 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange }:
           </div>
         </div>
 
-        {/* Executive overview */}
+        {!hasSimulationData ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-6 text-center">
+            <div className="h-20 w-20 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+              <TrendingUp size={36} />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold text-slate-700">No Simulation Data Available</h3>
+              <p className="text-sm text-slate-500 max-w-sm">
+                Run the simulation to generate live financial insights — revenue projections, payback period, IRR, NPV, and more.
+              </p>
+            </div>
+            {onRunSimulation && (
+              <button
+                onClick={onRunSimulation}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-md transition-colors"
+              >
+                <Play size={18} />
+                Run Simulation
+              </button>
+            )}
+          </div>
+        ) : (
+        <>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm">
             <div className="flex items-center justify-between">
@@ -372,6 +396,8 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange }:
             </div>
           </div>
         </div>
+        </>
+        )}
       </div>
     </section>
   );
