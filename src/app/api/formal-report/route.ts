@@ -955,9 +955,38 @@ function generateReportHTML(data: ReportRequest): string {
     <div class="section">
       <div class="section-title">
         <span class="section-number">6</span>
-        <span>Financial Analysis</span>
+        <span>${data.recommendation ? 'Simulation Savings Summary' : 'Financial Analysis'}</span>
       </div>
 
+      ${data.recommendation ? `
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Total Observed Savings</div>
+          <div class="metric-value">${fmt(data.totalSavings, 0)} <span class="metric-unit">KES</span></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Daily Average</div>
+          <div class="metric-value">${fmt(avgDailySavings, 0)} <span class="metric-unit">KES/day</span></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Annual Run-Rate</div>
+          <div class="metric-value">${fmt(simAnnualSavings, 0)} <span class="metric-unit">KES/year</span></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Days Tracked</div>
+          <div class="metric-value">${data.uniqueDays} <span class="metric-unit">days</span></div>
+        </div>
+      </div>
+
+      <div class="chart-container">
+        <div class="chart-title">Daily Savings Trend (Last 30 Days)</div>
+        ${savingsSVG}
+      </div>
+      <div style="font-size:12px;color:#64748b;margin-top:6px;">These are savings observed during the simulation run. Full investment analysis including CapEx, payback period, IRR, and 25-year projections are presented in the System Recommendation &amp; Financial Analysis section below.</div>
+      ` : `
       <div class="metrics-grid">
         <div class="metric-card">
           <div class="metric-label">Total Savings</div>
@@ -1041,6 +1070,7 @@ function generateReportHTML(data: ReportRequest): string {
         <div class="chart-title">Daily Savings Trend (Last 30 Days)</div>
         ${savingsSVG}
       </div>
+      `}
     </div>
 
     <!-- Battery Performance -->
@@ -1125,11 +1155,11 @@ function generateReportHTML(data: ReportRequest): string {
     </div>
 
     ${data.recommendation ? `
-    <!-- Hardware Recommendations -->
+    <!-- System Recommendation & Financial Analysis -->
     <div class="section">
       <div class="section-title">
         <span class="section-number">9</span>
-        <span>System Recommendation</span>
+        <span>System Recommendation &amp; Financial Analysis</span>
       </div>
 
       <div style="background: linear-gradient(135deg, #0c4a6e 0%, #075985 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
@@ -1232,8 +1262,18 @@ function generateReportHTML(data: ReportRequest): string {
             <td class="num"><strong>KES ${fmtNum(data.recommendation.financial.netSavings25YearsKES)}</strong></td>
             <td>After all costs</td>
           </tr>
+          <tr>
+            <td>10-Year NPV (10% discount)</td>
+            <td class="num">KES ${fmt(npv, 0)}</td>
+            <td>Discounted cash flow</td>
+          </tr>
         </tbody>
       </table>
+
+      <div class="chart-container">
+        <div class="chart-title">Observed Daily Savings Trend (Last 30 Days)</div>
+        ${savingsSVG}
+      </div>
 
       <h4 style="color: #0c4a6e; margin: 25px 0 15px 0; font-size: 16px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">Performance Metrics</h4>
       <div class="metrics-grid">

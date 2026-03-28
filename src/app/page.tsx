@@ -2513,6 +2513,8 @@ export default function App() {
           snapshot={financialSnapshot}
           inputs={financialInputs}
           onInputsChange={handleFinancialInputsChange}
+          hasSimulationData={minuteDataRef.current.length > 0}
+          onRunSimulation={() => setIsAutoMode(true)}
         />
       </div>
 
