@@ -96,7 +96,7 @@ export function PanelStatusTable({ panels = defaultPanels }: PanelStatusTablePro
   const offlineCount = panels.filter(p => p.status === 'offline').length;
 
   return (
-    <Card className="border-dark-border bg-secondary-900 rounded-2xl card-hover">
+    <Card className="border-dark-border bg-secondary-900">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-dark-text-primary">
@@ -124,22 +124,22 @@ export function PanelStatusTable({ panels = defaultPanels }: PanelStatusTablePro
         </div>
       </CardHeader>
       <CardContent>
-        <div className="rounded-xl border border-dark-border overflow-hidden bg-primary/40">
+        <div className="rounded-lg border border-dark-border overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow className="border-dark-border bg-primary/60 hover:bg-primary">
-                <TableHead className="text-dark-text-secondary font-semibold tracking-wide uppercase text-[11px]">Panel ID</TableHead>
-                <TableHead className="text-dark-text-secondary font-semibold tracking-wide uppercase text-[11px]">Output (W)</TableHead>
-                <TableHead className="text-dark-text-secondary font-semibold tracking-wide uppercase text-[11px]">Voltage (V)</TableHead>
-                <TableHead className="text-dark-text-secondary font-semibold tracking-wide uppercase text-[11px]">Status</TableHead>
-                <TableHead className="text-dark-text-secondary font-semibold tracking-wide uppercase text-[11px]">Efficiency</TableHead>
+              <TableRow className="border-dark-border bg-primary hover:bg-primary">
+                <TableHead className="text-dark-text-secondary font-semibold">Panel ID</TableHead>
+                <TableHead className="text-dark-text-secondary font-semibold">Output (W)</TableHead>
+                <TableHead className="text-dark-text-secondary font-semibold">Voltage (V)</TableHead>
+                <TableHead className="text-dark-text-secondary font-semibold">Status</TableHead>
+                <TableHead className="text-dark-text-secondary font-semibold">Efficiency</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {panels.map((panel) => (
                 <TableRow
                   key={panel.id}
-                  className="border-dark-border hover:bg-secondary-800 transition-colors [&>td]:py-3 [&>td]:align-middle"
+                  className="border-dark-border hover:bg-secondary-800 transition-colors"
                 >
                   <TableCell className="font-mono text-sm text-dark-text-primary font-medium">
                     {panel.id}
