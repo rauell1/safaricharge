@@ -3,22 +3,6 @@
 
 /* CSS Variables for dark energy-tech theme */
 :root {
-  --bg-primary: #0a0e1a;
-  --bg-secondary: #12172a;
-  --bg-card: #1a1f35;
-  --border: #2d3548;
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --accent-solar: #f59e0b;
-  --accent-consumption: #3b82f6;
-  --accent-battery: #10b981;
-  --accent-alert: #ef4444;
-  --accent-grid: #a855f7;
-  --accent-solar-dim: rgba(245, 158, 11, 0.15);
-  --accent-consumption-dim: rgba(59, 130, 246, 0.15);
-  --accent-battery-dim: rgba(16, 185, 129, 0.15);
-  --accent-alert-dim: rgba(239, 68, 68, 0.15);
-  --accent-grid-dim: rgba(168, 85, 247, 0.15);
   --sidebar-background: 220 26% 14%;
   --sidebar-foreground: 220 9% 80%;
   --sidebar-primary: 220 9% 46%;
@@ -32,8 +16,6 @@
 /* Dark theme base styles */
 body {
   @apply bg-primary text-dark-text-primary;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
