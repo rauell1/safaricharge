@@ -7,7 +7,7 @@ import {
   Sparkles, Loader2, Sliders, Play, Pause, FastForward, ChevronDown,
   ChevronUp, MapPin, Table, FileText, PieChart, Settings, Calendar,
   CloudRain, Moon, Download, RotateCcw, AlertTriangle, DollarSign,
-  Cpu, Car, ZapOff, FileSpreadsheet, Target, TrendingUp, BarChart3, Leaf, Trees
+  Cpu, Car, ZapOff, FileSpreadsheet, Target
 } from 'lucide-react';
 import DailyEnergyGraph, { type GraphDataPoint, buildGraphSVG, triggerJPGDownload, buildJPGBlob } from '@/components/DailyEnergyGraph';
 import { LocationSelector, RecommendationPanel } from '@/components/RecommendationComponents';
@@ -15,16 +15,6 @@ import type { LocationCoordinates, SolarIrradianceData } from '@/lib/nasa-power-
 import FinancialDashboard from '@/components/FinancialDashboard';
 import { buildFinancialSnapshot, type FinancialInputs } from '@/lib/financial-dashboard';
 import { KENYA_LOCATIONS } from '@/lib/nasa-power-api';
-import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { StatCards } from '@/components/dashboard/StatCards';
-import { PowerFlowVisualization } from '@/components/dashboard/PowerFlowVisualization';
-import { PanelStatusTable } from '@/components/dashboard/PanelStatusTable';
-import { AlertsList } from '@/components/dashboard/AlertsList';
-import { TimeRangeSwitcher } from '@/components/dashboard/TimeRangeSwitcher';
-import { WeatherCard } from '@/components/dashboard/WeatherCard';
-import { BatteryStatusCard } from '@/components/dashboard/BatteryStatusCard';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 // --- CONFIGURATION - Kenya Power Commercial Tariff (E-Mobility) ---
 // Based on actual KPLC bill for ROAM ELECTRIC LIMITED - February 2026
@@ -1980,7 +1970,6 @@ export default function App() {
   const [simSpeed, setSimSpeed] = useState(1);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
-  const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month' | 'year'>('today');
   const [priorityMode, setPriorityMode] = useState('auto');
   const [gridStatus, setGridStatus] = useState('Online');
   const [weather, setWeather] = useState('Sunny');
@@ -2009,8 +1998,6 @@ export default function App() {
     effectivePriority: 'load',
     totalSolar: 0,
     totalGridImport: 0,
-    totalGridExport: 0,
-    totalConsumption: 0,
     currentTariffRate: KPLC_TARIFF.getLowRateWithVAT(),
     isPeakTime: false,
     carbonOffset: 0,
@@ -2024,7 +2011,7 @@ export default function App() {
     _graphPoint: null as GraphDataPoint | null,
   });
 
-  const accumulators = useRef({ solar: 0, savings: 0, gridImport: 0, gridExport: 0, loadKwh: 0, carbonOffset: 0, batDischargeKwh: 0, feedInEarnings: 0 });
+  const accumulators = useRef({ solar: 0, savings: 0, gridImport: 0, carbonOffset: 0, batDischargeKwh: 0, feedInEarnings: 0 });
   const soilingFactorRef = useRef(1.0);
   const batteryHealthRef = useRef(1.0);
   const batteryCyclesRef = useRef(0);        // lifetime fractional cycles
@@ -2093,7 +2080,7 @@ export default function App() {
   const handleReset = () => {
     setTimeOfDay(0);
     setCurrentDate(new Date('2026-01-01T00:00:00'));
-    accumulators.current = { solar: 0, savings: 0, gridImport: 0, gridExport: 0, loadKwh: 0, carbonOffset: 0, batDischargeKwh: 0, feedInEarnings: 0 };
+    accumulators.current = { solar: 0, savings: 0, gridImport: 0, carbonOffset: 0, batDischargeKwh: 0, feedInEarnings: 0 };
     soilingFactorRef.current = 1.0;
     batteryHealthRef.current = 1.0;
     batteryCyclesRef.current = 0;
@@ -2104,7 +2091,7 @@ export default function App() {
     setDailyGraphData([]);
     setPastGraphs([]);
     minuteDataRef.current = [];
-    setData(prev => ({ ...prev, batteryLevel: 50, ev1Soc: 60, ev2Soc: 50, displaySavings: 0, carbonOffset: 0, batteryHealth: 1.0, batteryCycles: 0, monthlyPeakDemandKW: 0, estimatedDemandChargeKES: 0, feedInEarnings: 0, totalSolar: 0, totalGridImport: 0, totalGridExport: 0, totalConsumption: 0, ev1V2g: false, ev2V2g: false }));
+    setData(prev => ({ ...prev, batteryLevel: 50, ev1Soc: 60, ev2Soc: 50, displaySavings: 0, carbonOffset: 0, batteryHealth: 1.0, batteryCycles: 0, monthlyPeakDemandKW: 0, estimatedDemandChargeKES: 0, feedInEarnings: 0, ev1V2g: false, ev2V2g: false }));
     setIsAutoMode(false);
     dayScenarioRef.current = PhysicsEngine.generateDayScenario('Sunny', new Date('2026-01-01'), 1.0, solarData, systemConfigRef.current);
     timeOfDayRef.current = 0;
@@ -2141,7 +2128,7 @@ export default function App() {
     const nextDate = new Date(currentDate);
     nextDate.setDate(nextDate.getDate() + 1);
     setCurrentDate(nextDate);
-    accumulators.current = { solar: 0, savings: 0, gridImport: 0, gridExport: 0, loadKwh: 0, carbonOffset: 0, batDischargeKwh: 0, feedInEarnings: 0 };
+    accumulators.current = { solar: 0, savings: 0, gridImport: 0, carbonOffset: 0, batDischargeKwh: 0, feedInEarnings: 0 };
 
     // Archive completed day's graph before clearing.
     // Use setTimeout to defer the setPastGraphs call so that any pending React
@@ -2273,11 +2260,9 @@ export default function App() {
           const feedInEarned = state.gridExport * FEED_IN_TARIFF_RATE * actualStep;
 
           accumulators.current.solar += state.solar * actualStep;
-          accumulators.current.loadKwh += state.load * actualStep;
           accumulators.current.savings += moneySaved + feedInEarned;
           accumulators.current.feedInEarnings += feedInEarned;
           if (state.gridImport > 0) accumulators.current.gridImport += state.gridImport * actualStep;
-          if (state.gridExport > 0) accumulators.current.gridExport += state.gridExport * actualStep;
           accumulators.current.carbonOffset += solarConsumed * GRID_EMISSION_FACTOR * actualStep;
 
           if (state.gridImport > monthlyPeakDemandRef.current) {
@@ -2408,8 +2393,6 @@ export default function App() {
               displaySavings: accumulators.current.savings,
               totalSolar: accumulators.current.solar,
               totalGridImport: accumulators.current.gridImport,
-              totalGridExport: accumulators.current.gridExport,
-              totalConsumption: accumulators.current.loadKwh,
               monthlyPeakDemandKW: monthlyPeakDemandRef.current,
               estimatedDemandChargeKES: monthlyPeakDemandRef.current * KPLC_DEMAND_CHARGE_KES_PER_KW,
               feedInEarnings: accumulators.current.feedInEarnings,
@@ -2531,8 +2514,6 @@ export default function App() {
          displaySavings: accumulators.current.savings,
          totalSolar: accumulators.current.solar,
          totalGridImport: accumulators.current.gridImport,
-         totalGridExport: accumulators.current.gridExport,
-         totalConsumption: accumulators.current.loadKwh,
          monthlyPeakDemandKW: monthlyPeakDemandRef.current,
          estimatedDemandChargeKES: monthlyPeakDemandRef.current * KPLC_DEMAND_CHARGE_KES_PER_KW,
          feedInEarnings: accumulators.current.feedInEarnings,
@@ -2554,79 +2535,6 @@ export default function App() {
   }, [data._graphPoint]);
 
   const isNight = timeOfDay < 6 || timeOfDay > 19;
-  const flowDirection = useMemo(() => ({
-    solarToHome: data.solarR > 0 && data.homeLoad > 0,
-    solarToBattery: data.batteryPower > 0.05,
-    solarToGrid: data.netGridPower < -0.05,
-    batteryToHome: data.batteryPower < -0.05,
-    gridToHome: data.netGridPower > 0.05,
-  }), [data.solarR, data.homeLoad, data.batteryPower, data.netGridPower]);
-
-  const totalSolarKWh = Math.max(0, data.totalSolar);
-  const totalConsumptionKWh = Math.max(0, data.totalConsumption);
-  const totalGridImportKWh = Math.max(0, data.totalGridImport);
-  const totalGridExportKWh = Math.max(0, data.totalGridExport);
-
-  const energyDistribution = useMemo(() => {
-    const items = [
-      { key: 'solar', label: 'Solar Generation', value: totalSolarKWh, color: 'var(--accent-solar)', bg: 'var(--accent-solar-dim)' },
-      { key: 'grid-import', label: 'Grid Import', value: totalGridImportKWh, color: 'var(--accent-consumption)', bg: 'var(--accent-consumption-dim)' },
-      { key: 'grid', label: 'Grid Export', value: totalGridExportKWh, color: 'var(--accent-grid)', bg: 'var(--accent-grid-dim)' },
-    ];
-    const total = items.reduce((sum, item) => sum + item.value, 0) || 1;
-    return items.map(item => ({
-      ...item,
-      pct: Math.round((item.value / total) * 100),
-    }));
-  }, [totalSolarKWh, totalConsumptionKWh, totalGridExportKWh]);
-
-  const envImpactCards = useMemo(() => [
-    {
-      icon: Leaf,
-      value: `${(data.carbonOffset / 1000).toFixed(2)} tons`,
-      label: 'CO₂ Offset',
-      color: 'text-accent-energy',
-      bg: 'bg-accent-energy-transparent',
-      border: 'border-accent-energy/20',
-    },
-    {
-      icon: Trees,
-      value: `${Math.max(0, Math.round(data.carbonOffset / TREE_CO2_KG_PER_YEAR))}`,
-      label: 'Trees Equivalent',
-      color: 'text-accent-solar',
-      bg: 'bg-accent-solar-transparent',
-      border: 'border-accent-solar/20',
-    },
-    {
-      icon: Car,
-      value: `${Math.max(0, Math.round(data.carbonOffset / AVG_CAR_EMISSION_KG_PER_KM)).toLocaleString()} km`,
-      label: 'Car Miles Offset',
-      color: 'text-accent-info',
-      bg: 'bg-accent-info-transparent',
-      border: 'border-accent-info/20',
-    },
-  ], [data.carbonOffset]);
-
-  const distributionArcs = useMemo(() => {
-    const radius = 48;
-    const circumference = 2 * Math.PI * radius;
-    let offset = 0;
-    return {
-      radius,
-      circumference,
-      arcs: energyDistribution.map((item) => {
-        const dash = (item.pct / 100) * circumference;
-        const arc = { dash, offset, color: item.color };
-        offset += dash;
-        return arc;
-      }),
-    };
-  }, [energyDistribution]);
-
-  const monthlyOverview = useMemo(() => ({
-    generation: [65, 70, 78, 85, 90, 95, 88, 92, 80, 75, 68, 62],
-    consumption: [55, 58, 60, 62, 65, 68, 70, 69, 65, 60, 57, 54],
-  }), []);
 
   // Handle location change
   const handleLocationChange = useCallback((location: LocationCoordinates, newSolarData: SolarIrradianceData) => {
@@ -2969,25 +2877,16 @@ export default function App() {
   }, []);
 
   return (
-    <DashboardLayout>
-      <DashboardHeader
+    <div className="min-h-screen bg-slate-200 font-sans text-slate-900 flex flex-col relative">
+      <Header
+        onToggleAssistant={() => setIsAssistantOpen(!isAssistantOpen)}
         currentDate={currentDate}
         onReset={handleReset}
-        onLocationClick={() => setIsAssistantOpen(true)}
-        onDownload={() => setIsReportOpen(true)}
-        locationName={currentLocation.name}
-        notificationCount={3}
+        currentLocation={currentLocation}
+        onLocationSelected={handleLocationChange}
+        onOpenRecommendation={handleOpenRecommendation}
       />
-
-      <SafariChargeAIAssistant
-        isOpen={isAssistantOpen}
-        onClose={() => setIsAssistantOpen(false)}
-        data={data}
-        timeOfDay={timeOfDay}
-        weather={weather}
-        currentDate={currentDate}
-        isAutoMode={isAutoMode}
-      />
+      <SafariChargeAIAssistant isOpen={isAssistantOpen} onClose={() => setIsAssistantOpen(false)} data={data} timeOfDay={timeOfDay} weather={weather} currentDate={currentDate} isAutoMode={isAutoMode} />
       <RecommendationPanel
         isOpen={isRecommendationOpen}
         onClose={() => setIsRecommendationOpen(false)}
@@ -2995,9 +2894,9 @@ export default function App() {
         solarData={solarData}
         currentLocation={currentLocation}
       />
-      <EnergyReportModal
-        isOpen={isReportOpen}
-        onClose={() => setIsReportOpen(false)}
+      <EnergyReportModal 
+        isOpen={isReportOpen} 
+        onClose={() => setIsReportOpen(false)} 
         savings={data.displaySavings}
         solarConsumed={data.totalSolar}
         gridImport={data.totalGridImport}
@@ -3008,305 +2907,90 @@ export default function App() {
         carbonOffset={data.carbonOffset}
       />
 
-      <main className="flex-1 overflow-y-auto p-6 space-y-6 bg-primary">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-dark-text-primary">Energy Command Center</h2>
-            <p className="text-sm text-dark-text-secondary">Live solar generation, storage, and load performance</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="rounded-xl border border-dark-border bg-secondary-900 px-3 py-2">
-              <LocationSelector currentLocation={currentLocation} onLocationSelected={handleLocationChange} />
-            </div>
-            <TimeRangeSwitcher selectedRange={timeRange} onRangeChange={setTimeRange} />
-          </div>
-        </div>
-
-        <StatCards
-          totalGeneration={totalSolarKWh}
-          currentPower={Math.max(data.solarR, 0)}
-          consumption={totalConsumptionKWh}
-          savings={data.displaySavings}
+      <div className="w-full flex justify-center px-2 md:px-4 pt-2">
+        <SystemConfigPanel
+          config={derivedSystemConfig}
+          onChange={handleSystemConfigChange}
+          onModeChange={handleSystemModeChange}
+          onPreset={handlePresetSelect}
         />
+      </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <div className="xl:col-span-2">
-            <PowerFlowVisualization
-              solarPower={data.solarR}
-              batteryPower={data.batteryPower}
-              gridPower={data.netGridPower}
-              homePower={data.homeLoad}
-              batteryLevel={data.batteryLevel}
-              flowDirection={flowDirection}
+      <div className="w-full flex justify-center px-2 md:px-4 pb-2 md:pb-4">
+        <FinancialDashboard
+          snapshot={financialSnapshot}
+          inputs={financialInputs}
+          onInputsChange={handleFinancialInputsChange}
+          hasSimulationData={minuteDataRef.current.length > 0}
+          onRunSimulation={() => setIsAutoMode(true)}
+        />
+      </div>
+
+      <main className="flex-1 flex flex-col items-center justify-start p-2 md:p-4 gap-3 md:gap-4 overflow-y-auto">
+        <div className="w-full max-w-7xl bg-slate-100 rounded-[20px] sm:rounded-[30px] shadow-2xl border border-white relative flex flex-col lg:flex-row overflow-hidden">
+          <div className="absolute inset-0 opacity-40 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
+
+          <div className="flex-1 p-2 sm:p-4 flex items-center justify-center z-10 border-b lg:border-b-0 lg:border-r border-slate-200/60 bg-slate-50/50">
+             <div className="absolute bg-sky-500/5 blur-3xl w-3/4 h-3/4 rounded-full -z-10"></div>
+             <CentralDisplay 
+               data={data} 
+               timeOfDay={timeOfDay} 
+               onTimeChange={setTimeOfDay}
+               isAutoMode={isAutoMode}
+               onToggleAuto={() => setIsAutoMode(!isAutoMode)}
+               simSpeed={simSpeed}
+               onSpeedChange={setSimSpeed}
+               onOpenReport={() => setIsReportOpen(true)}
+               priorityMode={priorityMode}
+               onTogglePriority={() => setPriorityMode(prev => prev === 'battery' ? 'load' : prev === 'load' ? 'auto' : 'battery')}
+               weather={weather}
+               isNight={isNight}
+               gridStatus={gridStatus}
+               onToggleGrid={() => setGridStatus(prev => prev === 'Online' ? 'Offline' : 'Online')}
+               displayPriority={data.effectivePriority}
+               ev1Status={data.ev1Status}
+               ev2Status={data.ev2Status}
+             />
+          </div>
+
+          <div className="flex-[2] p-2 sm:p-4 bg-gradient-to-br from-slate-50 to-slate-100 relative">
+            <ResidentialPanel 
+              data={data} 
+              simSpeed={simSpeed} 
+              weather={weather}
+              isNight={isNight}
+              gridStatus={gridStatus}
+              ev1Status={data.ev1Status}
+              ev2Status={data.ev2Status}
+              evSpecs={evSpecs}
             />
           </div>
-          <div className="flex flex-col gap-6">
-            <WeatherCard
-              temperature={Math.round(22 + Math.sin((timeOfDay / 24) * Math.PI) * 4)}
-              humidity={68}
-              windSpeed={12}
-              condition={weather}
-              irradiance={Math.round(solarData.annualAverage * 180)}
-              locationName={currentLocation.name}
-            />
-            <BatteryStatusCard
-              batteryLevel={Math.round(data.batteryLevel)}
-              batteryPower={data.batteryPower}
-              capacity={systemConfigRef.current.batteryKwh}
-              voltage={48.5}
-              temperature={32}
-              isCharging={data.batteryPower >= 0}
-            />
-          </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <div className="xl:col-span-2">
-            <Card className="border-dark-border bg-secondary-900 card-hover">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-dark-text-primary">
-                  <TrendingUp className="h-5 w-5 text-accent-energy" />
-                  Generation vs Consumption
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <DailyEnergyGraph data={dailyGraphData} dateLabel={currentDate.toISOString().slice(0, 10)} />
-              </CardContent>
-            </Card>
-          </div>
-          <div>
-            <Card className="border-dark-border bg-secondary-900 h-full card-hover">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-dark-text-primary">
-                  <PieChart className="h-5 w-5 text-accent-grid" />
-                  Energy Distribution
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col items-center justify-center py-4 gap-4">
-                  <div className="relative flex h-40 w-40 items-center justify-center">
-                    <svg viewBox="0 0 120 120" className="absolute inset-0 h-full w-full -rotate-90">
-                      {distributionArcs.arcs.map((arc) => (
-                        <circle
-                          key={`${arc.color}-${arc.offset}`}
-                          cx="60"
-                          cy="60"
-                          r={distributionArcs.radius}
-                          fill="none"
-                          strokeWidth="14"
-                          strokeDasharray={`${arc.dash} ${distributionArcs.circumference}`}
-                          strokeDashoffset={`${-arc.offset}`}
-                          strokeLinecap="round"
-                          style={{ stroke: arc.color, opacity: 0.9 }}
-                        />
-                      ))}
-                    </svg>
-                    <div className="text-center z-10">
-                      <div className="text-xl font-bold text-dark-text-primary">{energyDistribution[0]?.pct ?? 0}%</div>
-                      <div className="text-[10px] text-dark-text-tertiary">{energyDistribution[0]?.label ?? 'Solar'}</div>
-                    </div>
-                  </div>
-                  <div className="w-full space-y-2">
-                    {energyDistribution.map((item) => (
-                      <div key={item.key} className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                          <span className="text-xs text-dark-text-secondary">{item.label}</span>
-                        </div>
-                        <span className="text-xs font-semibold text-dark-text-primary">{item.pct}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        {/* Daily Energy Graph: full width below main panel */}
+        <div className="w-full max-w-7xl px-2 pb-2">
+          <DailyEnergyGraph data={dailyGraphData} dateLabel={currentDate.toISOString().slice(0, 10)} />
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <div className="xl:col-span-2">
-            <PanelStatusTable />
-          </div>
-          <div>
-            <AlertsList />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <div className="xl:col-span-2">
-            <Card className="border-dark-border bg-secondary-900 card-hover">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-dark-text-primary">
-                  <BarChart3 className="h-5 w-5 text-accent-info" />
-                  Monthly Overview
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-end justify-between gap-2 h-40 px-2">
-                  {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((month, i) => {
-                    const gen = monthlyOverview.generation[i];
-                    const cons = monthlyOverview.consumption[i];
-                    return (
-                      <div key={month} className="flex-1 flex flex-col items-center gap-1">
-                        <div className="flex items-end gap-1 w-full justify-center" style={{ height: '120px' }}>
-                          <div
-                            className="w-2.5 rounded-t-sm bg-accent-solar opacity-80 transition-all duration-500 hover:opacity-100"
-                            style={{ height: `${(gen / 100) * 120}px` }}
-                          />
-                          <div
-                            className="w-2.5 rounded-t-sm bg-accent-info opacity-70 transition-all duration-500 hover:opacity-100"
-                            style={{ height: `${(cons / 100) * 120}px` }}
-                          />
-                        </div>
-                        <span className="text-[9px] text-dark-text-tertiary">{month}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="mt-3 flex items-center justify-center gap-6">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-sm bg-accent-solar" />
-                    <span className="text-xs text-dark-text-secondary">Generation (kWh)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-sm bg-accent-info" />
-                    <span className="text-xs text-dark-text-secondary">Consumption (kWh)</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          <div>
-            <Card className="border-dark-border bg-secondary-900 h-full card-hover">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-dark-text-primary">
-                  <Leaf className="h-5 w-5 text-accent-energy" />
-                  Environmental Impact
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col gap-4">
-                  {envImpactCards.map(({ icon: Icon, value, label, color, bg, border }) => (
-                    <div
-                      key={label}
-                      className={`flex items-center gap-4 rounded-xl border ${border} ${bg} p-4 transition-all duration-200 hover:-translate-y-0.5`}
-                    >
-                      <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${bg} border ${border}`}>
-                        <Icon className={`h-5 w-5 ${color}`} />
-                      </div>
-                      <div>
-                        <div className={`text-xl font-bold ${color}`}>{value}</div>
-                        <div className="text-xs text-dark-text-secondary">{label}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <Card className="border-dark-border bg-secondary-900 card-hover">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-dark-text-primary">
-                <Settings className="h-5 w-5 text-accent-info" />
-                System Configuration
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <SystemConfigPanel
-                config={derivedSystemConfig}
-                onChange={handleSystemConfigChange}
-                onModeChange={handleSystemModeChange}
-                onPreset={handlePresetSelect}
-              />
-            </CardContent>
-          </Card>
-
-          <Card className="border-dark-border bg-secondary-900 card-hover">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-dark-text-primary">
-                <DollarSign className="h-5 w-5 text-accent-energy" />
-                Financial Snapshot
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <FinancialDashboard
-                snapshot={financialSnapshot}
-                inputs={financialInputs}
-                onInputsChange={handleFinancialInputsChange}
-                hasSimulationData={minuteDataRef.current.length > 0}
-                onRunSimulation={() => setIsAutoMode(true)}
-              />
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="border-dark-border bg-secondary-900 card-hover">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-dark-text-primary">
-              <Zap className="h-5 w-5 text-accent-energy" />
-              Live Simulation
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <div className="bg-primary border border-dark-border rounded-xl p-3 lg:p-4">
-                <CentralDisplay 
-                  data={data} 
-                  timeOfDay={timeOfDay} 
-                  onTimeChange={setTimeOfDay}
-                  isAutoMode={isAutoMode}
-                  onToggleAuto={() => setIsAutoMode(!isAutoMode)}
-                  simSpeed={simSpeed}
-                  onSpeedChange={setSimSpeed}
-                  onOpenReport={() => setIsReportOpen(true)}
-                  priorityMode={priorityMode}
-                  onTogglePriority={() => setPriorityMode(prev => prev === 'battery' ? 'load' : prev === 'load' ? 'auto' : 'battery')}
-                  weather={weather}
-                  isNight={isNight}
-                  gridStatus={gridStatus}
-                  onToggleGrid={() => setGridStatus(prev => prev === 'Online' ? 'Offline' : 'Online')}
-                  displayPriority={data.effectivePriority}
-                  ev1Status={data.ev1Status}
-                  ev2Status={data.ev2Status}
-                />
-              </div>
-              <div className="bg-primary border border-dark-border rounded-xl p-3 lg:p-4 lg:col-span-2">
-                <ResidentialPanel 
-                  data={data} 
-                  simSpeed={simSpeed} 
-                  weather={weather}
-                  isNight={isNight}
-                  gridStatus={gridStatus}
-                  ev1Status={data.ev1Status}
-                  ev2Status={data.ev2Status}
-                  evSpecs={evSpecs}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
+        {/* Past Days Graph Archive: horizontally scrollable legend */}
         {pastGraphs.length > 0 && (
-          <Card className="border-dark-border bg-secondary-900 card-hover">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-dark-text-primary">
-                <Calendar className="h-5 w-5 text-accent-info" />
-                Past Days Archive
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="w-full max-w-7xl px-2 pb-4">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+              {/* Header row */}
               <div className="flex items-center justify-between mb-3">
-                <p className="text-xs text-dark-text-secondary">
-                  {pastGraphs.length} archived day{pastGraphs.length !== 1 ? 's' : ''}. Scroll horizontally to explore.
-                </p>
+                <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2">
+                  <span>📅 Past Days: Energy Profiles</span>
+                  <span className="text-[9px] font-normal text-slate-400 normal-case">
+                    ({pastGraphs.length} day{pastGraphs.length !== 1 ? 's' : ''} archived; scroll to view)
+                  </span>
+                </h3>
                 <PastDaysZipButton pastGraphs={pastGraphs} />
               </div>
+
+              {/* Scrollable single-row legend */}
               <div
                 className="flex gap-2 overflow-x-auto pb-2"
-                style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--border) transparent' }}
+                style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}
               >
                 {pastGraphs.map(({ date, data: pastData }) => {
                   const peakSolar = pastData.reduce((maxValue, point) => point.solar > maxValue ? point.solar : maxValue, 0).toFixed(1);
@@ -3319,30 +3003,35 @@ export default function App() {
                         const svg = buildGraphSVG(pastData, date);
                         triggerJPGDownload(svg, `SafariCharge_DailyGraph_${date}.jpg`);
                       }}
-                      className="flex-shrink-0 flex flex-col gap-1 bg-primary hover:bg-secondary-800 border border-dark-border hover:border-accent-info/40 rounded-lg px-3 py-2 transition-colors group w-36 text-left"
+                      className="flex-shrink-0 flex flex-col gap-1 bg-slate-50 hover:bg-sky-50 border border-slate-200 hover:border-sky-300 rounded-lg px-3 py-2 transition-colors group w-36 text-left"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-dark-text-primary">{date}</span>
-                        <Download size={11} className="text-dark-text-tertiary group-hover:text-accent-info flex-shrink-0" />
+                        <span className="text-[11px] font-bold text-slate-700">{date}</span>
+                        <Download size={11} className="text-slate-300 group-hover:text-sky-500 flex-shrink-0" />
                       </div>
-                      <div className="text-[9px] text-dark-text-secondary font-mono leading-tight">
+                      <div className="text-[9px] text-slate-400 font-mono leading-tight">
                         ☀️ {peakSolar} kW
                       </div>
-                      <div className="text-[9px] text-dark-text-secondary font-mono leading-tight">
+                      <div className="text-[9px] text-slate-400 font-mono leading-tight">
                         ⚡ {peakLoad} kW load
                       </div>
-                      <div className="text-[9px] text-dark-text-secondary font-mono leading-tight">
+                      <div className="text-[9px] text-slate-400 font-mono leading-tight">
                         🔋 {avgBat}% avg
                       </div>
+                      {/* Mini solar sparkline */}
                       <MiniSparkline data={pastData} />
                     </button>
                   );
                 })}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
       </main>
-    </DashboardLayout>
+      
+      <div className="fixed bottom-2 right-4 text-[9px] text-slate-400 font-mono">
+        SafariCharge Ltd • Simulation Mode: {isAutoMode ? `Auto (x${simSpeed})` : 'Manual'}
+      </div>
+    </div>
   );
 }
