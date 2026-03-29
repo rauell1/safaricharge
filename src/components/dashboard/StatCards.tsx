@@ -18,44 +18,44 @@ interface StatCardProps {
 function StatCard({ title, value, unit, subtitle, icon, trend, trendValue, accentColor }: StatCardProps) {
   const accentColorClasses = {
     solar: {
-      bg: 'bg-accent-solar-transparent',
-      icon: 'text-accent-solar',
+      bg: 'bg-[var(--solar-soft)]',
+      icon: 'text-[var(--solar)]',
       glow: 'stat-card-solar',
       gradient: 'gradient-text-solar'
     },
     energy: {
-      bg: 'bg-accent-energy-transparent',
-      icon: 'text-accent-energy',
+      bg: 'bg-[var(--battery-soft)]',
+      icon: 'text-[var(--battery)]',
       glow: 'stat-card-energy',
       gradient: 'gradient-text-energy'
     },
     info: {
-      bg: 'bg-accent-info-transparent',
-      icon: 'text-accent-info',
+      bg: 'bg-[var(--consumption-soft)]',
+      icon: 'text-[var(--consumption)]',
       glow: 'hover:shadow-glow-md',
-      gradient: 'text-accent-info'
+      gradient: 'text-[var(--consumption)]'
     },
     grid: {
-      bg: 'bg-accent-grid-transparent',
-      icon: 'text-accent-grid',
+      bg: 'bg-[var(--grid-soft)]',
+      icon: 'text-[var(--grid)]',
       glow: 'hover:shadow-glow-md',
-      gradient: 'text-accent-grid'
+      gradient: 'text-[var(--grid)]'
     }
   };
 
   const colors = accentColorClasses[accentColor];
 
   return (
-    <Card className={`relative overflow-hidden border-dark-border bg-secondary-900 transition-all duration-300 hover:-translate-y-1 ${colors.glow}`}>
+    <Card className={`dashboard-card relative overflow-hidden transition-all duration-300 ${colors.glow}`}>
       <CardContent className="p-6">
         {/* % change badge top-right */}
         {trend && trendValue && (
-          <div className={`absolute top-3 right-3 flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+          <div className={`absolute top-3 right-3 flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold backdrop-blur ${
             trend === 'up'
-              ? 'bg-accent-energy-transparent text-accent-energy'
+              ? 'bg-[var(--battery-soft)] text-[var(--battery)]'
               : trend === 'down'
-              ? 'bg-accent-alert-transparent text-accent-alert'
-              : 'bg-dark-border text-dark-text-secondary'
+              ? 'bg-[var(--alert-soft)] text-[var(--alert)]'
+              : 'bg-[var(--bg-card-muted)] text-[var(--text-secondary)]'
           }`}>
             {trend === 'up' && <TrendingUp className="h-2.5 w-2.5" />}
             {trend === 'down' && <TrendingDown className="h-2.5 w-2.5" />}
@@ -64,7 +64,7 @@ function StatCard({ title, value, unit, subtitle, icon, trend, trendValue, accen
         )}
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <p className="text-sm font-medium text-dark-text-secondary mb-1">
+            <p className="text-sm font-medium text-[var(--text-secondary)] mb-1 tracking-tight">
               {title}
             </p>
             <div className="flex items-baseline gap-2">
@@ -72,18 +72,18 @@ function StatCard({ title, value, unit, subtitle, icon, trend, trendValue, accen
                 {value}
               </h3>
               {unit && (
-                <span className="text-sm font-medium text-dark-text-tertiary">
+                <span className="text-sm font-medium text-[var(--text-tertiary)]">
                   {unit}
                 </span>
               )}
             </div>
             {subtitle && (
-              <p className="text-xs text-dark-text-tertiary mt-1">
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">
                 {subtitle}
               </p>
             )}
           </div>
-          <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${colors.bg}`}>
+          <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${colors.bg} border border-[var(--border)]`}>
             <div className={colors.icon}>
               {icon}
             </div>
@@ -120,6 +120,8 @@ export function StatCards({ totalGeneration, currentPower, consumption, savings 
         unit="kW"
         subtitle="Live generation"
         icon={<Zap className="h-6 w-6" />}
+        trend="up"
+        trendValue="+4.3%"
         accentColor="energy"
       />
       <StatCard
@@ -128,6 +130,8 @@ export function StatCards({ totalGeneration, currentPower, consumption, savings 
         unit="kWh"
         subtitle="Total energy used"
         icon={<Home className="h-6 w-6" />}
+        trend="up"
+        trendValue="+2.1%"
         accentColor="info"
       />
       <StatCard

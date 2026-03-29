@@ -3,6 +3,32 @@
 
 /* CSS Variables for dark energy-tech theme */
 :root {
+  /* Layout + typography */
+  --bg-primary: #090f1e;
+  --bg-secondary: #0f172c;
+  --bg-card: #111a30;
+  --bg-card-muted: rgba(255, 255, 255, 0.02);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(168, 179, 255, 0.16);
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-tertiary: #94a3b8;
+
+  /* Accent palette */
+  --solar: #f59e0b;
+  --consumption: #3b82f6;
+  --battery: #10b981;
+  --alert: #ef4444;
+  --grid: #a855f7;
+
+  /* Dimmed accent backgrounds */
+  --solar-soft: rgba(245, 158, 11, 0.14);
+  --consumption-soft: rgba(59, 130, 246, 0.14);
+  --battery-soft: rgba(16, 185, 129, 0.14);
+  --alert-soft: rgba(239, 68, 68, 0.14);
+  --grid-soft: rgba(168, 85, 247, 0.14);
+
+  /* Sidebar system tokens */
   --sidebar-background: 220 26% 14%;
   --sidebar-foreground: 220 9% 80%;
   --sidebar-primary: 220 9% 46%;
@@ -15,9 +41,25 @@
 
 /* Dark theme base styles */
 body {
-  @apply bg-primary text-dark-text-primary;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Unified card surface */
+.dashboard-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.32);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-strong);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.42), 0 0 0 1px var(--border-strong);
 }
 
 /* Custom animations for energy flow */
@@ -162,21 +204,21 @@ body {
 
 /* Transparent accent backgrounds */
 .bg-accent-solar-transparent {
-  background-color: rgba(251, 191, 36, 0.1);
+  background-color: var(--solar-soft);
 }
 
 .bg-accent-energy-transparent {
-  background-color: rgba(16, 185, 129, 0.1);
+  background-color: var(--battery-soft);
 }
 
 .bg-accent-alert-transparent {
-  background-color: rgba(239, 68, 68, 0.1);
+  background-color: var(--alert-soft);
 }
 
 .bg-accent-grid-transparent {
-  background-color: rgba(139, 92, 246, 0.1);
+  background-color: var(--grid-soft);
 }
 
 .bg-accent-info-transparent {
-  background-color: rgba(59, 130, 246, 0.1);
+  background-color: var(--consumption-soft);
 }

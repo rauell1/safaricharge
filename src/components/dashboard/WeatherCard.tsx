@@ -24,13 +24,13 @@ export function WeatherCard({
   const isSunny = condition.toLowerCase().includes('sun') || condition.toLowerCase().includes('clear');
 
   return (
-    <Card className="border-dark-border bg-secondary-900">
+    <Card className="dashboard-card">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-dark-text-primary text-sm">
+        <CardTitle className="flex items-center gap-2 text-[var(--text-primary)] text-sm">
           {isSunny ? (
-            <Sun className="h-4 w-4 text-accent-solar" />
+            <Sun className="h-4 w-4" style={{ color: 'var(--solar)' }} />
           ) : (
-            <Cloud className="h-4 w-4 text-dark-text-secondary" />
+            <Cloud className="h-4 w-4" style={{ color: 'var(--text-secondary)' }} />
           )}
           Weather &amp; Irradiance
         </CardTitle>
@@ -38,34 +38,34 @@ export function WeatherCard({
       <CardContent className="pt-0">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="text-3xl font-bold text-dark-text-primary">{temperature}°C</div>
-            <div className="text-xs text-dark-text-secondary mt-0.5">{condition}</div>
-            <div className="text-[10px] text-dark-text-tertiary">{locationName}</div>
+            <div className="text-3xl font-bold text-[var(--text-primary)]">{temperature}°C</div>
+            <div className="text-xs text-[var(--text-secondary)] mt-0.5">{condition}</div>
+            <div className="text-[10px] text-[var(--text-tertiary)]">{locationName}</div>
           </div>
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent-solar-transparent border border-accent-solar/20">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border" style={{ backgroundColor: 'var(--solar-soft)', borderColor: 'var(--border)' }}>
             {isSunny ? (
-              <Sun className="h-8 w-8 text-accent-solar" />
+              <Sun className="h-8 w-8" style={{ color: 'var(--solar)' }} />
             ) : (
-              <Cloud className="h-8 w-8 text-dark-text-secondary" />
+              <Cloud className="h-8 w-8" style={{ color: 'var(--text-secondary)' }} />
             )}
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-2">
-          <div className="flex flex-col items-center rounded-lg bg-primary border border-dark-border p-2">
-            <Droplets className="h-3.5 w-3.5 text-accent-info mb-1" />
-            <div className="text-xs font-semibold text-dark-text-primary">{humidity}%</div>
-            <div className="text-[9px] text-dark-text-tertiary">Humidity</div>
+          <div className="flex flex-col items-center rounded-lg p-2 border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
+            <Droplets className="h-3.5 w-3.5 mb-1" style={{ color: 'var(--consumption)' }} />
+            <div className="text-xs font-semibold text-[var(--text-primary)]">{humidity}%</div>
+            <div className="text-[9px] text-[var(--text-tertiary)]">Humidity</div>
           </div>
-          <div className="flex flex-col items-center rounded-lg bg-primary border border-dark-border p-2">
-            <Wind className="h-3.5 w-3.5 text-accent-grid mb-1" />
-            <div className="text-xs font-semibold text-dark-text-primary">{windSpeed} km/h</div>
-            <div className="text-[9px] text-dark-text-tertiary">Wind</div>
+          <div className="flex flex-col items-center rounded-lg p-2 border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
+            <Wind className="h-3.5 w-3.5 mb-1" style={{ color: 'var(--grid)' }} />
+            <div className="text-xs font-semibold text-[var(--text-primary)]">{windSpeed} km/h</div>
+            <div className="text-[9px] text-[var(--text-tertiary)]">Wind</div>
           </div>
-          <div className="flex flex-col items-center rounded-lg bg-primary border border-dark-border p-2">
-            <Thermometer className="h-3.5 w-3.5 text-accent-solar mb-1" />
-            <div className="text-xs font-semibold text-dark-text-primary">{irradiance} W/m²</div>
-            <div className="text-[9px] text-dark-text-tertiary">Solar</div>
+          <div className="flex flex-col items-center rounded-lg p-2 border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
+            <Thermometer className="h-3.5 w-3.5 mb-1" style={{ color: 'var(--solar)' }} />
+            <div className="text-xs font-semibold text-[var(--text-primary)]">{irradiance} W/m²</div>
+            <div className="text-[9px] text-[var(--text-tertiary)]">Solar</div>
           </div>
         </div>
       </CardContent>

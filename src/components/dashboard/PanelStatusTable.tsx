@@ -12,7 +12,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 
 interface PanelData {
   id: string;
@@ -42,17 +41,17 @@ function StatusBadge({ status }: { status: 'online' | 'warning' | 'offline' }) {
     online: {
       icon: CheckCircle,
       label: 'Online',
-      className: 'bg-accent-energy-transparent text-accent-energy border-accent-energy/30'
+      className: 'bg-[var(--battery-soft)] text-[var(--battery)] border-[var(--border)]'
     },
     warning: {
       icon: AlertCircle,
       label: 'Warning',
-      className: 'bg-accent-solar-transparent text-accent-solar border-accent-solar/30'
+      className: 'bg-[var(--solar-soft)] text-[var(--solar)] border-[var(--border)]'
     },
     offline: {
       icon: AlertCircle,
       label: 'Offline',
-      className: 'bg-accent-alert-transparent text-accent-alert border-accent-alert/30'
+      className: 'bg-[var(--alert-soft)] text-[var(--alert)] border-[var(--border)]'
     }
   };
 
@@ -68,22 +67,26 @@ function StatusBadge({ status }: { status: 'online' | 'warning' | 'offline' }) {
 
 function EfficiencyBar({ value }: { value: number }) {
   const getColor = (efficiency: number) => {
-    if (efficiency >= 95) return 'bg-accent-energy';
-    if (efficiency >= 80) return 'bg-accent-solar';
-    return 'bg-accent-alert';
+    if (efficiency >= 95) return 'var(--battery)';
+    if (efficiency >= 80) return 'var(--solar)';
+    return 'var(--alert)';
   };
+
+  if (value <= 0) {
+    return <span className="text-xs text-[var(--text-tertiary)]">—</span>;
+  }
 
   return (
     <div className="flex items-center gap-2">
       <div className="flex-1">
-        <div className="h-2 w-full rounded-full bg-dark-border overflow-hidden">
+        <div className="h-2 w-full rounded-full overflow-hidden" style={{ backgroundColor: 'var(--border)' }}>
           <div
-            className={`h-full transition-all duration-500 ${getColor(value)}`}
-            style={{ width: `${value}%` }}
+            className="h-full transition-all duration-500"
+            style={{ width: `${value}%`, backgroundColor: getColor(value) }}
           />
         </div>
       </div>
-      <span className="text-xs font-medium text-dark-text-secondary w-10 text-right">
+      <span className="text-xs font-medium text-[var(--text-secondary)] w-10 text-right">
         {value}%
       </span>
     </div>
@@ -96,61 +99,62 @@ export function PanelStatusTable({ panels = defaultPanels }: PanelStatusTablePro
   const offlineCount = panels.filter(p => p.status === 'offline').length;
 
   return (
-    <Card className="border-dark-border bg-secondary-900">
+    <Card className="dashboard-card">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-dark-text-primary">
-            <Activity className="h-5 w-5 text-accent-info" />
+          <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+            <Activity className="h-5 w-5 text-[var(--consumption)]" />
             Panel Status Monitor
           </CardTitle>
           <div className="flex items-center gap-2 text-xs">
             <div className="flex items-center gap-1">
-              <div className="h-2 w-2 rounded-full bg-accent-energy status-online" />
-              <span className="text-dark-text-secondary">{onlineCount} Online</span>
+              <div className="h-2 w-2 rounded-full bg-[var(--battery)] status-online" />
+              <span className="text-[var(--text-secondary)]">{onlineCount} Online</span>
             </div>
             {warningCount > 0 && (
               <div className="flex items-center gap-1">
-                <div className="h-2 w-2 rounded-full bg-accent-solar" />
-                <span className="text-dark-text-secondary">{warningCount} Warning</span>
+                <div className="h-2 w-2 rounded-full bg-[var(--solar)]" />
+                <span className="text-[var(--text-secondary)]">{warningCount} Warning</span>
               </div>
             )}
             {offlineCount > 0 && (
               <div className="flex items-center gap-1">
-                <div className="h-2 w-2 rounded-full bg-accent-alert" />
-                <span className="text-dark-text-secondary">{offlineCount} Offline</span>
+                <div className="h-2 w-2 rounded-full bg-[var(--alert)]" />
+                <span className="text-[var(--text-secondary)]">{offlineCount} Offline</span>
               </div>
             )}
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="rounded-lg border border-dark-border overflow-hidden">
+        <div className="rounded-lg border overflow-hidden" style={{ borderColor: 'var(--border)' }}>
           <Table>
             <TableHeader>
-              <TableRow className="border-dark-border bg-primary hover:bg-primary">
-                <TableHead className="text-dark-text-secondary font-semibold">Panel ID</TableHead>
-                <TableHead className="text-dark-text-secondary font-semibold">Output (W)</TableHead>
-                <TableHead className="text-dark-text-secondary font-semibold">Voltage (V)</TableHead>
-                <TableHead className="text-dark-text-secondary font-semibold">Status</TableHead>
-                <TableHead className="text-dark-text-secondary font-semibold">Efficiency</TableHead>
+              <TableRow className="hover:bg-[var(--bg-secondary)]" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
+                <TableHead className="text-[var(--text-secondary)] font-semibold">Panel ID</TableHead>
+                <TableHead className="text-[var(--text-secondary)] font-semibold">Output (W)</TableHead>
+                <TableHead className="text-[var(--text-secondary)] font-semibold">Voltage (V)</TableHead>
+                <TableHead className="text-[var(--text-secondary)] font-semibold">Status</TableHead>
+                <TableHead className="text-[var(--text-secondary)] font-semibold">Efficiency</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {panels.map((panel) => (
                 <TableRow
                   key={panel.id}
-                  className="border-dark-border hover:bg-secondary-800 transition-colors"
+                  className="transition-colors hover:bg-[var(--bg-card-muted)]"
+                  style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-card)' }}
                 >
-                  <TableCell className="font-mono text-sm text-dark-text-primary font-medium">
+                  <TableCell className="font-mono text-sm text-[var(--text-primary)] font-medium">
                     {panel.id}
                   </TableCell>
-                  <TableCell className="text-dark-text-primary">
-                    <span className={panel.output > 0 ? 'text-accent-energy' : 'text-dark-text-tertiary'}>
-                      {panel.output.toFixed(0)}
+                  <TableCell className="text-[var(--text-primary)]">
+                    <span style={{ color: panel.output > 0 ? 'var(--battery)' : 'var(--text-tertiary)' }}>
+                      {panel.output > 0 ? panel.output.toFixed(0) : '—'}
                     </span>
                   </TableCell>
-                  <TableCell className="text-dark-text-primary">
-                    {panel.voltage.toFixed(1)}
+                  <TableCell className="text-[var(--text-primary)]">
+                    {panel.voltage > 0 ? panel.voltage.toFixed(1) : '—'}
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={panel.status} />
