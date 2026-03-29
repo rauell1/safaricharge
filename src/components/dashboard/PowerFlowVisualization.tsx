@@ -35,7 +35,8 @@ function EnergyNode({ icon: Icon, label, valueLine, subLabel, colorClass, bgClas
   return (
     <div className="flex flex-col items-center gap-2">
       <div className={`relative flex h-20 w-20 items-center justify-center rounded-full ${bgClass} border-2 ${borderClass} transition-all duration-300 hover:scale-105 ${glowClass}`}>
-        <Icon className={`h-9 w-9 ${colorClass}`} />
+        <div className={`absolute inset-1 rounded-full border border-dashed ${borderClass} opacity-60 animate-[spin_8s_linear_infinite]`} />
+        <Icon className={`relative z-10 h-9 w-9 ${colorClass}`} />
         {badgeContent && (
           <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-secondary-900 border border-dark-border text-[10px] font-bold text-accent-energy">
             {badgeContent}
