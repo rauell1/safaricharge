@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { StatCards } from '@/components/dashboard/StatCards';
@@ -11,47 +11,87 @@ import { TimeRangeSwitcher } from '@/components/dashboard/TimeRangeSwitcher';
 import { WeatherCard } from '@/components/dashboard/WeatherCard';
 import { BatteryStatusCard } from '@/components/dashboard/BatteryStatusCard';
 import DailyEnergyGraph from '@/components/DailyEnergyGraph';
+import { SystemVisualization } from '@/components/dashboard/SystemVisualization';
+import { useDemoEnergySystem } from '@/hooks/useDemoEnergySystem';
+import {
+  useAccumulators,
+  useEnergyFlows,
+  useEnergyNode,
+  useEnergyStats,
+  useMinuteData,
+  useSimulationState,
+  useTimeRange,
+} from '@/hooks/useEnergySystem';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, PieChart, TrendingUp, Leaf, Car, Trees } from 'lucide-react';
 
 export default function ModularDashboardDemo() {
-  const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month' | 'year'>('today');
-  const currentDate = new Date();
+  useDemoEnergySystem();
+  const { timeRange, setTimeRange } = useTimeRange();
+  const { currentDate } = useSimulationState();
+  const solarNode = useEnergyNode('solar');
+  const batteryNode = useEnergyNode('battery');
+  const gridNode = useEnergyNode('grid');
+  const homeNode = useEnergyNode('home');
+  const flows = useEnergyFlows();
+  const stats = useEnergyStats(timeRange);
+  const minuteData = useMinuteData(timeRange);
+  const accumulators = useAccumulators();
 
-  // Mock data for demonstration
-  const mockData = {
-    totalGeneration: 245.6,
-    currentPower: 38.5,
-    consumption: 198.3,
-    savings: 2847,
-    solarPower: 38.5,
-    batteryPower: 5.2,
-    gridPower: -8.3,
-    homePower: 24.8,
-    batteryLevel: 85,
-    flowDirection: {
-      solarToHome: true,
-      solarToBattery: true,
-      solarToGrid: true,
-      batteryToHome: false,
-      gridToHome: false,
-    },
-  };
+  const latestPoint = minuteData[minuteData.length - 1];
+  const solarPower = latestPoint?.solarKW ?? solarNode.powerKW ?? 0;
+  const batteryPower = latestPoint?.batteryPowerKW ?? batteryNode.powerKW ?? 0;
+  const gridPower = latestPoint ? latestPoint.gridImportKW - latestPoint.gridExportKW : gridNode.powerKW ?? 0;
+  const homePower = latestPoint
+    ? latestPoint.homeLoadKW + latestPoint.ev1LoadKW + latestPoint.ev2LoadKW
+    : homeNode.powerKW ?? 0;
+  const batteryLevel = latestPoint?.batteryLevelPct ?? batteryNode.soc ?? 0;
 
-  const mockGraphData = [
-    { timeOfDay: 0, solar: 0, load: 15, batSoc: 80, gridImport: 10, gridExport: 0 },
-    { timeOfDay: 6, solar: 5, load: 20, batSoc: 75, gridImport: 12, gridExport: 0 },
-    { timeOfDay: 12, solar: 45, load: 30, batSoc: 85, gridImport: 0, gridExport: 15 },
-    { timeOfDay: 18, solar: 10, load: 35, batSoc: 80, gridImport: 5, gridExport: 0 },
-    { timeOfDay: 24, solar: 0, load: 18, batSoc: 75, gridImport: 15, gridExport: 0 },
-  ];
+  const flowDirection = useMemo(() => ({
+    solarToHome: flows.some((f) => f.from === 'solar' && f.to === 'home' && f.active),
+    solarToBattery: flows.some((f) => f.from === 'solar' && f.to === 'battery' && f.active),
+    solarToGrid: flows.some((f) => f.from === 'solar' && f.to === 'grid' && f.active),
+    batteryToHome: flows.some((f) => f.from === 'battery' && f.to === 'home' && f.active),
+    gridToHome: flows.some((f) => f.from === 'grid' && f.to === 'home' && f.active),
+  }), [flows]);
 
-  // Environmental impact data
-  const envImpact = [
-    { icon: Leaf, value: '2.4 tons', label: 'CO₂ Offset (Year)', color: 'var(--battery)', tint: 'var(--battery-soft)' },
-    { icon: Trees, value: '148', label: 'Trees Equivalent', color: 'var(--solar)', tint: 'var(--solar-soft)' },
-    { icon: Car, value: '12,450 km', label: 'Car Miles Offset', color: 'var(--consumption)', tint: 'var(--consumption-soft)' },
-  ];
+  const graphData = useMemo(() => minuteData.map((d) => ({
+    timeOfDay: d.hour + d.minute / 60,
+    solar: d.solarKW,
+    load: d.homeLoadKW + d.ev1LoadKW + d.ev2LoadKW,
+    batSoc: d.batteryLevelPct,
+    gridImport: d.gridImportKW,
+    gridExport: d.gridExportKW,
+  })), [minuteData]);
+
+  const energySplit = useMemo(() => {
+    const totalEnergy = stats.totalSolarKWh + stats.totalConsumptionKWh + stats.totalGridExportKWh;
+    if (!totalEnergy) {
+      return { solarPct: 0, consumptionPct: 0, exportPct: 0 };
+    }
+    return {
+      solarPct: stats.totalSolarKWh / totalEnergy,
+      consumptionPct: stats.totalConsumptionKWh / totalEnergy,
+      exportPct: stats.totalGridExportKWh / totalEnergy,
+    };
+  }, [stats]);
+
+  const envImpact = useMemo(() => ([
+    { icon: Leaf, value: `${(accumulators.carbonOffset / 1000).toFixed(2)} tons`, label: 'CO₂ Offset (Year)', color: 'var(--battery)', tint: 'var(--battery-soft)' },
+    { icon: Trees, value: Math.round(accumulators.carbonOffset / 14).toString(), label: 'Trees Equivalent', color: 'var(--solar)', tint: 'var(--solar-soft)' },
+    { icon: Car, value: `${Math.round(accumulators.carbonOffset * 1.6)} km`, label: 'Car Miles Offset', color: 'var(--consumption)', tint: 'var(--consumption-soft)' },
+  ]), [accumulators]);
+
+  const ringSegments = useMemo(() => {
+    const circumference = 2 * Math.PI * 48;
+    const clamp = (v: number) => Math.max(0, Math.min(1, v));
+    return {
+      circumference,
+      solar: clamp(energySplit.solarPct) * circumference,
+      consumption: clamp(energySplit.consumptionPct) * circumference,
+      export: clamp(energySplit.exportPct) * circumference,
+    };
+  }, [energySplit]);
 
   return (
     <DashboardLayout>
@@ -77,33 +117,36 @@ export default function ModularDashboardDemo() {
 
         {/* ROW 1 — 4 Stat Cards */}
         <StatCards
-          totalGeneration={mockData.totalGeneration}
-          currentPower={mockData.currentPower}
-          consumption={mockData.consumption}
-          savings={mockData.savings}
+          totalGeneration={Number(stats.totalSolarKWh.toFixed(1))}
+          currentPower={Number(solarPower.toFixed(1))}
+          consumption={Number(stats.totalConsumptionKWh.toFixed(1))}
+          savings={Math.round(stats.totalSavingsKES)}
         />
 
         {/* ROW 2 — Energy Flow (2/3) + Weather & Battery (1/3) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <PowerFlowVisualization
-              solarPower={mockData.solarPower}
-              batteryPower={mockData.batteryPower}
-              gridPower={mockData.gridPower}
-              homePower={mockData.homePower}
-              batteryLevel={mockData.batteryLevel}
-              flowDirection={mockData.flowDirection}
+              solarPower={solarPower}
+              batteryPower={batteryPower}
+              gridPower={gridPower}
+              homePower={homePower}
+              batteryLevel={batteryLevel}
+              flowDirection={flowDirection}
+              detailBasePath="/demo"
             />
           </div>
           <div className="flex flex-col gap-6">
             <WeatherCard locationName="Nairobi, Kenya" />
             <BatteryStatusCard
-              batteryLevel={mockData.batteryLevel}
-              batteryPower={mockData.batteryPower}
-              isCharging={mockData.batteryPower >= 0}
+              batteryLevel={batteryLevel}
+              batteryPower={batteryPower}
+              isCharging={batteryPower >= 0}
             />
           </div>
         </div>
+
+        <SystemVisualization />
 
         {/* ROW 3 — Generation vs Consumption (2/3) + Energy Distribution (1/3) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -116,7 +159,7 @@ export default function ModularDashboardDemo() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                <DailyEnergyGraph data={mockGraphData} dateLabel={currentDate.toISOString().slice(0, 10)} />
+                <DailyEnergyGraph data={graphData} dateLabel={currentDate?.toISOString().slice(0, 10)} />
               </CardContent>
             </Card>
           </div>
@@ -135,31 +178,33 @@ export default function ModularDashboardDemo() {
                     <div className="absolute inset-0 rounded-full bg-[var(--bg-card-muted)]" />
                     <svg viewBox="0 0 120 120" className="absolute inset-0 w-full h-full -rotate-90">
                       <circle cx="60" cy="60" r="48" fill="none" stroke="var(--solar)" strokeWidth="14"
-                        strokeDasharray={`${0.55 * 2 * Math.PI * 48} ${2 * Math.PI * 48}`} strokeLinecap="round" opacity="0.9" />
+                        strokeDasharray={`${ringSegments.solar} ${ringSegments.circumference}`} strokeLinecap="round" opacity="0.9" />
                       <circle cx="60" cy="60" r="48" fill="none" stroke="var(--consumption)" strokeWidth="14"
-                        strokeDasharray={`${0.28 * 2 * Math.PI * 48} ${2 * Math.PI * 48}`}
-                        strokeDashoffset={`${-(0.55 * 2 * Math.PI * 48)}`} strokeLinecap="round" opacity="0.9" />
+                        strokeDasharray={`${ringSegments.consumption} ${ringSegments.circumference}`}
+                        strokeDashoffset={`${-ringSegments.solar}`} strokeLinecap="round" opacity="0.9" />
                       <circle cx="60" cy="60" r="48" fill="none" stroke="var(--grid)" strokeWidth="14"
-                        strokeDasharray={`${0.17 * 2 * Math.PI * 48} ${2 * Math.PI * 48}`}
-                        strokeDashoffset={`${-((0.55 + 0.28) * 2 * Math.PI * 48)}`} strokeLinecap="round" opacity="0.9" />
+                        strokeDasharray={`${ringSegments.export} ${ringSegments.circumference}`}
+                        strokeDashoffset={`${-(ringSegments.solar + ringSegments.consumption)}`} strokeLinecap="round" opacity="0.9" />
                     </svg>
                     <div className="text-center z-10">
-                      <div className="text-xl font-bold text-[var(--text-primary)]">55%</div>
+                      <div className="text-xl font-bold text-[var(--text-primary)]">
+                        {Math.round(energySplit.solarPct * 100)}%
+                      </div>
                       <div className="text-[10px] text-[var(--text-tertiary)]">Solar</div>
                     </div>
                   </div>
                   <div className="w-full space-y-2">
                     {[
-                      { label: 'Solar Generation', pct: '55%', color: 'var(--solar)' },
-                      { label: 'Consumption', pct: '28%', color: 'var(--consumption)' },
-                      { label: 'Grid Export', pct: '17%', color: 'var(--grid)' },
+                      { label: 'Solar Generation', pct: Math.round(energySplit.solarPct * 100), color: 'var(--solar)' },
+                      { label: 'Consumption', pct: Math.round(energySplit.consumptionPct * 100), color: 'var(--consumption)' },
+                      { label: 'Grid Export', pct: Math.round(energySplit.exportPct * 100), color: 'var(--grid)' },
                     ].map(item => (
                       <div key={item.label} className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                           <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
                           <span className="text-xs text-[var(--text-secondary)]">{item.label}</span>
                         </div>
-                        <span className="text-xs font-semibold text-[var(--text-primary)]">{item.pct}</span>
+                        <span className="text-xs font-semibold text-[var(--text-primary)]">{item.pct}%</span>
                       </div>
                     ))}
                   </div>

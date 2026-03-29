@@ -9,9 +9,11 @@ import {
   DollarSign,
   AlertTriangle,
   Settings,
-  BarChart3,
-  Activity,
+  Car,
+  UtilityPole,
 } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   Sidebar,
   SidebarContent,
@@ -37,13 +39,23 @@ export function DashboardSidebar({
   onSectionChange,
   alertCount = 0
 }: DashboardSidebarProps) {
+  const pathname = usePathname();
+  const resolvedActive = React.useMemo(() => {
+    if (pathname?.startsWith('/demo/solar')) return 'solar';
+    if (pathname?.startsWith('/demo/battery')) return 'battery';
+    if (pathname?.startsWith('/demo/grid')) return 'grid';
+    if (pathname?.startsWith('/demo/ev')) return 'ev';
+    if (pathname?.startsWith('/demo')) return 'dashboard';
+    return activeSection;
+  }, [activeSection, pathname]);
+
   const mainMenuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: Home },
-    { id: 'generation', label: 'Generation', icon: Sun },
-    { id: 'consumption', label: 'Consumption', icon: Activity },
-    { id: 'panels', label: 'Panels', icon: BarChart3 },
-    { id: 'battery', label: 'Battery', icon: Battery },
-    { id: 'savings', label: 'Savings', icon: DollarSign },
+    { id: 'dashboard', label: 'Dashboard', icon: Home, href: '/demo' },
+    { id: 'solar', label: 'Solar', icon: Sun, href: '/demo/solar' },
+    { id: 'battery', label: 'Battery', icon: Battery, href: '/demo/battery' },
+    { id: 'grid', label: 'Grid', icon: UtilityPole, href: '/demo/grid' },
+    { id: 'ev', label: 'EV Charging', icon: Car, href: '/demo/ev' },
+    { id: 'savings', label: 'Savings', icon: DollarSign, href: '/demo' },
   ];
 
   const systemMenuItems = [
@@ -75,15 +87,18 @@ export function DashboardSidebar({
               {mainMenuItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
-                    isActive={activeSection === item.id}
+                    asChild
+                    isActive={resolvedActive === item.id || (!!item.href && pathname?.startsWith(item.href))}
                     onClick={() => onSectionChange?.(item.id)}
                     className="group relative rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] data-[active=true]:bg-[var(--bg-card)] data-[active=true]:shadow-[0_10px_30px_rgba(0,0,0,0.25)] data-[active=true]:text-[var(--text-primary)]"
                   >
-                    <item.icon className="h-4 w-4" />
-                    <span className="font-medium">{item.label}</span>
-                    {activeSection === item.id && (
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--battery)] rounded-r" />
-                    )}
+                    <Link href={item.href ?? '#'} className="flex w-full items-center gap-2 relative">
+                      <item.icon className="h-4 w-4" />
+                      <span className="font-medium">{item.label}</span>
+                      {resolvedActive === item.id && (
+                        <div className="absolute -left-3 top-0 bottom-0 w-1 bg-[var(--battery)] rounded-r" />
+                      )}
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -100,7 +115,7 @@ export function DashboardSidebar({
               {systemMenuItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
-                    isActive={activeSection === item.id}
+                    isActive={resolvedActive === item.id}
                     onClick={() => onSectionChange?.(item.id)}
                     className="group relative rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] data-[active=true]:bg-[var(--bg-card)] data-[active=true]:shadow-[0_10px_30px_rgba(0,0,0,0.25)] data-[active=true]:text-[var(--text-primary)]"
                   >
