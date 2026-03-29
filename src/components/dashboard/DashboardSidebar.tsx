@@ -52,7 +52,7 @@ export function DashboardSidebar({
   ];
 
   return (
-    <Sidebar className="border-r border-dark-border bg-primary/50">
+    <Sidebar className="border-r border-dark-border">
       <SidebarHeader className="border-b border-dark-border p-6">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-accent-solar to-accent-energy shadow-glow-solar">
@@ -77,12 +77,12 @@ export function DashboardSidebar({
                   <SidebarMenuButton
                     isActive={activeSection === item.id}
                     onClick={() => onSectionChange?.(item.id)}
-                    className="group relative gap-3 px-3 py-2 rounded-xl transition-all duration-150 data-[active=true]:bg-secondary-800 data-[active=true]:text-dark-text-primary hover:bg-secondary-800"
+                    className="group relative"
                   >
                     <item.icon className="h-4 w-4" />
                     <span>{item.label}</span>
                     {activeSection === item.id && (
-                      <div className="absolute left-2 top-2 bottom-2 w-1.5 rounded-full bg-accent-energy/80 shadow-glow-energy" />
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-accent-energy rounded-r" />
                     )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -102,7 +102,7 @@ export function DashboardSidebar({
                   <SidebarMenuButton
                     isActive={activeSection === item.id}
                     onClick={() => onSectionChange?.(item.id)}
-                    className="group relative gap-3 px-3 py-2 rounded-xl transition-all duration-150 data-[active=true]:bg-secondary-800 data-[active=true]:text-dark-text-primary hover:bg-secondary-800"
+                    className="group relative"
                   >
                     <item.icon className="h-4 w-4" />
                     <span>{item.label}</span>
@@ -112,7 +112,7 @@ export function DashboardSidebar({
                       </SidebarMenuBadge>
                     )}
                     {activeSection === item.id && (
-                      <div className="absolute left-2 top-2 bottom-2 w-1.5 rounded-full bg-accent-energy/80 shadow-glow-energy" />
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-accent-energy rounded-r" />
                     )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>

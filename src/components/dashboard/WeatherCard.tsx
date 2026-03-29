@@ -24,7 +24,7 @@ export function WeatherCard({
   const isSunny = condition.toLowerCase().includes('sun') || condition.toLowerCase().includes('clear');
 
   return (
-    <Card className="border-dark-border bg-secondary-900 rounded-2xl card-hover">
+    <Card className="border-dark-border bg-secondary-900">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-dark-text-primary text-sm">
           {isSunny ? (

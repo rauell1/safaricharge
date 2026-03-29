@@ -92,7 +92,7 @@ export function AlertsList({ alerts = defaultAlerts }: AlertsListProps) {
   const warningCount = alerts.filter(a => a.type === 'warning').length;
 
   return (
-    <Card className="border-dark-border bg-secondary-900 rounded-2xl card-hover">
+    <Card className="border-dark-border bg-secondary-900">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-dark-text-primary">
@@ -114,7 +114,7 @@ export function AlertsList({ alerts = defaultAlerts }: AlertsListProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-3">
           {alerts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <CheckCircle className="h-12 w-12 text-accent-energy mb-3" />
@@ -126,7 +126,7 @@ export function AlertsList({ alerts = defaultAlerts }: AlertsListProps) {
             alerts.map((alert) => (
               <div
                 key={alert.id}
-                className="flex items-start gap-3 rounded-xl border border-dark-border bg-primary/60 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-accent-info/30 hover:shadow-glow-solar/30 cursor-default group"
+                className="flex items-start gap-3 rounded-xl border border-dark-border bg-primary p-4 transition-all duration-200 hover:scale-[1.02] hover:border-dark-border/60 hover:bg-secondary-900 cursor-default group"
               >
                 <div className="mt-0.5 flex-shrink-0">
                   <AlertIcon type={alert.type} />
