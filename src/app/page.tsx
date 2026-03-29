@@ -3008,7 +3008,7 @@ export default function App() {
         carbonOffset={data.carbonOffset}
       />
 
-      <main className="flex-1 overflow-y-auto p-6 space-y-6 bg-primary">
+      <main className="flex-1 overflow-y-auto p-7 lg:p-8 space-y-8 bg-primary">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold text-dark-text-primary">Energy Command Center</h2>
@@ -3062,7 +3062,7 @@ export default function App() {
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           <div className="xl:col-span-2">
-            <Card className="border-dark-border bg-secondary-900 card-hover">
+            <Card className="border-dark-border bg-secondary-900 rounded-2xl card-hover">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-dark-text-primary">
                   <TrendingUp className="h-5 w-5 text-accent-energy" />
@@ -3075,7 +3075,7 @@ export default function App() {
             </Card>
           </div>
           <div>
-            <Card className="border-dark-border bg-secondary-900 h-full card-hover">
+            <Card className="border-dark-border bg-secondary-900 h-full rounded-2xl card-hover">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-dark-text-primary">
                   <PieChart className="h-5 w-5 text-accent-grid" />
@@ -3134,7 +3134,7 @@ export default function App() {
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           <div className="xl:col-span-2">
-            <Card className="border-dark-border bg-secondary-900 card-hover">
+            <Card className="border-dark-border bg-secondary-900 rounded-2xl card-hover">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-dark-text-primary">
                   <BarChart3 className="h-5 w-5 text-accent-info" />
@@ -3177,7 +3177,7 @@ export default function App() {
             </Card>
           </div>
           <div>
-            <Card className="border-dark-border bg-secondary-900 h-full card-hover">
+            <Card className="border-dark-border bg-secondary-900 h-full rounded-2xl card-hover">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-dark-text-primary">
                   <Leaf className="h-5 w-5 text-accent-energy" />
@@ -3207,7 +3207,7 @@ export default function App() {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <Card className="border-dark-border bg-secondary-900 card-hover">
+          <Card className="border-dark-border bg-secondary-900 rounded-2xl card-hover">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-dark-text-primary">
                 <Settings className="h-5 w-5 text-accent-info" />
@@ -3224,7 +3224,7 @@ export default function App() {
             </CardContent>
           </Card>
 
-          <Card className="border-dark-border bg-secondary-900 card-hover">
+          <Card className="border-dark-border bg-secondary-900 rounded-2xl card-hover">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-dark-text-primary">
                 <DollarSign className="h-5 w-5 text-accent-energy" />
@@ -3243,7 +3243,7 @@ export default function App() {
           </Card>
         </div>
 
-        <Card className="border-dark-border bg-secondary-900 card-hover">
+        <Card className="border-dark-border bg-secondary-900 rounded-2xl card-hover">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-dark-text-primary">
               <Zap className="h-5 w-5 text-accent-energy" />
@@ -3290,7 +3290,7 @@ export default function App() {
         </Card>
 
         {pastGraphs.length > 0 && (
-          <Card className="border-dark-border bg-secondary-900 card-hover">
+          <Card className="border-dark-border bg-secondary-900 rounded-2xl card-hover">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-dark-text-primary">
                 <Calendar className="h-5 w-5 text-accent-info" />
