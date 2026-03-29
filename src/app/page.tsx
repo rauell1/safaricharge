@@ -24,6 +24,8 @@ import { BatteryStatusCard } from '@/components/dashboard/BatteryStatusCard';
 import { PanelStatusTable } from '@/components/dashboard/PanelStatusTable';
 import { AlertsList } from '@/components/dashboard/AlertsList';
 import { TimeRangeSwitcher } from '@/components/dashboard/TimeRangeSwitcher';
+import { generateDayScenario, nextWeatherMarkov } from '@/simulation/timeEngine';
+import { runSolarSimulation } from '@/simulation/runSimulation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, TrendingUp, Leaf, Trees, Car as CarIcon } from 'lucide-react';
 import type { SystemConfig, DerivedSystemConfig, SimulationMinuteRecord } from '@/types/simulation-core';
@@ -156,61 +158,6 @@ const SOILING_MIN_FACTOR = 0.70; // Maximum soiling derating (30% loss before ra
  * Seasonal solar peak hour - Uses dynamic location data
  * Sun position varies by latitude and season
  */
-const getSeasonalPeakHour = (month: number, latitude: number = -1.2921): number => {
-  // Simplified seasonal variation based on latitude
-  // Sun is slightly north/south of zenith depending on season
-  const basePeak = 12.75; // ~12:45 PM local time (solar noon)
-  const phaseRad = ((month - 6) / 12) * 2 * Math.PI;
-  // Latitude effect: more variation at higher latitudes
-  const seasonalShift = -0.25 * Math.cos(phaseRad) * (Math.abs(latitude) / 2);
-  return basePeak + seasonalShift;
-};
-
-/**
- * Panel temperature derating using NOCT model - UPDATED TO USE DYNAMIC TEMPERATURE DATA
- * Estimates panel temperature from ambient temperature + solar heating
- */
-const getPanelTempEffect = (irradFraction: number, month: number, monthlyTemps?: number[]): number => {
-  // Use provided monthly temperatures or fallback to Nairobi-like pattern
-  const ambientTemp = monthlyTemps && monthlyTemps[month - 1]
-    ? monthlyTemps[month - 1]
-    : 22 + 8 * Math.sin(((month - 3) / 12) * 2 * Math.PI);
-
-  const panelTemp = ambientTemp + irradFraction * 28; // simplified NOCT model
-  const excess = Math.max(0, panelTemp - 25);
-  return Math.max(0.70, 1.0 + excess * PANEL_TEMP_COEFFICIENT);
-};
-
-/**
- * Inverter efficiency curve: peaks ~97% at 50-80% of rated load,
- * falls off at very low loads and near full capacity.
- */
-const getInverterEfficiency = (loadFraction: number): number => {
-  if (loadFraction <= 0.05) return 0.82;
-  if (loadFraction <= 0.20) return 0.93;
-  if (loadFraction <= 0.60) return 0.97;
-  if (loadFraction <= 0.90) return 0.96;
-  return 0.94;
-};
-
-/**
- * Battery round-trip efficiency varies with charge/discharge rate:
- * ~95% at low rates (0.1C), ~85% at maximum rates (0.5C+).
- */
-const getBatteryEfficiency = (rateFraction: number): number => {
-  return Math.max(0.85, 0.95 - 0.10 * Math.min(1.0, rateFraction));
-};
-
-/**
- * Tapered EV charging above 80% SOC: realistic Li-ion CC/CV behavior.
- * Full rate below 80%, linearly reduced to 0 at 100%.
- */
-const getEVTaperedRate = (soc: number, maxRate: number): number => {
-  if (soc >= 100) return 0;
-  if (soc >= 80) return maxRate * (100 - soc) / 20;
-  return maxRate;
-};
-
 // Gaussian random (Box-Muller transform)
 const gaussianRandom = (mean: number, std: number): number => {
   const u1 = Math.max(1e-10, Math.random());
@@ -223,266 +170,6 @@ const FEED_IN_TARIFF_RATE = 5.0;
 // KPLC maximum demand charge (KES per kW of monthly peak grid import)
 const KPLC_DEMAND_CHARGE_KES_PER_KW = 750.0;
 
-// Weather Markov chain: realistic day-to-day persistence
-const WEATHER_TRANSITION: Record<string, { Sunny: number; Cloudy: number; Rainy: number }> = {
-  Sunny:  { Sunny: 0.70, Cloudy: 0.25, Rainy: 0.05 },
-  Cloudy: { Sunny: 0.30, Cloudy: 0.50, Rainy: 0.20 },
-  Rainy:  { Sunny: 0.10, Cloudy: 0.30, Rainy: 0.60 },
-};
-
-const nextWeatherMarkov = (current: string): string => {
-  const row = WEATHER_TRANSITION[current] ?? WEATHER_TRANSITION.Sunny;
-  const r = Math.random();
-  if (r < row.Sunny) return 'Sunny';
-  if (r < row.Sunny + row.Cloudy) return 'Cloudy';
-  return 'Rainy';
-};
-
-// --- 1. PHYSICS ENGINE (Shared Logic) ---
-const PhysicsEngine = {
-  generateDayScenario: (
-    weather: string,
-    date: Date = new Date('2026-01-01'),
-    soilingFactor: number = 1.0,
-    solarData?: SolarIrradianceData,
-    systemConfig?: DerivedSystemConfig
-  ) => {
-    const month = date.getMonth() + 1;
-    const dayOfWeek = date.getDay();
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-    const latitude = solarData?.latitude ?? -1.2921;
-    const peakSolarHour = getSeasonalPeakHour(month, latitude);
-    // Weather-dependent HVAC base load (sunny/hot days drive more cooling demand)
-    const hvacBase = weather === 'Sunny' ? 3.5 : weather === 'Cloudy' ? 2.0 : 0.5;
-
-    return {
-      initialBatSoc: 30.0,
-      month,
-      dayOfWeek,
-      isWeekend,
-      peakSolarHour,
-      soilingFactor,
-      latitude,
-      monthlyTemperature: solarData?.monthlyTemperature,
-      ev1: {
-        startSoc: 40 + Math.random() * 30,
-        depart: 7.5 + gaussianRandom(0, 0.2),
-        return: 18.0 + gaussianRandom(0, 0.4),
-        emergency: Math.random() < 0.2 ? { start: 20.0 + Math.random()*0.5, end: 21.0 + Math.random()*0.5 } : null,
-        drainRate: 0.5 * (systemConfig?.evCommuterScale ?? 1),
-        cap: 80,
-        onboard: 7 * (systemConfig?.evCommuterScale ?? 1)
-      },
-      ev2: {
-        startSoc: 15 + Math.random() * 25,
-        depart: 5.5 + gaussianRandom(0, 0.2),
-        lunchStart: 12.5 + Math.random() * 0.5,    
-        lunchEnd: 14.0 + Math.random() * 0.5,      
-        return: 22.0 + gaussianRandom(0, 0.4),
-        drainRate: 0.8 * (systemConfig?.evFleetScale ?? 1),
-        cap: 118,
-        onboard: 22 * (systemConfig?.evFleetScale ?? 1)
-      },
-      weatherFactor: weather === 'Sunny' ? 1.0 : weather === 'Cloudy' ? 0.6 : 0.2,
-      cloudNoiseSeed: Math.random(),
-      houseLoadProfile: Array(24).fill(0).map((_, h) => {
-        if (isWeekend) {
-          // Weekend: later start, more midday leisure load, long evening peak
-          if (h >= 8 && h < 11) return 4.0 + Math.random() * 2;
-          if (h >= 11 && h < 16) return 3.0 + Math.random() * 1.5 + (weather === 'Sunny' ? hvacBase * Math.random() * 0.6 : 0);
-          if (h >= 16 && h < 23) return 6.5 + Math.random() * 2.5;
-          return 1.2;
-        } else {
-          // Weekday: morning rush, office-quiet midday with HVAC, evening peak
-          if (h >= 6 && h < 9) return 5.0 + Math.random() * 2;
-          if (h >= 9 && h < 18) return 2.0 + Math.random() + (weather === 'Sunny' && h >= 11 && h < 17 ? hvacBase * Math.random() * 0.5 : 0);
-          if (h >= 18 && h < 22) return 6.0 + Math.random() * 3;
-          return 0.8;
-        }
-      }).map(v => v * (systemConfig?.loadScale ?? 1))
-    };
-  },
-
-  calculateInstant: (
-    t: number,
-    prevBatKwh: number,
-    prevEv1Soc: number,
-    prevEv2Soc: number,
-    scenario: any,
-    evSpecs: any,
-    systemConfig: DerivedSystemConfig,
-    cloudNoise = 0,
-    batteryHealth = 1.0,
-    actualTimeStep = 5/60,
-    priorityMode = 'load'
-  ) => {
-    const timeStep = actualTimeStep;
-    const month: number = scenario.month || 1;
-    const peakHour: number = scenario.peakSolarHour || 12.75;
-    const soiling: number = scenario.soilingFactor ?? 1.0;
-
-    // A. Solar: seasonal peak hour, temperature coefficient, soiling/dust
-    let solar = 0;
-    if (t > 6.2 && t < 18.8) { 
-        // Seasonal Gaussian width: wider in dry months (Jan-Feb, Jul-Aug), narrower in rainy months
-        const width = 6 + 2 * Math.cos(((month - 7) / 12) * 2 * Math.PI);
-        // Brownian cloud noise (passed in from external walk, bounded [-1,1])
-        const noise = cloudNoise * 0.15;
-        const irradFraction = Math.max(0, Math.exp(-Math.pow(t - peakHour, 2) / width));
-        const tempEffect = getPanelTempEffect(irradFraction * scenario.weatherFactor, month, scenario.monthlyTemperature);
-        solar = systemConfig.pvCapacityKw * irradFraction * (scenario.weatherFactor + noise) * soiling * tempEffect;
-        solar = Math.max(0, solar);
-    }
-
-    // B. House Load with ±8% stochastic noise (appliance switching)
-    const hIdx = Math.floor(t);
-    const houseLoad = scenario.houseLoadProfile[hIdx % 24] * Math.max(0.5, 1 + gaussianRandom(0, 0.08));
-    // Effective battery capacity and reserve accounting for degradation
-    const effectiveCapacity = systemConfig.batteryKwh * batteryHealth;
-    const effectiveReserve = Math.max(systemConfig.batteryKwh * 0.15, 8) * batteryHealth;
-
-    // C. EV Logic with tapered charging above 80% SOC
-    let ev1Load = 0;
-    let ev2Load = 0;
-    let ev1IsHome = true;
-    let ev2IsHome = true;
-
-    // EV1 Status
-    if ((t > scenario.ev1.depart && t < scenario.ev1.return) || 
-        (scenario.ev1.emergency && t > scenario.ev1.emergency.start && t < scenario.ev1.emergency.end)) {
-        ev1IsHome = false;
-        prevEv1Soc = Math.max(5, prevEv1Soc - (evSpecs.ev1.drainRate * (systemConfig.evCommuterScale ?? 1) * timeStep / evSpecs.ev1.cap * 100));
-    } else {
-        if (prevEv1Soc < 100) {
-            const taperedRate = getEVTaperedRate(
-              prevEv1Soc,
-              Math.min(systemConfig.evChargerKw, evSpecs.ev1.onboard) * (systemConfig.evCommuterScale ?? 1)
-            );
-            const needed = (100 - prevEv1Soc) / 100 * evSpecs.ev1.cap;
-            ev1Load = Math.min(taperedRate, needed / timeStep) * (systemConfig.evCommuterScale ?? 1);
-        }
-    }
-
-    // EV2 Status
-    if ((t > scenario.ev2.depart && t < scenario.ev2.lunchStart) || 
-        (t > scenario.ev2.lunchEnd && t < scenario.ev2.return)) {
-        ev2IsHome = false;
-        prevEv2Soc = Math.max(5, prevEv2Soc - (evSpecs.ev2.drainRate * (systemConfig.evFleetScale ?? 1) * timeStep / evSpecs.ev2.cap * 100));
-    } else {
-        if (prevEv2Soc < 100) {
-            const taperedRate = getEVTaperedRate(
-              prevEv2Soc,
-              Math.min(systemConfig.evChargerKw, evSpecs.ev2.onboard) * (systemConfig.evFleetScale ?? 1)
-            );
-            const needed = (100 - prevEv2Soc) / 100 * evSpecs.ev2.cap;
-            ev2Load = Math.min(taperedRate, needed / timeStep) * (systemConfig.evFleetScale ?? 1);
-        }
-    }
-
-    // Load Management
-    let totalLoad = houseLoad + ev1Load + ev2Load;
-    if (totalLoad > systemConfig.inverterKw) {
-        const available = Math.max(0, systemConfig.inverterKw - houseLoad);
-        if (ev1Load + ev2Load > 0) {
-            const factor = available / (ev1Load + ev2Load);
-            ev1Load *= factor;
-            ev2Load *= factor;
-            totalLoad = systemConfig.inverterKw;
-        }
-    }
-
-    // Apply inverter efficiency: DC solar → AC bus
-    const inverterEff = getInverterEfficiency(totalLoad / systemConfig.inverterKw);
-    const effectiveSolar = solar * inverterEff;
-
-    // Apply Charge to SOC
-    if (ev1Load > 0) prevEv1Soc = Math.min(100, prevEv1Soc + (ev1Load * timeStep / evSpecs.ev1.cap * 100));
-    if (ev2Load > 0) prevEv2Soc = Math.min(100, prevEv2Soc + (ev2Load * timeStep / evSpecs.ev2.cap * 100));
-
-    // D. Energy Balance with variable battery efficiency
-    let batCharge = 0;
-    let batDischarge = 0;
-    let gridImport = 0;
-    let gridExport = 0;
-    let newBatKwh = prevBatKwh;
-
-    // V2G: during peak hours, EVs discharge to cover deficit if battery is low
-    const isPeakNow = KPLC_TARIFF.isPeakTime(Math.floor(t));
-    let v2gKw = 0;
-    let ev1V2g = false;
-    let ev2V2g = false;
-    if (isPeakNow) {
-        const batSocPct = (newBatKwh / effectiveCapacity) * 100;
-        if (ev1IsHome && prevEv1Soc > 50 && batSocPct < 30) {
-            const rate = Math.min(5, evSpecs.ev1.onboard);
-            v2gKw += rate;
-            ev1V2g = true;
-            prevEv1Soc = Math.max(20, prevEv1Soc - (rate * timeStep / evSpecs.ev1.cap * 100));
-        }
-        if (ev2IsHome && prevEv2Soc > 50 && batSocPct < 30) {
-            const rate = Math.min(5, evSpecs.ev2.onboard);
-            v2gKw += rate;
-            ev2V2g = true;
-            prevEv2Soc = Math.max(20, prevEv2Soc - (rate * timeStep / evSpecs.ev2.cap * 100));
-        }
-    }
-    const augmentedSolar = effectiveSolar + v2gKw;
-
-    // Energy balance with priority mode support
-    if (augmentedSolar >= totalLoad) {
-        // Surplus: prioritize based on mode
-        let excess = augmentedSolar - totalLoad;
-
-        if (priorityMode === 'battery') {
-            // Battery-first: charge battery before serving loads
-            if (newBatKwh < effectiveCapacity) {
-                const capRem = effectiveCapacity - newBatKwh;
-                const chargeFraction = Math.min(excess, systemConfig.maxChargeKw) / systemConfig.maxChargeKw;
-                const batEff = getBatteryEfficiency(chargeFraction);
-                batCharge = Math.min(excess, systemConfig.maxChargeKw, (capRem / batEff) / timeStep);
-                newBatKwh += batCharge * timeStep * batEff;
-                excess -= batCharge;
-            }
-            gridExport = excess;
-        } else {
-            // Load-first (default): charge battery with excess after loads
-            if (newBatKwh < effectiveCapacity) {
-                const capRem = effectiveCapacity - newBatKwh;
-                const chargeFraction = Math.min(excess, systemConfig.maxChargeKw) / systemConfig.maxChargeKw;
-                const batEff = getBatteryEfficiency(chargeFraction);
-                batCharge = Math.min(excess, systemConfig.maxChargeKw, (capRem / batEff) / timeStep);
-                newBatKwh += batCharge * timeStep * batEff;
-                excess -= batCharge;
-            }
-            gridExport = excess;
-        }
-    } else {
-        // Deficit: discharge battery then import from grid
-        let deficit = totalLoad - augmentedSolar;
-        if (newBatKwh > effectiveReserve) {
-            const enAvail = newBatKwh - effectiveReserve;
-            const dischargeFraction = Math.min(deficit, systemConfig.maxDischargeKw) / systemConfig.maxDischargeKw;
-            const batEff = getBatteryEfficiency(dischargeFraction);
-            batDischarge = Math.min(deficit, systemConfig.maxDischargeKw, (enAvail * batEff) / timeStep);
-            newBatKwh -= (batDischarge * timeStep) / batEff;
-            deficit -= batDischarge;
-        }
-        gridImport = deficit;
-    }
-
-    return {
-        solar, load: totalLoad, houseLoad, evLoad: ev1Load + ev2Load,
-        gridImport, gridExport, 
-        batPower: batCharge > 0 ? batCharge : -batDischarge,
-        batKwh: Math.max(0, Math.min(effectiveCapacity, newBatKwh)),
-        ev1Soc: prevEv1Soc, ev2Soc: prevEv2Soc,
-        ev1IsHome, ev2IsHome,
-        ev1Kw: ev1Load, ev2Kw: ev2Load,
-        ev1V2g, ev2V2g, v2gKw,
-        batDischargeKw: batDischarge,
-    };
-  }
-};
 
 // --- UTILITIES ---
 const formatDate = (date: Date | null): string => {
@@ -2019,7 +1706,7 @@ export default function App() {
   const [dailyGraphData, setDailyGraphData] = useState<GraphDataPoint[]>([]);
   const [pastGraphs, setPastGraphs] = useState<Array<{ date: string; data: GraphDataPoint[] }>>([]);
   const dayScenarioRef = useRef(
-    PhysicsEngine.generateDayScenario('Sunny', new Date('2026-01-01'), 1.0, solarData, systemConfigRef.current)
+    generateDayScenario('Sunny', new Date('2026-01-01'), 1.0, solarData, systemConfigRef.current)
   );
   
   // Comprehensive data tracking for export - stores all minute-by-minute data
@@ -2062,7 +1749,7 @@ export default function App() {
     minuteDataRef.current = [];
     setData(prev => ({ ...prev, batteryLevel: 50, ev1Soc: 60, ev2Soc: 50, displaySavings: 0, carbonOffset: 0, batteryHealth: 1.0, batteryCycles: 0, monthlyPeakDemandKW: 0, estimatedDemandChargeKES: 0, feedInEarnings: 0, ev1V2g: false, ev2V2g: false }));
     setIsAutoMode(false);
-    dayScenarioRef.current = PhysicsEngine.generateDayScenario('Sunny', new Date('2026-01-01'), 1.0, solarData, systemConfigRef.current);
+    dayScenarioRef.current = generateDayScenario('Sunny', new Date('2026-01-01'), 1.0, solarData, systemConfigRef.current);
     timeOfDayRef.current = 0;
     batKwhRef.current = systemConfigRef.current.batteryKwh * 0.5;
     ev1SocRef.current = dayScenarioRef.current.ev1.startSoc;
@@ -2074,7 +1761,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const updatedScenario = PhysicsEngine.generateDayScenario(
+    const updatedScenario = generateDayScenario(
       weatherRef.current,
       currentDate,
       soilingFactorRef.current,
@@ -2142,7 +1829,7 @@ export default function App() {
       soilingFactorRef.current = Math.max(SOILING_MIN_FACTOR, soilingFactorRef.current - SOILING_LOSS_PER_DAY);
     }
 
-    dayScenarioRef.current = PhysicsEngine.generateDayScenario(newWeather, nextDate, soilingFactorRef.current, solarData, systemConfigRef.current);
+    dayScenarioRef.current = generateDayScenario(newWeather, nextDate, soilingFactorRef.current, solarData, systemConfigRef.current);
     ev1SocRef.current = dayScenarioRef.current.ev1.startSoc;
     ev2SocRef.current = dayScenarioRef.current.ev2.startSoc;
     setData(prev => ({ ...prev, ev1Soc: dayScenarioRef.current.ev1.startSoc, ev2Soc: dayScenarioRef.current.ev2.startSoc }));
@@ -2170,7 +1857,7 @@ export default function App() {
       // Maintain fixed-resolution sub-steps (420 points/day) while chunking
       // work across animation frames so x1000 simulations don't block the UI.
 
-      let lastState: ReturnType<typeof PhysicsEngine.calculateInstant> | null = null;
+      let lastState: ReturnType<typeof runSolarSimulation> | null = null;
       let lastApplicableRate = KPLC_TARIFF.getLowRateWithVAT();
       const newGraphPoints: GraphDataPoint[] = [];
       let processed = 0;
@@ -2201,7 +1888,7 @@ export default function App() {
           cloudNoiseRef.current += gaussianRandom(0, 0.05 * Math.sqrt(actualStep / 0.05));
           cloudNoiseRef.current = Math.max(-1, Math.min(1, cloudNoiseRef.current * 0.97));
 
-          const state = PhysicsEngine.calculateInstant(
+          const state = runSolarSimulation(
             timeOfDayRef.current,
             batKwhRef.current,
             ev1SocRef.current,
@@ -2212,7 +1899,8 @@ export default function App() {
             cloudNoiseRef.current,
             batteryHealthRef.current,
             actualStep,
-            curPriority
+            curPriority,
+            KPLC_TARIFF.isPeakTime(Math.floor(timeOfDayRef.current))
           );
 
           // Update authoritative physics refs.
@@ -2426,7 +2114,7 @@ export default function App() {
     const physicsTimeStep = 0.25;
 
     // Compute physics using ref-based state for continuity across manual scrubs.
-    const state = PhysicsEngine.calculateInstant(
+    const state = runSolarSimulation(
       timeOfDay,
       batKwhRef.current,
       ev1SocRef.current,
@@ -2437,7 +2125,8 @@ export default function App() {
       cloudNoiseRef.current,
       batteryHealthRef.current,
       physicsTimeStep,
-      currentPriorityMode
+      currentPriorityMode,
+      KPLC_TARIFF.isPeakTime(Math.floor(timeOfDay))
     );
 
     // Keep refs in sync with the freshly-computed state.
