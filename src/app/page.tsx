@@ -26,6 +26,7 @@ import { AlertsList } from '@/components/dashboard/AlertsList';
 import { TimeRangeSwitcher } from '@/components/dashboard/TimeRangeSwitcher';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, TrendingUp, Leaf, Trees, Car as CarIcon } from 'lucide-react';
+import type { SystemConfig, DerivedSystemConfig, SimulationMinuteRecord } from '@/types/simulation-core';
 
 // --- CONFIGURATION - Kenya Power Commercial Tariff (E-Mobility) ---
 // Based on actual KPLC bill for ROAM ELECTRIC LIMITED - February 2026
@@ -86,22 +87,6 @@ const KPLC_TARIFF = {
     return this.getRateForTime(hour);
   }
 };
-
-type SystemConfig = {
-  mode: 'auto' | 'advanced';
-  panelCount: number;
-  panelWatt: number;
-  inverterKw: number;
-  batteryKwh: number;
-  maxChargeKw: number;
-  maxDischargeKw: number;
-  evChargerKw: number;
-  loadScale: number;
-  evCommuterScale: number;
-  evFleetScale: number;
-};
-
-type DerivedSystemConfig = SystemConfig & { pvCapacityKw: number };
 
 const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
   mode: 'auto',
@@ -2038,35 +2023,7 @@ export default function App() {
   );
   
   // Comprehensive data tracking for export - stores all minute-by-minute data
-  const minuteDataRef = useRef<Array<{
-    timestamp: string;
-    date: string;
-    year: number;
-    month: number;
-    week: number;
-    day: number;
-    hour: number;
-    minute: number;
-    solarKW: number;
-    homeLoadKW: number;
-    ev1LoadKW: number;
-    ev2LoadKW: number;
-    batteryPowerKW: number;
-    batteryLevelPct: number;
-    gridImportKW: number;
-    gridExportKW: number;
-    ev1SocPct: number;
-    ev2SocPct: number;
-    tariffRate: number;
-    isPeakTime: boolean;
-    savingsKES: number;
-    solarEnergyKWh: number;
-    homeLoadKWh: number;
-    ev1LoadKWh: number;
-    ev2LoadKWh: number;
-    gridImportKWh: number;
-    gridExportKWh: number;
-  }>>([]);
+  const minuteDataRef = useRef<SimulationMinuteRecord[]>([]);
   
   const systemStartDate = useRef('2026-01-01'); // System start date for tracking
   const lastProcessedTimeRef = useRef<number | null>(null);
