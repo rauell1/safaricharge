@@ -5,6 +5,7 @@ import { Sun, Home, Battery, UtilityPole, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNodeSelection } from '@/hooks/useEnergySystem';
 import type { NodeType } from '@/stores/energySystemStore';
+import { useRouter } from 'next/navigation';
 
 interface PowerFlowVisualizationProps {
   solarPower: number;
@@ -19,6 +20,7 @@ interface PowerFlowVisualizationProps {
     batteryToHome: boolean;
     gridToHome: boolean;
   };
+  detailBasePath?: string;
 }
 
 interface NodeProps {
@@ -141,14 +143,18 @@ export function PowerFlowVisualization({
   gridPower,
   homePower,
   batteryLevel,
-  flowDirection
+  flowDirection,
+  detailBasePath,
 }: PowerFlowVisualizationProps) {
   const { selectNode, isSelected } = useNodeSelection();
+  const router = useRouter();
 
   const handleNodeClick = (nodeType: NodeType) => {
     selectNode(nodeType);
-    // Optionally navigate to detail page in the future
-    // router.push(`/${nodeType}`);
+    if (detailBasePath) {
+      const pathNode = nodeType === 'ev1' || nodeType === 'ev2' ? 'ev' : nodeType;
+      router.push(`${detailBasePath}/${pathNode}`);
+    }
   };
 
   return (
