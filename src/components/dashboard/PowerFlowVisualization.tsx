@@ -62,8 +62,8 @@ interface FlowPathProps {
 
 function FlowPath({ active, vertical = false, colorClass, trackClass, reversed = false }: FlowPathProps) {
   const base = vertical
-    ? 'w-0.5 h-16 mx-auto'
-    : 'h-0.5 w-16 my-auto';
+    ? 'w-0.5 h-20 mx-auto'
+    : 'h-0.5 w-20 my-auto';
   if (!active) {
     return <div className={`${base} bg-dark-border rounded-full`} />;
   }
@@ -96,16 +96,16 @@ export function PowerFlowVisualization({
   flowDirection
 }: PowerFlowVisualizationProps) {
   return (
-    <Card className="border-dark-border bg-secondary-900">
+    <Card className="border-dark-border bg-secondary-900 rounded-2xl card-hover shadow-glow-solar/40">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-dark-text-primary">
           <Zap className="h-5 w-5 text-accent-energy" />
           Energy Flow
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0">
         {/* Layout: Solar (top center), Battery (bottom-left), Home (bottom-center), Grid (bottom-right) */}
-        <div className="flex flex-col items-center gap-0 py-4 select-none">
+        <div className="flex flex-col items-center gap-6 py-5 select-none">
 
           {/* TOP: Solar */}
           <EnergyNode
@@ -120,12 +120,12 @@ export function PowerFlowVisualization({
           />
 
           {/* Vertical line from Solar down */}
-          <div className="flex justify-center py-1">
+          <div className="flex justify-center py-2">
             <FlowPath active={flowDirection.solarToHome || flowDirection.solarToBattery || flowDirection.solarToGrid} vertical colorClass="bg-accent-solar" trackClass="bg-accent-solar-transparent" />
           </div>
 
           {/* Middle horizontal connector row */}
-          <div className="flex items-center justify-center w-full max-w-xs gap-0">
+          <div className="flex items-center justify-center w-full max-w-xl gap-6">
             {/* Battery side */}
             <div className="flex-1 flex justify-end">
               <FlowPath active={flowDirection.solarToBattery} colorClass="bg-accent-energy" trackClass="bg-accent-energy-transparent" />
@@ -139,7 +139,7 @@ export function PowerFlowVisualization({
           </div>
 
           {/* BOTTOM ROW: Battery | Home | Grid */}
-          <div className="flex items-start justify-center w-full max-w-xs gap-2 mt-1">
+          <div className="flex items-start justify-center w-full max-w-xl gap-6 mt-1">
             {/* Battery */}
             <div className="flex-1 flex flex-col items-center gap-1">
               <FlowPath active={flowDirection.solarToBattery || flowDirection.batteryToHome} vertical colorClass="bg-accent-energy" trackClass="bg-accent-energy-transparent" />

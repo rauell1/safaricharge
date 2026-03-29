@@ -31,7 +31,7 @@ export function BatteryStatusCard({
   const storedKwh = ((batteryLevel / 100) * capacity).toFixed(1);
 
   return (
-    <Card className="border-dark-border bg-secondary-900">
+    <Card className="border-dark-border bg-secondary-900 rounded-2xl card-hover">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-dark-text-primary text-sm">
           {isCharging ? (

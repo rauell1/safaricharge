@@ -171,16 +171,16 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
   const last = data[data.length - 1];
 
   return (
-    <div className="w-full bg-white p-4 rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
-      <div className="flex items-center justify-between mb-2 px-2">
-        <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+    <div className="w-full rounded-2xl border border-dark-border bg-secondary-900 card-hover overflow-x-auto p-4 sm:p-6">
+      <div className="flex items-center justify-between mb-3 px-1 sm:px-2">
+        <h3 className="text-xs font-bold text-dark-text-secondary uppercase tracking-wider">
           Today&apos;s Energy Profile{dateLabel ? ` (${dateLabel})` : ''}
         </h3>
         <div className="flex items-center gap-3">
-          <span className="text-[9px] text-slate-400 font-mono">{data.length} data points</span>
+          <span className="text-[10px] text-dark-text-tertiary font-mono">{data.length} pts</span>
           <button
             onClick={handleDownloadJPG}
-            className="flex items-center gap-1 text-[10px] font-bold text-sky-600 hover:text-sky-800 bg-sky-50 hover:bg-sky-100 border border-sky-200 px-2 py-1 rounded transition-colors"
+            className="flex items-center gap-1 text-[10px] font-bold text-accent-info hover:text-white bg-secondary-800 hover:bg-accent-info/20 border border-dark-border px-2 py-1 rounded transition-colors"
             title="Download chart as JPG"
           >
             <Download size={11} /> JPG
@@ -199,12 +199,12 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
                 <line
                   x1={padding.left} y1={y}
                   x2={width - padding.right} y2={y}
-                  stroke="#f1f5f9" strokeDasharray="4 4"
+                  stroke="#1f2937" strokeDasharray="4 4"
                 />
-                <text x={padding.left - 6} y={y + 3} textAnchor="end" fill="#64748b" fontSize="9" fontWeight="bold">
+                <text x={padding.left - 6} y={y + 3} textAnchor="end" fill="#94a3b8" fontSize="9" fontWeight="bold">
                   {kwVal} kW
                 </text>
-                <text x={width - padding.right + 6} y={y + 3} textAnchor="start" fill="#8b5cf6" fontSize="9" fontWeight="bold">
+                <text x={width - padding.right + 6} y={y + 3} textAnchor="start" fill="#c4b5fd" fontSize="9" fontWeight="bold">
                   {socVal}%
                 </text>
               </g>
@@ -216,8 +216,8 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
             const x = padding.left + (hr / 24) * innerWidth;
             return (
               <g key={hr}>
-                <line x1={x} y1={padding.top} x2={x} y2={padding.top + innerHeight + 5} stroke="#f1f5f9" />
-                <text x={x} y={padding.top + innerHeight + 18} textAnchor="middle" fill="#64748b" fontSize="9" fontWeight="bold">
+                <line x1={x} y1={padding.top} x2={x} y2={padding.top + innerHeight + 5} stroke="#1f2937" />
+                <text x={x} y={padding.top + innerHeight + 18} textAnchor="middle" fill="#94a3b8" fontSize="9" fontWeight="bold">
                   {hr.toString().padStart(2, '0')}:00
                 </text>
               </g>
@@ -225,13 +225,13 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
           })}
 
           {/* Solar area fill */}
-          <path d={solarArea} fill="rgba(34,197,94,0.12)" />
+          <path d={solarArea} fill="rgba(16,185,129,0.18)" />
           {/* Solar line */}
-          <path d={`M ${solarPoints}`} fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinejoin="round" />
+          <path d={`M ${solarPoints}`} fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
           {/* Load line */}
-          <path d={`M ${loadPoints}`} fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinejoin="round" />
+          <path d={`M ${loadPoints}`} fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
           {/* Battery SOC dashed line */}
-          <path d={`M ${socPoints}`} fill="none" stroke="#8b5cf6" strokeWidth="2" strokeDasharray="6 4" strokeLinejoin="round" />
+          <path d={`M ${socPoints}`} fill="none" stroke="#8b5cf6" strokeWidth="2" strokeDasharray="6 4" strokeLinejoin="round" strokeLinecap="round" />
 
           {/* Live cursor dot at latest solar data point */}
           {data.length > 1 && (
@@ -247,18 +247,18 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
         </svg>
 
         {/* Legend */}
-        <div className="flex justify-center gap-8 mt-3 text-xs font-bold bg-slate-50 p-2 rounded-lg mx-12">
+        <div className="flex justify-center gap-6 mt-4 text-[11px] font-semibold text-dark-text-secondary bg-secondary-800/60 border border-dark-border rounded-lg p-3 mx-6">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-green-500 rounded-sm opacity-80" />
-            <span className="text-green-700">Solar Gen (kW)</span>
+            <span className="text-accent-energy">Solar Gen (kW)</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-5 h-1 bg-red-500 rounded-full" />
-            <span className="text-red-700">Total Load (kW)</span>
+            <span className="text-accent-alert">Total Load (kW)</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-5 border-t-2 border-dashed border-purple-500" />
-            <span className="text-purple-700">Battery SOC (%)</span>
+            <div className="w-5 border-t-2 border-dashed border-purple-400" />
+            <span className="text-accent-grid">Battery SOC (%)</span>
           </div>
         </div>
       </div>
