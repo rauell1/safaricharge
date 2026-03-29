@@ -24,28 +24,40 @@ interface NodeProps {
   label: string;
   valueLine: string;
   subLabel: string;
-  colorClass: string;
-  bgClass: string;
-  borderClass: string;
-  glowClass: string;
+  accent: string;
+  tint: string;
   badgeContent?: React.ReactNode;
 }
 
-function EnergyNode({ icon: Icon, label, valueLine, subLabel, colorClass, bgClass, borderClass, glowClass, badgeContent }: NodeProps) {
+function EnergyNode({ icon: Icon, label, valueLine, subLabel, accent, tint, badgeContent }: NodeProps) {
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className={`relative flex h-20 w-20 items-center justify-center rounded-full ${bgClass} border-2 ${borderClass} transition-all duration-300 hover:scale-105 ${glowClass}`}>
-        <Icon className={`h-9 w-9 ${colorClass}`} />
-        {badgeContent && (
-          <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-secondary-900 border border-dark-border text-[10px] font-bold text-accent-energy">
-            {badgeContent}
-          </div>
-        )}
+    <div className="flex flex-col items-center gap-3">
+      <div className="relative flex items-center justify-center">
+        <div
+          className="absolute inset-[-10px] rounded-full border border-dashed opacity-60 animate-[spin_12s_linear_infinite]"
+          style={{ borderColor: accent }}
+        />
+        <div
+          className="absolute inset-[-4px] rounded-full blur-xl opacity-30"
+          style={{ background: accent }}
+        />
+        <div
+          className="relative flex h-20 w-20 items-center justify-center rounded-full border-2 transition-all duration-300 hover:scale-105"
+          style={{ backgroundColor: tint, borderColor: accent, boxShadow: '0 10px 30px rgba(0, 0, 0, 0.28)' }}
+        >
+          <Icon className="h-9 w-9" style={{ color: accent }} />
+          {badgeContent && (
+            <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border text-[10px] font-bold"
+              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--battery)' }}>
+              {badgeContent}
+            </div>
+          )}
+        </div>
       </div>
-      <div className="text-center">
-        <p className="text-xs font-semibold text-dark-text-primary">{label}</p>
-        <p className={`text-sm font-bold ${colorClass}`}>{valueLine}</p>
-        <p className="text-[10px] text-dark-text-tertiary">{subLabel}</p>
+      <div className="text-center space-y-0.5">
+        <p className="text-xs font-semibold text-[var(--text-primary)]">{label}</p>
+        <p className="text-sm font-bold" style={{ color: accent }}>{valueLine}</p>
+        <p className="text-[10px] text-[var(--text-tertiary)]">{subLabel}</p>
       </div>
     </div>
   );
@@ -54,17 +66,17 @@ function EnergyNode({ icon: Icon, label, valueLine, subLabel, colorClass, bgClas
 interface FlowPathProps {
   active: boolean;
   vertical?: boolean;
-  colorClass: string;
-  trackClass: string;
+  accent: string;
+  tint: string;
   reversed?: boolean;
 }
 
-function FlowPath({ active, vertical = false, colorClass, trackClass, reversed = false }: FlowPathProps) {
+function FlowPath({ active, vertical = false, accent, tint, reversed = false }: FlowPathProps) {
   const base = vertical
-    ? 'w-0.5 h-16 mx-auto'
-    : 'h-0.5 w-16 my-auto';
+    ? 'w-0.5 h-20 mx-auto'
+    : 'h-0.5 w-20 my-auto';
   if (!active) {
-    return <div className={`${base} bg-dark-border rounded-full`} />;
+    return <div className={`${base} rounded-full`} style={{ backgroundColor: 'var(--border)' }} />;
   }
 
   const particleAnimation = vertical
@@ -72,10 +84,13 @@ function FlowPath({ active, vertical = false, colorClass, trackClass, reversed =
     : (reversed ? 'flow-right-to-left' : 'flow-left-to-right');
 
   return (
-    <div className={`${base} relative overflow-hidden rounded-full ${trackClass}`}>
+    <div className={`${base} relative overflow-hidden rounded-full`} style={{ backgroundColor: tint }}>
       <div
-        className={`absolute rounded-full ${colorClass}`}
+        className="absolute rounded-full"
         style={{
+          background: vertical
+            ? `linear-gradient(${reversed ? '0deg' : '180deg'}, transparent, ${accent})`
+            : `linear-gradient(${reversed ? '270deg' : '90deg'}, transparent, ${accent})`,
           ...(vertical
             ? { width: '100%', height: '40%', animation: `${particleAnimation} 1.2s linear infinite` }
             : { height: '100%', width: '40%', animation: `${particleAnimation} 1.2s linear infinite` }
@@ -95,111 +110,123 @@ export function PowerFlowVisualization({
   flowDirection
 }: PowerFlowVisualizationProps) {
   return (
-    <Card className="border-dark-border bg-secondary-900">
+    <Card className="dashboard-card">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-dark-text-primary">
-          <Zap className="h-5 w-5 text-accent-energy" />
+        <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+          <Zap className="h-5 w-5 text-[var(--battery)]" />
           Energy Flow
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {/* Layout: Solar (top center), Battery (bottom-left), Home (bottom-center), Grid (bottom-right) */}
-        <div className="flex flex-col items-center gap-0 py-4 select-none">
-
-          {/* TOP: Solar */}
+        <div className="flex flex-col items-center gap-4 py-4 select-none">
           <EnergyNode
             icon={Sun}
             label="Solar"
             valueLine={`${solarPower.toFixed(2)} kW`}
             subLabel="Generation"
-            colorClass="text-accent-solar"
-            bgClass="bg-accent-solar-transparent"
-            borderClass="border-accent-solar/40"
-            glowClass="hover:shadow-glow-solar"
+            accent="var(--solar)"
+            tint="var(--solar-soft)"
           />
 
-          {/* Vertical line from Solar down */}
           <div className="flex justify-center py-1">
-            <FlowPath active={flowDirection.solarToHome || flowDirection.solarToBattery || flowDirection.solarToGrid} vertical colorClass="bg-accent-solar" trackClass="bg-accent-solar-transparent" />
+            <FlowPath
+              active={flowDirection.solarToHome || flowDirection.solarToBattery || flowDirection.solarToGrid}
+              vertical
+              accent="var(--solar)"
+              tint="var(--solar-soft)"
+            />
           </div>
 
-          {/* Middle horizontal connector row */}
-          <div className="flex items-center justify-center w-full max-w-xs gap-0">
-            {/* Battery side */}
+          <div className="flex items-center justify-center w-full max-w-xl gap-6">
             <div className="flex-1 flex justify-end">
-              <FlowPath active={flowDirection.solarToBattery} colorClass="bg-accent-energy" trackClass="bg-accent-energy-transparent" />
+              <FlowPath
+                active={flowDirection.solarToBattery}
+                accent="var(--battery)"
+                tint="var(--battery-soft)"
+              />
             </div>
-            {/* Center hub dot */}
-            <div className="h-3 w-3 rounded-full bg-accent-solar border-2 border-accent-solar/60 shadow-glow-solar flex-shrink-0" />
-            {/* Grid side */}
+            <div className="h-4 w-4 rounded-full border-2 shadow-[0_0_0_6px_rgba(245,158,11,0.1)]"
+              style={{ backgroundColor: 'var(--solar)', borderColor: 'var(--solar)' }} />
             <div className="flex-1 flex justify-start">
-              <FlowPath active={flowDirection.solarToGrid} colorClass="bg-accent-grid" trackClass="bg-accent-grid-transparent" reversed />
+              <FlowPath
+                active={flowDirection.solarToGrid}
+                accent="var(--grid)"
+                tint="var(--grid-soft)"
+                reversed
+              />
             </div>
           </div>
 
-          {/* BOTTOM ROW: Battery | Home | Grid */}
-          <div className="flex items-start justify-center w-full max-w-xs gap-2 mt-1">
-            {/* Battery */}
-            <div className="flex-1 flex flex-col items-center gap-1">
-              <FlowPath active={flowDirection.solarToBattery || flowDirection.batteryToHome} vertical colorClass="bg-accent-energy" trackClass="bg-accent-energy-transparent" />
+          <div className="flex items-start justify-center w-full max-w-3xl gap-6 mt-1">
+            <div className="flex-1 flex flex-col items-center gap-2">
+              <FlowPath
+                active={flowDirection.solarToBattery || flowDirection.batteryToHome}
+                vertical
+                accent="var(--battery)"
+                tint="var(--battery-soft)"
+              />
               <EnergyNode
                 icon={Battery}
                 label="Battery"
                 valueLine={`${Math.abs(batteryPower).toFixed(1)} kW`}
                 subLabel={batteryPower >= 0 ? 'Charging' : 'Discharging'}
-                colorClass="text-accent-energy"
-                bgClass="bg-accent-energy-transparent"
-                borderClass="border-accent-energy/40"
-                glowClass="hover:shadow-glow-energy"
+                accent="var(--battery)"
+                tint="var(--battery-soft)"
                 badgeContent={`${Math.round(batteryLevel)}%`}
               />
             </div>
 
-            {/* Home center */}
-            <div className="flex-1 flex flex-col items-center gap-1">
-              <FlowPath active={flowDirection.solarToHome} vertical colorClass="bg-accent-solar" trackClass="bg-accent-solar-transparent" />
+            <div className="flex-1 flex flex-col items-center gap-2">
+              <FlowPath
+                active={flowDirection.solarToHome}
+                vertical
+                accent="var(--solar)"
+                tint="var(--solar-soft)"
+              />
               <EnergyNode
                 icon={Home}
                 label="Home"
                 valueLine={`${homePower.toFixed(2)} kW`}
                 subLabel="Consumption"
-                colorClass="text-accent-info"
-                bgClass="bg-accent-info-transparent"
-                borderClass="border-accent-info/40"
-                glowClass="hover:shadow-glow-md"
+                accent="var(--consumption)"
+                tint="var(--consumption-soft)"
               />
             </div>
 
-            {/* Grid */}
-            <div className="flex-1 flex flex-col items-center gap-1">
-              <FlowPath active={flowDirection.solarToGrid || flowDirection.gridToHome} vertical colorClass="bg-accent-grid" trackClass="bg-accent-grid-transparent" />
+            <div className="flex-1 flex flex-col items-center gap-2">
+              <FlowPath
+                active={flowDirection.solarToGrid || flowDirection.gridToHome}
+                vertical
+                accent="var(--grid)"
+                tint="var(--grid-soft)"
+              />
               <EnergyNode
                 icon={UtilityPole}
                 label="Grid"
                 valueLine={`${Math.abs(gridPower).toFixed(2)} kW`}
                 subLabel={gridPower > 0 ? 'Importing' : gridPower < 0 ? 'Exporting' : 'Standby'}
-                colorClass="text-accent-grid"
-                bgClass="bg-accent-grid-transparent"
-                borderClass="border-accent-grid/40"
-                glowClass="hover:shadow-glow-md"
+                accent="var(--grid)"
+                tint="var(--grid-soft)"
               />
             </div>
           </div>
         </div>
 
-        {/* Real-time Values Summary */}
-        <div className="mt-6 grid grid-cols-3 gap-4 rounded-xl bg-primary border border-dark-border p-4">
+        <div className="mt-6 grid grid-cols-3 gap-4 rounded-xl border p-4 bg-[var(--bg-secondary)] border-[var(--border)]">
           <div className="text-center">
-            <div className="text-[10px] text-dark-text-tertiary uppercase tracking-wide mb-1">Solar</div>
-            <div className="text-base font-bold text-accent-solar">{solarPower.toFixed(2)} kW</div>
+            <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Solar</div>
+            <div className="text-base font-bold" style={{ color: 'var(--solar)' }}>{solarPower.toFixed(2)} kW</div>
           </div>
-          <div className="text-center border-l border-r border-dark-border">
-            <div className="text-[10px] text-dark-text-tertiary uppercase tracking-wide mb-1">Home Load</div>
-            <div className="text-base font-bold text-accent-info">{homePower.toFixed(2)} kW</div>
+          <div className="text-center border-l border-r" style={{ borderColor: 'var(--border)' }}>
+            <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Home Load</div>
+            <div className="text-base font-bold" style={{ color: 'var(--consumption)' }}>{homePower.toFixed(2)} kW</div>
           </div>
           <div className="text-center">
-            <div className="text-[10px] text-dark-text-tertiary uppercase tracking-wide mb-1">Net Grid</div>
-            <div className={`text-base font-bold ${gridPower > 0 ? 'text-accent-alert' : 'text-accent-energy'}`}>
+            <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Net Grid</div>
+            <div
+              className="text-base font-bold"
+              style={{ color: gridPower > 0 ? 'var(--alert)' : 'var(--battery)' }}
+            >
               {gridPower > 0 ? '+' : ''}{gridPower.toFixed(2)} kW
             </div>
           </div>

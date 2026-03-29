@@ -50,26 +50,32 @@ const defaultAlerts: Alert[] = [
 
 function AlertIcon({ type }: { type: Alert['type'] }) {
   const config = {
-    error: { icon: AlertCircle, className: 'text-accent-alert' },
-    warning: { icon: AlertTriangle, className: 'text-accent-solar' },
-    info: { icon: Info, className: 'text-accent-info' },
-    success: { icon: CheckCircle, className: 'text-accent-energy' }
+    error: { icon: AlertCircle, color: 'var(--alert)' },
+    warning: { icon: AlertTriangle, color: 'var(--solar)' },
+    info: { icon: Info, color: 'var(--consumption)' },
+    success: { icon: CheckCircle, color: 'var(--battery)' }
   };
 
-  const { icon: Icon, className } = config[type];
-  return <Icon className={`h-5 w-5 ${className}`} />;
+  const { icon: Icon, color } = config[type];
+  return <Icon className="h-5 w-5" style={{ color }} />;
 }
 
 function AlertTypeBadge({ type }: { type: Alert['type'] }) {
   const config = {
-    error: 'bg-accent-alert-transparent text-accent-alert border-accent-alert/30',
-    warning: 'bg-accent-solar-transparent text-accent-solar border-accent-solar/30',
-    info: 'bg-accent-info-transparent text-accent-info border-accent-info/30',
-    success: 'bg-accent-energy-transparent text-accent-energy border-accent-energy/30'
+    error: { bg: 'var(--alert-soft)', color: 'var(--alert)' },
+    warning: { bg: 'var(--solar-soft)', color: 'var(--solar)' },
+    info: { bg: 'var(--consumption-soft)', color: 'var(--consumption)' },
+    success: { bg: 'var(--battery-soft)', color: 'var(--battery)' }
   };
 
+  const styles = config[type];
+
   return (
-    <Badge variant="outline" className={`text-xs ${config[type]}`}>
+    <Badge
+      variant="outline"
+      className="text-xs border"
+      style={{ backgroundColor: styles.bg, color: styles.color, borderColor: 'var(--border)' }}
+    >
       {type.charAt(0).toUpperCase() + type.slice(1)}
     </Badge>
   );
@@ -92,21 +98,21 @@ export function AlertsList({ alerts = defaultAlerts }: AlertsListProps) {
   const warningCount = alerts.filter(a => a.type === 'warning').length;
 
   return (
-    <Card className="border-dark-border bg-secondary-900">
+    <Card className="dashboard-card">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-dark-text-primary">
-            <AlertTriangle className="h-5 w-5 text-accent-alert" />
+          <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+            <AlertTriangle className="h-5 w-5 text-[var(--alert)]" />
             System Alerts
           </CardTitle>
           <div className="flex items-center gap-2">
             {errorCount > 0 && (
-              <Badge className="bg-accent-alert text-white">
+              <Badge className="text-white border" style={{ backgroundColor: 'var(--alert)', borderColor: 'var(--border)' }}>
                 {errorCount} Error{errorCount !== 1 ? 's' : ''}
               </Badge>
             )}
             {warningCount > 0 && (
-              <Badge className="bg-accent-solar text-primary">
+              <Badge className="text-primary border" style={{ backgroundColor: 'var(--solar)', borderColor: 'var(--border)' }}>
                 {warningCount} Warning{warningCount !== 1 ? 's' : ''}
               </Badge>
             )}
@@ -117,8 +123,8 @@ export function AlertsList({ alerts = defaultAlerts }: AlertsListProps) {
         <div className="space-y-3">
           {alerts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <CheckCircle className="h-12 w-12 text-accent-energy mb-3" />
-              <p className="text-sm text-dark-text-secondary">
+              <CheckCircle className="h-12 w-12 text-[var(--battery)] mb-3" />
+              <p className="text-sm text-[var(--text-secondary)]">
                 No active alerts. All systems operating normally.
               </p>
             </div>
@@ -126,23 +132,36 @@ export function AlertsList({ alerts = defaultAlerts }: AlertsListProps) {
             alerts.map((alert) => (
               <div
                 key={alert.id}
-                className="flex items-start gap-3 rounded-xl border border-dark-border bg-primary p-4 transition-all duration-200 hover:scale-[1.02] hover:border-dark-border/60 hover:bg-secondary-900 cursor-default group"
+                className="flex items-start gap-3 rounded-xl border p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-glow-md cursor-default group"
+                style={{ backgroundColor: 'var(--bg-card-muted)', borderColor: 'var(--border)' }}
               >
                 <div className="mt-0.5 flex-shrink-0">
-                  <AlertIcon type={alert.type} />
+                  <div
+                    className="flex h-10 w-10 items-center justify-center rounded-full border"
+                    style={{
+                      backgroundColor:
+                        alert.type === 'error' ? 'var(--alert-soft)' :
+                        alert.type === 'warning' ? 'var(--solar-soft)' :
+                        alert.type === 'info' ? 'var(--consumption-soft)' :
+                        'var(--battery-soft)',
+                      borderColor: 'var(--border)'
+                    }}
+                  >
+                    <AlertIcon type={alert.type} />
+                  </div>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-1">
-                    <h4 className="text-sm font-semibold text-dark-text-primary">
+                    <h4 className="text-sm font-semibold text-[var(--text-primary)]">
                       {alert.title}
                     </h4>
                     <AlertTypeBadge type={alert.type} />
                   </div>
-                  <p className="text-xs text-dark-text-secondary mb-2">
+                  <p className="text-xs text-[var(--text-secondary)] mb-2 leading-relaxed">
                     {alert.message}
                   </p>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-dark-text-tertiary">
+                    <span className="text-[10px] text-[var(--text-tertiary)]">
                       {formatTimestamp(alert.timestamp)}
                     </span>
                   </div>

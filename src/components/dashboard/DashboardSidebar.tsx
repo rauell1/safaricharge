@@ -52,22 +52,22 @@ export function DashboardSidebar({
   ];
 
   return (
-    <Sidebar className="border-r border-dark-border">
-      <SidebarHeader className="border-b border-dark-border p-6">
+    <Sidebar className="border-r border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-primary)] shadow-[10px_0_40px_rgba(0,0,0,0.22)]">
+      <SidebarHeader className="border-b border-[var(--border)] p-6">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-accent-solar to-accent-energy shadow-glow-solar">
             <Zap className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-dark-text-primary">SafariCharge</h1>
-            <p className="text-xs text-dark-text-secondary">Energy Management</p>
+            <h1 className="text-lg font-bold text-[var(--text-primary)]">SafariCharge</h1>
+            <p className="text-xs text-[var(--text-tertiary)]">Energy Management</p>
           </div>
         </div>
       </SidebarHeader>
 
       <SidebarContent className="px-3 py-4">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-dark-text-tertiary uppercase tracking-wider text-xs mb-2">
+          <SidebarGroupLabel className="text-[var(--text-tertiary)] uppercase tracking-wider text-xs mb-2">
             Main
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -77,12 +77,12 @@ export function DashboardSidebar({
                   <SidebarMenuButton
                     isActive={activeSection === item.id}
                     onClick={() => onSectionChange?.(item.id)}
-                    className="group relative"
+                    className="group relative rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] data-[active=true]:bg-[var(--bg-card)] data-[active=true]:shadow-[0_10px_30px_rgba(0,0,0,0.25)] data-[active=true]:text-[var(--text-primary)]"
                   >
                     <item.icon className="h-4 w-4" />
-                    <span>{item.label}</span>
+                    <span className="font-medium">{item.label}</span>
                     {activeSection === item.id && (
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-accent-energy rounded-r" />
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--battery)] rounded-r" />
                     )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -92,7 +92,7 @@ export function DashboardSidebar({
         </SidebarGroup>
 
         <SidebarGroup className="mt-6">
-          <SidebarGroupLabel className="text-dark-text-tertiary uppercase tracking-wider text-xs mb-2">
+          <SidebarGroupLabel className="text-[var(--text-tertiary)] uppercase tracking-wider text-xs mb-2">
             System
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -102,17 +102,17 @@ export function DashboardSidebar({
                   <SidebarMenuButton
                     isActive={activeSection === item.id}
                     onClick={() => onSectionChange?.(item.id)}
-                    className="group relative"
+                    className="group relative rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] data-[active=true]:bg-[var(--bg-card)] data-[active=true]:shadow-[0_10px_30px_rgba(0,0,0,0.25)] data-[active=true]:text-[var(--text-primary)]"
                   >
                     <item.icon className="h-4 w-4" />
                     <span>{item.label}</span>
                     {item.badge !== undefined && item.badge > 0 && (
-                      <SidebarMenuBadge className="bg-accent-alert text-white">
+                      <SidebarMenuBadge className="bg-[var(--alert)] text-white">
                         {item.badge}
                       </SidebarMenuBadge>
                     )}
                     {activeSection === item.id && (
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-accent-energy rounded-r" />
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--battery)] rounded-r" />
                     )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -122,13 +122,13 @@ export function DashboardSidebar({
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-dark-border p-4">
-        <div className="text-xs text-dark-text-tertiary">
+      <SidebarFooter className="border-t border-[var(--border)] p-4">
+        <div className="text-xs text-[var(--text-tertiary)]">
           <div className="flex items-center gap-2 mb-1">
-            <div className="h-2 w-2 rounded-full bg-accent-energy status-online" />
+            <div className="h-2 w-2 rounded-full bg-[var(--battery)] status-online" />
             <span>System Online</span>
           </div>
-          <div className="text-[10px] text-dark-text-tertiary/60">
+          <div className="text-[10px] text-[var(--text-tertiary)] opacity-70">
             SafariCharge © 2026
           </div>
         </div>
