@@ -22,11 +22,13 @@ import { PowerFlowVisualization } from '@/components/dashboard/PowerFlowVisualiz
 import { WeatherCard } from '@/components/dashboard/WeatherCard';
 import { BatteryStatusCard } from '@/components/dashboard/BatteryStatusCard';
 import { PanelStatusTable } from '@/components/dashboard/PanelStatusTable';
+import { EnergyReportModal } from '@/components/EnergyReportModal';
 import { AlertsList } from '@/components/dashboard/AlertsList';
 import { TimeRangeSwitcher } from '@/components/dashboard/TimeRangeSwitcher';
 import { generateDayScenario, nextWeatherMarkov } from '@/simulation/timeEngine';
 import { runSolarSimulation } from '@/simulation/runSimulation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { TREE_CO2_KG_PER_YEAR, AVG_CAR_EMISSION_KG_PER_KM, GRID_EMISSION_FACTOR } from '@/lib/tariff';
 
 // --- CONFIGURATION - Kenya Power Commercial Tariff (E-Mobility) ---
 // Based on actual KPLC bill for ROAM ELECTRIC LIMITED - February 2026
