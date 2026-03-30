@@ -202,7 +202,7 @@ const RigidCable = React.memo(({ height = 40, width = 2, active = false, color =
          className={`absolute left-1/2 -translate-x-1/2 z-10 ${flowDirection === 'down' ? 'animate-flow-down' : 'animate-flow-up'}`}
          style={{ animationDuration: `${Math.max(0.1, 0.8 / Math.max(0.2, Math.min(speed, 10)))}s` }}
        >
-         <div className={`bg-white rounded-full p-0.5 shadow-sm ${flowDirection === 'down' ? '' : 'rotate-180'}`}>
+         <div className={`bg-[var(--bg-card-muted)] rounded-full p-0.5 shadow-sm ${flowDirection === 'down' ? '' : 'rotate-180'}`}>
             <ChevronDown size={8} className={arrowColor} strokeWidth={4} />
          </div>
        </div>
@@ -235,9 +235,9 @@ const SolarPanelProduct = React.memo(({ power, capacity, weather, isNight }: {
       )}
       {isNight && <div className="absolute top-2 right-4 w-1 h-1 bg-white rounded-full shadow-[0_0_4px_white] animate-pulse"></div>}
     </div>
-    <div className="text-center mt-2 bg-white/80 px-3 py-1 rounded-full shadow-sm border border-slate-200 backdrop-blur-sm">
-      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">PV Array ({capacity}kW)</div>
-      <div className="text-lg font-black text-slate-800 leading-none">{power.toFixed(1)} <span className="text-xs font-normal">kW</span></div>
+    <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-3 py-1 rounded-full border border-[var(--border)] backdrop-blur-sm">
+      <div className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">PV Array ({capacity}kW)</div>
+      <div className="text-lg font-black text-[var(--text-primary)] leading-none">{power.toFixed(1)} <span className="text-xs font-normal">kW</span></div>
     </div>
   </div>
 ));
@@ -246,9 +246,9 @@ const BatteryProduct = React.memo(({ level, status, power, health = 1.0, cycles 
   level: number; status: string; power: number; health?: number; cycles?: number;
 }) => (
   <div className="flex flex-col items-center z-20">
-    <div className="relative w-28 h-40 bg-slate-100 rounded-xl border border-slate-300 shadow-lg flex flex-col items-center justify-center overflow-hidden group transition-all duration-500 hover:-translate-y-1">
-      <div className="absolute top-3 text-[7px] font-black text-slate-300 tracking-widest">SAFARICHARGE</div>
-      <div className="w-3 h-24 bg-slate-200 rounded-full overflow-hidden relative border border-slate-300 shadow-inner">
+    <div className="relative w-28 h-40 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] shadow-lg flex flex-col items-center justify-center overflow-hidden group transition-all duration-500 hover:-translate-y-1">
+      <div className="absolute top-3 text-[7px] font-black text-[var(--border)] tracking-widest">SAFARICHARGE</div>
+      <div className="w-3 h-24 bg-[var(--bg-card-muted)] rounded-full overflow-hidden relative border border-[var(--border)] shadow-inner">
          <div 
            className={`absolute bottom-0 left-0 w-full transition-all duration-500 
              ${status === 'Charging' ? 'bg-green-500 animate-pulse' : status === 'Discharging' ? 'bg-orange-500' : 'bg-green-600'}
@@ -259,10 +259,10 @@ const BatteryProduct = React.memo(({ level, status, power, health = 1.0, cycles 
       </div>
       <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none"></div>
     </div>
-    <div className="text-center mt-2 bg-white/80 px-2 py-1 rounded border border-slate-200 min-w-[90px] backdrop-blur-sm">
-      <div className="text-[9px] font-bold text-slate-500 uppercase">Storage ({(60 * health).toFixed(0)}kWh)</div>
-      <div className="text-sm font-black text-slate-800">{level.toFixed(1)}%</div>
-      <div className={`text-[9px] font-bold ${health < 0.85 ? 'text-orange-500' : 'text-slate-400'}`}>
+    <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] min-w-[90px] backdrop-blur-sm">
+      <div className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase">Storage ({(60 * health).toFixed(0)}kWh)</div>
+      <div className="text-sm font-black text-[var(--text-primary)]">{level.toFixed(1)}%</div>
+      <div className={`text-[9px] font-bold ${health < 0.85 ? 'text-orange-500' : 'text-[var(--text-tertiary)]'}`}>
         Health: {(health * 100).toFixed(1)}% · {cycles.toFixed(1)} cyc
       </div>
     </div>
@@ -283,28 +283,28 @@ const EVChargerProduct = React.memo(({ id, status, power, soc, carName, capacity
          ) : status === 'Away' ? (
            <span className="text-red-500 text-[8px] z-20">AWAY</span>
          ) : (
-           <span className="text-slate-500 text-[8px] z-20">IDLE</span>
+           <span className="text-[var(--text-tertiary)] text-[8px] z-20">IDLE</span>
          )}
       </div>
       <div className="w-12 h-8 border-4 border-slate-700 rounded-b-full border-t-0"></div>
       <div className={`absolute top-2 right-2 w-1.5 h-1.5 rounded-full ${status === 'Charging' ? 'bg-sky-500 shadow-[0_0_8px_#0ea5e9]' : status === 'Away' ? 'bg-red-500' : 'bg-slate-600'}`}></div>
     </div>
-    <div className="text-center mt-2 bg-white/80 px-2 py-1 rounded border border-slate-200 backdrop-blur-sm min-w-[90px]">
-      <div className="text-[8px] font-bold text-slate-500 uppercase">{carName}</div>
-      <div className="text-[7px] text-slate-400">{capacity}kWh • {maxRate}kW</div>
-      <div className="flex justify-between items-end px-1 mt-1 border-t border-slate-100 pt-0.5">
-         <span className="text-[8px] text-slate-400">SoC</span>
-         <span className={`text-[10px] font-bold ${soc < 20 ? 'text-red-500' : 'text-sky-600'}`}>{(soc || 0).toFixed(0)}%</span>
+    <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] backdrop-blur-sm min-w-[90px]">
+      <div className="text-[8px] font-bold text-[var(--text-tertiary)] uppercase">{carName}</div>
+      <div className="text-[7px] text-[var(--text-tertiary)]">{capacity}kWh • {maxRate}kW</div>
+      <div className="flex justify-between items-end px-1 mt-1 border-t border-[var(--border)] pt-0.5">
+         <span className="text-[8px] text-[var(--text-tertiary)]">SoC</span>
+         <span className={`text-[10px] font-bold ${soc < 20 ? 'text-[var(--alert)]' : 'text-[var(--battery)]'}`}>{(soc || 0).toFixed(0)}%</span>
       </div>
     </div>
   </div>
 ));
 
 const InverterProduct = React.memo(({ id, power }: { id: number; power: number }) => (
-  <div className="flex flex-col items-center bg-white rounded-lg shadow-md border border-slate-200 w-24 p-2 z-20 transition-transform hover:scale-105">
-    <div className="w-full flex justify-between items-center mb-1 border-b border-slate-100 pb-1">
-       <span className="text-[8px] font-bold text-slate-400">16kW Unit #{id}</span>
-       <div className={`w-1.5 h-1.5 rounded-full ${power > 0 ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`}></div>
+  <div className="flex flex-col items-center bg-[var(--bg-card)] rounded-lg border border-[var(--border)] w-24 p-2 z-20 transition-transform hover:scale-105">
+    <div className="w-full flex justify-between items-center mb-1 border-b border-[var(--border)] pb-1">
+       <span className="text-[8px] font-bold text-[var(--text-tertiary)]">16kW Unit #{id}</span>
+       <div className={`w-1.5 h-1.5 rounded-full ${power > 0 ? 'bg-green-500 animate-pulse' : 'bg-[var(--border)]'}`}></div>
     </div>
     <div className="bg-slate-800 rounded w-full h-8 flex items-center justify-center font-mono text-orange-400 text-[10px] shadow-inner">
       {power.toFixed(1)} kW
@@ -317,22 +317,22 @@ const GridProduct = React.memo(({ power, isImporting, isExporting, gridStatus }:
 }) => (
   <div className="flex flex-col items-center z-20">
      <div className="w-24 h-32 flex items-center justify-center relative">
-        <UtilityPole size={64} className={gridStatus === 'Online' ? "text-slate-700" : "text-red-300"} strokeWidth={1} />
+        <UtilityPole size={64} className={gridStatus === 'Online' ? "text-[var(--text-secondary)]" : "text-red-300"} strokeWidth={1} />
         {gridStatus === 'Offline' && (
            <div className="absolute inset-0 flex items-center justify-center">
               <div className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded animate-pulse">GRID DOWN</div>
            </div>
         )}
         {gridStatus === 'Online' && (isImporting || isExporting) && (
-           <div className={`absolute top-0 right-0 p-1 rounded bg-white border border-slate-200 shadow-sm flex items-center gap-1 ${isImporting ? 'text-sky-600' : 'text-green-500'}`}>
+           <div className={`absolute top-0 right-0 p-1 rounded bg-[var(--bg-card)] border border-[var(--border)] flex items-center gap-1 ${isImporting ? 'text-[var(--consumption)]' : 'text-[var(--battery)]'}`}>
               {isImporting ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
               <span className="text-[9px] font-bold">{Math.abs(power).toFixed(1)} kW</span>
            </div>
         )}
      </div>
-     <div className="text-center mt-2 bg-white/80 px-2 py-1 rounded border border-slate-200 backdrop-blur-sm">
-        <div className="text-[9px] font-bold text-slate-500 uppercase">Utility Grid</div>
-        <div className="text-[9px] font-bold text-slate-800">
+     <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] backdrop-blur-sm">
+        <div className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase">Utility Grid</div>
+        <div className="text-[9px] font-bold text-[var(--text-primary)]">
            {gridStatus === 'Offline' ? 'OFFLINE' : isImporting ? 'IMPORTING' : isExporting ? 'EXPORTING' : 'IDLE'}
         </div>
      </div>
@@ -341,12 +341,12 @@ const GridProduct = React.memo(({ power, isImporting, isExporting, gridStatus }:
 
 const HomeProduct = React.memo(({ power }: { power: number }) => (
   <div className="flex flex-col items-center z-20">
-    <div className="w-24 h-32 flex items-center justify-center bg-slate-100 rounded-2xl border border-slate-200 shadow-sm">
-       <Home size={40} className="text-slate-700" strokeWidth={1.5} />
+    <div className="w-24 h-32 flex items-center justify-center bg-[var(--bg-card-muted)] rounded-2xl border border-[var(--border)]">
+       <Home size={40} className="text-[var(--text-secondary)]" strokeWidth={1.5} />
     </div>
-    <div className="text-center mt-2 bg-white/80 px-2 py-1 rounded border border-slate-200 backdrop-blur-sm">
-      <div className="text-[9px] font-bold text-slate-500 uppercase">Home Load</div>
-      <div className="text-sm font-black text-slate-800">{power.toFixed(1)} kW</div>
+    <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] backdrop-blur-sm">
+      <div className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase">Home Load</div>
+      <div className="text-sm font-black text-[var(--text-primary)]">{power.toFixed(1)} kW</div>
     </div>
   </div>
 ));
@@ -464,7 +464,7 @@ const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, cu
   const showChips = messages.length <= 2;
 
   return (
-    <div className="fixed right-0 top-16 bottom-0 w-full md:w-96 bg-white shadow-2xl border-l border-slate-200 z-[200] flex flex-col">
+    <div className="fixed right-0 top-16 bottom-0 w-full md:w-96 bg-[var(--bg-secondary)] shadow-2xl border-l border-[var(--border)] z-[200] flex flex-col">
       {/* Header */}
       <div className="p-4 bg-slate-900 text-white flex justify-between items-center shadow-md flex-shrink-0">
         <div className="flex items-center gap-2">
@@ -494,7 +494,7 @@ const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, cu
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[var(--bg-primary)]">
         {messages.map((msg, idx) => (
           <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             {msg.role === 'assistant' && (
@@ -505,7 +505,7 @@ const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, cu
             <div className={`max-w-[85%] p-3 rounded-2xl text-sm shadow-sm ${
               msg.role === 'user'
                 ? 'bg-sky-500 text-white rounded-br-sm'
-                : 'bg-white border border-slate-200 text-slate-700 rounded-bl-sm'
+                : 'bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-bl-sm'
             }`}>
               {msg.role === 'assistant' ? <AIMessageText text={msg.text} /> : msg.text}
             </div>
@@ -518,10 +518,10 @@ const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, cu
             <div className="w-6 h-6 rounded-full bg-slate-900 flex items-center justify-center flex-shrink-0">
               <Sparkles size={12} className="text-green-400" />
             </div>
-            <div className="bg-white border border-slate-200 rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1">
-              <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1">
+              <span className="w-1.5 h-1.5 bg-[var(--text-tertiary)] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-1.5 h-1.5 bg-[var(--text-tertiary)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-1.5 h-1.5 bg-[var(--text-tertiary)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
           </div>
         )}
@@ -529,13 +529,13 @@ const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, cu
         {/* Suggestion chips: shown only at start */}
         {showChips && !isTyping && (
           <div className="pt-2">
-            <p className="text-[10px] text-slate-400 font-mono mb-2 ml-8">Suggested questions:</p>
+            <p className="text-[10px] text-[var(--text-tertiary)] font-mono mb-2 ml-8">Suggested questions:</p>
             <div className="flex flex-wrap gap-2 ml-8">
               {SUGGESTION_CHIPS.map(chip => (
                 <button
                   key={chip}
                   onClick={() => handleChip(chip)}
-                  className="text-[11px] bg-white border border-sky-200 text-sky-700 px-3 py-1.5 rounded-full hover:bg-sky-50 hover:border-sky-400 transition-colors shadow-sm font-medium"
+                  className="text-[11px] bg-[var(--bg-card)] border border-[var(--consumption)] text-[var(--consumption)] px-3 py-1.5 rounded-full hover:opacity-80 transition-colors font-medium"
                 >
                   {chip}
                 </button>
@@ -553,7 +553,7 @@ const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, cu
       </div>
 
       {/* Input */}
-      <div className="p-3 bg-white border-t border-slate-200 flex gap-2 flex-shrink-0">
+      <div className="p-3 bg-[var(--bg-secondary)] border-t border-[var(--border)] flex gap-2 flex-shrink-0">
         <input 
           type="text"
           value={inputText}
@@ -561,12 +561,12 @@ const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, cu
           onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
           placeholder="Ask about your solar system..."
           disabled={isTyping}
-          className="flex-1 bg-slate-100 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-500 disabled:opacity-60"
+          className="flex-1 bg-[var(--bg-card-muted)] text-[var(--text-primary)] rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-60 placeholder:text-[var(--text-tertiary)]"
         />
         <button
           onClick={handleSend}
           disabled={!inputText.trim() || isTyping}
-          className="p-2.5 bg-sky-500 text-white rounded-full disabled:opacity-50 hover:bg-sky-600 transition-colors"
+          className="p-2.5 bg-[var(--battery)] text-white rounded-full disabled:opacity-50 hover:opacity-90 transition-colors"
         >
           <Send size={16} />
         </button>
@@ -661,7 +661,7 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-slide-in-right">
+      <div className="bg-[var(--bg-secondary)] rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-slide-in-right border border-[var(--border)]">
         <div className="p-4 bg-slate-900 text-white flex justify-between items-center">
           <div className="flex items-center gap-2">
             <FileSpreadsheet size={20} className="text-sky-400" />
@@ -670,61 +670,61 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
           <button onClick={onClose} className="text-white hover:text-slate-300"><X size={20}/></button>
         </div>
         
-        <div className="flex bg-slate-100 p-1 border-b border-slate-200">
-          <button onClick={() => setActiveTab('daily')} className={`flex-1 py-2 text-xs font-bold uppercase ${activeTab === 'daily' ? 'bg-white shadow text-sky-600' : 'text-slate-500'}`}>Summary</button>
-          <button onClick={() => setActiveTab('tariff')} className={`flex-1 py-2 text-xs font-bold uppercase ${activeTab === 'tariff' ? 'bg-white shadow text-sky-600' : 'text-slate-500'}`}>Tariff Rates</button>
-          <button onClick={() => setActiveTab('sustainability')} className={`flex-1 py-2 text-xs font-bold uppercase ${activeTab === 'sustainability' ? 'bg-white shadow text-green-600' : 'text-slate-500'}`}>Sustainability</button>
-          <button onClick={() => setActiveTab('export')} className={`flex-1 py-2 text-xs font-bold uppercase ${activeTab === 'export' ? 'bg-white shadow text-sky-600' : 'text-slate-500'}`}>Export Data</button>
+        <div className="flex bg-[var(--bg-card-muted)] p-1 border-b border-[var(--border)]">
+          <button onClick={() => setActiveTab('daily')} className={`flex-1 py-2 text-xs font-bold uppercase ${activeTab === 'daily' ? 'bg-[var(--bg-card)] text-[var(--battery)] shadow' : 'text-[var(--text-tertiary)]'}`}>Summary</button>
+          <button onClick={() => setActiveTab('tariff')} className={`flex-1 py-2 text-xs font-bold uppercase ${activeTab === 'tariff' ? 'bg-[var(--bg-card)] text-[var(--battery)] shadow' : 'text-[var(--text-tertiary)]'}`}>Tariff Rates</button>
+          <button onClick={() => setActiveTab('sustainability')} className={`flex-1 py-2 text-xs font-bold uppercase ${activeTab === 'sustainability' ? 'bg-[var(--bg-card)] text-[var(--battery)] shadow' : 'text-[var(--text-tertiary)]'}`}>Sustainability</button>
+          <button onClick={() => setActiveTab('export')} className={`flex-1 py-2 text-xs font-bold uppercase ${activeTab === 'export' ? 'bg-[var(--bg-card)] text-[var(--battery)] shadow' : 'text-[var(--text-tertiary)]'}`}>Export Data</button>
         </div>
 
         <div className="flex-1 overflow-auto p-6">
           {activeTab === 'daily' && (
           <div className="space-y-4">
-            <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex items-center justify-between">
-              <div className="text-xs text-slate-500">
+            <div className="bg-[var(--bg-card-muted)] p-3 rounded-lg border border-[var(--border)] flex items-center justify-between">
+              <div className="text-xs text-[var(--text-secondary)]">
                 <span className="font-bold">System Start:</span> {systemStartDate} | 
                 <span className="font-bold ml-2">Date Range:</span> {dateRange}
               </div>
-              <div className="text-xs bg-sky-100 text-sky-700 px-2 py-1 rounded font-bold">
+              <div className="text-xs bg-[var(--consumption-soft,rgba(16,185,129,0.15))] text-[var(--consumption)] px-2 py-1 rounded font-bold">
                 {totalDataPoints.toLocaleString()} data points
               </div>
             </div>
             
             <div className="grid grid-cols-4 gap-3">
-              <div className="bg-green-50 p-4 rounded-xl border border-green-100 flex flex-col items-center">
-                  <span className="text-xs font-bold text-green-600 uppercase">Total Savings</span>
-                  <span className="text-2xl font-black text-green-900">KES {totalSavings.toFixed(0)}</span>
+              <div className="bg-[var(--bg-card-muted)] p-4 rounded-xl border border-[var(--border)] flex flex-col items-center">
+                  <span className="text-xs font-bold text-[var(--battery)] uppercase">Total Savings</span>
+                  <span className="text-2xl font-black text-[var(--battery)]">KES {totalSavings.toFixed(0)}</span>
               </div>
-              <div className="bg-sky-50 p-4 rounded-xl border border-sky-100 flex flex-col items-center">
-                  <span className="text-xs font-bold text-sky-600 uppercase">Solar Generated</span>
-                  <span className="text-2xl font-black text-sky-900">{totalSolarGenerated.toFixed(1)} kWh</span>
+              <div className="bg-[var(--bg-card-muted)] p-4 rounded-xl border border-[var(--border)] flex flex-col items-center">
+                  <span className="text-xs font-bold text-[var(--consumption)] uppercase">Solar Generated</span>
+                  <span className="text-2xl font-black text-[var(--consumption)]">{totalSolarGenerated.toFixed(1)} kWh</span>
               </div>
-              <div className="bg-red-50 p-4 rounded-xl border border-red-100 flex flex-col items-center">
-                  <span className="text-xs font-bold text-red-600 uppercase">Grid Import</span>
-                  <span className="text-2xl font-black text-red-900">{totalGridImportKWh.toFixed(1)} kWh</span>
+              <div className="bg-[var(--bg-card-muted)] p-4 rounded-xl border border-[var(--border)] flex flex-col items-center">
+                  <span className="text-xs font-bold text-[var(--alert)] uppercase">Grid Import</span>
+                  <span className="text-2xl font-black text-[var(--alert)]">{totalGridImportKWh.toFixed(1)} kWh</span>
               </div>
-              <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 flex flex-col items-center">
-                  <span className="text-xs font-bold text-purple-600 uppercase">Grid Export</span>
-                  <span className="text-2xl font-black text-purple-900">{totalGridExportKWh.toFixed(1)} kWh</span>
+              <div className="bg-[var(--bg-card-muted)] p-4 rounded-xl border border-[var(--border)] flex flex-col items-center">
+                  <span className="text-xs font-bold text-[var(--grid)] uppercase">Grid Export</span>
+                  <span className="text-2xl font-black text-[var(--grid)]">{totalGridExportKWh.toFixed(1)} kWh</span>
               </div>
             </div>
             
             <div className="grid grid-cols-4 gap-3">
-              <div className="bg-white p-3 rounded-lg border border-slate-200 text-center">
-                <div className="text-2xl font-black text-slate-800">{uniqueYears}</div>
-                <div className="text-xs text-slate-500 font-bold uppercase">Years</div>
+              <div className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border)] text-center">
+                <div className="text-2xl font-black text-[var(--text-primary)]">{uniqueYears}</div>
+                <div className="text-xs text-[var(--text-secondary)] font-bold uppercase">Years</div>
               </div>
-              <div className="bg-white p-3 rounded-lg border border-slate-200 text-center">
-                <div className="text-2xl font-black text-slate-800">{uniqueMonths}</div>
-                <div className="text-xs text-slate-500 font-bold uppercase">Months</div>
+              <div className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border)] text-center">
+                <div className="text-2xl font-black text-[var(--text-primary)]">{uniqueMonths}</div>
+                <div className="text-xs text-[var(--text-secondary)] font-bold uppercase">Months</div>
               </div>
-              <div className="bg-white p-3 rounded-lg border border-slate-200 text-center">
-                <div className="text-2xl font-black text-slate-800">{uniqueWeeks}</div>
-                <div className="text-xs text-slate-500 font-bold uppercase">Weeks</div>
+              <div className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border)] text-center">
+                <div className="text-2xl font-black text-[var(--text-primary)]">{uniqueWeeks}</div>
+                <div className="text-xs text-[var(--text-secondary)] font-bold uppercase">Weeks</div>
               </div>
-              <div className="bg-white p-3 rounded-lg border border-slate-200 text-center">
-                <div className="text-2xl font-black text-slate-800">{uniqueDays}</div>
-                <div className="text-xs text-slate-500 font-bold uppercase">Days</div>
+              <div className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border)] text-center">
+                <div className="text-2xl font-black text-[var(--text-primary)]">{uniqueDays}</div>
+                <div className="text-xs text-[var(--text-secondary)] font-bold uppercase">Days</div>
               </div>
             </div>
           </div>
@@ -732,12 +732,12 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
           
           {activeTab === 'tariff' && (
           <div className="space-y-4">
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-              <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
+            <div className="bg-[var(--bg-card-muted)] p-4 rounded-xl border border-[var(--border)]">
+              <h3 className="font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
                 <DollarSign size={16} className="text-green-600" />
                 Kenya Power Commercial Tariff (E-Mobility)
               </h3>
-              <p className="text-xs text-slate-500 mb-4">Based on KPLC bill - February 2026 for ROAM ELECTRIC LIMITED</p>
+              <p className="text-xs text-[var(--text-secondary)] mb-4">Based on KPLC bill - February 2026 for ROAM ELECTRIC LIMITED</p>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
@@ -754,37 +754,37 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
                     <span className="text-xs font-bold text-green-600">OFF-PEAK HOURS</span>
                     <span className="text-[10px] bg-green-200 text-green-800 px-2 py-0.5 rounded">All other times</span>
                   </div>
-                  <div className="text-2xl font-black text-green-900">KES {lowRateTotal.toFixed(2)}/kWh</div>
+                  <div className="text-2xl font-black text-[var(--battery)]">KES {lowRateTotal.toFixed(2)}/kWh</div>
                   <div className="text-[10px] text-green-600 mt-1">Base: KES {KPLC_TARIFF.LOW_RATE_BASE.toFixed(2)} + charges</div>
                 </div>
               </div>
               
-              <div className="mt-4 pt-4 border-t border-slate-200">
-                <h4 className="text-xs font-bold text-slate-600 mb-2">Additional Charges (per kWh)</h4>
+              <div className="mt-4 pt-4 border-t border-[var(--border)]">
+                <h4 className="text-xs font-bold text-[var(--text-secondary)] mb-2">Additional Charges (per kWh)</h4>
                 <div className="grid grid-cols-3 gap-2 text-xs">
-                  <div className="flex justify-between bg-slate-100 px-2 py-1 rounded">
-                    <span className="text-slate-500">Fuel Cost</span>
-                    <span className="font-bold text-slate-700">KES {KPLC_TARIFF.FUEL_ENERGY_COST.toFixed(2)}</span>
+                  <div className="flex justify-between bg-[var(--bg-card)] px-2 py-1 rounded">
+                    <span className="text-[var(--text-tertiary)]">Fuel Cost</span>
+                    <span className="font-bold text-[var(--text-primary)]">KES {KPLC_TARIFF.FUEL_ENERGY_COST.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between bg-slate-100 px-2 py-1 rounded">
-                    <span className="text-slate-500">FERFA</span>
-                    <span className="font-bold text-slate-700">KES {KPLC_TARIFF.FERFA.toFixed(4)}</span>
+                  <div className="flex justify-between bg-[var(--bg-card)] px-2 py-1 rounded">
+                    <span className="text-[var(--text-tertiary)]">FERFA</span>
+                    <span className="font-bold text-[var(--text-primary)]">KES {KPLC_TARIFF.FERFA.toFixed(4)}</span>
                   </div>
-                  <div className="flex justify-between bg-slate-100 px-2 py-1 rounded">
-                    <span className="text-slate-500">INFA</span>
-                    <span className="font-bold text-slate-700">KES {KPLC_TARIFF.INFA.toFixed(2)}</span>
+                  <div className="flex justify-between bg-[var(--bg-card)] px-2 py-1 rounded">
+                    <span className="text-[var(--text-tertiary)]">INFA</span>
+                    <span className="font-bold text-[var(--text-primary)]">KES {KPLC_TARIFF.INFA.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between bg-slate-100 px-2 py-1 rounded">
-                    <span className="text-slate-500">ERC Levy</span>
-                    <span className="font-bold text-slate-700">KES {KPLC_TARIFF.ERC_LEVY.toFixed(2)}</span>
+                  <div className="flex justify-between bg-[var(--bg-card)] px-2 py-1 rounded">
+                    <span className="text-[var(--text-tertiary)]">ERC Levy</span>
+                    <span className="font-bold text-[var(--text-primary)]">KES {KPLC_TARIFF.ERC_LEVY.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between bg-slate-100 px-2 py-1 rounded">
-                    <span className="text-slate-500">WRA Levy</span>
-                    <span className="font-bold text-slate-700">KES {KPLC_TARIFF.WRA_LEVY.toFixed(4)}</span>
+                  <div className="flex justify-between bg-[var(--bg-card)] px-2 py-1 rounded">
+                    <span className="text-[var(--text-tertiary)]">WRA Levy</span>
+                    <span className="font-bold text-[var(--text-primary)]">KES {KPLC_TARIFF.WRA_LEVY.toFixed(4)}</span>
                   </div>
-                  <div className="flex justify-between bg-slate-100 px-2 py-1 rounded">
-                    <span className="text-slate-500">VAT</span>
-                    <span className="font-bold text-slate-700">{(KPLC_TARIFF.VAT_RATE * 100).toFixed(0)}%</span>
+                  <div className="flex justify-between bg-[var(--bg-card)] px-2 py-1 rounded">
+                    <span className="text-[var(--text-tertiary)]">VAT</span>
+                    <span className="font-bold text-[var(--text-primary)]">{(KPLC_TARIFF.VAT_RATE * 100).toFixed(0)}%</span>
                   </div>
                 </div>
               </div>
@@ -794,57 +794,57 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
           
           {activeTab === 'sustainability' && (
           <div className="space-y-4">
-            <div className="bg-green-50 p-4 rounded-xl border border-green-200">
-              <h3 className="font-bold text-green-800 mb-1 flex items-center gap-2">
+            <div className="bg-[var(--bg-card-muted)] p-4 rounded-xl border border-[var(--border)]">
+              <h3 className="font-bold text-[var(--battery)] mb-1 flex items-center gap-2">
                 🌿 Carbon Impact
               </h3>
-              <p className="text-xs text-green-600 mb-4">
+              <p className="text-xs text-[var(--text-secondary)] mb-4">
                 Estimated CO₂ avoided by using solar instead of the Kenya national grid
                 (avg. emission factor: {GRID_EMISSION_FACTOR} kgCO₂/kWh, hydro+thermal mix).
               </p>
               <div className="grid grid-cols-3 gap-3">
-                <div className="bg-white p-4 rounded-xl border border-green-100 flex flex-col items-center">
-                  <span className="text-2xl font-black text-green-700">{carbonOffset.toFixed(1)}</span>
-                  <span className="text-xs font-bold text-green-600 uppercase mt-1">kg CO₂ Avoided</span>
+                <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border)] flex flex-col items-center">
+                  <span className="text-2xl font-black text-[var(--battery)]">{carbonOffset.toFixed(1)}</span>
+                  <span className="text-xs font-bold text-[var(--battery)] uppercase mt-1">kg CO₂ Avoided</span>
                 </div>
-                <div className="bg-white p-4 rounded-xl border border-green-100 flex flex-col items-center">
-                  <span className="text-2xl font-black text-green-700">{(carbonOffset / TREE_CO2_KG_PER_YEAR).toFixed(2)}</span>
-                  <span className="text-xs font-bold text-green-600 uppercase mt-1">Trees Equivalent</span>
-                  <span className="text-[9px] text-slate-400 mt-0.5">({TREE_CO2_KG_PER_YEAR} kg CO₂/tree/yr)</span>
+                <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border)] flex flex-col items-center">
+                  <span className="text-2xl font-black text-[var(--battery)]">{(carbonOffset / TREE_CO2_KG_PER_YEAR).toFixed(2)}</span>
+                  <span className="text-xs font-bold text-[var(--battery)] uppercase mt-1">Trees Equivalent</span>
+                  <span className="text-[9px] text-[var(--text-tertiary)] mt-0.5">({TREE_CO2_KG_PER_YEAR} kg CO₂/tree/yr)</span>
                 </div>
-                <div className="bg-white p-4 rounded-xl border border-green-100 flex flex-col items-center">
-                  <span className="text-2xl font-black text-green-700">{(carbonOffset / AVG_CAR_EMISSION_KG_PER_KM).toFixed(0)}</span>
-                  <span className="text-xs font-bold text-green-600 uppercase mt-1">km Not Driven</span>
-                  <span className="text-[9px] text-slate-400 mt-0.5">(avg {AVG_CAR_EMISSION_KG_PER_KM} kgCO₂/km)</span>
+                <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border)] flex flex-col items-center">
+                  <span className="text-2xl font-black text-[var(--battery)]">{(carbonOffset / AVG_CAR_EMISSION_KG_PER_KM).toFixed(0)}</span>
+                  <span className="text-xs font-bold text-[var(--battery)] uppercase mt-1">km Not Driven</span>
+                  <span className="text-[9px] text-[var(--text-tertiary)] mt-0.5">(avg {AVG_CAR_EMISSION_KG_PER_KM} kgCO₂/km)</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-sky-50 p-4 rounded-xl border border-sky-200">
-              <h3 className="font-bold text-sky-800 mb-3">Self-Sufficiency Breakdown</h3>
+            <div className="bg-[var(--bg-card-muted)] p-4 rounded-xl border border-[var(--border)]">
+              <h3 className="font-bold text-[var(--text-primary)] mb-3">Self-Sufficiency Breakdown</h3>
               <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="bg-white p-3 rounded-lg border border-sky-100">
-                  <div className="text-slate-500 mb-1">Total Solar Generated</div>
-                  <div className="text-xl font-black text-sky-700">{totalSolarGenerated.toFixed(1)} kWh</div>
+                <div className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border)]">
+                  <div className="text-[var(--text-tertiary)] mb-1">Total Solar Generated</div>
+                  <div className="text-xl font-black text-[var(--consumption)]">{totalSolarGenerated.toFixed(1)} kWh</div>
                 </div>
-                <div className="bg-white p-3 rounded-lg border border-sky-100">
-                  <div className="text-slate-500 mb-1">Grid Import</div>
-                  <div className="text-xl font-black text-red-500">{totalGridImportKWh.toFixed(1)} kWh</div>
+                <div className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border)]">
+                  <div className="text-[var(--text-tertiary)] mb-1">Grid Import</div>
+                  <div className="text-xl font-black text-[var(--alert)]">{totalGridImportKWh.toFixed(1)} kWh</div>
                 </div>
-                <div className="bg-white p-3 rounded-lg border border-sky-100">
-                  <div className="text-slate-500 mb-1">Grid Export (Surplus)</div>
-                  <div className="text-xl font-black text-green-600">{totalGridExportKWh.toFixed(1)} kWh</div>
+                <div className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border)]">
+                  <div className="text-[var(--text-tertiary)] mb-1">Grid Export (Surplus)</div>
+                  <div className="text-xl font-black text-[var(--battery)]">{totalGridExportKWh.toFixed(1)} kWh</div>
                 </div>
-                <div className="bg-white p-3 rounded-lg border border-sky-100">
-                  <div className="text-slate-500 mb-1">Solar Self-Consumption</div>
-                  <div className="text-xl font-black text-sky-700">
+                <div className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border)]">
+                  <div className="text-[var(--text-tertiary)] mb-1">Solar Self-Consumption</div>
+                  <div className="text-xl font-black text-[var(--consumption)]">
                     {totalSolarGenerated > 0 ? (((totalSolarGenerated - totalGridExportKWh) / totalSolarGenerated) * 100).toFixed(1) : '0.0'}%
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs text-slate-500">
+            <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs text-[var(--text-secondary)]">
               <strong>Simulation Physics:</strong> Solar model uses Nairobi latitude (1.29°S) seasonal peak hour,
               panel temperature coefficient (−0.5%/°C above 25°C), soiling/dust accumulation (reset by rain),
               inverter efficiency curve (82-97%), and variable battery round-trip efficiency (85-95%).
@@ -855,18 +855,18 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
 
           {activeTab === 'evs' && (
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-sky-50 p-4 rounded-xl border border-sky-100">
-              <h4 className="text-sm font-bold text-sky-800 mb-2">EV #1 (Commuter)</h4>
+            <div className="bg-[var(--bg-card-muted)] p-4 rounded-xl border border-[var(--border)]">
+              <h4 className="text-sm font-bold text-[var(--text-primary)] mb-2">EV #1 (Commuter)</h4>
               <div className="space-y-2 text-xs">
-                <div className="flex justify-between"><span className="text-slate-500">Battery</span><span className="font-bold">80 kWh</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Charger Rate</span><span className="font-bold">7 kW</span></div>
+                <div className="flex justify-between"><span className="text-[var(--text-tertiary)]">Battery</span><span className="font-bold">80 kWh</span></div>
+                <div className="flex justify-between"><span className="text-[var(--text-tertiary)]">Charger Rate</span><span className="font-bold">7 kW</span></div>
               </div>
             </div>
-            <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
-              <h4 className="text-sm font-bold text-purple-800 mb-2">EV #2 (Uber)</h4>
+            <div className="bg-[var(--bg-card-muted)] p-4 rounded-xl border border-[var(--border)]">
+              <h4 className="text-sm font-bold text-[var(--text-primary)] mb-2">EV #2 (Uber)</h4>
               <div className="space-y-2 text-xs">
-                <div className="flex justify-between"><span className="text-slate-500">Battery</span><span className="font-bold">118 kWh</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Charger Rate</span><span className="font-bold">22 kW</span></div>
+                <div className="flex justify-between"><span className="text-[var(--text-tertiary)]">Battery</span><span className="font-bold">118 kWh</span></div>
+                <div className="flex justify-between"><span className="text-[var(--text-tertiary)]">Charger Rate</span><span className="font-bold">22 kW</span></div>
               </div>
             </div>
           </div>
@@ -874,46 +874,46 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
           
           {activeTab === 'export' && (
           <div className="space-y-6">
-            <div className="bg-gradient-to-br from-sky-50 to-green-50 p-6 rounded-xl border border-sky-200">
+            <div className="bg-[var(--bg-card-muted)] p-6 rounded-xl border border-[var(--border)]">
               <div className="flex items-center gap-3 mb-4">
                 <Download size={24} className="text-sky-600" />
                 <div>
-                  <h3 className="font-bold text-slate-800 text-lg">Export Full Report</h3>
-                  <p className="text-xs text-slate-500">Download comprehensive energy data in Excel-compatible CSV format</p>
+                  <h3 className="font-bold text-[var(--text-primary)] text-lg">Export Full Report</h3>
+                  <p className="text-xs text-[var(--text-secondary)]">Download comprehensive energy data in Excel-compatible CSV format</p>
                 </div>
               </div>
               
-              <div className="bg-white p-4 rounded-lg border border-slate-200 mb-4">
-                <h4 className="text-xs font-bold text-slate-600 mb-2 uppercase">Report Contents</h4>
+              <div className="bg-[var(--bg-card)] p-4 rounded-lg border border-[var(--border)] mb-4">
+                <h4 className="text-xs font-bold text-[var(--text-secondary)] mb-2 uppercase">Report Contents</h4>
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="flex items-center gap-2 text-slate-600">
+                  <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                     <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                     Minute-by-minute data ({totalDataPoints.toLocaleString()} records)
                   </div>
-                  <div className="flex items-center gap-2 text-slate-600">
+                  <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                     <span className="w-2 h-2 bg-sky-500 rounded-full"></span>
                     Hourly summaries ({uniqueDays * 24}+ hours)
                   </div>
-                  <div className="flex items-center gap-2 text-slate-600">
+                  <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                     <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
                     Daily summaries ({uniqueDays} days)
                   </div>
-                  <div className="flex items-center gap-2 text-slate-600">
+                  <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                     <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
                     Weekly summaries ({uniqueWeeks} weeks)
                   </div>
-                  <div className="flex items-center gap-2 text-slate-600">
+                  <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                     <span className="w-2 h-2 bg-red-500 rounded-full"></span>
                     Monthly summaries ({uniqueMonths} months)
                   </div>
-                  <div className="flex items-center gap-2 text-slate-600">
+                  <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                     <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
                     Yearly summaries ({uniqueYears} years)
                   </div>
                 </div>
               </div>
               
-              <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-4 text-xs text-slate-600">
+              <div className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border)] mb-4 text-xs text-[var(--text-secondary)]">
                 <div className="font-bold mb-1">Data Includes:</div>
                 <div className="grid grid-cols-3 gap-1">
                   <span>• Solar generation</span>
@@ -938,7 +938,7 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
                   }
                 }}
                 disabled={isExporting || totalDataPoints === 0}
-                className="w-full py-3 bg-gradient-to-r from-sky-600 to-green-600 text-white font-bold rounded-lg hover:from-sky-700 hover:to-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3 bg-[var(--consumption)] text-white font-bold rounded-lg hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isExporting ? (
                   <>
@@ -1015,15 +1015,15 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
                   Start the simulation to generate a report
                 </p>
               ) : (
-                <p className="text-xs text-slate-500 mt-2 text-center">
+                <p className="text-xs text-[var(--text-secondary)] mt-2 text-center">
                   Opens in new tab: use browser Print (Ctrl+P) to save as PDF
                 </p>
               )}
             </div>
             
-            <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
-              <h4 className="text-xs font-bold text-amber-800 mb-1">Data Retention</h4>
-              <p className="text-xs text-amber-700">
+            <div className="bg-[rgba(251,191,36,0.1)] p-4 rounded-lg border border-[var(--solar)]">
+              <h4 className="text-xs font-bold text-[var(--solar)] mb-1">Data Retention</h4>
+              <p className="text-xs text-[var(--text-secondary)]">
                 All data from system start (January 1, 2026) is retained. The system can track up to 20+ years 
                 of simulation data. Use high speed simulation (x1000) to quickly generate multi-year datasets.
               </p>
@@ -1035,11 +1035,11 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
       
       {/* Mobile sticky controls for Android/iOS */}
       <div className="sm:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-50 w-[min(480px,calc(100%-16px))] space-y-2 drop-shadow-2xl">
-        <div className="bg-white/95 backdrop-blur-lg border border-slate-200 rounded-2xl px-3 py-2 flex items-center gap-2">
+        <div className="bg-[var(--bg-secondary)]/95 backdrop-blur-lg border border-[var(--border)] rounded-2xl px-3 py-2 flex items-center gap-2">
           <button
             onClick={onToggleAuto}
             className={`w-10 h-10 flex items-center justify-center rounded-full border font-bold ${
-              isAutoMode ? 'bg-green-100 border-green-200 text-green-600' : 'bg-slate-100 border-slate-200 text-slate-700'
+              isAutoMode ? 'bg-[rgba(16,185,129,0.2)] border-[var(--battery)] text-[var(--battery)]' : 'bg-[var(--bg-card-muted)] border-[var(--border)] text-[var(--text-secondary)]'
             }`}
             aria-label={isAutoMode ? 'Pause simulation' : 'Play simulation'}
           >
@@ -1051,7 +1051,7 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
                 key={speed}
                 onClick={() => onSpeedChange(speed)}
                 className={`px-3 py-2 rounded-xl text-[11px] font-bold border transition-colors flex-1 ${
-                  simSpeed === speed ? 'bg-sky-600 text-white border-sky-600' : 'bg-slate-50 border-slate-200 text-slate-700'
+                  simSpeed === speed ? 'bg-[var(--battery)] text-white border-[var(--battery)]' : 'bg-[var(--bg-card-muted)] border-[var(--border)] text-[var(--text-secondary)]'
                 }`}
               >
                 x{speed}
@@ -1060,14 +1060,14 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
           </div>
           <button
             onClick={onOpenReport}
-            className="w-10 h-10 flex items-center justify-center rounded-full border border-slate-200 bg-slate-900 text-white"
+            className="w-10 h-10 flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-primary)]"
             aria-label="Open report"
           >
             <Table size={16} />
           </button>
         </div>
-        <div className="bg-white/95 backdrop-blur-lg border border-slate-200 rounded-2xl px-3 py-2">
-          <div className="flex items-center justify-between text-[10px] font-semibold text-slate-600 mb-1">
+        <div className="bg-[var(--bg-secondary)]/95 backdrop-blur-lg border border-[var(--border)] rounded-2xl px-3 py-2">
+          <div className="flex items-center justify-between text-[10px] font-semibold text-[var(--text-secondary)] mb-1">
             <span>Timeline</span>
             <span className="font-mono">{formatTime(timeOfDay)}</span>
           </div>
@@ -1079,7 +1079,7 @@ const EnergyReportModal = ({ isOpen, onClose, savings, solarConsumed, gridImport
             value={timeOfDay}
             onChange={(e) => { onTimeChange(parseFloat(e.target.value)); if (isAutoMode) onToggleAuto(); }}
             disabled={isAutoMode}
-            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full h-2 bg-[var(--bg-card)] rounded-lg appearance-none cursor-pointer accent-[var(--battery)] disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
       </div>
@@ -1191,7 +1191,7 @@ const Header = ({ onToggleAssistant, currentDate, onReset, currentLocation, onLo
       </div>
       <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto flex-wrap justify-center sm:justify-end">
          <button onClick={onReset} className="hidden sm:block text-slate-400 hover:text-red-500 transition-colors" title="Reset Simulation"><RotateCcw size={16} /></button>
-         <div className="flex items-center gap-2 text-slate-500 text-[10px] sm:text-xs font-medium bg-slate-100 px-2 sm:px-3 py-1 rounded-full">
+         <div className="flex items-center gap-2 text-[var(--text-tertiary)] text-[10px] sm:text-xs font-medium bg-slate-100 px-2 sm:px-3 py-1 rounded-full">
             <Calendar size={12} className="text-slate-400" /> <span className="hidden xs:inline">{formatDate(currentDate)}</span><span className="xs:hidden">{currentDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
          </div>
          <div className="block">
@@ -1210,10 +1210,10 @@ const Header = ({ onToggleAssistant, currentDate, onReset, currentLocation, onLo
 );
 
 const StatPill = ({ label, value, sub }: { label: string; value: string; sub?: string }) => (
-  <div className="flex flex-col bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
-    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">{label}</span>
-    <span className="text-sm font-black text-slate-900">{value}</span>
-    {sub && <span className="text-[10px] text-slate-400">{sub}</span>}
+  <div className="flex flex-col bg-[var(--bg-card-muted)] border border-[var(--border)] rounded-xl px-3 py-2">
+    <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">{label}</span>
+    <span className="text-sm font-black text-[var(--text-primary)]">{value}</span>
+    {sub && <span className="text-[10px] text-[var(--text-tertiary)]">{sub}</span>}
   </div>
 );
 
@@ -1237,28 +1237,28 @@ const SystemConfigPanel = ({
   };
 
   return (
-    <div className="w-full max-w-7xl bg-white border border-slate-200 rounded-2xl shadow-sm p-3 sm:p-4">
+    <div className="w-full max-w-7xl">
       <div className="flex flex-col sm:flex-row justify-between gap-3 sm:items-center">
         <div>
-          <div className="flex items-center gap-2 text-slate-700 font-black text-sm sm:text-base uppercase tracking-wide">
-            <Settings size={16} className="text-slate-400" />
+          <div className="flex items-center gap-2 text-[var(--text-primary)] font-black text-sm sm:text-base uppercase tracking-wide">
+            <Settings size={16} className="text-[var(--text-tertiary)]" />
             System Configuration
           </div>
-          <p className="text-[11px] sm:text-xs text-slate-500 mt-1">
+          <p className="text-[11px] sm:text-xs text-[var(--text-secondary)] mt-1">
             Switch to advanced mode to tweak panel count, inverter, battery, and load splits. Values feed directly into the live simulation.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="bg-slate-100 rounded-full p-1 flex gap-1 text-[11px]">
+          <div className="bg-[var(--bg-card-muted)] rounded-full p-1 flex gap-1 text-[11px]">
             <button
               onClick={() => onModeChange('auto')}
-              className={`px-3 py-1 rounded-full font-bold transition-colors ${config.mode === 'auto' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-white'}`}
+              className={`px-3 py-1 rounded-full font-bold transition-colors ${config.mode === 'auto' ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] shadow-sm' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-card)]'}`}
             >
               Auto
             </button>
             <button
               onClick={() => onModeChange('advanced')}
-              className={`px-3 py-1 rounded-full font-bold transition-colors ${isAdvanced ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white'}`}
+              className={`px-3 py-1 rounded-full font-bold transition-colors ${isAdvanced ? 'bg-[var(--consumption)] text-white shadow-sm' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-card)]'}`}
             >
               Advanced
             </button>
@@ -1268,115 +1268,115 @@ const SystemConfigPanel = ({
 
       <div className="mt-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-semibold text-slate-500 uppercase">Panel Count</label>
+          <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">Panel Count</label>
           <input
             type="number"
             min={0}
             value={config.panelCount}
             onChange={(e) => updateField('panelCount', parseFloat(e.target.value))}
-            className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-50"
+            className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
             disabled={!isAdvanced}
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-semibold text-slate-500 uppercase">Panel Wattage (W)</label>
+          <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">Panel Wattage (W)</label>
           <input
             type="number"
             min={0}
             value={config.panelWatt}
             onChange={(e) => updateField('panelWatt', parseFloat(e.target.value))}
-            className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-50"
+            className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
             disabled={!isAdvanced}
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-semibold text-slate-500 uppercase">Inverter Size (kW)</label>
+          <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">Inverter Size (kW)</label>
           <input
             type="number"
             min={0}
             value={config.inverterKw}
             onChange={(e) => updateField('inverterKw', parseFloat(e.target.value))}
-            className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-50"
+            className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
             disabled={!isAdvanced}
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-semibold text-slate-500 uppercase">Battery Size (kWh)</label>
+          <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">Battery Size (kWh)</label>
           <input
             type="number"
             min={0}
             value={config.batteryKwh}
             onChange={(e) => updateField('batteryKwh', parseFloat(e.target.value))}
-            className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-50"
+            className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
             disabled={!isAdvanced}
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-semibold text-slate-500 uppercase">Max Charge (kW)</label>
+          <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">Max Charge (kW)</label>
           <input
             type="number"
             min={0}
             value={config.maxChargeKw}
             onChange={(e) => updateField('maxChargeKw', parseFloat(e.target.value))}
-            className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-50"
+            className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
             disabled={!isAdvanced}
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-semibold text-slate-500 uppercase">Max Discharge (kW)</label>
+          <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">Max Discharge (kW)</label>
           <input
             type="number"
             min={0}
             value={config.maxDischargeKw}
             onChange={(e) => updateField('maxDischargeKw', parseFloat(e.target.value))}
-            className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-50"
+            className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
             disabled={!isAdvanced}
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-semibold text-slate-500 uppercase">EV Charger Rate (kW)</label>
+          <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">EV Charger Rate (kW)</label>
           <input
             type="number"
             min={0}
             value={config.evChargerKw}
             onChange={(e) => updateField('evChargerKw', parseFloat(e.target.value))}
-            className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-50"
+            className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
             disabled={!isAdvanced}
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-semibold text-slate-500 uppercase">Base Load Scale</label>
+          <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">Base Load Scale</label>
           <input
             type="number"
             min={0}
             step="0.05"
             value={config.loadScale}
             onChange={(e) => updateField('loadScale', parseFloat(e.target.value))}
-            className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-50"
+            className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
             disabled={!isAdvanced}
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-semibold text-slate-500 uppercase">EV #1 (Commuter) Scale</label>
+          <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">EV #1 (Commuter) Scale</label>
           <input
             type="number"
             min={0}
             step="0.05"
             value={config.evCommuterScale}
             onChange={(e) => updateField('evCommuterScale', parseFloat(e.target.value))}
-            className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-50"
+            className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
             disabled={!isAdvanced}
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-semibold text-slate-500 uppercase">EV #2 (Fleet) Scale</label>
+          <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">EV #2 (Fleet) Scale</label>
           <input
             type="number"
             min={0}
             step="0.05"
             value={config.evFleetScale}
             onChange={(e) => updateField('evFleetScale', parseFloat(e.target.value))}
-            className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-50"
+            className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
             disabled={!isAdvanced}
           />
         </div>
@@ -1391,19 +1391,19 @@ const SystemConfigPanel = ({
         </div>
         {isAdvanced && (
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[10px] font-semibold text-slate-500 uppercase">Presets</span>
+            <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">Presets</span>
             {(['conservative', 'expected', 'aggressive'] as const).map((preset) => (
               <button
                 key={preset}
                 onClick={() => onPreset(preset)}
-                className="px-3 py-1.5 rounded-full text-[11px] font-bold border border-slate-200 bg-slate-50 hover:border-sky-300 hover:text-sky-700 transition-colors"
+                className="px-3 py-1.5 rounded-full text-[11px] font-bold border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-secondary)] hover:border-[var(--battery)] hover:text-[var(--battery)] transition-colors"
               >
                 {preset === 'expected' ? 'Expected' : preset === 'aggressive' ? 'Aggressive' : 'Conservative'}
               </button>
             ))}
             <button
               onClick={() => onChange({ ...DEFAULT_SYSTEM_CONFIG, mode: 'auto' })}
-              className="px-3 py-1.5 rounded-full text-[11px] font-bold border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+              className="px-3 py-1.5 rounded-full text-[11px] font-bold border border-[var(--alert)] text-[var(--alert)] bg-[rgba(239,68,68,0.1)] hover:opacity-80 transition-colors"
             >
               Reset to Auto
             </button>
@@ -1420,11 +1420,11 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
   return (
     <div className="relative flex flex-col items-center justify-center w-full h-full p-3 sm:p-6">
       <div className="text-center mb-4 sm:mb-6 w-full">
-        <h2 className="text-lg sm:text-2xl font-black text-slate-800 leading-tight">SIMULATION <span className="text-sky-500">CONTROLS</span></h2>
+        <h2 className="text-lg sm:text-2xl font-black text-[var(--text-primary)] leading-tight">SIMULATION <span className="text-[var(--consumption)]">CONTROLS</span></h2>
 
-        <div className="mt-3 sm:mt-4 bg-white p-3 sm:p-4 rounded-xl shadow-md border border-slate-200 w-full max-w-sm mx-auto relative overflow-hidden">
+        <div className="mt-3 sm:mt-4 bg-[var(--bg-card-muted)] p-3 sm:p-4 rounded-xl border border-[var(--border)] w-full max-w-sm mx-auto relative overflow-hidden">
           <div className="flex justify-end mb-2">
-            <div className="text-[10px] sm:text-xs text-slate-500 font-bold flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded transition-colors duration-500 shadow-sm whitespace-nowrap">
+            <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)] font-bold flex items-center gap-1.5 bg-[var(--bg-card)] px-2 py-1 rounded transition-colors duration-500 whitespace-nowrap">
               {isNight ? (
                 <>
                   <Moon size={12} className="text-indigo-400" /> <span className="hidden xs:inline">Night</span>
@@ -1441,10 +1441,10 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
 
           <div className="flex justify-between items-center mb-2">
             <div className="flex items-center gap-1.5 sm:gap-2">
-               <span className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase flex items-center gap-1"><Clock size={10} className="sm:hidden"/><Clock size={12} className="hidden sm:block"/> <span className="hidden xs:inline">Time</span></span>
+               <span className="text-[10px] sm:text-xs font-bold text-[var(--text-tertiary)] uppercase flex items-center gap-1"><Clock size={10} className="sm:hidden"/><Clock size={12} className="hidden sm:block"/> <span className="hidden xs:inline">Time</span></span>
                {isAutoMode && <span className="text-[8px] sm:text-[9px] bg-green-500 text-white px-1 sm:px-1.5 rounded animate-pulse">LIVE</span>}
             </div>
-            <span className="text-xs sm:text-sm font-mono font-bold text-slate-800">{formatTime(timeOfDay)}</span>
+            <span className="text-xs sm:text-sm font-mono font-bold text-[var(--text-primary)]">{formatTime(timeOfDay)}</span>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -1452,28 +1452,28 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
                 {isAutoMode ? <Pause size={14} className="sm:hidden" fill="currentColor" /> : <Play size={14} className="sm:hidden" fill="currentColor" />}
                 {isAutoMode ? <Pause size={16} className="hidden sm:block" fill="currentColor" /> : <Play size={16} className="hidden sm:block" fill="currentColor" />}
              </button>
-             <input type="range" min="0" max="24" step="0.08" value={timeOfDay} onChange={(e) => { onTimeChange(parseFloat(e.target.value)); if(isAutoMode) onToggleAuto(); }} disabled={isAutoMode} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-500 disabled:opacity-50 disabled:cursor-not-allowed" />
+             <input type="range" min="0" max="24" step="0.08" value={timeOfDay} onChange={(e) => { onTimeChange(parseFloat(e.target.value)); if(isAutoMode) onToggleAuto(); }} disabled={isAutoMode} className="w-full h-2 bg-[var(--bg-card)] rounded-lg appearance-none cursor-pointer accent-[var(--battery)] disabled:opacity-50 disabled:cursor-not-allowed" />
           </div>
 
-          <div className="flex justify-center gap-1.5 sm:gap-2 mt-2 sm:mt-3 pt-2 border-t border-slate-100 flex-wrap">
+          <div className="flex justify-center gap-1.5 sm:gap-2 mt-2 sm:mt-3 pt-2 border-t border-[var(--border)] flex-wrap">
              {[1, 5, 20, 100, 1000].map(speed => (
-               <button key={speed} onClick={() => onSpeedChange(speed)} className={`text-[8px] sm:text-[9px] px-1.5 sm:px-2 py-1 rounded font-bold transition-all ${simSpeed === speed ? 'bg-slate-800 text-white scale-110' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>x{speed}</button>
+               <button key={speed} onClick={() => onSpeedChange(speed)} className={`text-[8px] sm:text-[9px] px-1.5 sm:px-2 py-1 rounded font-bold transition-all ${simSpeed === speed ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] scale-110' : 'bg-[var(--bg-card)] text-[var(--text-tertiary)] hover:opacity-80'}`}>x{speed}</button>
              ))}
           </div>
         </div>
 
         <div className="mt-3 sm:mt-4 flex flex-col gap-2 w-full max-w-sm mx-auto">
            <div className="flex justify-center gap-2">
-             <div className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border text-[9px] sm:text-[10px] font-bold flex items-center gap-1 flex-1 sm:w-32 justify-center transition-all ${ev1Status === 'Charging' ? 'bg-sky-50 border-sky-200 text-sky-700 ring-2 ring-sky-500' : ev1Status === 'Away' ? 'bg-slate-50 border-slate-200 text-red-400' : 'bg-green-50 border-green-200 text-green-700'}`}>
+             <div className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border text-[9px] sm:text-[10px] font-bold flex items-center gap-1 flex-1 sm:w-32 justify-center transition-all ${ev1Status === 'Charging' ? 'bg-[var(--consumption-soft,rgba(16,185,129,0.1))] border-[var(--battery)] text-[var(--battery)]' : ev1Status === 'Away' ? 'bg-[var(--bg-card-muted)] border-[var(--border)] text-[var(--alert)]' : 'bg-[var(--bg-card-muted)] border-[var(--border)] text-[var(--battery)]'}`}>
                <span className="hidden xs:inline">EV #1: </span><span className="xs:hidden">EV1: </span>{ev1Status}
              </div>
-             <div className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border text-[9px] sm:text-[10px] font-bold flex items-center gap-1 flex-1 sm:w-32 justify-center transition-all ${ev2Status === 'Charging' ? 'bg-sky-50 border-sky-200 text-sky-700 ring-2 ring-sky-500' : ev2Status === 'Away' ? 'bg-slate-50 border-slate-200 text-red-400' : 'bg-green-50 border-green-200 text-green-700'}`}>
+             <div className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border text-[9px] sm:text-[10px] font-bold flex items-center gap-1 flex-1 sm:w-32 justify-center transition-all ${ev2Status === 'Charging' ? 'bg-[var(--consumption-soft,rgba(16,185,129,0.1))] border-[var(--battery)] text-[var(--battery)]' : ev2Status === 'Away' ? 'bg-[var(--bg-card-muted)] border-[var(--border)] text-[var(--alert)]' : 'bg-[var(--bg-card-muted)] border-[var(--border)] text-[var(--battery)]'}`}>
                <span className="hidden xs:inline">EV #2: </span><span className="xs:hidden">EV2: </span>{ev2Status}
              </div>
            </div>
 
            <div className="grid grid-cols-2 gap-2">
-             <button onClick={onTogglePriority} className="bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg p-1.5 sm:p-2 flex items-center justify-center text-[10px] sm:text-xs gap-1 sm:gap-2 transition-colors">
+             <button onClick={onTogglePriority} className="bg-[var(--bg-card-muted)] hover:opacity-80 border border-[var(--border)] rounded-lg p-1.5 sm:p-2 flex items-center justify-center text-[10px] sm:text-xs gap-1 sm:gap-2 transition-colors">
                <span className={`font-bold ${displayPriority === 'battery' ? 'text-green-600' : 'text-sky-600'}`}><span className="hidden sm:inline">{displayPriority === 'battery' ? 'Charge First' : 'Load First'}</span><span className="sm:hidden">{displayPriority === 'battery' ? 'Charge' : 'Load'}</span></span>
                {priorityMode === 'auto' && <span className="text-[7px] sm:text-[8px] bg-purple-100 text-purple-600 px-1 rounded font-bold">AUTO</span>}
              </button>
@@ -1560,7 +1560,7 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
   const gridFlowDir = data.netGridPower < 0 ? 'up' : 'down';
 
   return (
-    <div className="flex flex-col items-center w-full h-full p-2 sm:p-3 md:p-6 bg-slate-50/50 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-inner overflow-x-auto">
+    <div className="flex flex-col items-center w-full h-full p-2 sm:p-3 md:p-6 bg-[var(--bg-card-muted)] rounded-2xl sm:rounded-3xl border border-[var(--border)] overflow-x-auto">
       <div className="min-w-[360px] sm:min-w-[540px] lg:min-w-[620px] flex flex-col items-center w-full px-1 sm:px-2">
        <div className="mb-0"><SolarPanelProduct power={data.solarR} capacity={50.0} weather={weather} isNight={isNight} /></div>
        <div className="flex flex-col items-center">
