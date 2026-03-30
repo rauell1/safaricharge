@@ -6,14 +6,14 @@ import { DashboardSidebar, type DashboardSection, type SidebarContextMetric } fr
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  activeSection: DashboardSection;
-  onSectionChange: (section: DashboardSection) => void;
+  activeSection?: DashboardSection;
+  onSectionChange?: (section: DashboardSection) => void;
   contextualMetrics?: SidebarContextMetric[];
 }
 
 export function DashboardLayout({
   children,
-  activeSection,
+  activeSection = 'dashboard',
   onSectionChange,
   contextualMetrics = [],
 }: DashboardLayoutProps) {

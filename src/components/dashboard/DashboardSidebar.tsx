@@ -51,6 +51,14 @@ export function DashboardSidebar({
   onSectionChange,
   contextualMetrics = [],
 }: DashboardSidebarProps) {
+  const pathname = usePathname();
+  const resolvedActive = activeSection ?? (() => {
+    if (!pathname) return 'dashboard';
+    if (pathname.includes('simulation')) return 'simulation';
+    if (pathname.includes('configuration')) return 'configuration';
+    if (pathname.includes('financial')) return 'financial';
+    return 'dashboard';
+  })();
   const mainMenuItems: Array<{ id: DashboardSection; label: string; icon: React.ElementType }> = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'simulation', label: 'Simulation', icon: FlaskConical },
@@ -82,7 +90,6 @@ export function DashboardSidebar({
               {mainMenuItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
-                    asChild
                     isActive={resolvedActive === item.id || (!!item.href && pathname?.startsWith(item.href))}
                     onClick={() => onSectionChange?.(item.id)}
                     className="group relative rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] data-[active=true]:bg-[var(--bg-card)] data-[active=true]:shadow-[0_10px_30px_rgba(0,0,0,0.25)] data-[active=true]:text-[var(--text-primary)]"
