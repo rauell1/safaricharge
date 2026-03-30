@@ -10,6 +10,7 @@ import { AlertsList } from '@/components/dashboard/AlertsList';
 import { TimeRangeSwitcher } from '@/components/dashboard/TimeRangeSwitcher';
 import { WeatherCard } from '@/components/dashboard/WeatherCard';
 import { BatteryStatusCard } from '@/components/dashboard/BatteryStatusCard';
+import { InsightsBanner } from '@/components/dashboard/InsightsBanner';
 import DailyEnergyGraph from '@/components/DailyEnergyGraph';
 import { SystemVisualization } from '@/components/dashboard/SystemVisualization';
 import { useDemoEnergySystem } from '@/hooks/useDemoEnergySystem';
@@ -376,6 +377,67 @@ export default function ModularDashboardDemo() {
     };
   }, [energySplit]);
 
+  // Calculate sparkline data (last 7 data points for each metric)
+  const sparklineData = useMemo(() => {
+    const last7Days = minuteData.slice(-7 * 420); // 420 points per day
+    const dailyData: { gen: number[]; power: number[]; cons: number[]; savings: number[] } = {
+      gen: [], power: [], cons: [], savings: []
+    };
+
+    for (let i = 0; i < 7; i++) {
+      const dayData = last7Days.slice(i * 420, (i + 1) * 420);
+      if (dayData.length > 0) {
+        dailyData.gen.push(dayData.reduce((sum, d) => sum + d.solarEnergyKWh, 0));
+        dailyData.cons.push(dayData.reduce((sum, d) => sum + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh, 0));
+        dailyData.savings.push(dayData.reduce((sum, d) => sum + d.savingsKES, 0));
+        dailyData.power.push(dayData.reduce((sum, d) => sum + d.solarKW, 0) / dayData.length);
+      }
+    }
+
+    return dailyData;
+  }, [minuteData]);
+
+  // Calculate weekly averages and yesterday's values for trends
+  const trendsData = useMemo(() => {
+    const weekData = minuteData.slice(-7 * 420);
+    const yesterdayData = minuteData.slice(-2 * 420, -420);
+    const todayData = minuteData.slice(-420);
+
+    const weeklyAvgGen = weekData.length > 0
+      ? weekData.reduce((sum, d) => sum + d.solarEnergyKWh, 0) / 7
+      : 0;
+    const weeklyAvgCons = weekData.length > 0
+      ? weekData.reduce((sum, d) => sum + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh, 0) / 7
+      : 0;
+    const yesterdaySavings = yesterdayData.length > 0
+      ? yesterdayData.reduce((sum, d) => sum + d.savingsKES, 0)
+      : 0;
+
+    // Calculate system efficiency
+    const usefulEnergy = Math.min(homePower, solarPower) + (batteryPower > 0 ? Math.min(batteryPower, solarPower - homePower) : 0);
+    const systemEfficiency = solarPower > 0 ? (usefulEnergy / solarPower) * 100 : 0;
+
+    // Savings change
+    const savingsChange = yesterdaySavings > 0
+      ? ((stats.totalSavingsKES - yesterdaySavings) / yesterdaySavings) * 100
+      : 0;
+
+    // Battery optimization check (if battery is above 70% during peak hours)
+    const now = new Date();
+    const isPeakHour = now.getHours() >= 18 && now.getHours() <= 22;
+    const batteryOptimized = isPeakHour ? batteryLevel > 70 : batteryLevel > 50;
+
+    return {
+      weeklyAvgGen,
+      weeklyAvgCons,
+      yesterdaySavings,
+      systemEfficiency,
+      savingsChange,
+      batteryOptimized,
+      forecastChange: 10, // Placeholder - would come from weather API
+    };
+  }, [minuteData, stats, solarPower, homePower, batteryPower, batteryLevel]);
+
   return (
     <DashboardLayout>
       <EnergyReportModal
@@ -410,40 +472,75 @@ export default function ModularDashboardDemo() {
           <TimeRangeSwitcher selectedRange={timeRange} onRangeChange={setTimeRange} />
         </div>
 
-        {/* ROW 1 — 4 Stat Cards */}
+        {/* NEW: Insights Banner - Decision Layer */}
+        <InsightsBanner
+          systemEfficiency={trendsData.systemEfficiency}
+          todaySavings={stats.totalSavingsKES}
+          savingsChange={trendsData.savingsChange}
+          forecastChange={trendsData.forecastChange}
+          batteryOptimized={trendsData.batteryOptimized}
+          alertCount={3}
+        />
+
+        {/* ROW 1 — 4 Stat Cards with Sparklines */}
         <StatCards
           totalGeneration={Number(stats.totalSolarKWh.toFixed(1))}
           currentPower={Number(solarPower.toFixed(1))}
           consumption={Number(stats.totalConsumptionKWh.toFixed(1))}
           savings={Math.round(stats.totalSavingsKES)}
+          generationHistory={sparklineData.gen}
+          powerHistory={sparklineData.power}
+          consumptionHistory={sparklineData.cons}
+          savingsHistory={sparklineData.savings}
+          weeklyAvgGeneration={trendsData.weeklyAvgGen}
+          weeklyAvgConsumption={trendsData.weeklyAvgCons}
+          yesterdaySavings={trendsData.yesterdaySavings}
         />
 
-        {/* ROW 2 — Energy Flow (2/3) + Weather & Battery (1/3) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <PowerFlowVisualization
-              solarPower={solarPower}
-              batteryPower={batteryPower}
-              gridPower={gridPower}
-              homePower={homePower}
-              batteryLevel={batteryLevel}
-              flowDirection={flowDirection}
-              detailBasePath="/demo"
-            />
-          </div>
-          <div className="flex flex-col gap-6">
-            <WeatherCard locationName="Nairobi, Kenya" />
-            <BatteryStatusCard
-              batteryLevel={batteryLevel}
-              batteryPower={batteryPower}
-              isCharging={batteryPower >= 0}
-            />
-          </div>
-        </div>
+        {/* ROW 2 — Environmental Impact (moved up for storytelling) */}
+        <Card className="dashboard-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+              <Leaf className="h-5 w-5 text-[var(--battery)]" />
+              Environmental Impact
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {envImpact.map(({ icon: Icon, value, label, color, tint }) => (
+                <div
+                  key={label}
+                  className="flex items-center gap-4 rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5"
+                  style={{ backgroundColor: tint, borderColor: 'var(--border)' }}
+                >
+                  <div
+                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border"
+                    style={{ backgroundColor: tint, borderColor: 'var(--border-strong)' }}
+                  >
+                    <Icon className="h-5 w-5" style={{ color }} />
+                  </div>
+                  <div>
+                    <div className="text-xl font-bold" style={{ color }}>{value}</div>
+                    <div className="text-xs text-[var(--text-secondary)]">{label}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-        <SystemVisualization />
+        {/* ROW 3 — Energy Flow (full width) */}
+        <PowerFlowVisualization
+          solarPower={solarPower}
+          batteryPower={batteryPower}
+          gridPower={gridPower}
+          homePower={homePower}
+          batteryLevel={batteryLevel}
+          flowDirection={flowDirection}
+          detailBasePath="/demo"
+        />
 
-        {/* ROW 3 — Generation vs Consumption (2/3) + Energy Distribution (1/3) */}
+        {/* ROW 4 — Generation vs Consumption (2/3) + Energy Distribution (1/3) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <Card className="dashboard-card">
@@ -509,94 +606,66 @@ export default function ModularDashboardDemo() {
           </div>
         </div>
 
-        {/* ROW 4 — Panel Status (2/3) + Alerts (1/3) */}
+        {/* ROW 5 — Panel Status (2/3) + Weather & Battery (1/3) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <PanelStatusTable />
           </div>
-          <div>
-            <AlertsList />
+          <div className="flex flex-col gap-6">
+            <WeatherCard locationName="Nairobi, Kenya" />
+            <BatteryStatusCard
+              batteryLevel={batteryLevel}
+              batteryPower={batteryPower}
+              isCharging={batteryPower >= 0}
+            />
           </div>
         </div>
 
-        {/* ROW 5 — Monthly Overview (2/3) + Environmental Impact (1/3) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Card className="dashboard-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-                  <BarChart3 className="h-5 w-5 text-[var(--consumption)]" />
-                  Monthly Overview
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-end justify-between gap-2 h-44 px-2">
-                  {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((month, i) => {
-                    const gen = [65, 70, 78, 85, 90, 95, 88, 92, 80, 75, 68, 62][i];
-                    const cons = [55, 58, 60, 62, 65, 68, 70, 69, 65, 60, 57, 54][i];
-                    return (
-                      <div key={month} className="flex-1 flex flex-col items-center gap-1">
-                        <div className="flex items-end gap-0.5 w-full justify-center" style={{ height: '140px' }}>
-                          <div
-                            className="w-2.5 rounded-t-sm bg-gradient-to-t from-[var(--solar-soft)] to-[var(--solar)] opacity-90 transition-all duration-500 hover:opacity-100"
-                            style={{ height: `${(gen / 100) * 140}px` }}
-                          />
-                          <div
-                            className="w-2.5 rounded-t-sm bg-gradient-to-t from-[var(--consumption-soft)] to-[var(--consumption)] opacity-80 transition-all duration-500 hover:opacity-100"
-                            style={{ height: `${(cons / 100) * 140}px` }}
-                          />
-                        </div>
-                        <span className="text-[10px] text-[var(--text-tertiary)]">{month}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="mt-4 flex items-center justify-center gap-6">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: 'var(--solar)' }} />
-                    <span className="text-xs text-[var(--text-secondary)]">Generation (kWh)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: 'var(--consumption)' }} />
-                    <span className="text-xs text-[var(--text-secondary)]">Consumption (kWh)</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          <div>
-            <Card className="dashboard-card h-full">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-                  <Leaf className="h-5 w-5 text-[var(--battery)]" />
-                  Environmental Impact
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col gap-4">
-                  {envImpact.map(({ icon: Icon, value, label, color, tint }) => (
-                    <div
-                      key={label}
-                      className="flex items-center gap-4 rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5"
-                      style={{ backgroundColor: tint, borderColor: 'var(--border)' }}
-                    >
+        {/* ROW 6 — System Visualization & Monthly Overview */}
+        <SystemVisualization />
+
+        {/* Monthly Overview */}
+        <Card className="dashboard-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+              <BarChart3 className="h-5 w-5 text-[var(--consumption)]" />
+              Monthly Overview
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-end justify-between gap-2 h-44 px-2">
+              {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((month, i) => {
+                const gen = [65, 70, 78, 85, 90, 95, 88, 92, 80, 75, 68, 62][i];
+                const cons = [55, 58, 60, 62, 65, 68, 70, 69, 65, 60, 57, 54][i];
+                return (
+                  <div key={month} className="flex-1 flex flex-col items-center gap-1">
+                    <div className="flex items-end gap-0.5 w-full justify-center" style={{ height: '140px' }}>
                       <div
-                        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border"
-                        style={{ backgroundColor: tint, borderColor: 'var(--border-strong)' }}
-                      >
-                        <Icon className="h-5 w-5" style={{ color }} />
-                      </div>
-                      <div>
-                        <div className="text-xl font-bold" style={{ color }}>{value}</div>
-                        <div className="text-xs text-[var(--text-secondary)]">{label}</div>
-                      </div>
+                        className="w-2.5 rounded-t-sm bg-gradient-to-t from-[var(--solar-soft)] to-[var(--solar)] opacity-90 transition-all duration-500 hover:opacity-100"
+                        style={{ height: `${(gen / 100) * 140}px` }}
+                      />
+                      <div
+                        className="w-2.5 rounded-t-sm bg-gradient-to-t from-[var(--consumption-soft)] to-[var(--consumption)] opacity-80 transition-all duration-500 hover:opacity-100"
+                        style={{ height: `${(cons / 100) * 140}px` }}
+                      />
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                    <span className="text-[10px] text-[var(--text-tertiary)]">{month}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-4 flex items-center justify-center gap-6">
+              <div className="flex items-center gap-1.5">
+                <div className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: 'var(--solar)' }} />
+                <span className="text-xs text-[var(--text-secondary)]">Generation (kWh)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: 'var(--consumption)' }} />
+                <span className="text-xs text-[var(--text-secondary)]">Consumption (kWh)</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </main>
   </DashboardLayout>
