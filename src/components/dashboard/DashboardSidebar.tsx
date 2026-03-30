@@ -8,6 +8,8 @@ import {
   DollarSign,
   Zap,
 } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   Sidebar,
   SidebarContent,
@@ -80,7 +82,8 @@ export function DashboardSidebar({
               {mainMenuItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
-                    isActive={activeSection === item.id}
+                    asChild
+                    isActive={resolvedActive === item.id || (!!item.href && pathname?.startsWith(item.href))}
                     onClick={() => onSectionChange?.(item.id)}
                     className="group relative rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] data-[active=true]:bg-[var(--bg-card)] data-[active=true]:shadow-[0_10px_30px_rgba(0,0,0,0.25)] data-[active=true]:text-[var(--text-primary)]"
                   >

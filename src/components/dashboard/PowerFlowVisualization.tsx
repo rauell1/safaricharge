@@ -3,6 +3,9 @@
 import React from 'react';
 import { Sun, Home, Battery, UtilityPole, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useNodeSelection } from '@/hooks/useEnergySystem';
+import type { NodeType } from '@/stores/energySystemStore';
+import { useRouter } from 'next/navigation';
 
 interface PowerFlowVisualizationProps {
   solarPower: number;
@@ -17,6 +20,7 @@ interface PowerFlowVisualizationProps {
     batteryToHome: boolean;
     gridToHome: boolean;
   };
+  detailBasePath?: string;
 }
 
 interface NodeProps {
@@ -27,23 +31,48 @@ interface NodeProps {
   accent: string;
   tint: string;
   badgeContent?: React.ReactNode;
+  nodeType: NodeType;
+  onClick?: (nodeType: NodeType) => void;
+  isSelected?: boolean;
 }
 
-function EnergyNode({ icon: Icon, label, valueLine, subLabel, accent, tint, badgeContent }: NodeProps) {
+function EnergyNode({ icon: Icon, label, valueLine, subLabel, accent, tint, badgeContent, nodeType, onClick, isSelected }: NodeProps) {
+  const handleClick = () => {
+    if (onClick) {
+      onClick(nodeType);
+    }
+  };
+
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div
+      className="flex flex-col items-center gap-3 cursor-pointer group"
+      onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      aria-label={`View ${label} details`}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          handleClick();
+        }
+      }}
+    >
       <div className="relative flex items-center justify-center">
         <div
-          className="absolute inset-[-10px] rounded-full border border-dashed opacity-60 animate-[spin_12s_linear_infinite]"
+          className={`absolute inset-[-10px] rounded-full border border-dashed opacity-60 animate-[spin_12s_linear_infinite] ${isSelected ? 'opacity-100 border-solid' : ''}`}
           style={{ borderColor: accent }}
         />
         <div
-          className="absolute inset-[-4px] rounded-full blur-xl opacity-30"
+          className="absolute inset-[-4px] rounded-full blur-xl opacity-30 group-hover:opacity-50 transition-opacity"
           style={{ background: accent }}
         />
         <div
-          className="relative flex h-20 w-20 items-center justify-center rounded-full border-2 transition-all duration-300 hover:scale-105"
-          style={{ backgroundColor: tint, borderColor: accent, boxShadow: '0 10px 30px rgba(0, 0, 0, 0.28)' }}
+          className={`relative flex h-20 w-20 items-center justify-center rounded-full border-2 transition-all duration-300 hover:scale-110 ${isSelected ? 'scale-105 ring-2 ring-offset-2 ring-offset-[var(--bg-card)]' : ''}`}
+          style={{
+            backgroundColor: tint,
+            borderColor: accent,
+            boxShadow: isSelected ? `0 15px 40px ${accent}66` : '0 10px 30px rgba(0, 0, 0, 0.28)',
+            borderWidth: isSelected ? '3px' : '2px'
+          }}
         >
           <Icon className="h-9 w-9" style={{ color: accent }} />
           {badgeContent && (
@@ -53,9 +82,16 @@ function EnergyNode({ icon: Icon, label, valueLine, subLabel, accent, tint, badg
             </div>
           )}
         </div>
+        {isSelected && (
+          <div className="absolute -top-2 left-1/2 -translate-x-1/2">
+            <div className="text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ backgroundColor: accent, color: 'white' }}>
+              Selected
+            </div>
+          </div>
+        )}
       </div>
       <div className="text-center space-y-0.5">
-        <p className="text-xs font-semibold text-[var(--text-primary)]">{label}</p>
+        <p className="text-xs font-semibold text-[var(--text-primary)] group-hover:underline">{label}</p>
         <p className="text-sm font-bold" style={{ color: accent }}>{valueLine}</p>
         <p className="text-[10px] text-[var(--text-tertiary)]">{subLabel}</p>
       </div>
@@ -107,18 +143,31 @@ export function PowerFlowVisualization({
   gridPower,
   homePower,
   batteryLevel,
-  flowDirection
+  flowDirection,
+  detailBasePath,
 }: PowerFlowVisualizationProps) {
+  const { selectNode, isSelected } = useNodeSelection();
+  const router = useRouter();
+
+  const handleNodeClick = (nodeType: NodeType) => {
+    selectNode(nodeType);
+    if (detailBasePath) {
+      const pathNode = nodeType === 'ev1' || nodeType === 'ev2' ? 'ev' : nodeType;
+      router.push(`${detailBasePath}/${pathNode}`);
+    }
+  };
+
   return (
     <Card className="dashboard-card">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
           <Zap className="h-5 w-5 text-[var(--battery)]" />
           Energy Flow
+          <span className="text-xs text-[var(--text-tertiary)] font-normal ml-2">(Click nodes for details)</span>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col items-center gap-4 py-4 select-none">
+        <div className="flex flex-col items-center gap-4 py-4">
           <EnergyNode
             icon={Sun}
             label="Solar"
@@ -126,6 +175,9 @@ export function PowerFlowVisualization({
             subLabel="Generation"
             accent="var(--solar)"
             tint="var(--solar-soft)"
+            nodeType="solar"
+            onClick={handleNodeClick}
+            isSelected={isSelected('solar')}
           />
 
           <div className="flex justify-center py-1">
@@ -173,6 +225,9 @@ export function PowerFlowVisualization({
                 accent="var(--battery)"
                 tint="var(--battery-soft)"
                 badgeContent={`${Math.round(batteryLevel)}%`}
+                nodeType="battery"
+                onClick={handleNodeClick}
+                isSelected={isSelected('battery')}
               />
             </div>
 
@@ -190,6 +245,9 @@ export function PowerFlowVisualization({
                 subLabel="Consumption"
                 accent="var(--consumption)"
                 tint="var(--consumption-soft)"
+                nodeType="home"
+                onClick={handleNodeClick}
+                isSelected={isSelected('home')}
               />
             </div>
 
@@ -207,6 +265,9 @@ export function PowerFlowVisualization({
                 subLabel={gridPower > 0 ? 'Importing' : gridPower < 0 ? 'Exporting' : 'Standby'}
                 accent="var(--grid)"
                 tint="var(--grid-soft)"
+                nodeType="grid"
+                onClick={handleNodeClick}
+                isSelected={isSelected('grid')}
               />
             </div>
           </div>

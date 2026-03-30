@@ -8,3 +8,5 @@ export { AlertsList } from './AlertsList';
 export { TimeRangeSwitcher } from './TimeRangeSwitcher';
 export { WeatherCard } from './WeatherCard';
 export { BatteryStatusCard } from './BatteryStatusCard';
+export { EnergyDetailShell } from './EnergyDetailShell';
+export { SystemVisualization } from './SystemVisualization';
