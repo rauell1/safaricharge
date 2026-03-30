@@ -3,6 +3,7 @@
 import React from 'react';
 import { Activity, AlertCircle, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -23,6 +24,7 @@ interface PanelData {
 
 interface PanelStatusTableProps {
   panels?: PanelData[];
+  isLoading?: boolean;
 }
 
 const defaultPanels: PanelData[] = [
@@ -93,10 +95,71 @@ function EfficiencyBar({ value }: { value: number }) {
   );
 }
 
-export function PanelStatusTable({ panels = defaultPanels }: PanelStatusTableProps) {
+export function PanelStatusTable({ panels = defaultPanels, isLoading }: PanelStatusTableProps) {
   const onlineCount = panels.filter(p => p.status === 'online').length;
   const warningCount = panels.filter(p => p.status === 'warning').length;
   const offlineCount = panels.filter(p => p.status === 'offline').length;
+
+  if (isLoading) {
+    return (
+      <Card className="dashboard-card">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+              <Activity className="h-5 w-5 text-[var(--consumption)]" />
+              Panel Status Monitor
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-5 w-20" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border overflow-hidden" style={{ borderColor: 'var(--border)' }}>
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-[var(--bg-secondary)]" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
+                  <TableHead className="text-[var(--text-secondary)] font-semibold">Panel ID</TableHead>
+                  <TableHead className="text-[var(--text-secondary)] font-semibold">Output (W)</TableHead>
+                  <TableHead className="text-[var(--text-secondary)] font-semibold">Voltage (V)</TableHead>
+                  <TableHead className="text-[var(--text-secondary)] font-semibold">Status</TableHead>
+                  <TableHead className="text-[var(--text-secondary)] font-semibold">Efficiency</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[...Array(6)].map((_, i) => (
+                  <TableRow
+                    key={i}
+                    className="transition-colors"
+                    style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-card)' }}
+                  >
+                    <TableCell>
+                      <Skeleton className="h-4 w-16" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-12" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-12" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-6 w-20" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-2 flex-1" />
+                        <Skeleton className="h-4 w-10" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="dashboard-card">

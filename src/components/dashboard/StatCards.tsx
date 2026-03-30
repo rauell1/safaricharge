@@ -3,6 +3,7 @@
 import React from 'react';
 import { Sun, Zap, Home, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface StatCardProps {
   title: string;
@@ -99,9 +100,41 @@ interface StatCardsProps {
   currentPower: number;
   consumption: number;
   savings: number;
+  isLoading?: boolean;
 }
 
-export function StatCards({ totalGeneration, currentPower, consumption, savings }: StatCardsProps) {
+function StatCardSkeleton() {
+  return (
+    <Card className="dashboard-card relative overflow-hidden">
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between">
+          <div className="flex-1 space-y-3">
+            <Skeleton className="h-4 w-24" />
+            <div className="flex items-baseline gap-2">
+              <Skeleton className="h-9 w-20" />
+              <Skeleton className="h-4 w-10" />
+            </div>
+            <Skeleton className="h-3 w-32" />
+          </div>
+          <Skeleton className="h-12 w-12 rounded-xl" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function StatCards({ totalGeneration, currentPower, consumption, savings, isLoading }: StatCardsProps) {
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCardSkeleton />
+        <StatCardSkeleton />
+        <StatCardSkeleton />
+        <StatCardSkeleton />
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <StatCard

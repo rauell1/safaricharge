@@ -3,6 +3,7 @@
 import React from 'react';
 import { Cloud, Sun, Wind, Droplets, Thermometer } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface WeatherCardProps {
   temperature?: number;
@@ -11,6 +12,7 @@ interface WeatherCardProps {
   condition?: string;
   irradiance?: number;
   locationName?: string;
+  isLoading?: boolean;
 }
 
 export function WeatherCard({
@@ -20,8 +22,50 @@ export function WeatherCard({
   condition = 'Partly Cloudy',
   irradiance = 720,
   locationName = 'Nairobi, Kenya',
+  isLoading,
 }: WeatherCardProps) {
   const isSunny = condition.toLowerCase().includes('sun') || condition.toLowerCase().includes('clear');
+
+  if (isLoading) {
+    return (
+      <Card className="dashboard-card">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-[var(--text-primary)] text-sm">
+            <Sun className="h-4 w-4" style={{ color: 'var(--solar)' }} />
+            Weather &amp; Irradiance
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="flex items-center justify-between mb-4">
+            <div className="space-y-2">
+              <Skeleton className="h-9 w-20" />
+              <Skeleton className="h-3 w-28" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+            <Skeleton className="h-16 w-16 rounded-full" />
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            <div className="flex flex-col items-center rounded-lg p-2 border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
+              <Skeleton className="h-3.5 w-3.5 mb-1" />
+              <Skeleton className="h-4 w-10 mb-1" />
+              <Skeleton className="h-3 w-12" />
+            </div>
+            <div className="flex flex-col items-center rounded-lg p-2 border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
+              <Skeleton className="h-3.5 w-3.5 mb-1" />
+              <Skeleton className="h-4 w-14 mb-1" />
+              <Skeleton className="h-3 w-8" />
+            </div>
+            <div className="flex flex-col items-center rounded-lg p-2 border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
+              <Skeleton className="h-3.5 w-3.5 mb-1" />
+              <Skeleton className="h-4 w-16 mb-1" />
+              <Skeleton className="h-3 w-10" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="dashboard-card">
