@@ -5,9 +5,9 @@ import {
   Sun, Cloud, Factory, Home, Building2, Battery, UtilityPole, Wifi,
   Clock, Smartphone, Zap, ArrowDown, ArrowUp, MessageSquare, X, Send,
   Sparkles, Loader2, Sliders, Play, Pause, FastForward, ChevronDown,
-  ChevronUp, MapPin, Table, FileText, PieChart, Settings, Calendar,
+  ChevronUp, MapPin, Table, PieChart, Settings, Calendar,
   CloudRain, Moon, Download, RotateCcw, AlertTriangle, DollarSign,
-  Cpu, Car, ZapOff, FileSpreadsheet, Target
+  Cpu, Car, ZapOff, Target
 } from 'lucide-react';
 import DailyEnergyGraph, { type GraphDataPoint, buildGraphSVG, triggerJPGDownload, buildJPGBlob } from '@/components/DailyEnergyGraph';
 import { LocationSelector, RecommendationPanel } from '@/components/RecommendationComponents';

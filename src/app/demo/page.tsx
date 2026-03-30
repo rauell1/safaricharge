@@ -378,6 +378,18 @@ export default function ModularDashboardDemo() {
 
   return (
     <DashboardLayout>
+      <EnergyReportModal
+        isOpen={isReportOpen}
+        onClose={() => setIsReportOpen(false)}
+        savings={stats.totalSavingsKES}
+        solarConsumed={stats.totalSolarKWh}
+        gridImport={stats.totalGridImportKWh ?? 0}
+        minuteData={minuteData}
+        systemStartDate={minuteData[0]?.date ?? new Date().toISOString().slice(0, 10)}
+        onExport={handleExportReport}
+        onFormalReport={handleFormalReport}
+        carbonOffset={accumulators.carbonOffset}
+      />
       <DashboardHeader
         currentDate={currentDate}
         onReset={() => console.log('Reset clicked')}
@@ -588,18 +600,5 @@ export default function ModularDashboardDemo() {
       </div>
     </main>
   </DashboardLayout>
-
-      <EnergyReportModal
-        isOpen={isReportOpen}
-        onClose={() => setIsReportOpen(false)}
-        savings={stats.totalSavingsKES}
-        solarConsumed={stats.totalSolarKWh}
-        gridImport={stats.totalGridImportKWh ?? 0}
-        minuteData={minuteData}
-        systemStartDate={minuteData[0]?.date ?? new Date().toISOString().slice(0, 10)}
-        onExport={handleExportReport}
-        onFormalReport={handleFormalReport}
-        carbonOffset={accumulators.carbonOffset}
-      />
   );
 }
