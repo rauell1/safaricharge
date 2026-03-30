@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffect } from 'react';
 import {
-  Sun, Cloud, Factory, Home, Building2, Battery, UtilityPole, Wifi,
-  Clock, Smartphone, Zap, ArrowDown, ArrowUp, MessageSquare, X, Send,
-  Sparkles, Loader2, Sliders, Play, Pause, FastForward, ChevronDown,
-  ChevronUp, MapPin, Table, PieChart, Settings, Calendar,
-  CloudRain, Moon, Download, RotateCcw, AlertTriangle, DollarSign,
-  Cpu, Car, ZapOff, Target
+  Sun, Home, Building2, Battery, UtilityPole,
+  Clock, Zap, ArrowDown, ArrowUp, MessageSquare, X, Send,
+  Sparkles, Loader2, Sliders, Play, Pause, ChevronDown,
+  ChevronUp, MapPin, Table, FileText, PieChart, Settings, Calendar,
+  Moon, Download, RotateCcw, AlertTriangle, DollarSign,
+  Car, Car as CarIcon, FileSpreadsheet, Target, TrendingUp, Leaf, Trees
 } from 'lucide-react';
 import DailyEnergyGraph, { type GraphDataPoint, buildGraphSVG, triggerJPGDownload, buildJPGBlob } from '@/components/DailyEnergyGraph';
 import { LocationSelector, RecommendationPanel } from '@/components/RecommendationComponents';
@@ -16,8 +16,8 @@ import FinancialDashboard from '@/components/FinancialDashboard';
 import { buildFinancialSnapshot, type FinancialInputs } from '@/lib/financial-dashboard';
 import { KENYA_LOCATIONS } from '@/lib/nasa-power-api';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
+import type { DashboardSection, SidebarContextMetric } from '@/components/dashboard/DashboardSidebar';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { StatCards } from '@/components/dashboard/StatCards';
 import { PowerFlowVisualization } from '@/components/dashboard/PowerFlowVisualization';
 import { WeatherCard } from '@/components/dashboard/WeatherCard';
 import { BatteryStatusCard } from '@/components/dashboard/BatteryStatusCard';
@@ -27,10 +27,82 @@ import { TimeRangeSwitcher } from '@/components/dashboard/TimeRangeSwitcher';
 import { generateDayScenario, nextWeatherMarkov } from '@/simulation/timeEngine';
 import { runSolarSimulation } from '@/simulation/runSimulation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart3, TrendingUp, Leaf, Trees, Car as CarIcon } from 'lucide-react';
-import type { SystemConfig, DerivedSystemConfig, SimulationMinuteRecord } from '@/types/simulation-core';
-import { EnergyReportModal } from '@/components/EnergyReportModal';
-import { KPLC_TARIFF, GRID_EMISSION_FACTOR, TREE_CO2_KG_PER_YEAR, AVG_CAR_EMISSION_KG_PER_KM } from '@/lib/tariff';
+
+// --- CONFIGURATION - Kenya Power Commercial Tariff (E-Mobility) ---
+// Based on actual KPLC bill for ROAM ELECTRIC LIMITED - February 2026
+// Peak Hours: 6:00-10:00 (morning) and 18:00-22:00 (evening)
+// Off-Peak Hours: All other times including weekends
+
+const KPLC_TARIFF = {
+  // Base energy rates (KES/kWh)
+  HIGH_RATE_BASE: 16.00,      // Peak consumption rate
+  LOW_RATE_BASE: 8.00,        // Off-peak consumption rate
+  
+  // Additional charges per kWh (from KPLC bill)
+  FUEL_ENERGY_COST: 3.10,     // Fuel cost adjustment
+  FERFA: 1.2061,              // Forex Exchange Adjustment
+  INFA: 0.46,                 // Inflation Adjustment
+  ERC_LEVY: 0.08,             // Energy Regulatory Commission Levy
+  WRA_LEVY: 0.0121,           // Water Resources Authority Levy
+  VAT_RATE: 0.16,             // Value Added Tax (16%)
+  
+  // Peak hours definition (24-hour format)
+  PEAK_MORNING_START: 6,
+  PEAK_MORNING_END: 10,
+  PEAK_EVENING_START: 18,
+  PEAK_EVENING_END: 22,
+  
+  // Calculate total rate including all charges
+  getHighRateWithVAT: function() {
+    const base = this.HIGH_RATE_BASE + this.FUEL_ENERGY_COST + this.FERFA + 
+                 this.INFA + this.ERC_LEVY + this.WRA_LEVY;
+    return base * (1 + this.VAT_RATE);
+  },
+  
+  getLowRateWithVAT: function() {
+    const base = this.LOW_RATE_BASE + this.FUEL_ENERGY_COST + this.FERFA + 
+                 this.INFA + this.ERC_LEVY + this.WRA_LEVY;
+    return base * (1 + this.VAT_RATE);
+  },
+  
+  // Check if current time is peak hours
+  isPeakTime: function(hour: number): boolean {
+    return (hour >= this.PEAK_MORNING_START && hour < this.PEAK_MORNING_END) ||
+           (hour >= this.PEAK_EVENING_START && hour < this.PEAK_EVENING_END);
+  },
+  
+  // Get applicable rate based on time
+  getRateForTime: function(hour: number): number {
+    return this.isPeakTime(hour) ? this.getHighRateWithVAT() : this.getLowRateWithVAT();
+  },
+
+  // Weekends are entirely off-peak per KPLC commercial E-Mobility tariff
+  isWeekend: function(dayOfWeek: number): boolean {
+    return dayOfWeek === 0 || dayOfWeek === 6;
+  },
+
+  // Get applicable rate accounting for both time-of-use and day-of-week
+  getRateForTimeAndDay: function(hour: number, dayOfWeek: number): number {
+    if (this.isWeekend(dayOfWeek)) return this.getLowRateWithVAT();
+    return this.getRateForTime(hour);
+  }
+};
+
+type SystemConfig = {
+  mode: 'auto' | 'advanced';
+  panelCount: number;
+  panelWatt: number;
+  inverterKw: number;
+  batteryKwh: number;
+  maxChargeKw: number;
+  maxDischargeKw: number;
+  evChargerKw: number;
+  loadScale: number;
+  evCommuterScale: number;
+  evFleetScale: number;
+};
+
+type DerivedSystemConfig = SystemConfig & { pvCapacityKw: number };
 
 const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
   mode: 'auto',
@@ -1080,6 +1152,8 @@ export default function App() {
   const [simSpeed, setSimSpeed] = useState(1);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<DashboardSection>('dashboard');
+  const [overviewDetailsOpen, setOverviewDetailsOpen] = useState(false);
   const [priorityMode, setPriorityMode] = useState('auto');
   const [gridStatus, setGridStatus] = useState('Online');
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month' | 'year'>('today');
@@ -1973,9 +2047,93 @@ export default function App() {
   // Environmental impact calculations
   const treesEquivalent = Math.round((data.carbonOffset / TREE_CO2_KG_PER_YEAR) * 10) / 10;
   const carKmOffset = Math.round(data.carbonOffset / AVG_CAR_EMISSION_KG_PER_KM);
+  const todayLoadKwh = useMemo(
+    () => dailyGraphData.reduce((sum, point) => sum + point.load * (24 / 420), 0),
+    [dailyGraphData]
+  );
+  const estimatedCostToday = Math.max(
+    0,
+    data.totalGridImport * data.currentTariffRate - data.feedInEarnings
+  );
+
+  const sectionMeta: Record<DashboardSection, { title: string; subtitle: string }> = {
+    dashboard: {
+      title: 'Dashboard',
+      subtitle: 'Primary KPIs first, then flow visualization, then drill-down details.',
+    },
+    simulation: {
+      title: 'Simulation',
+      subtitle: 'Run what-if scenarios across Solar, Battery, Grid, and EV behavior.',
+    },
+    configuration: {
+      title: 'System Configuration',
+      subtitle: 'Set your engineering inputs and operating assumptions.',
+    },
+    financial: {
+      title: 'Financial Analysis',
+      subtitle: 'Evaluate savings, ROI, payback, and business performance.',
+    },
+  };
+
+  const sidebarMetrics = useMemo<SidebarContextMetric[]>(() => {
+    if (activeSection === 'simulation') {
+      return [
+        { label: 'Sim Speed', value: `x${simSpeed}`, tone: 'neutral' },
+        { label: 'Time of Day', value: `${timeOfDay.toFixed(2)} h`, tone: 'neutral' },
+        { label: 'Grid', value: gridStatus, tone: gridStatus === 'Online' ? 'grid' : 'neutral' },
+        { label: 'Weather', value: weather, tone: 'neutral' },
+      ];
+    }
+
+    if (activeSection === 'configuration') {
+      return [
+        { label: 'Solar Capacity', value: `${derivedSystemConfig.pvCapacityKw.toFixed(1)} kW`, tone: 'solar' },
+        { label: 'Battery Size', value: `${derivedSystemConfig.batteryKwh.toFixed(1)} kWh`, tone: 'battery' },
+        { label: 'EV Charger', value: `${derivedSystemConfig.evChargerKw.toFixed(1)} kW`, tone: 'ev' },
+        { label: 'Load Scale', value: `${derivedSystemConfig.loadScale.toFixed(2)}x`, tone: 'neutral' },
+      ];
+    }
+
+    if (activeSection === 'financial') {
+      return [
+        { label: 'Savings Today', value: `KES ${data.displaySavings.toFixed(0)}`, tone: 'battery' },
+        { label: 'Cost Today', value: `KES ${estimatedCostToday.toFixed(0)}`, tone: 'grid' },
+        { label: 'Grid Import', value: `${data.totalGridImport.toFixed(1)} kWh`, tone: 'grid' },
+        { label: 'Feed-in Earnings', value: `KES ${data.feedInEarnings.toFixed(0)}`, tone: 'solar' },
+      ];
+    }
+
+    return [
+      { label: 'Solar Today', value: `${data.totalSolar.toFixed(1)} kWh`, tone: 'solar' },
+      { label: 'Battery SOC', value: `${data.batteryLevel.toFixed(0)}%`, tone: 'battery' },
+      { label: 'Grid Net', value: `${data.netGridPower.toFixed(2)} kW`, tone: 'grid' },
+      { label: 'EV Load', value: `${(data.ev1Load + data.ev2Load).toFixed(2)} kW`, tone: 'ev' },
+    ];
+  }, [
+    activeSection,
+    simSpeed,
+    timeOfDay,
+    gridStatus,
+    weather,
+    derivedSystemConfig,
+    data.totalSolar,
+    data.batteryLevel,
+    data.netGridPower,
+    data.ev1Load,
+    data.ev2Load,
+    data.displaySavings,
+    data.totalGridImport,
+    data.feedInEarnings,
+    estimatedCostToday,
+  ]);
+  const activeMeta = sectionMeta[activeSection];
 
   return (
-    <DashboardLayout>
+    <DashboardLayout
+      activeSection={activeSection}
+      onSectionChange={setActiveSection}
+      contextualMetrics={sidebarMetrics}
+    >
       {/* Keep all modals */}
       <SafariChargeAIAssistant isOpen={isAssistantOpen} onClose={() => setIsAssistantOpen(false)} data={data} timeOfDay={timeOfDay} weather={weather} currentDate={currentDate} isAutoMode={isAutoMode} />
       <RecommendationPanel
@@ -2011,12 +2169,11 @@ export default function App() {
       {/* Main Dashboard Content */}
       <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
-          {/* Page title + controls */}
-          <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-[var(--text-primary)]">Solar Energy Dashboard</h2>
+              <h2 className="text-2xl font-bold text-[var(--text-primary)]">{activeMeta.title}</h2>
               <p className="text-sm text-[var(--text-tertiary)]">
-                Monitor your solar energy system • {isAutoMode ? `Auto Mode (×${simSpeed})` : 'Manual Mode'}
+                {activeMeta.subtitle} {isAutoMode ? `Auto Mode (x${simSpeed})` : 'Manual Mode'}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -2032,17 +2189,49 @@ export default function App() {
             </div>
           </div>
 
-          {/* ROW 1 — 4 Stat Cards */}
-          <StatCards
-            totalGeneration={data.totalSolar}
-            currentPower={data.solarR}
-            consumption={data.homeLoad + data.ev1Load + data.ev2Load}
-            savings={data.displaySavings}
-          />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            {[
+              { id: 'dashboard' as DashboardSection, label: 'Dashboard', icon: Table },
+              { id: 'simulation' as DashboardSection, label: 'Simulation', icon: Play },
+              { id: 'configuration' as DashboardSection, label: 'System Config', icon: Sliders },
+              { id: 'financial' as DashboardSection, label: 'Financial Analysis', icon: DollarSign },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveSection(tab.id)}
+                className={`flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                  activeSection === tab.id
+                    ? 'border-transparent'
+                    : 'border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                }`}
+                style={activeSection === tab.id ? { backgroundColor: 'var(--battery-soft)', color: 'var(--battery)' } : undefined}
+              >
+                <tab.icon className="h-4 w-4" />
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-          {/* ROW 2 — Energy Flow (2/3) + Weather & Battery (1/3) */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
+          {activeSection === 'dashboard' && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+                {[
+                  { label: 'Solar Production', value: `${data.totalSolar.toFixed(1)} kWh`, color: 'var(--solar)', tint: 'var(--solar-soft)' },
+                  { label: 'Energy Consumption', value: `${todayLoadKwh.toFixed(1)} kWh`, color: 'var(--consumption)', tint: 'var(--consumption-soft)' },
+                  { label: 'Battery State', value: `${data.batteryLevel.toFixed(0)}%`, color: 'var(--battery)', tint: 'var(--battery-soft)' },
+                  { label: 'Grid Import/Export', value: `${data.netGridPower.toFixed(2)} kW`, color: 'var(--grid)', tint: 'var(--grid-soft)' },
+                  { label: 'Cost Today', value: `KES ${estimatedCostToday.toFixed(0)}`, color: 'var(--battery)', tint: 'var(--battery-soft)' },
+                ].map((metric) => (
+                  <Card key={metric.label} className="dashboard-card">
+                    <CardContent className="p-5">
+                      <p className="text-xs uppercase tracking-wide text-[var(--text-tertiary)]">{metric.label}</p>
+                      <p className="mt-2 text-2xl font-bold" style={{ color: metric.color }}>{metric.value}</p>
+                      <div className="mt-3 h-1.5 w-full rounded-full" style={{ backgroundColor: metric.tint }} />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
               <PowerFlowVisualization
                 solarPower={data.solarR}
                 batteryPower={data.batteryPower}
@@ -2051,314 +2240,406 @@ export default function App() {
                 batteryLevel={data.batteryLevel}
                 flowDirection={flowDirection}
               />
-            </div>
-            <div className="flex flex-col gap-6">
-              <WeatherCard
-                condition={weather}
-                locationName={currentLocation.name}
-                irradiance={Math.round(data.solarR * 100 / (derivedSystemConfig.pvCapacityKw || 1))}
-              />
-              <BatteryStatusCard
-                batteryLevel={data.batteryLevel}
-                batteryPower={Math.abs(data.batteryPower)}
-                capacity={derivedSystemConfig.batteryKwh}
-                isCharging={data.batteryPower > 0}
-              />
-            </div>
-          </div>
 
-          {/* ROW 3 — Generation vs Consumption (2/3) + Energy Distribution (1/3) */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
               <Card className="dashboard-card">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
                     <TrendingUp className="h-5 w-5 text-[var(--battery)]" />
-                    Generation vs Consumption
+                    Daily Energy Balance
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
                   <DailyEnergyGraph data={dailyGraphData} dateLabel={currentDate.toISOString().slice(0, 10)} />
                 </CardContent>
               </Card>
-            </div>
-            <div>
-              <Card className="dashboard-card h-full">
+
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setOverviewDetailsOpen(prev => !prev)}
+                  className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                >
+                  {overviewDetailsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  {overviewDetailsOpen ? 'Hide Details' : 'Show Drill-down Details'}
+                </button>
+              </div>
+
+              {overviewDetailsOpen && (
+                <>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <WeatherCard
+                      condition={weather}
+                      locationName={currentLocation.name}
+                      irradiance={Math.round(data.solarR * 100 / (derivedSystemConfig.pvCapacityKw || 1))}
+                    />
+                    <BatteryStatusCard
+                      batteryLevel={data.batteryLevel}
+                      batteryPower={Math.abs(data.batteryPower)}
+                      capacity={derivedSystemConfig.batteryKwh}
+                      isCharging={data.batteryPower > 0}
+                    />
+                    <Card className="dashboard-card">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+                          <AlertTriangle className="h-5 w-5 text-[var(--alert)]" />
+                          System Snapshot
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-[var(--text-secondary)]">Grid Status</span>
+                            <span className={`text-sm font-semibold ${gridStatus === 'Online' ? 'text-[var(--battery)]' : 'text-[var(--alert)]'}`}>
+                              {gridStatus}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-[var(--text-secondary)]">Weather</span>
+                            <span className="text-sm font-semibold text-[var(--text-primary)]">{weather}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-[var(--text-secondary)]">Battery Health</span>
+                            <span className="text-sm font-semibold text-[var(--battery)]">{(data.batteryHealth * 100).toFixed(1)}%</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-[var(--text-secondary)]">Peak Time</span>
+                            <span className={`text-sm font-semibold ${data.isPeakTime ? 'text-[var(--alert)]' : 'text-[var(--battery)]'}`}>
+                              {data.isPeakTime ? 'Yes' : 'No'}
+                            </span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <PanelStatusTable />
+                    <AlertsList />
+                  </div>
+
+                  {pastGraphs.length > 0 && (
+                    <Card className="dashboard-card">
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+                            <Calendar className="h-5 w-5 text-[var(--solar)]" />
+                            Past Days Archive
+                            <span className="text-sm font-normal text-[var(--text-tertiary)]">
+                              ({pastGraphs.length} day{pastGraphs.length !== 1 ? 's' : ''})
+                            </span>
+                          </CardTitle>
+                          <PastDaysZipButton pastGraphs={pastGraphs} />
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex gap-2 overflow-x-auto pb-2">
+                          {pastGraphs.map(({ date, data: pastData }) => {
+                            const peakSolar = pastData.reduce((maxValue, point) => point.solar > maxValue ? point.solar : maxValue, 0).toFixed(1);
+                            const peakLoad = pastData.reduce((maxValue, point) => point.load > maxValue ? point.load : maxValue, 0).toFixed(1);
+                            const avgBat = (pastData.reduce((sum, point) => sum + point.batSoc, 0) / Math.max(pastData.length, 1)).toFixed(0);
+                            return (
+                              <button
+                                key={date}
+                                onClick={() => {
+                                  const svg = buildGraphSVG(pastData, date);
+                                  triggerJPGDownload(svg, `SafariCharge_DailyGraph_${date}.jpg`);
+                                }}
+                                className="flex-shrink-0 flex flex-col gap-1 rounded-lg border p-3 transition-all duration-300 hover:-translate-y-0.5 w-36 text-left"
+                                style={{ backgroundColor: 'var(--bg-card-muted)', borderColor: 'var(--border)' }}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11px] font-bold text-[var(--text-primary)]">{date}</span>
+                                  <Download size={11} className="text-[var(--text-tertiary)]" />
+                                </div>
+                                <div className="text-[9px] text-[var(--text-secondary)] font-mono leading-tight">Solar {peakSolar} kW</div>
+                                <div className="text-[9px] text-[var(--text-secondary)] font-mono leading-tight">Load {peakLoad} kW</div>
+                                <div className="text-[9px] text-[var(--text-secondary)] font-mono leading-tight">Battery {avgBat}% avg</div>
+                                <MiniSparkline data={pastData} />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </>
+              )}
+            </>
+          )}
+
+          {activeSection === 'simulation' && (
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <Card className="dashboard-card">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+                        <Settings className="h-5 w-5 text-[var(--battery)]" />
+                        Core Simulation Engine
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <CentralDisplay
+                        data={data}
+                        timeOfDay={timeOfDay}
+                        onTimeChange={setTimeOfDay}
+                        isAutoMode={isAutoMode}
+                        onToggleAuto={() => setIsAutoMode(!isAutoMode)}
+                        simSpeed={simSpeed}
+                        onSpeedChange={setSimSpeed}
+                        onOpenReport={() => setIsReportOpen(true)}
+                        priorityMode={priorityMode}
+                        onTogglePriority={() => setPriorityMode(prev => prev === 'battery' ? 'load' : prev === 'load' ? 'auto' : 'battery')}
+                        weather={weather}
+                        isNight={isNight}
+                        gridStatus={gridStatus}
+                        onToggleGrid={() => setGridStatus(prev => prev === 'Online' ? 'Offline' : 'Online')}
+                        displayPriority={data.effectivePriority}
+                        ev1Status={data.ev1Status}
+                        ev2Status={data.ev2Status}
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
+                <Card className="dashboard-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+                      <Target className="h-5 w-5 text-[var(--grid)]" />
+                      Scenario Controls
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0 space-y-4">
+                    <div>
+                      <p className="text-xs text-[var(--text-tertiary)] mb-2">Solar Capacity</p>
+                      <input
+                        type="range"
+                        min={40}
+                        max={220}
+                        step={2}
+                        value={systemConfig.panelCount}
+                        onChange={(event) => setSystemConfig(prev => ({ ...prev, panelCount: Number(event.target.value), mode: 'advanced' }))}
+                        className="w-full"
+                      />
+                      <p className="text-xs text-[var(--text-secondary)] mt-1">{derivedSystemConfig.pvCapacityKw.toFixed(1)} kW</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[var(--text-tertiary)] mb-2">Battery Capacity</p>
+                      <input
+                        type="range"
+                        min={20}
+                        max={240}
+                        step={2}
+                        value={systemConfig.batteryKwh}
+                        onChange={(event) => setSystemConfig(prev => ({ ...prev, batteryKwh: Number(event.target.value), mode: 'advanced' }))}
+                        className="w-full"
+                      />
+                      <p className="text-xs text-[var(--text-secondary)] mt-1">{systemConfig.batteryKwh.toFixed(1)} kWh</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setGridStatus(prev => prev === 'Online' ? 'Offline' : 'Online')}
+                        className="rounded-lg border px-3 py-2 text-xs font-medium border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                      >
+                        Toggle Grid Outage
+                      </button>
+                      <button
+                        onClick={() => setPriorityMode(prev => prev === 'battery' ? 'load' : prev === 'load' ? 'auto' : 'battery')}
+                        className="rounded-lg border px-3 py-2 text-xs font-medium border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                      >
+                        Priority: {data.effectivePriority}
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {['Sunny', 'Cloudy', 'Rainy'].map((condition) => (
+                        <button
+                          key={condition}
+                          onClick={() => setWeather(condition)}
+                          className={`rounded-lg border px-2 py-2 text-xs font-medium ${
+                            weather === condition ? 'border-transparent' : 'border-[var(--border)]'
+                          }`}
+                          style={weather === condition ? { backgroundColor: 'var(--solar-soft)', color: 'var(--solar)' } : undefined}
+                        >
+                          {condition}
+                        </button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <PowerFlowVisualization
+                    solarPower={data.solarR}
+                    batteryPower={data.batteryPower}
+                    gridPower={data.netGridPower}
+                    homePower={data.homeLoad + data.ev1Load + data.ev2Load}
+                    batteryLevel={data.batteryLevel}
+                    flowDirection={flowDirection}
+                  />
+                </div>
+                <Card className="dashboard-card h-full">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+                      <Building2 className="h-5 w-5 text-[var(--solar)]" />
+                      System Visualization
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <ResidentialPanel
+                      data={data}
+                      simSpeed={simSpeed}
+                      weather={weather}
+                      isNight={isNight}
+                      gridStatus={gridStatus}
+                      ev1Status={data.ev1Status}
+                      ev2Status={data.ev2Status}
+                      evSpecs={evSpecs}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card className="dashboard-card">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-                    <PieChart className="h-5 w-5 text-[var(--grid)]" />
-                    Energy Distribution
+                    <TrendingUp className="h-5 w-5 text-[var(--battery)]" />
+                    Scenario Results Over Time
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <div className="flex flex-col items-center justify-center py-6 gap-5">
-                    <div className="relative flex h-40 w-40 items-center justify-center">
-                      <div className="absolute inset-0 rounded-full bg-[var(--bg-card-muted)]" />
-                      <svg viewBox="0 0 120 120" className="absolute inset-0 w-full h-full -rotate-90">
-                        {(() => {
-                          const total = data.totalSolar + data.totalGridImport + 0.1;
-                          const solarPct = data.totalSolar / total;
-                          const gridPct = data.totalGridImport / total;
-                          return (
-                            <>
-                              <circle cx="60" cy="60" r="48" fill="none" stroke="var(--solar)" strokeWidth="14"
-                                strokeDasharray={`${solarPct * 2 * Math.PI * 48} ${2 * Math.PI * 48}`} strokeLinecap="round" opacity="0.9" />
-                              <circle cx="60" cy="60" r="48" fill="none" stroke="var(--consumption)" strokeWidth="14"
-                                strokeDasharray={`${gridPct * 2 * Math.PI * 48} ${2 * Math.PI * 48}`}
-                                strokeDashoffset={`${-(solarPct * 2 * Math.PI * 48)}`} strokeLinecap="round" opacity="0.9" />
-                            </>
-                          );
-                        })()}
-                      </svg>
-                      <div className="text-center z-10">
-                        <div className="text-xl font-bold text-[var(--text-primary)]">{Math.round((data.totalSolar / (data.totalSolar + data.totalGridImport + 0.1)) * 100)}%</div>
-                        <div className="text-[10px] text-[var(--text-tertiary)]">Solar</div>
-                      </div>
+                  <DailyEnergyGraph data={dailyGraphData} dateLabel={currentDate.toISOString().slice(0, 10)} />
+                </CardContent>
+              </Card>
+            </>
+          )}
+
+          {activeSection === 'configuration' && (
+            <>
+              <Card className="dashboard-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+                    <Sliders className="h-5 w-5 text-[var(--consumption)]" />
+                    System Configuration Inputs
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <SystemConfigPanel
+                    config={derivedSystemConfig}
+                    onChange={handleSystemConfigChange}
+                    onModeChange={handleSystemModeChange}
+                    onPreset={handlePresetSelect}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card className="dashboard-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+                    <MapPin className="h-5 w-5 text-[var(--grid)]" />
+                    Location, Tariff, and EV Setup
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="rounded-lg border border-[var(--border)] p-4 bg-[var(--bg-card-muted)]">
+                      <p className="text-[var(--text-tertiary)]">Current Location</p>
+                      <p className="text-[var(--text-primary)] font-semibold mt-1">{currentLocation.name}</p>
+                      <p className="text-[var(--text-secondary)] mt-1">{solarData.annualAverage.toFixed(2)} kWh/m2/day annual average</p>
                     </div>
-                    <div className="w-full space-y-2">
+                    <div className="rounded-lg border border-[var(--border)] p-4 bg-[var(--bg-card-muted)]">
+                      <p className="text-[var(--text-tertiary)]">Tariff Profile</p>
+                      <p className="text-[var(--text-primary)] font-semibold mt-1">Peak {KPLC_TARIFF.getHighRateWithVAT().toFixed(2)} KES/kWh</p>
+                      <p className="text-[var(--text-secondary)] mt-1">Off-peak {KPLC_TARIFF.getLowRateWithVAT().toFixed(2)} KES/kWh</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
+
+          {activeSection === 'financial' && (
+            <>
+              <Card className="dashboard-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+                    <DollarSign className="h-5 w-5 text-[var(--battery)]" />
+                    Savings, ROI, and Payback
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <FinancialDashboard
+                    snapshot={financialSnapshot}
+                    inputs={financialInputs}
+                    onInputsChange={handleFinancialInputsChange}
+                    hasSimulationData={minuteDataRef.current.length > 0}
+                    onRunSimulation={() => {
+                      setActiveSection('simulation');
+                      setIsAutoMode(true);
+                    }}
+                  />
+                </CardContent>
+              </Card>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="dashboard-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+                      <Leaf className="h-5 w-5 text-[var(--battery)]" />
+                      Environmental Impact
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col gap-4">
                       {[
-                        { label: 'Solar Generation', value: `${data.totalSolar.toFixed(1)} kWh`, color: 'var(--solar)' },
-                        { label: 'Grid Import', value: `${data.totalGridImport.toFixed(1)} kWh`, color: 'var(--consumption)' },
-                        { label: 'Battery Stored', value: `${(data.batteryLevel * derivedSystemConfig.batteryKwh / 100).toFixed(1)} kWh`, color: 'var(--battery)' },
-                      ].map(item => (
-                        <div key={item.label} className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                            <span className="text-xs text-[var(--text-secondary)]">{item.label}</span>
+                        { icon: Leaf, value: `${(data.carbonOffset / 1000).toFixed(2)} tons`, label: 'CO2 Offset', color: 'var(--battery)', tint: 'var(--battery-soft)' },
+                        { icon: Trees, value: `${treesEquivalent}`, label: 'Trees Equivalent', color: 'var(--solar)', tint: 'var(--solar-soft)' },
+                        { icon: CarIcon, value: `${carKmOffset.toLocaleString()} km`, label: 'Car Miles Offset', color: 'var(--ev)', tint: 'var(--ev-soft)' },
+                      ].map(({ icon: Icon, value, label, color, tint }) => (
+                        <div
+                          key={label}
+                          className="flex items-center gap-4 rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5"
+                          style={{ backgroundColor: tint, borderColor: 'var(--border)' }}
+                        >
+                          <div
+                            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border"
+                            style={{ backgroundColor: tint, borderColor: 'var(--border-strong)' }}
+                          >
+                            <Icon className="h-5 w-5" style={{ color }} />
                           </div>
-                          <span className="text-xs font-semibold text-[var(--text-primary)]">{item.value}</span>
+                          <div>
+                            <div className="text-xl font-bold" style={{ color }}>{value}</div>
+                            <div className="text-xs text-[var(--text-secondary)]">{label}</div>
+                          </div>
                         </div>
                       ))}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+                  </CardContent>
+                </Card>
 
-          {/* ROW 4 — Simulation Controls (2/3) + System Status (1/3) */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <Card className="dashboard-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-                    <Settings className="h-5 w-5 text-[var(--battery)]" />
-                    Simulation Controls
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <CentralDisplay
-                    data={data}
-                    timeOfDay={timeOfDay}
-                    onTimeChange={setTimeOfDay}
-                    isAutoMode={isAutoMode}
-                    onToggleAuto={() => setIsAutoMode(!isAutoMode)}
-                    simSpeed={simSpeed}
-                    onSpeedChange={setSimSpeed}
-                    onOpenReport={() => setIsReportOpen(true)}
-                    priorityMode={priorityMode}
-                    onTogglePriority={() => setPriorityMode(prev => prev === 'battery' ? 'load' : prev === 'load' ? 'auto' : 'battery')}
-                    weather={weather}
-                    isNight={isNight}
-                    gridStatus={gridStatus}
-                    onToggleGrid={() => setGridStatus(prev => prev === 'Online' ? 'Offline' : 'Online')}
-                    displayPriority={data.effectivePriority}
-                    ev1Status={data.ev1Status}
-                    ev2Status={data.ev2Status}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-            <div>
-              <Card className="dashboard-card h-full">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-                    <AlertTriangle className="h-5 w-5 text-[var(--alert)]" />
-                    System Status
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-[var(--text-secondary)]">Grid Status</span>
-                      <span className={`text-sm font-semibold ${gridStatus === 'Online' ? 'text-[var(--battery)]' : 'text-[var(--alert)]'}`}>
-                        {gridStatus}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-[var(--text-secondary)]">Weather</span>
-                      <span className="text-sm font-semibold text-[var(--text-primary)]">{weather}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-[var(--text-secondary)]">Priority Mode</span>
-                      <span className="text-sm font-semibold text-[var(--consumption)]">{data.effectivePriority}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-[var(--text-secondary)]">Battery Health</span>
-                      <span className="text-sm font-semibold text-[var(--battery)]">{(data.batteryHealth * 100).toFixed(1)}%</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-[var(--text-secondary)]">Peak Time</span>
-                      <span className={`text-sm font-semibold ${data.isPeakTime ? 'text-[var(--alert)]' : 'text-[var(--battery)]'}`}>
-                        {data.isPeakTime ? 'Yes' : 'No'}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* ROW 5 — System Visualization (2/3) + Environmental Impact (1/3) */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <Card className="dashboard-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-                    <Building2 className="h-5 w-5 text-[var(--solar)]" />
-                    Energy System Visualization
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <ResidentialPanel
-                    data={data}
-                    simSpeed={simSpeed}
-                    weather={weather}
-                    isNight={isNight}
-                    gridStatus={gridStatus}
-                    ev1Status={data.ev1Status}
-                    ev2Status={data.ev2Status}
-                    evSpecs={evSpecs}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-            <div>
-              <Card className="dashboard-card h-full">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-                    <Leaf className="h-5 w-5 text-[var(--battery)]" />
-                    Environmental Impact
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col gap-4">
+                <Card className="dashboard-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+                      <PieChart className="h-5 w-5 text-[var(--grid)]" />
+                      Financial Snapshot
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     {[
-                      { icon: Leaf, value: `${(data.carbonOffset / 1000).toFixed(2)} tons`, label: 'CO₂ Offset', color: 'var(--battery)', tint: 'var(--battery-soft)' },
-                      { icon: Trees, value: `${treesEquivalent}`, label: 'Trees Equivalent', color: 'var(--solar)', tint: 'var(--solar-soft)' },
-                      { icon: CarIcon, value: `${carKmOffset.toLocaleString()} km`, label: 'Car Miles Offset', color: 'var(--consumption)', tint: 'var(--consumption-soft)' },
-                    ].map(({ icon: Icon, value, label, color, tint }) => (
-                      <div
-                        key={label}
-                        className="flex items-center gap-4 rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5"
-                        style={{ backgroundColor: tint, borderColor: 'var(--border)' }}
-                      >
-                        <div
-                          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border"
-                          style={{ backgroundColor: tint, borderColor: 'var(--border-strong)' }}
-                        >
-                          <Icon className="h-5 w-5" style={{ color }} />
-                        </div>
-                        <div>
-                          <div className="text-xl font-bold" style={{ color }}>{value}</div>
-                          <div className="text-xs text-[var(--text-secondary)]">{label}</div>
-                        </div>
+                      { label: 'Solar Energy Produced', value: `${data.totalSolar.toFixed(1)} kWh`, tone: 'var(--solar)' },
+                      { label: 'Grid Energy Purchased', value: `${data.totalGridImport.toFixed(1)} kWh`, tone: 'var(--grid)' },
+                      { label: 'Estimated Cost Today', value: `KES ${estimatedCostToday.toFixed(0)}`, tone: 'var(--grid)' },
+                      { label: 'Savings Today', value: `KES ${data.displaySavings.toFixed(0)}`, tone: 'var(--battery)' },
+                      { label: 'Feed-in Earnings', value: `KES ${data.feedInEarnings.toFixed(0)}`, tone: 'var(--solar)' },
+                    ].map((row) => (
+                      <div key={row.label} className="flex items-center justify-between border-b border-[var(--border)] pb-3 last:border-b-0 last:pb-0">
+                        <span className="text-sm text-[var(--text-secondary)]">{row.label}</span>
+                        <span className="text-sm font-semibold" style={{ color: row.tone }}>{row.value}</span>
                       </div>
                     ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* ROW 6 — System Configuration */}
-          <Card className="dashboard-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-                <Sliders className="h-5 w-5 text-[var(--consumption)]" />
-                System Configuration
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <SystemConfigPanel
-                config={derivedSystemConfig}
-                onChange={handleSystemConfigChange}
-                onModeChange={handleSystemModeChange}
-                onPreset={handlePresetSelect}
-              />
-            </CardContent>
-          </Card>
-
-          {/* ROW 7 — Financial Dashboard */}
-          <Card className="dashboard-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-                <DollarSign className="h-5 w-5 text-[var(--battery)]" />
-                Financial Analysis
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <FinancialDashboard
-                snapshot={financialSnapshot}
-                inputs={financialInputs}
-                onInputsChange={handleFinancialInputsChange}
-                hasSimulationData={minuteDataRef.current.length > 0}
-                onRunSimulation={() => setIsAutoMode(true)}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Past Days Graph Archive */}
-          {pastGraphs.length > 0 && (
-            <Card className="dashboard-card">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-                    <Calendar className="h-5 w-5 text-[var(--solar)]" />
-                    Past Days Archive
-                    <span className="text-sm font-normal text-[var(--text-tertiary)]">
-                      ({pastGraphs.length} day{pastGraphs.length !== 1 ? 's' : ''})
-                    </span>
-                  </CardTitle>
-                  <PastDaysZipButton pastGraphs={pastGraphs} />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-2 overflow-x-auto pb-2">
-                  {pastGraphs.map(({ date, data: pastData }) => {
-                    const peakSolar = pastData.reduce((maxValue, point) => point.solar > maxValue ? point.solar : maxValue, 0).toFixed(1);
-                    const peakLoad  = pastData.reduce((maxValue, point) => point.load > maxValue ? point.load : maxValue, 0).toFixed(1);
-                    const avgBat    = (pastData.reduce((s, p) => s + p.batSoc, 0) / Math.max(pastData.length, 1)).toFixed(0);
-                    return (
-                      <button
-                        key={date}
-                        onClick={() => {
-                          const svg = buildGraphSVG(pastData, date);
-                          triggerJPGDownload(svg, `SafariCharge_DailyGraph_${date}.jpg`);
-                        }}
-                        className="flex-shrink-0 flex flex-col gap-1 rounded-lg border p-3 transition-all duration-300 hover:-translate-y-0.5 w-36 text-left"
-                        style={{ backgroundColor: 'var(--bg-card-muted)', borderColor: 'var(--border)' }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-[var(--text-primary)]">{date}</span>
-                          <Download size={11} className="text-[var(--text-tertiary)]" />
-                        </div>
-                        <div className="text-[9px] text-[var(--text-secondary)] font-mono leading-tight">
-                          ☀️ {peakSolar} kW
-                        </div>
-                        <div className="text-[9px] text-[var(--text-secondary)] font-mono leading-tight">
-                          ⚡ {peakLoad} kW load
-                        </div>
-                        <div className="text-[9px] text-[var(--text-secondary)] font-mono leading-tight">
-                          🔋 {avgBat}% avg
-                        </div>
-                        <MiniSparkline data={pastData} />
-                      </button>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
           )}
         </div>
       </main>
