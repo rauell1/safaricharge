@@ -20,9 +20,9 @@ const formatNumber = (value: number, digits = 1) =>
   Number.isFinite(value) ? value.toLocaleString('en-KE', { maximumFractionDigits: digits }) : '0';
 
 const ProgressBar = ({ value }: { value: number }) => (
-  <div className="h-2.5 w-full rounded-full bg-slate-200">
+  <div className="h-2.5 w-full rounded-full bg-[var(--bg-card-muted)]">
     <div
-      className="h-full rounded-full bg-emerald-500 transition-all"
+      className="h-full rounded-full bg-[var(--battery)] transition-all"
       style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
     />
   </div>
@@ -53,32 +53,32 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
 
   return (
     <section className="w-full max-w-7xl">
-      <div className="rounded-3xl border border-slate-200 bg-white/90 shadow-2xl backdrop-blur p-4 md:p-6 space-y-5">
+      <div className="space-y-5">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+          <div className="h-10 w-10 rounded-full bg-[var(--bg-card-muted)] flex items-center justify-center text-[var(--battery)]">
             <Sparkles size={18} />
           </div>
           <div>
-            <h2 className="text-lg md:text-xl font-bold text-slate-900">Investor Dashboard</h2>
-            <p className="text-xs md:text-sm text-slate-500">Live financial layer wired to your SafariCharge simulation</p>
+            <h2 className="text-lg md:text-xl font-bold text-[var(--text-primary)]">Investor Dashboard</h2>
+            <p className="text-xs md:text-sm text-[var(--text-secondary)]">Live financial layer wired to your SafariCharge simulation</p>
           </div>
         </div>
 
         {!hasSimulationData ? (
           <div className="flex flex-col items-center justify-center py-16 gap-6 text-center">
-            <div className="h-20 w-20 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+            <div className="h-20 w-20 rounded-full bg-[var(--bg-card-muted)] flex items-center justify-center text-[var(--text-tertiary)]">
               <TrendingUp size={36} />
             </div>
             <div className="space-y-2">
-              <h3 className="text-xl font-bold text-slate-700">No Simulation Data Available</h3>
-              <p className="text-sm text-slate-500 max-w-sm">
+              <h3 className="text-xl font-bold text-[var(--text-primary)]">No Simulation Data Available</h3>
+              <p className="text-sm text-[var(--text-secondary)] max-w-sm">
                 Run the simulation to generate live financial insights — revenue projections, payback period, IRR, NPV, and more.
               </p>
             </div>
             {onRunSimulation && (
               <button
                 onClick={onRunSimulation}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-md transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--battery)] hover:opacity-90 text-white font-semibold rounded-xl transition-colors"
               >
                 <Play size={18} />
                 Run Simulation
@@ -88,47 +88,47 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
         ) : (
         <>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] p-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-emerald-700">Revenue / Month</span>
-              <DollarSign className="text-emerald-500" size={18} />
+              <span className="text-xs font-semibold text-[var(--battery)]">Revenue / Month</span>
+              <DollarSign className="text-[var(--battery)]" size={18} />
             </div>
-            <div className="mt-2 text-2xl font-bold text-slate-900">{formatCurrency(snapshot.revenueMonthly)}</div>
-            <p className="text-xs text-slate-500 mt-1">
+            <div className="mt-2 text-2xl font-bold text-[var(--text-primary)]">{formatCurrency(snapshot.revenueMonthly)}</div>
+            <p className="text-xs text-[var(--text-secondary)] mt-1">
               Revenue per station: {formatCurrency(snapshot.revenuePerStationDay * 30)} / mo
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-indigo-50 to-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] p-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-indigo-700">Net Profit / Month</span>
-              <TrendingUp className="text-indigo-500" size={18} />
+              <span className="text-xs font-semibold text-[var(--grid)]">Net Profit / Month</span>
+              <TrendingUp className="text-[var(--grid)]" size={18} />
             </div>
-            <div className="mt-2 text-2xl font-bold text-slate-900">{formatCurrency(snapshot.netMonthly)}</div>
-            <p className="text-xs text-slate-500 mt-1">Margin {formatNumber(marginPct, 1)}%</p>
+            <div className="mt-2 text-2xl font-bold text-[var(--text-primary)]">{formatCurrency(snapshot.netMonthly)}</div>
+            <p className="text-xs text-[var(--text-secondary)] mt-1">Margin {formatNumber(marginPct, 1)}%</p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] p-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-amber-700">Payback Progress</span>
-              <Gauge className="text-amber-500" size={18} />
+              <span className="text-xs font-semibold text-[var(--solar)]">Payback Progress</span>
+              <Gauge className="text-[var(--solar)]" size={18} />
             </div>
-            <div className="mt-2 text-2xl font-bold text-slate-900">
+            <div className="mt-2 text-2xl font-bold text-[var(--text-primary)]">
               {formatNumber(snapshot.paybackProgressPct, 1)}%
             </div>
             <ProgressBar value={snapshot.paybackProgressPct} />
-            <p className="text-xs text-slate-500 mt-1">Projected payback: {formatNumber(snapshot.paybackYears, 1)} yrs</p>
+            <p className="text-xs text-[var(--text-secondary)] mt-1">Projected payback: {formatNumber(snapshot.paybackYears, 1)} yrs</p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-sky-50 to-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] p-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-sky-700">LCOE</span>
-              <LineChart className="text-sky-500" size={18} />
+              <span className="text-xs font-semibold text-[var(--consumption)]">LCOE</span>
+              <LineChart className="text-[var(--consumption)]" size={18} />
             </div>
-            <div className="mt-2 text-2xl font-bold text-slate-900">
+            <div className="mt-2 text-2xl font-bold text-[var(--text-primary)]">
               {formatCurrency(snapshot.lcoeKesPerKwh, 2)} / kWh
             </div>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-[var(--text-secondary)] mt-1">
               Grid benchmark {formatCurrency(snapshot.gridBenchmarkKesPerKwh, 2)} / kWh
             </p>
           </div>
@@ -136,50 +136,50 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
 
         {/* Financial analytics */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50/60">
+          <div className="rounded-2xl border border-[var(--border)] p-4 bg-[var(--bg-card-muted)]">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase text-slate-500 font-semibold">Capex & Opex</p>
-                <h3 className="text-base font-bold text-slate-900">Cost structure</h3>
+                <p className="text-xs uppercase text-[var(--text-tertiary)] font-semibold">Capex & Opex</p>
+                <h3 className="text-base font-bold text-[var(--text-primary)]">Cost structure</h3>
               </div>
-              <PieChart className="text-slate-400" size={18} />
+              <PieChart className="text-[var(--text-tertiary)]" size={18} />
             </div>
             <div className="mt-3 space-y-3">
               {[
-                { label: 'Solar', value: snapshot.capex.solar, tone: 'bg-emerald-200' },
-                { label: 'Battery', value: snapshot.capex.battery, tone: 'bg-amber-200' },
-                { label: 'Inverter', value: snapshot.capex.inverter, tone: 'bg-sky-200' },
-                { label: 'Installation', value: snapshot.capex.installation, tone: 'bg-slate-200' },
+                { label: 'Solar', value: snapshot.capex.solar, tone: 'bg-[var(--battery)]' },
+                { label: 'Battery', value: snapshot.capex.battery, tone: 'bg-[var(--solar)]' },
+                { label: 'Inverter', value: snapshot.capex.inverter, tone: 'bg-[var(--consumption)]' },
+                { label: 'Installation', value: snapshot.capex.installation, tone: 'bg-[var(--border)]' },
               ].map(item => (
                 <div key={item.label} className="flex items-center gap-3">
                   <div className={`h-2 w-2 rounded-full ${item.tone}`} />
                   <div className="flex-1">
-                    <div className="flex justify-between text-xs text-slate-600">
+                    <div className="flex justify-between text-xs text-[var(--text-secondary)]">
                       <span>{item.label}</span>
-                      <span className="font-semibold text-slate-800">{formatCurrency(item.value)}</span>
+                      <span className="font-semibold text-[var(--text-primary)]">{formatCurrency(item.value)}</span>
                     </div>
                     <ProgressBar value={(item.value / snapshot.capex.total) * 100} />
                   </div>
                 </div>
               ))}
-              <div className="flex justify-between text-sm font-bold text-slate-900 pt-1 border-t border-slate-200">
+              <div className="flex justify-between text-sm font-bold text-[var(--text-primary)] pt-1 border-t border-[var(--border)]">
                 <span>Total Capex</span>
                 <span>{formatCurrency(snapshot.capex.total)}</span>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl border border-slate-200 bg-white p-3">
-                  <p className="text-[11px] text-slate-500">Opex / Month</p>
-                  <div className="text-lg font-semibold text-slate-900">{formatCurrency(snapshot.opex.total)}</div>
-                  <p className="text-[11px] text-slate-500">
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3">
+                  <p className="text-[11px] text-[var(--text-tertiary)]">Opex / Month</p>
+                  <div className="text-lg font-semibold text-[var(--text-primary)]">{formatCurrency(snapshot.opex.total)}</div>
+                  <p className="text-[11px] text-[var(--text-tertiary)]">
                     Maint {formatCurrency(snapshot.opex.maintenance, 0)} • Ins {formatCurrency(snapshot.opex.insurance, 0)}
                   </p>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-white p-3">
-                  <p className="text-[11px] text-slate-500">Lifetime Energy</p>
-                  <div className="text-lg font-semibold text-slate-900">
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3">
+                  <p className="text-[11px] text-[var(--text-tertiary)]">Lifetime Energy</p>
+                  <div className="text-lg font-semibold text-[var(--text-primary)]">
                     {formatNumber(snapshot.energy.lifetimeEnergyKWh / 1000, 1)} MWh
                   </div>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-[11px] text-[var(--text-tertiary)]">
                     Daily solar {formatNumber(snapshot.energy.avgDailySolarKWh, 1)} kWh
                   </p>
                 </div>
@@ -187,48 +187,48 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 p-4 bg-slate-50/60">
+          <div className="rounded-2xl border border-[var(--border)] p-4 bg-[var(--bg-card-muted)]">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase text-slate-500 font-semibold">Profit engine</p>
-                <h3 className="text-base font-bold text-slate-900">Returns & payback</h3>
+                <p className="text-xs uppercase text-[var(--text-tertiary)] font-semibold">Profit engine</p>
+                <h3 className="text-base font-bold text-[var(--text-primary)]">Returns & payback</h3>
               </div>
-              <TrendingUp className="text-emerald-500" size={18} />
+              <TrendingUp className="text-[var(--battery)]" size={18} />
             </div>
             <div className="mt-3 grid grid-cols-2 gap-3">
-              <div className="rounded-xl border border-slate-200 bg-white p-3">
-                <p className="text-[11px] text-slate-500">Net / Month</p>
-                <div className="text-lg font-semibold text-slate-900">{formatCurrency(snapshot.netMonthly)}</div>
-                <p className="text-[11px] text-slate-500">Margin {formatNumber(marginPct, 1)}%</p>
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3">
+                <p className="text-[11px] text-[var(--text-tertiary)]">Net / Month</p>
+                <div className="text-lg font-semibold text-[var(--text-primary)]">{formatCurrency(snapshot.netMonthly)}</div>
+                <p className="text-[11px] text-[var(--text-tertiary)]">Margin {formatNumber(marginPct, 1)}%</p>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-white p-3">
-                <p className="text-[11px] text-slate-500">Payback</p>
-                <div className="text-lg font-semibold text-slate-900">
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3">
+                <p className="text-[11px] text-[var(--text-tertiary)]">Payback</p>
+                <div className="text-lg font-semibold text-[var(--text-primary)]">
                   {snapshot.paybackYears > 0 ? `${formatNumber(snapshot.paybackYears, 1)} yrs` : 'N/A'}
                 </div>
                 <ProgressBar value={snapshot.paybackProgressPct} />
               </div>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-3">
-              <div className="rounded-xl border border-slate-200 bg-white p-3">
-                <p className="text-[11px] text-slate-500">IRR</p>
-                <div className="text-lg font-semibold text-slate-900">{formatNumber(snapshot.irrPct, 1)}%</div>
-                <p className="text-[11px] text-slate-500">Discount {formatNumber(snapshot.discountRatePct, 1)}%</p>
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3">
+                <p className="text-[11px] text-[var(--text-tertiary)]">IRR</p>
+                <div className="text-lg font-semibold text-[var(--text-primary)]">{formatNumber(snapshot.irrPct, 1)}%</div>
+                <p className="text-[11px] text-[var(--text-tertiary)]">Discount {formatNumber(snapshot.discountRatePct, 1)}%</p>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-white p-3">
-                <p className="text-[11px] text-slate-500">NPV</p>
-                <div className="text-lg font-semibold text-slate-900">{formatCurrency(snapshot.npvKes)}</div>
-                <p className="text-[11px] text-slate-500">Horizon {snapshot.projectYears} yrs</p>
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3">
+                <p className="text-[11px] text-[var(--text-tertiary)]">NPV</p>
+                <div className="text-lg font-semibold text-[var(--text-primary)]">{formatCurrency(snapshot.npvKes)}</div>
+                <p className="text-[11px] text-[var(--text-tertiary)]">Horizon {snapshot.projectYears} yrs</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Scenario & sensitivity */}
-        <div className="rounded-2xl border border-slate-200 p-4 bg-gradient-to-br from-slate-900 to-slate-800 text-white space-y-4">
+        <div className="rounded-2xl border border-[var(--border)] p-4 bg-[var(--bg-primary)] text-white space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs uppercase text-slate-300 font-semibold">Scenario & Sensitivity</p>
+              <p className="text-xs uppercase text-[var(--text-secondary)] font-semibold">Scenario & Sensitivity</p>
               <h3 className="text-base font-bold">Live simulation</h3>
             </div>
             <div className="flex items-center gap-2">
@@ -246,14 +246,14 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
               >
                 Reset
               </button>
-              <Gauge size={18} className="text-emerald-300" />
+              <Gauge size={18} className="text-[var(--battery)]" />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-3">
               <label className="flex flex-col gap-1 text-sm">
-                <div className="flex justify-between text-slate-200">
+                <div className="flex justify-between text-[var(--text-secondary)]">
                   <span>Charging tariff (KES/kWh)</span>
                   <span className="font-semibold">{formatNumber(scenario.chargingTariffKes, 0)}</span>
                 </div>
@@ -273,7 +273,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
               </label>
 
               <label className="flex flex-col gap-1 text-sm">
-                <div className="flex justify-between text-slate-200">
+                <div className="flex justify-between text-[var(--text-secondary)]">
                   <span>Utilization (%)</span>
                   <span className="font-semibold">{formatNumber(scenario.utilizationPct, 0)}%</span>
                 </div>
@@ -294,7 +294,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
 
               <div className="grid grid-cols-2 gap-2">
                 <label className="flex flex-col gap-1 text-sm">
-                  <div className="flex justify-between text-slate-200">
+                  <div className="flex justify-between text-[var(--text-secondary)]">
                     <span>Stations</span>
                     <span className="font-semibold">{scenario.stationCount}</span>
                   </div>
@@ -314,7 +314,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
                 </label>
 
                 <label className="flex flex-col gap-1 text-sm">
-                  <div className="flex justify-between text-slate-200">
+                  <div className="flex justify-between text-[var(--text-secondary)]">
                     <span>Discount rate (%)</span>
                     <span className="font-semibold">{formatNumber(scenario.discountRatePct, 1)}%</span>
                   </div>
@@ -337,60 +337,60 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
 
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-xl bg-white/5 border border-white/10 p-3">
-                <p className="text-[11px] text-slate-200">Scenario revenue / month</p>
+                <p className="text-[11px] text-[var(--text-secondary)]">Scenario revenue / month</p>
                 <div className="text-xl font-semibold text-white">{formatCurrency(scenarioResult.revenueMonthly)}</div>
-                <p className="text-[11px] text-emerald-200">Δ vs base {formatCurrency(scenarioResult.revenueMonthly - snapshot.revenueMonthly)}</p>
+                <p className="text-[11px] text-[var(--battery)]">Δ vs base {formatCurrency(scenarioResult.revenueMonthly - snapshot.revenueMonthly)}</p>
               </div>
               <div className="rounded-xl bg-white/5 border border-white/10 p-3">
-                <p className="text-[11px] text-slate-200">Scenario net / month</p>
+                <p className="text-[11px] text-[var(--text-secondary)]">Scenario net / month</p>
                 <div className="text-xl font-semibold text-white">{formatCurrency(scenarioResult.netMonthly)}</div>
-                <p className="text-[11px] text-emerald-200">Payback {scenarioResult.paybackYears ? `${formatNumber(scenarioResult.paybackYears, 1)} yrs` : 'N/A'}</p>
+                <p className="text-[11px] text-[var(--battery)]">Payback {scenarioResult.paybackYears ? `${formatNumber(scenarioResult.paybackYears, 1)} yrs` : 'N/A'}</p>
               </div>
               <div className="rounded-xl bg-white/5 border border-white/10 p-3">
-                <p className="text-[11px] text-slate-200">Scenario IRR</p>
+                <p className="text-[11px] text-[var(--text-secondary)]">Scenario IRR</p>
                 <div className="text-xl font-semibold text-white">{formatNumber(scenarioResult.irrPct, 1)}%</div>
-                <p className="text-[11px] text-slate-200">Discount {formatNumber(scenario.discountRatePct, 1)}%</p>
+                <p className="text-[11px] text-[var(--text-secondary)]">Discount {formatNumber(scenario.discountRatePct, 1)}%</p>
               </div>
               <div className="rounded-xl bg-white/5 border border-white/10 p-3">
-                <p className="text-[11px] text-slate-200">Scenario NPV</p>
+                <p className="text-[11px] text-[var(--text-secondary)]">Scenario NPV</p>
                 <div className="text-xl font-semibold text-white">{formatCurrency(scenarioResult.npvKes)}</div>
-                <p className="text-[11px] text-slate-200">Horizon {snapshot.projectYears} yrs</p>
+                <p className="text-[11px] text-[var(--text-secondary)]">Horizon {snapshot.projectYears} yrs</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Portfolio view */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs uppercase text-slate-500 font-semibold">Portfolio</p>
-              <h3 className="text-base font-bold text-slate-900">Fleet outlook</h3>
+              <p className="text-xs uppercase text-[var(--text-tertiary)] font-semibold">Portfolio</p>
+              <h3 className="text-base font-bold text-[var(--text-primary)]">Fleet outlook</h3>
             </div>
-            <DollarSign className="text-emerald-500" size={18} />
+            <DollarSign className="text-[var(--battery)]" size={18} />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <p className="text-[11px] text-slate-500">Stations</p>
-              <div className="text-lg font-semibold text-slate-900">{snapshot.stations}</div>
-              <p className="text-[11px] text-slate-500">Utilization {formatNumber(snapshot.utilizationPct, 1)}%</p>
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3">
+              <p className="text-[11px] text-[var(--text-tertiary)]">Stations</p>
+              <div className="text-lg font-semibold text-[var(--text-primary)]">{snapshot.stations}</div>
+              <p className="text-[11px] text-[var(--text-tertiary)]">Utilization {formatNumber(snapshot.utilizationPct, 1)}%</p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <p className="text-[11px] text-slate-500">Portfolio revenue / mo</p>
-              <div className="text-lg font-semibold text-slate-900">{formatCurrency(portfolioRevenue)}</div>
-              <p className="text-[11px] text-slate-500">Net {formatCurrency(portfolioNet)}</p>
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3">
+              <p className="text-[11px] text-[var(--text-tertiary)]">Portfolio revenue / mo</p>
+              <div className="text-lg font-semibold text-[var(--text-primary)]">{formatCurrency(portfolioRevenue)}</div>
+              <p className="text-[11px] text-[var(--text-tertiary)]">Net {formatCurrency(portfolioNet)}</p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <p className="text-[11px] text-slate-500">Portfolio IRR</p>
-              <div className="text-lg font-semibold text-slate-900">{formatNumber(snapshot.irrPct, 1)}%</div>
-              <p className="text-[11px] text-slate-500">Grid {formatCurrency(snapshot.gridBenchmarkKesPerKwh, 2)}/kWh</p>
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3">
+              <p className="text-[11px] text-[var(--text-tertiary)]">Portfolio IRR</p>
+              <div className="text-lg font-semibold text-[var(--text-primary)]">{formatNumber(snapshot.irrPct, 1)}%</div>
+              <p className="text-[11px] text-[var(--text-tertiary)]">Grid {formatCurrency(snapshot.gridBenchmarkKesPerKwh, 2)}/kWh</p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <p className="text-[11px] text-slate-500">Blended LCOE</p>
-              <div className="text-lg font-semibold text-slate-900">
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3">
+              <p className="text-[11px] text-[var(--text-tertiary)]">Blended LCOE</p>
+              <div className="text-lg font-semibold text-[var(--text-primary)]">
                 {formatCurrency(snapshot.lcoeKesPerKwh, 2)} / kWh
               </div>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-[var(--text-tertiary)]">
                 Lifetime {formatNumber(snapshot.energy.lifetimeEnergyKWh / 1000, 1)} MWh
               </p>
             </div>
