@@ -28,6 +28,7 @@ export function BatteryStatusCard({
   };
 
   const colors = getColor(batteryLevel);
+  const formattedLevel = Number.isFinite(batteryLevel) ? batteryLevel.toFixed(2) : '0.00';
   const storedKwh = ((batteryLevel / 100) * capacity).toFixed(1);
 
   return (
@@ -46,7 +47,7 @@ export function BatteryStatusCard({
         {/* Level display */}
         <div className="flex items-center justify-between mb-3">
           <div>
-            <span className="text-3xl font-bold" style={{ color: colors.text }}>{batteryLevel}%</span>
+            <span className="text-3xl font-bold" style={{ color: colors.text }}>{formattedLevel}%</span>
             <span className="text-xs text-[var(--text-secondary)] ml-2">{storedKwh} / {capacity} kWh</span>
           </div>
           <div
