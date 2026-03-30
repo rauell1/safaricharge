@@ -16,17 +16,19 @@
 
   /* Accent palette */
   --solar: #f59e0b;
-  --consumption: #3b82f6;
+  --consumption: #0ea5e9;
   --battery: #10b981;
   --alert: #ef4444;
-  --grid: #a855f7;
+  --grid: #3b82f6;
+  --ev: #a855f7;
 
   /* Dimmed accent backgrounds */
   --solar-soft: rgba(245, 158, 11, 0.14);
-  --consumption-soft: rgba(59, 130, 246, 0.14);
+  --consumption-soft: rgba(14, 165, 233, 0.14);
   --battery-soft: rgba(16, 185, 129, 0.14);
   --alert-soft: rgba(239, 68, 68, 0.14);
-  --grid-soft: rgba(168, 85, 247, 0.14);
+  --grid-soft: rgba(59, 130, 246, 0.14);
+  --ev-soft: rgba(168, 85, 247, 0.14);
 
   /* Sidebar system tokens */
   --sidebar-background: 220 26% 14%;

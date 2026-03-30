@@ -2,15 +2,11 @@
 
 import React from 'react';
 import {
-  Home,
-  Sun,
-  Zap,
-  Battery,
+  LayoutDashboard,
+  FlaskConical,
+  SlidersHorizontal,
   DollarSign,
-  AlertTriangle,
-  Settings,
-  BarChart3,
-  Activity,
+  Zap,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -21,34 +17,43 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuBadge,
   SidebarHeader,
   SidebarFooter,
 } from '@/components/ui/sidebar';
+import { cn } from '@/lib/utils';
+
+export type DashboardSection = 'dashboard' | 'simulation' | 'configuration' | 'financial';
+
+export interface SidebarContextMetric {
+  label: string;
+  value: string;
+  tone: 'solar' | 'battery' | 'grid' | 'ev' | 'neutral';
+}
 
 interface DashboardSidebarProps {
-  activeSection?: string;
-  onSectionChange?: (section: string) => void;
-  alertCount?: number;
+  activeSection?: DashboardSection;
+  onSectionChange?: (section: DashboardSection) => void;
+  contextualMetrics?: SidebarContextMetric[];
 }
+
+const toneClasses: Record<SidebarContextMetric['tone'], string> = {
+  solar: 'bg-[var(--solar-soft)] text-[var(--solar)] border-[var(--solar-soft)]',
+  battery: 'bg-[var(--battery-soft)] text-[var(--battery)] border-[var(--battery-soft)]',
+  grid: 'bg-[var(--grid-soft)] text-[var(--grid)] border-[var(--grid-soft)]',
+  ev: 'bg-[var(--ev-soft)] text-[var(--ev)] border-[var(--ev-soft)]',
+  neutral: 'bg-[var(--bg-card-muted)] text-[var(--text-secondary)] border-[var(--border)]',
+};
 
 export function DashboardSidebar({
   activeSection = 'dashboard',
   onSectionChange,
-  alertCount = 0
+  contextualMetrics = [],
 }: DashboardSidebarProps) {
-  const mainMenuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: Home },
-    { id: 'generation', label: 'Generation', icon: Sun },
-    { id: 'consumption', label: 'Consumption', icon: Activity },
-    { id: 'panels', label: 'Panels', icon: BarChart3 },
-    { id: 'battery', label: 'Battery', icon: Battery },
-    { id: 'savings', label: 'Savings', icon: DollarSign },
-  ];
-
-  const systemMenuItems = [
-    { id: 'alerts', label: 'Alerts', icon: AlertTriangle, badge: alertCount },
-    { id: 'settings', label: 'Settings', icon: Settings },
+  const mainMenuItems: Array<{ id: DashboardSection; label: string; icon: React.ElementType }> = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'simulation', label: 'Simulation', icon: FlaskConical },
+    { id: 'configuration', label: 'System Config', icon: SlidersHorizontal },
+    { id: 'financial', label: 'Financial Analysis', icon: DollarSign },
   ];
 
   return (
@@ -68,7 +73,7 @@ export function DashboardSidebar({
       <SidebarContent className="px-3 py-4">
         <SidebarGroup>
           <SidebarGroupLabel className="text-[var(--text-tertiary)] uppercase tracking-wider text-xs mb-2">
-            Main
+            Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -82,7 +87,7 @@ export function DashboardSidebar({
                     <item.icon className="h-4 w-4" />
                     <span className="font-medium">{item.label}</span>
                     {activeSection === item.id && (
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--battery)] rounded-r" />
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--solar)] rounded-r" />
                     )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -91,33 +96,25 @@ export function DashboardSidebar({
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup className="mt-6">
+        <SidebarGroup className="mt-4">
           <SidebarGroupLabel className="text-[var(--text-tertiary)] uppercase tracking-wider text-xs mb-2">
-            System
+            Live Context
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {systemMenuItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    isActive={activeSection === item.id}
-                    onClick={() => onSectionChange?.(item.id)}
-                    className="group relative rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] data-[active=true]:bg-[var(--bg-card)] data-[active=true]:shadow-[0_10px_30px_rgba(0,0,0,0.25)] data-[active=true]:text-[var(--text-primary)]"
-                  >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.label}</span>
-                    {item.badge !== undefined && item.badge > 0 && (
-                      <SidebarMenuBadge className="bg-[var(--alert)] text-white">
-                        {item.badge}
-                      </SidebarMenuBadge>
-                    )}
-                    {activeSection === item.id && (
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--battery)] rounded-r" />
-                    )}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+            <div className="space-y-2">
+              {contextualMetrics.map((metric) => (
+                <div
+                  key={metric.label}
+                  className={cn(
+                    'rounded-lg border px-3 py-2',
+                    toneClasses[metric.tone]
+                  )}
+                >
+                  <div className="text-[10px] uppercase tracking-wide opacity-80">{metric.label}</div>
+                  <div className="text-sm font-semibold mt-0.5">{metric.value}</div>
+                </div>
               ))}
-            </SidebarMenu>
+            </div>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

@@ -3,6 +3,7 @@
 import React from 'react';
 import { Calendar, Bell, Filter, Download, RotateCcw, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import {
   Popover,
   PopoverContent,
@@ -40,6 +41,7 @@ export function DashboardHeader({
     <header className="sticky top-0 z-40 w-full border-b border-dark-border bg-secondary-900/95 backdrop-blur supports-[backdrop-filter]:bg-secondary-900/80">
       <div className="flex h-16 items-center justify-between px-6">
         <div className="flex items-center gap-4">
+          <SidebarTrigger className="h-9 w-9 text-dark-text-secondary hover:text-dark-text-primary hover:bg-secondary-800 rounded-md" />
           <div>
             <div className="flex items-center gap-2 text-sm text-dark-text-secondary">
               <Calendar className="h-4 w-4" />
