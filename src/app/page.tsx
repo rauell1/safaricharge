@@ -1191,8 +1191,8 @@ const Header = ({ onToggleAssistant, currentDate, onReset, currentLocation, onLo
       </div>
       <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto flex-wrap justify-center sm:justify-end">
          <button onClick={onReset} className="hidden sm:block text-slate-400 hover:text-red-500 transition-colors" title="Reset Simulation"><RotateCcw size={16} /></button>
-         <div className="flex items-center gap-2 text-[var(--text-tertiary)] text-[10px] sm:text-xs font-medium bg-slate-100 px-2 sm:px-3 py-1 rounded-full">
-            <Calendar size={12} className="text-slate-400" /> <span className="hidden xs:inline">{formatDate(currentDate)}</span><span className="xs:hidden">{currentDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+         <div className="flex items-center gap-2 text-[var(--text-tertiary)] text-[10px] sm:text-xs font-medium bg-[var(--bg-card-muted)] px-2 sm:px-3 py-1 rounded-full">
+            <Calendar size={12} className="text-[var(--text-tertiary)]" /> <span className="hidden xs:inline">{formatDate(currentDate)}</span><span className="xs:hidden">{currentDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
          </div>
          <div className="block">
             <LocationSelector currentLocation={currentLocation} onLocationSelected={onLocationSelected} />
