@@ -1464,6 +1464,7 @@ export default function App() {
     monthlyTemperature: [22, 23, 24, 23, 22, 21, 20, 21, 22, 23, 22, 22],
     peakSunHours: [5.5, 5.8, 5.6, 5.4, 5.2, 5.1, 5.0, 5.3, 5.7, 5.8, 5.4, 5.3],
   });
+  const [isLocationSelectorOpen, setIsLocationSelectorOpen] = useState(false);
   const [isRecommendationOpen, setIsRecommendationOpen] = useState(false);
   const [systemConfig, setSystemConfig] = useState<SystemConfig>(DEFAULT_SYSTEM_CONFIG);
   const derivedSystemConfig = useMemo<DerivedSystemConfig>(
@@ -2518,6 +2519,37 @@ export default function App() {
     >
       {/* Keep all modals */}
       <SafariChargeAIAssistant isOpen={isAssistantOpen} onClose={() => setIsAssistantOpen(false)} data={data} timeOfDay={timeOfDay} weather={weather} currentDate={currentDate} isAutoMode={isAutoMode} />
+
+      {/* Location Selector Modal */}
+      {isLocationSelectorOpen && (
+        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div className="p-4 bg-gradient-to-r from-sky-600 to-sky-700 text-white flex justify-between items-center rounded-t-2xl">
+              <h2 className="font-bold text-lg">Select Location</h2>
+              <button
+                onClick={() => setIsLocationSelectorOpen(false)}
+                className="text-white hover:text-sky-200 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6">
+              <LocationSelector
+                currentLocation={currentLocation}
+                onLocationSelected={(location, solar) => {
+                  setCurrentLocation(location);
+                  setSolarData(solar);
+                  setIsLocationSelectorOpen(false);
+                }}
+                embedded={true}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       <RecommendationPanel
         isOpen={isRecommendationOpen}
         onClose={() => setIsRecommendationOpen(false)}
@@ -2549,7 +2581,8 @@ export default function App() {
       <DashboardHeader
         currentDate={currentDate}
         onReset={handleReset}
-        onLocationClick={() => setIsRecommendationOpen(true)}
+        onLocationClick={() => setIsLocationSelectorOpen(true)}
+        onRecommendationClick={() => setIsRecommendationOpen(true)}
         onDownload={handleExportReport}
         locationName={currentLocation.name}
         notificationCount={0}
@@ -2989,17 +3022,52 @@ export default function App() {
                     Location, Tariff, and EV Setup
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-0">
+                <CardContent className="pt-0 space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div className="rounded-lg border border-[var(--border)] p-4 bg-[var(--bg-card-muted)]">
-                      <p className="text-[var(--text-tertiary)]">Current Location</p>
-                      <p className="text-[var(--text-primary)] font-semibold mt-1">{currentLocation.name}</p>
-                      <p className="text-[var(--text-secondary)] mt-1">{solarData.annualAverage.toFixed(2)} kWh/m2/day annual average</p>
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-[var(--text-tertiary)]">Current Location</p>
+                          <p className="text-[var(--text-primary)] font-semibold mt-1">{currentLocation.name}</p>
+                          <p className="text-[var(--text-secondary)] mt-1">{solarData.annualAverage.toFixed(2)} kWh/m²/day annual average</p>
+                        </div>
+                        <button
+                          onClick={() => setIsLocationSelectorOpen(true)}
+                          className="flex-shrink-0 flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--solar)] hover:text-[var(--solar)]"
+                        >
+                          <MapPin className="h-3 w-3" />
+                          Change
+                        </button>
+                      </div>
                     </div>
                     <div className="rounded-lg border border-[var(--border)] p-4 bg-[var(--bg-card-muted)]">
                       <p className="text-[var(--text-tertiary)]">Tariff Profile</p>
                       <p className="text-[var(--text-primary)] font-semibold mt-1">Peak {KPLC_TARIFF.getHighRateWithVAT().toFixed(2)} KES/kWh</p>
                       <p className="text-[var(--text-secondary)] mt-1">Off-peak {KPLC_TARIFF.getLowRateWithVAT().toFixed(2)} KES/kWh</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">EV Configuration</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {[
+                        { label: 'EV #1', capacity: evSpecs.ev1.capacity, rate: evSpecs.ev1.rate },
+                        { label: 'EV #2', capacity: evSpecs.ev2.capacity, rate: evSpecs.ev2.rate },
+                      ].map((ev) => (
+                        <div key={ev.label} className="rounded-lg border border-[var(--border)] p-4 bg-[var(--bg-card-muted)] text-sm">
+                          <p className="text-[var(--text-tertiary)] font-medium">{ev.label}</p>
+                          <div className="mt-2 space-y-1">
+                            <div className="flex justify-between">
+                              <span className="text-[var(--text-secondary)]">Battery capacity</span>
+                              <span className="text-[var(--text-primary)] font-semibold">{ev.capacity} kWh</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-[var(--text-secondary)]">Max charge rate</span>
+                              <span className="text-[var(--text-primary)] font-semibold">{ev.rate} kW</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </CardContent>

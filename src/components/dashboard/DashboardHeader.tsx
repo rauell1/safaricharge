@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Calendar, Bell, Filter, Download, RotateCcw, MapPin } from 'lucide-react';
+import { Calendar, Bell, Filter, Download, RotateCcw, MapPin, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import {
@@ -15,6 +15,7 @@ interface DashboardHeaderProps {
   currentDate: Date;
   onReset?: () => void;
   onLocationClick?: () => void;
+  onRecommendationClick?: () => void;
   onDownload?: () => void;
   locationName?: string;
   notificationCount?: number;
@@ -24,6 +25,7 @@ export function DashboardHeader({
   currentDate,
   onReset,
   onLocationClick,
+  onRecommendationClick,
   onDownload,
   locationName = 'Nairobi',
   notificationCount = 0
@@ -61,6 +63,18 @@ export function DashboardHeader({
         </div>
 
         <div className="flex items-center gap-1 md:gap-2">
+          {/* Get Recommendations Button */}
+          {onRecommendationClick && (
+            <Button
+              onClick={onRecommendationClick}
+              className="h-8 md:h-10 px-3 md:px-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold shadow-lg transition-all text-xs md:text-sm"
+            >
+              <Target className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+              <span className="hidden md:inline">Get Recommendation</span>
+              <span className="md:hidden">Recommend</span>
+            </Button>
+          )}
+
           {/* Filters - Hidden on mobile */}
           <Popover>
             <PopoverTrigger asChild>
