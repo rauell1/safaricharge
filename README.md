@@ -1,13 +1,32 @@
 # SafariCharge Solar Dashboard
 
-Production-grade Next.js dashboard for simulating and monitoring solar PV, battery storage, and EV charging performance for a Nairobi commercial site.
+Production-grade Next.js dashboard for simulating and monitoring solar PV, battery storage, and EV charging performance for commercial sites in Kenya.
 
-## Overview
-- Real-time simulation of PV + battery + dual EV chargers with tariff-aware optimisation.
-- CSV/HTML report generation with sanitised exports to avoid spreadsheet injection.
-- AI advisor endpoint with Gemini-first, Z.AI fallback and strict payload validation.
-- In-memory rate limiting, CORS allowlist, bearer-token auth, optional RBAC, and webhook signature checks on all API routes.
-- Environment validation at startup and health endpoint for liveness probes.
+## ✨ Key Features
+
+### 🎨 Modern Dashboard UI
+- **Dark energy-tech theme** with animated power flow visualization
+- **Real-time metrics** with animated counters and live status indicators
+- **Interactive components**: StatCards, PowerFlowVisualization, PanelStatusTable, AlertsList
+- **Responsive design** optimized for mobile, tablet, and desktop
+- **Demo page** at `/demo` with mock data for exploration
+
+### ⚡ Solar Simulation Engine
+- Real-time simulation of PV + battery + dual EV chargers with tariff-aware optimization
+- Physics-based solar modeling with location-specific irradiance and temperature
+- 25-year financial projections with battery replacements and tariff escalation
+- Hardware recommendations sized for Kenya market (2026 pricing)
+
+### 📊 Reports & AI
+- CSV/HTML report generation with sanitized exports (prevents formula injection)
+- AI advisor endpoint with Gemini-first, Z.AI fallback and strict payload validation
+- Formal PDF reports with hardware specifications and financial analysis
+
+### 🔒 Production Security
+- In-memory rate limiting, CORS allowlist, bearer-token auth, optional RBAC
+- Webhook signature verification (HMAC-SHA256)
+- Input validation with Zod schemas and 8MB request caps
+- Environment validation at startup and health endpoint for liveness probes
 
 ## Prerequisites
 - Node.js 20+ (dev/build) and npm.
@@ -24,69 +43,57 @@ Production-grade Next.js dashboard for simulating and monitoring solar PV, batte
 | Auth/Security | Bearer token + optional RBAC header + rate limiting + HMAC |
 | AI | Google Gemini API (primary) + Z.AI SDK (fallback) |
 
-## Folder Structure
-Current (selected)
+## 📁 Project Structure
 ```
 src/
-├── app/               # Routes, layouts, API handlers
-├── components/        # UI primitives + charts
-├── hooks/             # Reusable client hooks
-├── lib/               # Config, db client, env validation, security helpers
-└── middleware.ts      # Rate limiting
+├── app/
+│   ├── api/                    # API routes (health, reports, AI)
+│   ├── demo/                   # Demo dashboard page
+│   └── page.tsx                # Main simulation interface
+├── components/
+│   ├── dashboard/              # Dashboard UI components
+│   │   ├── DashboardLayout.tsx
+│   │   ├── StatCards.tsx
+│   │   ├── PowerFlowVisualization.tsx
+│   │   ├── PanelStatusTable.tsx
+│   │   └── AlertsList.tsx
+│   └── ui/                     # shadcn/ui primitives
+├── hooks/                      # React hooks (simulation, state)
+├── lib/                        # Core logic
+│   ├── recommendation-engine.ts  # Solar sizing & financials
+│   ├── physics-engine.ts         # PV simulation
+│   ├── security.ts               # Auth, CORS, RBAC
+│   └── meteonorm-api.ts          # Weather data APIs
+├── types/                      # TypeScript definitions
+└── middleware.ts               # Rate limiting
 ```
 
-Proposed feature-based layout (before → after)
-```
-src/
-├── app/                          # Routing shell only
-├── features/
-│   ├── simulation/
-│   │   ├── components/           # Graphs, controls
-│   │   ├── services/             # Physics engine, tariff logic
-│   │   ├── hooks/                # Simulation state
-│   │   ├── utils/                # Math helpers, constants
-│   │   └── types/
-│   ├── ai/
-│   │   ├── services/             # Gemini/Z.AI clients
-│   │   ├── utils/                # Prompt builders, validation
-│   │   └── types/
-│   ├── reports/
-│   │   ├── services/             # CSV/HTML rendering, aggregation
-│   │   ├── utils/                # Sanitizers, formatters
-│   │   └── types/
-│   └── security/
-│       ├── services/             # CORS, auth, RBAC, signatures
-│       └── types/
-└── lib/                          # Cross-cutting helpers (db, env, config)
-```
+## 🚀 Quick Start
 
-## Getting Started
-1) Install dependencies  
 ```bash
+# 1. Install dependencies
 npm install
-```
 
-2) Configure environment  
-```bash
+# 2. Configure environment
 cp .env.example .env
-# set DATABASE_URL, GEMINI_API_KEY (optional), and security envs below
-```
+# Edit .env and set DATABASE_URL, GEMINI_API_KEY (optional), and security vars
 
-3) Initialise database  
-```bash
+# 3. Initialize database
 npm run db:push
-```
 
-4) Run locally  
-```bash
+# 4. Run development server
 npm run dev
-# http://localhost:3000
+# Open http://localhost:3000
+
+# 5. Try the demo dashboard
+# Visit http://localhost:3000/demo to see all components with mock data
 ```
 
-5) Lint / build checks  
+### Development Commands
 ```bash
-npm run lint
-npm run build
+npm run lint          # Check code quality
+npm run build         # Production build
+npm run start         # Run production server (requires Bun)
 ```
 
 ## Environment Variables
@@ -104,12 +111,31 @@ npm run build
 ## Scripts
 | Command | Description |
 | --- | --- |
-| `npm run dev` | Start development server. |
+| `npm run dev` | Start development server on port 3000. |
 | `npm run build` | Production build (standalone output). |
 | `npm run start` | Run standalone server (uses Bun). |
 | `npm run lint` | ESLint with Next rules. |
-| `npm run db:push` | Apply Prisma schema. |
+| `npm run db:push` | Apply Prisma schema to database. |
 | `npm run db:migrate` | Create a migration in dev. |
+
+## 🎨 Dashboard Demo
+
+The project includes a fully-functional demo dashboard at `/demo` showcasing:
+
+- **StatCards**: Real-time metrics with animated counters (Generation, Power, Consumption, Savings)
+- **PowerFlowVisualization**: Animated energy flow between Solar → Battery → Home → Grid
+- **PanelStatusTable**: System diagnostics with color-coded status indicators
+- **AlertsList**: System notifications with type-based filtering
+- **TimeRangeSwitcher**: Filter data by day/week/month/year
+
+The demo uses mock data from `useDemoEnergySystem` hook and demonstrates the dark energy-tech theme with:
+- Amber/yellow for solar energy
+- Green for savings/positive metrics
+- Purple for grid interactions
+- Red for alerts/warnings
+- Smooth animations and hover effects
+
+See `src/components/dashboard/README.md` for full component documentation.
 
 ## API Routes
 | Method | Path | Description | Auth / Limits |
@@ -132,24 +158,54 @@ npm run build
 - **Content security**: CSP and header hardening live in `next.config.ts`; CORS and body-size enforcement are per-route.
 - **Rate limits by endpoint**: AI (10/min), formal report (5/min), export report (5/min), other API routes (60/min).
 
-## Deployment
-### Vercel
-1. Connect repo to Vercel.  
-2. Set env vars (`DATABASE_URL`, `GEMINI_API_KEY`, `API_SERVICE_TOKEN`, `WEBHOOK_SECRET`, `API_ALLOWED_ORIGINS`).  
-3. Deploy – Next standalone output is produced by the build script.
+## 🚀 Deployment
+
+### Vercel (Recommended)
+1. Connect repo to Vercel
+2. Set environment variables: `DATABASE_URL`, `GEMINI_API_KEY`, `API_SERVICE_TOKEN`, `WEBHOOK_SECRET`, `API_ALLOWED_ORIGINS`
+3. Deploy – Next standalone output is built automatically
 
 ### Self-hosted
 ```bash
 npm run build
-npm run start  # requires Bun and env vars above
+npm run start  # Requires Bun and environment variables
 ```
-Use `Caddyfile.txt` as a reverse-proxy template (TLS + compression).
 
-## Operations
-- Health check: `GET /api/health`.
-- Logs: `npm run start` pipes to `server.log` via Bun.
-- Scaling tips:
-  - Enable a shared rate-limit store (Redis) for multi-instance deployments.
-  - Use Postgres in production with connection pooling.
-  - Keep `API_ALLOWED_ORIGINS` narrow and enforce bearer tokens for server-to-server calls.
-  - Prefer background jobs/queues for heavy tasks (report generation, notifications).
+**Reverse Proxy**: Use `Caddyfile.txt` as a template for Caddy (TLS + compression)
+
+**Scaling Tips**:
+- Use Redis for shared rate-limit store across multiple instances
+- Configure Postgres with connection pooling for production
+- Keep `API_ALLOWED_ORIGINS` narrow and enforce bearer tokens
+- Use background jobs/queues for heavy tasks (reports, notifications)
+
+## 📊 Operations
+
+- **Health check**: `GET /api/health` returns JSON status
+- **Logs**: Production server logs to `server.log` via Bun
+- **Monitoring**: Health endpoint suitable for Kubernetes liveness probes
+- **Database**: SQLite for dev, Postgres recommended for production
+
+## 📚 Additional Documentation
+
+- **[IMPLEMENTATION.md](IMPLEMENTATION.md)** - Central reference for all calculations, formulas, and architectural decisions
+- **[USER_GUIDE.md](USER_GUIDE.md)** - End-user guide for the simulation interface
+- **[INTEGRATION.md](INTEGRATION.md)** - API integration guide for external systems
+- **[src/components/dashboard/README.md](src/components/dashboard/README.md)** - Dashboard component documentation
+
+## 🤝 Contributing
+
+This project uses:
+- **TypeScript** for type safety
+- **ESLint** for code quality (`npm run lint`)
+- **Prettier** formatting via ESLint config
+- **Prisma** for database schema management
+
+Before submitting changes:
+1. Run `npm run lint` to check for issues
+2. Run `npm run build` to ensure the project builds
+3. Test your changes locally with `npm run dev`
+
+## 📄 License
+
+See repository for license information.
