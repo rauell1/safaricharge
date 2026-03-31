@@ -107,6 +107,72 @@ type SystemConfig = {
 
 type DerivedSystemConfig = SystemConfig & { pvCapacityKw: number };
 
+type GridDirection = 'import' | 'export' | 'neutral';
+type StorageDirection = 'charge' | 'discharge' | 'idle';
+
+type GenerationNode = {
+  type: 'pv';
+  capacityKw: number;
+  outputKw: number;
+  enabled: boolean;
+};
+
+type ConversionNode = {
+  type: 'inverter';
+  id: number;
+  ratingKw: number;
+  outputKw: number;
+  active: boolean;
+};
+
+type StorageNode = {
+  type: 'battery';
+  capacityKwh: number;
+  powerKw: number;
+  status: string;
+  levelPct: number;
+  health: number;
+  cycles: number;
+  direction: StorageDirection;
+  active: boolean;
+};
+
+type LoadNode =
+  | {
+      type: 'grid';
+      name: string;
+      powerKw: number;
+      status: string;
+      direction: GridDirection;
+      active: boolean;
+    }
+  | {
+      type: 'home';
+      name: string;
+      powerKw: number;
+      active: boolean;
+    }
+  | {
+      type: 'ev';
+      id: number;
+      name: string;
+      powerKw: number;
+      status: string;
+      capacity: number;
+      maxRate: number;
+      soc: number;
+      v2g: boolean;
+      active: boolean;
+    };
+
+type DerivedVisualizationLayout = {
+  generation: GenerationNode[];
+  conversion: ConversionNode[];
+  storage: StorageNode[];
+  distribution: { hasACBus: boolean };
+  loads: LoadNode[];
+};
+
 const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
   mode: 'auto',
   panelCount: 120,
@@ -164,6 +230,115 @@ const SYSTEM_PRESETS: Record<'conservative' | 'expected' | 'aggressive', Partial
     evCommuterScale: 1.1,
     evFleetScale: 1.1,
   },
+};
+
+const buildVisualizationLayout = (
+  config: DerivedSystemConfig,
+  data: any,
+  gridStatus: string,
+  ev1Status: string,
+  ev2Status: string,
+  evSpecs: { ev1: { capacity: number; rate: number }; ev2: { capacity: number; rate: number } }
+): DerivedVisualizationLayout => {
+  const safeSolar = Math.max(0, data?.solarR ?? 0);
+  const pvEnabled = config.panelCount > 0 && config.panelWatt > 0 && config.pvCapacityKw > 0;
+  const generation: GenerationNode[] = pvEnabled
+    ? [
+        {
+          type: 'pv',
+          capacityKw: config.pvCapacityKw,
+          outputKw: safeSolar,
+          enabled: pvEnabled,
+        },
+      ]
+    : [];
+
+  const inverterUnits = Math.max(1, Math.round(config.inverterUnits || 1));
+  const perInverterKw = inverterUnits > 0 ? config.inverterKw / inverterUnits : config.inverterKw;
+  const inverterOutput = Math.max(0, Math.min(perInverterKw, safeSolar / inverterUnits));
+  const conversion: ConversionNode[] = Array.from({ length: inverterUnits }).map((_, idx) => ({
+    type: 'inverter',
+    id: idx + 1,
+    ratingKw: perInverterKw,
+    outputKw: inverterOutput,
+    active: safeSolar > 0.1,
+  }));
+
+  const storage: StorageNode[] = [];
+  if (config.batteryKwh > 0) {
+    const batteryStatus = data?.batteryStatus ?? 'Idle';
+    const direction: StorageNode['direction'] =
+      batteryStatus === 'Charging' ? 'charge' : batteryStatus === 'Discharging' ? 'discharge' : 'idle';
+    storage.push({
+      type: 'battery',
+      capacityKwh: Math.max(0, config.batteryKwh),
+      powerKw: data?.batteryPower ?? 0,
+      status: batteryStatus,
+      levelPct: Math.max(0, data?.batteryLevel ?? 0),
+      health: data?.batteryHealth ?? 1,
+      cycles: data?.batteryCycles ?? 0,
+      direction,
+      active: direction !== 'idle',
+    });
+  }
+
+  const loads: LoadNode[] = [];
+  const netGridPower = data?.netGridPower ?? 0;
+  const gridDirection: GridDirection = netGridPower < 0 ? 'import' : netGridPower > 0 ? 'export' : 'neutral';
+  loads.push({
+    type: 'grid',
+    name: 'Grid',
+    powerKw: netGridPower,
+    status: gridStatus,
+    direction: gridDirection,
+    active: gridStatus === 'Online' && netGridPower !== 0,
+  });
+
+  const homeLoad = Math.max(0, data?.homeLoad ?? 0);
+  loads.push({
+    type: 'home',
+    name: 'Home',
+    powerKw: homeLoad,
+    active: homeLoad > 0,
+  });
+
+  const canShowEv = config.evChargerKw > 0;
+  if (canShowEv && (config.evCommuterScale ?? 1) > 0) {
+    loads.push({
+      type: 'ev',
+      id: 1,
+      name: 'EV 1 (Commuter)',
+      powerKw: Math.max(0, data?.ev1Load ?? 0),
+      status: ev1Status,
+      capacity: evSpecs.ev1.capacity,
+      maxRate: evSpecs.ev1.rate,
+      soc: Math.max(0, data?.ev1Soc ?? 0),
+      v2g: data?.ev1V2g ?? false,
+      active: ev1Status === 'Charging',
+    });
+  }
+  if (canShowEv && (config.evFleetScale ?? 1) > 0) {
+    loads.push({
+      type: 'ev',
+      id: 2,
+      name: 'EV 2 (Uber)',
+      powerKw: Math.max(0, data?.ev2Load ?? 0),
+      status: ev2Status,
+      capacity: evSpecs.ev2.capacity,
+      maxRate: evSpecs.ev2.rate,
+      soc: Math.max(0, data?.ev2Soc ?? 0),
+      v2g: data?.ev2V2g ?? false,
+      active: ev2Status === 'Charging',
+    });
+  }
+
+  return {
+    generation,
+    conversion,
+    storage,
+    distribution: { hasACBus: true },
+    loads,
+  };
 };
 
 // --- PHYSICS HELPERS ---
@@ -1080,111 +1255,133 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
   );
 };
 
-const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridStatus, ev1Status, ev2Status, evSpecs, config }: {
-  data: any; simSpeed: number; weather: string; isNight: boolean; gridStatus: string; ev1Status: string; ev2Status: string; evSpecs: any; config: DerivedSystemConfig;
+const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout }: {
+  simSpeed: number; weather: string; isNight: boolean; layout: DerivedVisualizationLayout;
 }) => {
-  const isSolarActive = data.solarR > 0.1;
-  const gridFlowDir = data.netGridPower < 0 ? 'up' : 'down';
-  const inverterUnits = Math.max(1, Math.round(config.inverterUnits || 1));
-  const perInverterKw = config.inverterKw / inverterUnits;
-  const inverterDisplayKw = Math.max(0, Math.min(perInverterKw, data.solarR / inverterUnits));
-  const showEv1 = config.evChargerKw > 0 && (config.evCommuterScale ?? 1) > 0;
-  const showEv2 = config.evChargerKw > 0 && (config.evFleetScale ?? 1) > 0;
+  const pvNode = layout.generation[0];
+  const isSolarActive = (pvNode?.outputKw ?? 0) > 0.1;
+  const inverterUnits = Math.max(1, layout.conversion.length || 1);
+  const busNodes: Array<{ key: string; cable: React.ReactNode; node: React.ReactNode }> = [];
 
-  const loadNodes: Array<{ key: string; cable: React.ReactNode; node: React.ReactNode }> = [
-    {
-      key: 'grid',
+  layout.loads.forEach((load) => {
+    if (load.type === 'grid') {
+      const flowDirection = load.direction === 'import' ? 'up' : 'down';
+      const cableColor =
+        load.status === 'Offline'
+          ? 'bg-red-200'
+          : load.direction === 'import'
+            ? 'bg-sky-500'
+            : load.direction === 'export'
+              ? 'bg-green-500'
+              : 'bg-slate-300';
+      const arrowColor =
+        load.direction === 'import' ? 'text-sky-100' : load.direction === 'export' ? 'text-green-100' : 'text-slate-200';
+      busNodes.push({
+        key: 'grid',
+        cable: (
+          <RigidCable
+            height={40}
+            active={load.active}
+            flowDirection={flowDirection}
+            color={cableColor}
+            speed={simSpeed}
+            arrowColor={arrowColor}
+          />
+        ),
+        node: (
+          <GridProduct
+            power={load.powerKw}
+            isImporting={load.powerKw < 0}
+            isExporting={load.powerKw > 0}
+            gridStatus={load.status}
+          />
+        ),
+      });
+      return;
+    }
+
+    if (load.type === 'home') {
+      busNodes.push({
+        key: 'home',
+        cable: <RigidCable height={40} active={load.active} color="bg-slate-800" speed={simSpeed} arrowColor="text-slate-200" />,
+        node: <HomeProduct power={load.powerKw} />,
+      });
+      return;
+    }
+
+    if (load.type === 'ev') {
+      const isCharging = load.status === 'Charging';
+      busNodes.push({
+        key: `ev-${load.id}`,
+        cable: (
+          <RigidCable
+            height={40}
+            active={isCharging}
+            color={isCharging ? 'bg-slate-800' : 'bg-slate-200'}
+            speed={simSpeed}
+            arrowColor="text-slate-200"
+          />
+        ),
+        node: (
+          <EVChargerProduct
+            id={load.id}
+            status={load.status}
+            soc={load.soc}
+            power={load.powerKw}
+            carName={load.name}
+            capacity={load.capacity}
+            maxRate={load.maxRate}
+            onToggle={() => {}}
+            v2g={load.v2g}
+          />
+        ),
+      });
+    }
+  });
+
+  layout.storage.forEach((storage) => {
+    const flowDirection = storage.direction === 'charge' ? 'down' : 'up';
+    const color =
+      storage.direction === 'charge'
+        ? 'bg-green-500'
+        : storage.direction === 'discharge'
+          ? 'bg-orange-500'
+          : 'bg-slate-300';
+    const arrowColor = storage.direction === 'charge' ? 'text-green-100' : 'text-orange-100';
+    busNodes.push({
+      key: 'battery',
       cable: (
         <RigidCable
           height={40}
-          active={data.netGridPower !== 0 && gridStatus === 'Online'}
-          flowDirection={gridFlowDir}
-          color={gridStatus === 'Offline' ? 'bg-red-200' : data.netGridPower < 0 ? 'bg-sky-500' : data.netGridPower > 0 ? 'bg-green-500' : 'bg-slate-300'}
+          active={storage.active}
+          flowDirection={flowDirection}
+          color={color}
           speed={simSpeed}
-          arrowColor={data.netGridPower < 0 ? 'text-sky-100' : 'text-green-100'}
+          arrowColor={arrowColor}
         />
       ),
-      node: <GridProduct power={data.netGridPower} isImporting={data.netGridPower < 0} isExporting={data.netGridPower > 0} gridStatus={gridStatus} />,
-    },
-    {
-      key: 'home',
-      cable: <RigidCable height={40} active={data.homeLoad > 0} color="bg-slate-800" speed={simSpeed} arrowColor="text-slate-200" />,
-      node: <HomeProduct power={data.homeLoad} />,
-    },
-  ];
-
-  if (showEv1) {
-    loadNodes.push({
-      key: 'ev1',
-      cable: <RigidCable height={40} active={ev1Status === 'Charging'} color={ev1Status === 'Charging' ? 'bg-slate-800' : 'bg-slate-200'} speed={simSpeed} arrowColor="text-slate-200" />,
       node: (
-        <EVChargerProduct
-          id={1}
-          status={ev1Status}
-          soc={data.ev1Soc}
-          power={data.ev1Load}
-          carName="EV 1 (Commuter)"
-          capacity={evSpecs.ev1.capacity}
-          maxRate={evSpecs.ev1.rate}
-          onToggle={() => {}}
-          v2g={data.ev1V2g}
+        <BatteryProduct
+          level={storage.levelPct}
+          status={storage.status}
+          power={storage.powerKw}
+          health={storage.health}
+          cycles={storage.cycles}
+          capacityKwh={storage.capacityKwh}
         />
       ),
     });
-  }
-
-  if (showEv2) {
-    loadNodes.push({
-      key: 'ev2',
-      cable: <RigidCable height={40} active={ev2Status === 'Charging'} color={ev2Status === 'Charging' ? 'bg-slate-800' : 'bg-slate-200'} speed={simSpeed} arrowColor="text-slate-200" />,
-      node: (
-        <EVChargerProduct
-          id={2}
-          status={ev2Status}
-          soc={data.ev2Soc}
-          power={data.ev2Load}
-          carName="EV 2 (Uber)"
-          capacity={evSpecs.ev2.capacity}
-          maxRate={evSpecs.ev2.rate}
-          onToggle={() => {}}
-          v2g={data.ev2V2g}
-        />
-      ),
-    });
-  }
-
-  loadNodes.push({
-    key: 'battery',
-    cable: (
-      <RigidCable
-        height={40}
-        active={data.batteryStatus !== 'Idle'}
-        flowDirection={data.batteryStatus === 'Charging' ? 'down' : 'up'}
-        color={data.batteryStatus === 'Charging' ? 'bg-green-500' : data.batteryStatus === 'Discharging' ? 'bg-orange-500' : 'bg-slate-300'}
-        speed={simSpeed}
-        arrowColor={data.batteryStatus === 'Charging' ? 'text-green-100' : 'text-orange-100'}
-      />
-    ),
-    node: (
-      <BatteryProduct
-        level={data.batteryLevel}
-        status={data.batteryStatus}
-        power={data.batteryPower}
-        health={data.batteryHealth}
-        cycles={data.batteryCycles}
-        capacityKwh={config.batteryKwh}
-      />
-    ),
   });
 
-  const busTemplate = { gridTemplateColumns: `repeat(${loadNodes.length}, minmax(0, 1fr))` };
+  const busColumns = Math.max(1, busNodes.length);
+  const busTemplate = { gridTemplateColumns: `repeat(${busColumns}, minmax(0, 1fr))` };
   const inverterTemplate = { gridTemplateColumns: `repeat(${Math.min(inverterUnits, 4)}, minmax(100px, 1fr))` };
 
   return (
     <div className="flex flex-col items-center w-full h-full p-2 sm:p-3 md:p-6 bg-[var(--bg-card-muted)] rounded-2xl sm:rounded-3xl border border-[var(--border)]">
       <div className="flex flex-col items-center w-full max-w-full sm:max-w-[600px] md:max-w-[800px] mx-auto px-1 sm:px-2">
         <div className="mb-0">
-          <SolarPanelProduct power={data.solarR} capacity={config.pvCapacityKw} weather={weather} isNight={isNight} />
+          <SolarPanelProduct power={pvNode?.outputKw ?? 0} capacity={pvNode?.capacityKw ?? 0} weather={weather} isNight={isNight} />
         </div>
         <div className="flex flex-col items-center w-full max-w-[720px]">
           <RigidCable height={30} active={isSolarActive} color={isSolarActive ? 'bg-green-500' : 'bg-slate-300'} speed={simSpeed} arrowColor="text-green-100" />
@@ -1198,8 +1395,13 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
           </div>
         </div>
         <div className="grid gap-3 sm:gap-4 md:gap-5 justify-items-center mb-0 scale-75 sm:scale-90 md:scale-100 w-full max-w-[800px]" style={inverterTemplate}>
-          {Array.from({ length: inverterUnits }).map((_, idx) => (
-            <InverterProduct key={`inv-${idx}`} id={idx + 1} power={inverterDisplayKw} ratedCapacityKw={perInverterKw} />
+          {layout.conversion.map((converter) => (
+            <InverterProduct
+              key={`inv-${converter.id}`}
+              id={converter.id}
+              power={converter.outputKw}
+              ratedCapacityKw={converter.ratingKw}
+            />
           ))}
         </div>
         <div className="flex flex-col items-center w-full max-w-[900px]">
@@ -1211,7 +1413,7 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
               <div className="text-[6px] sm:text-[8px] text-white font-mono tracking-widest">AC DISTRIBUTION BUS</div>
             </div>
             <div className="grid gap-1 sm:gap-2 pt-6" style={busTemplate}>
-              {loadNodes.map((node) => (
+              {busNodes.map((node) => (
                 <div key={`cable-${node.key}`} className="flex justify-center">
                   {node.cable}
                 </div>
@@ -1220,7 +1422,7 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
           </div>
         </div>
         <div className="grid gap-2 sm:gap-3 md:gap-4 w-full max-w-[900px] mt-2 scale-75 sm:scale-90 md:scale-100" style={busTemplate}>
-          {loadNodes.map((node) => (
+          {busNodes.map((node) => (
             <div key={`node-${node.key}`} className="flex justify-center scale-90">
               {node.node}
             </div>
@@ -1307,6 +1509,10 @@ export default function App() {
     ev2V2g: false,
     _graphPoint: null as GraphDataPoint | null,
   });
+  const systemLayout = useMemo(
+    () => buildVisualizationLayout(derivedSystemConfig, data, gridStatus, data.ev1Status, data.ev2Status, evSpecs),
+    [derivedSystemConfig, data, gridStatus, evSpecs]
+  );
 
   const accumulators = useRef({ solar: 0, savings: 0, gridImport: 0, carbonOffset: 0, batDischargeKwh: 0, feedInEarnings: 0 });
   const soilingFactorRef = useRef(1.0);
@@ -2589,15 +2795,10 @@ export default function App() {
                 </CardHeader>
                 <CardContent className="pt-0">
                   <ResidentialPanel
-                    data={data}
                     simSpeed={simSpeed}
                     weather={weather}
                     isNight={isNight}
-                    gridStatus={gridStatus}
-                    ev1Status={data.ev1Status}
-                    ev2Status={data.ev2Status}
-                    evSpecs={evSpecs}
-                    config={derivedSystemConfig}
+                    layout={systemLayout}
                   />
                 </CardContent>
               </Card>
