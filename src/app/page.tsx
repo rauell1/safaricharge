@@ -29,6 +29,7 @@ import { generateDayScenario, nextWeatherMarkov } from '@/simulation/timeEngine'
 import { runSolarSimulation } from '@/simulation/runSimulation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TREE_CO2_KG_PER_YEAR, AVG_CAR_EMISSION_KG_PER_KM, GRID_EMISSION_FACTOR } from '@/lib/tariff';
+import type { HardwareRecommendation } from '@/lib/recommendation-engine';
 
 // --- CONFIGURATION - Kenya Power Commercial Tariff (E-Mobility) ---
 // Based on actual KPLC bill for ROAM ELECTRIC LIMITED - February 2026
@@ -107,6 +108,72 @@ type SystemConfig = {
 
 type DerivedSystemConfig = SystemConfig & { pvCapacityKw: number };
 
+type GridDirection = 'import' | 'export' | 'neutral';
+type StorageDirection = 'charge' | 'discharge' | 'idle';
+
+type GenerationNode = {
+  type: 'pv';
+  capacityKw: number;
+  outputKw: number;
+  enabled: boolean;
+};
+
+type ConversionNode = {
+  type: 'inverter';
+  id: number;
+  ratingKw: number;
+  outputKw: number;
+  active: boolean;
+};
+
+type StorageNode = {
+  type: 'battery';
+  capacityKwh: number;
+  powerKw: number;
+  status: string;
+  levelPct: number;
+  health: number;
+  cycles: number;
+  direction: StorageDirection;
+  active: boolean;
+};
+
+type LoadNode =
+  | {
+      type: 'grid';
+      name: string;
+      powerKw: number;
+      status: string;
+      direction: GridDirection;
+      active: boolean;
+    }
+  | {
+      type: 'home';
+      name: string;
+      powerKw: number;
+      active: boolean;
+    }
+  | {
+      type: 'ev';
+      id: number;
+      name: string;
+      powerKw: number;
+      status: string;
+      capacity: number;
+      maxRate: number;
+      soc: number;
+      v2g: boolean;
+      active: boolean;
+    };
+
+type DerivedVisualizationLayout = {
+  generation: GenerationNode[];
+  conversion: ConversionNode[];
+  storage: StorageNode[];
+  distribution: { hasACBus: boolean };
+  loads: LoadNode[];
+};
+
 const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
   mode: 'auto',
   panelCount: 120,
@@ -164,6 +231,115 @@ const SYSTEM_PRESETS: Record<'conservative' | 'expected' | 'aggressive', Partial
     evCommuterScale: 1.1,
     evFleetScale: 1.1,
   },
+};
+
+const buildVisualizationLayout = (
+  config: DerivedSystemConfig,
+  data: any,
+  gridStatus: string,
+  ev1Status: string,
+  ev2Status: string,
+  evSpecs: { ev1: { capacity: number; rate: number }; ev2: { capacity: number; rate: number } }
+): DerivedVisualizationLayout => {
+  const safeSolar = Math.max(0, data?.solarR ?? 0);
+  const pvEnabled = config.panelCount > 0 && config.panelWatt > 0 && config.pvCapacityKw > 0;
+  const generation: GenerationNode[] = pvEnabled
+    ? [
+        {
+          type: 'pv',
+          capacityKw: config.pvCapacityKw,
+          outputKw: safeSolar,
+          enabled: pvEnabled,
+        },
+      ]
+    : [];
+
+  const inverterUnits = Math.max(1, Math.round(config.inverterUnits || 1));
+  const perInverterKw = inverterUnits > 0 ? config.inverterKw / inverterUnits : config.inverterKw;
+  const inverterOutput = Math.max(0, Math.min(perInverterKw, safeSolar / inverterUnits));
+  const conversion: ConversionNode[] = Array.from({ length: inverterUnits }).map((_, idx) => ({
+    type: 'inverter',
+    id: idx + 1,
+    ratingKw: perInverterKw,
+    outputKw: inverterOutput,
+    active: safeSolar > 0.1,
+  }));
+
+  const storage: StorageNode[] = [];
+  if (config.batteryKwh > 0) {
+    const batteryStatus = data?.batteryStatus ?? 'Idle';
+    const direction: StorageNode['direction'] =
+      batteryStatus === 'Charging' ? 'charge' : batteryStatus === 'Discharging' ? 'discharge' : 'idle';
+    storage.push({
+      type: 'battery',
+      capacityKwh: Math.max(0, config.batteryKwh),
+      powerKw: data?.batteryPower ?? 0,
+      status: batteryStatus,
+      levelPct: Math.max(0, data?.batteryLevel ?? 0),
+      health: data?.batteryHealth ?? 1,
+      cycles: data?.batteryCycles ?? 0,
+      direction,
+      active: direction !== 'idle',
+    });
+  }
+
+  const loads: LoadNode[] = [];
+  const netGridPower = data?.netGridPower ?? 0;
+  const gridDirection: GridDirection = netGridPower < 0 ? 'import' : netGridPower > 0 ? 'export' : 'neutral';
+  loads.push({
+    type: 'grid',
+    name: 'Grid',
+    powerKw: netGridPower,
+    status: gridStatus,
+    direction: gridDirection,
+    active: gridStatus === 'Online' && netGridPower !== 0,
+  });
+
+  const homeLoad = Math.max(0, data?.homeLoad ?? 0);
+  loads.push({
+    type: 'home',
+    name: 'Home',
+    powerKw: homeLoad,
+    active: homeLoad > 0,
+  });
+
+  const canShowEv = config.evChargerKw > 0;
+  if (canShowEv && (config.evCommuterScale ?? 1) > 0) {
+    loads.push({
+      type: 'ev',
+      id: 1,
+      name: 'EV 1 (Commuter)',
+      powerKw: Math.max(0, data?.ev1Load ?? 0),
+      status: ev1Status,
+      capacity: evSpecs.ev1.capacity,
+      maxRate: evSpecs.ev1.rate,
+      soc: Math.max(0, data?.ev1Soc ?? 0),
+      v2g: data?.ev1V2g ?? false,
+      active: ev1Status === 'Charging',
+    });
+  }
+  if (canShowEv && (config.evFleetScale ?? 1) > 0) {
+    loads.push({
+      type: 'ev',
+      id: 2,
+      name: 'EV 2 (Uber)',
+      powerKw: Math.max(0, data?.ev2Load ?? 0),
+      status: ev2Status,
+      capacity: evSpecs.ev2.capacity,
+      maxRate: evSpecs.ev2.rate,
+      soc: Math.max(0, data?.ev2Soc ?? 0),
+      v2g: data?.ev2V2g ?? false,
+      active: ev2Status === 'Charging',
+    });
+  }
+
+  return {
+    generation,
+    conversion,
+    storage,
+    distribution: { hasACBus: true },
+    loads,
+  };
 };
 
 // --- PHYSICS HELPERS ---
@@ -682,8 +858,8 @@ const PastDaysZipButton = ({ pastGraphs }: { pastGraphs: Array<{ date: string; d
   );
 };
 
-const Header = ({ onToggleAssistant, currentDate, onReset, currentLocation, onLocationSelected, onOpenRecommendation }: {
-  onToggleAssistant: () => void; currentDate: Date; onReset: () => void; currentLocation: LocationCoordinates; onLocationSelected: (location: LocationCoordinates, solarData: SolarIrradianceData) => void; onOpenRecommendation: () => void;
+const Header = ({ onToggleAssistant, currentDate, onReset, currentLocation, onLocationSelected, onOpenRecommendation, dataSource, onDataSourceChange, isSolarLoading, onLoadingChange }: {
+  onToggleAssistant: () => void; currentDate: Date; onReset: () => void; currentLocation: LocationCoordinates; onLocationSelected: (location: LocationCoordinates, solarData: SolarIrradianceData, source: 'nasa' | 'meteonorm', fetchedAt: number) => void; onOpenRecommendation: () => void; dataSource: 'nasa' | 'meteonorm'; onDataSourceChange: (src: 'nasa' | 'meteonorm') => void; isSolarLoading: boolean; onLoadingChange: (loading: boolean) => void;
 }) => (
   <div className="w-full bg-white relative z-50 shadow-sm">
     <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
@@ -706,7 +882,19 @@ const Header = ({ onToggleAssistant, currentDate, onReset, currentLocation, onLo
             <Calendar size={12} className="text-[var(--text-tertiary)]" /> <span className="hidden xs:inline">{formatDate(currentDate)}</span><span className="xs:hidden">{currentDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
          </div>
          <div className="block">
-            <LocationSelector currentLocation={currentLocation} onLocationSelected={onLocationSelected} />
+            <LocationSelector
+              currentLocation={currentLocation}
+              onLocationSelected={onLocationSelected}
+              dataSource={dataSource}
+              onDataSourceChange={onDataSourceChange}
+              onLoadingChange={onLoadingChange}
+            />
+         </div>
+         <div className="flex items-center gap-2 text-[10px] sm:text-xs font-semibold text-slate-600">
+           <span className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200">
+             Source: {dataSource === 'nasa' ? 'NASA POWER' : 'Meteonorm'}
+           </span>
+           {isSolarLoading && <span className="text-sky-600">Loading…</span>}
          </div>
          <button onClick={onOpenRecommendation} className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold hover:from-green-700 hover:to-emerald-700 transition-colors shadow-lg whitespace-nowrap">
            <Target size={12} /> <span className="hidden sm:inline">Get Recommendation</span><span className="sm:hidden">Recommend</span>
@@ -1080,111 +1268,133 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
   );
 };
 
-const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridStatus, ev1Status, ev2Status, evSpecs, config }: {
-  data: any; simSpeed: number; weather: string; isNight: boolean; gridStatus: string; ev1Status: string; ev2Status: string; evSpecs: any; config: DerivedSystemConfig;
+const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout }: {
+  simSpeed: number; weather: string; isNight: boolean; layout: DerivedVisualizationLayout;
 }) => {
-  const isSolarActive = data.solarR > 0.1;
-  const gridFlowDir = data.netGridPower < 0 ? 'up' : 'down';
-  const inverterUnits = Math.max(1, Math.round(config.inverterUnits || 1));
-  const perInverterKw = config.inverterKw / inverterUnits;
-  const inverterDisplayKw = Math.max(0, Math.min(perInverterKw, data.solarR / inverterUnits));
-  const showEv1 = config.evChargerKw > 0 && (config.evCommuterScale ?? 1) > 0;
-  const showEv2 = config.evChargerKw > 0 && (config.evFleetScale ?? 1) > 0;
+  const pvNode = layout.generation[0];
+  const isSolarActive = (pvNode?.outputKw ?? 0) > 0.1;
+  const inverterUnits = Math.max(1, layout.conversion.length || 1);
+  const busNodes: Array<{ key: string; cable: React.ReactNode; node: React.ReactNode }> = [];
 
-  const loadNodes: Array<{ key: string; cable: React.ReactNode; node: React.ReactNode }> = [
-    {
-      key: 'grid',
+  layout.loads.forEach((load) => {
+    if (load.type === 'grid') {
+      const flowDirection = load.direction === 'import' ? 'up' : 'down';
+      const cableColor =
+        load.status === 'Offline'
+          ? 'bg-red-200'
+          : load.direction === 'import'
+            ? 'bg-sky-500'
+            : load.direction === 'export'
+              ? 'bg-green-500'
+              : 'bg-slate-300';
+      const arrowColor =
+        load.direction === 'import' ? 'text-sky-100' : load.direction === 'export' ? 'text-green-100' : 'text-slate-200';
+      busNodes.push({
+        key: 'grid',
+        cable: (
+          <RigidCable
+            height={40}
+            active={load.active}
+            flowDirection={flowDirection}
+            color={cableColor}
+            speed={simSpeed}
+            arrowColor={arrowColor}
+          />
+        ),
+        node: (
+          <GridProduct
+            power={load.powerKw}
+            isImporting={load.powerKw < 0}
+            isExporting={load.powerKw > 0}
+            gridStatus={load.status}
+          />
+        ),
+      });
+      return;
+    }
+
+    if (load.type === 'home') {
+      busNodes.push({
+        key: 'home',
+        cable: <RigidCable height={40} active={load.active} color="bg-slate-800" speed={simSpeed} arrowColor="text-slate-200" />,
+        node: <HomeProduct power={load.powerKw} />,
+      });
+      return;
+    }
+
+    if (load.type === 'ev') {
+      const isCharging = load.status === 'Charging';
+      busNodes.push({
+        key: `ev-${load.id}`,
+        cable: (
+          <RigidCable
+            height={40}
+            active={isCharging}
+            color={isCharging ? 'bg-slate-800' : 'bg-slate-200'}
+            speed={simSpeed}
+            arrowColor="text-slate-200"
+          />
+        ),
+        node: (
+          <EVChargerProduct
+            id={load.id}
+            status={load.status}
+            soc={load.soc}
+            power={load.powerKw}
+            carName={load.name}
+            capacity={load.capacity}
+            maxRate={load.maxRate}
+            onToggle={() => {}}
+            v2g={load.v2g}
+          />
+        ),
+      });
+    }
+  });
+
+  layout.storage.forEach((storage) => {
+    const flowDirection = storage.direction === 'charge' ? 'down' : 'up';
+    const color =
+      storage.direction === 'charge'
+        ? 'bg-green-500'
+        : storage.direction === 'discharge'
+          ? 'bg-orange-500'
+          : 'bg-slate-300';
+    const arrowColor = storage.direction === 'charge' ? 'text-green-100' : 'text-orange-100';
+    busNodes.push({
+      key: 'battery',
       cable: (
         <RigidCable
           height={40}
-          active={data.netGridPower !== 0 && gridStatus === 'Online'}
-          flowDirection={gridFlowDir}
-          color={gridStatus === 'Offline' ? 'bg-red-200' : data.netGridPower < 0 ? 'bg-sky-500' : data.netGridPower > 0 ? 'bg-green-500' : 'bg-slate-300'}
+          active={storage.active}
+          flowDirection={flowDirection}
+          color={color}
           speed={simSpeed}
-          arrowColor={data.netGridPower < 0 ? 'text-sky-100' : 'text-green-100'}
+          arrowColor={arrowColor}
         />
       ),
-      node: <GridProduct power={data.netGridPower} isImporting={data.netGridPower < 0} isExporting={data.netGridPower > 0} gridStatus={gridStatus} />,
-    },
-    {
-      key: 'home',
-      cable: <RigidCable height={40} active={data.homeLoad > 0} color="bg-slate-800" speed={simSpeed} arrowColor="text-slate-200" />,
-      node: <HomeProduct power={data.homeLoad} />,
-    },
-  ];
-
-  if (showEv1) {
-    loadNodes.push({
-      key: 'ev1',
-      cable: <RigidCable height={40} active={ev1Status === 'Charging'} color={ev1Status === 'Charging' ? 'bg-slate-800' : 'bg-slate-200'} speed={simSpeed} arrowColor="text-slate-200" />,
       node: (
-        <EVChargerProduct
-          id={1}
-          status={ev1Status}
-          soc={data.ev1Soc}
-          power={data.ev1Load}
-          carName="EV 1 (Commuter)"
-          capacity={evSpecs.ev1.capacity}
-          maxRate={evSpecs.ev1.rate}
-          onToggle={() => {}}
-          v2g={data.ev1V2g}
+        <BatteryProduct
+          level={storage.levelPct}
+          status={storage.status}
+          power={storage.powerKw}
+          health={storage.health}
+          cycles={storage.cycles}
+          capacityKwh={storage.capacityKwh}
         />
       ),
     });
-  }
-
-  if (showEv2) {
-    loadNodes.push({
-      key: 'ev2',
-      cable: <RigidCable height={40} active={ev2Status === 'Charging'} color={ev2Status === 'Charging' ? 'bg-slate-800' : 'bg-slate-200'} speed={simSpeed} arrowColor="text-slate-200" />,
-      node: (
-        <EVChargerProduct
-          id={2}
-          status={ev2Status}
-          soc={data.ev2Soc}
-          power={data.ev2Load}
-          carName="EV 2 (Uber)"
-          capacity={evSpecs.ev2.capacity}
-          maxRate={evSpecs.ev2.rate}
-          onToggle={() => {}}
-          v2g={data.ev2V2g}
-        />
-      ),
-    });
-  }
-
-  loadNodes.push({
-    key: 'battery',
-    cable: (
-      <RigidCable
-        height={40}
-        active={data.batteryStatus !== 'Idle'}
-        flowDirection={data.batteryStatus === 'Charging' ? 'down' : 'up'}
-        color={data.batteryStatus === 'Charging' ? 'bg-green-500' : data.batteryStatus === 'Discharging' ? 'bg-orange-500' : 'bg-slate-300'}
-        speed={simSpeed}
-        arrowColor={data.batteryStatus === 'Charging' ? 'text-green-100' : 'text-orange-100'}
-      />
-    ),
-    node: (
-      <BatteryProduct
-        level={data.batteryLevel}
-        status={data.batteryStatus}
-        power={data.batteryPower}
-        health={data.batteryHealth}
-        cycles={data.batteryCycles}
-        capacityKwh={config.batteryKwh}
-      />
-    ),
   });
 
-  const busTemplate = { gridTemplateColumns: `repeat(${loadNodes.length}, minmax(0, 1fr))` };
+  const busColumns = Math.max(1, busNodes.length);
+  const busTemplate = { gridTemplateColumns: `repeat(${busColumns}, minmax(0, 1fr))` };
   const inverterTemplate = { gridTemplateColumns: `repeat(${Math.min(inverterUnits, 4)}, minmax(100px, 1fr))` };
 
   return (
     <div className="flex flex-col items-center w-full h-full p-2 sm:p-3 md:p-6 bg-[var(--bg-card-muted)] rounded-2xl sm:rounded-3xl border border-[var(--border)]">
       <div className="flex flex-col items-center w-full max-w-full sm:max-w-[600px] md:max-w-[800px] mx-auto px-1 sm:px-2">
         <div className="mb-0">
-          <SolarPanelProduct power={data.solarR} capacity={config.pvCapacityKw} weather={weather} isNight={isNight} />
+          <SolarPanelProduct power={pvNode?.outputKw ?? 0} capacity={pvNode?.capacityKw ?? 0} weather={weather} isNight={isNight} />
         </div>
         <div className="flex flex-col items-center w-full max-w-[720px]">
           <RigidCable height={30} active={isSolarActive} color={isSolarActive ? 'bg-green-500' : 'bg-slate-300'} speed={simSpeed} arrowColor="text-green-100" />
@@ -1198,8 +1408,13 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
           </div>
         </div>
         <div className="grid gap-3 sm:gap-4 md:gap-5 justify-items-center mb-0 scale-75 sm:scale-90 md:scale-100 w-full max-w-[800px]" style={inverterTemplate}>
-          {Array.from({ length: inverterUnits }).map((_, idx) => (
-            <InverterProduct key={`inv-${idx}`} id={idx + 1} power={inverterDisplayKw} ratedCapacityKw={perInverterKw} />
+          {layout.conversion.map((converter) => (
+            <InverterProduct
+              key={`inv-${converter.id}`}
+              id={converter.id}
+              power={converter.outputKw}
+              ratedCapacityKw={converter.ratingKw}
+            />
           ))}
         </div>
         <div className="flex flex-col items-center w-full max-w-[900px]">
@@ -1211,7 +1426,7 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
               <div className="text-[6px] sm:text-[8px] text-white font-mono tracking-widest">AC DISTRIBUTION BUS</div>
             </div>
             <div className="grid gap-1 sm:gap-2 pt-6" style={busTemplate}>
-              {loadNodes.map((node) => (
+              {busNodes.map((node) => (
                 <div key={`cable-${node.key}`} className="flex justify-center">
                   {node.cable}
                 </div>
@@ -1220,7 +1435,7 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
           </div>
         </div>
         <div className="grid gap-2 sm:gap-3 md:gap-4 w-full max-w-[900px] mt-2 scale-75 sm:scale-90 md:scale-100" style={busTemplate}>
-          {loadNodes.map((node) => (
+          {busNodes.map((node) => (
             <div key={`node-${node.key}`} className="flex justify-center scale-90">
               {node.node}
             </div>
@@ -1236,6 +1451,10 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
 export default function App() {
   // Location and solar data state
   const [currentLocation, setCurrentLocation] = useState<LocationCoordinates>(KENYA_LOCATIONS[0]); // Default to Nairobi
+  const [solarDataLoading, setSolarDataLoading] = useState(false);
+  const [solarLastUpdated, setSolarLastUpdated] = useState<number | null>(null);
+  const [solarFromCache, setSolarFromCache] = useState(false);
+  const solarCacheRef = useRef<Record<string, { data: SolarIrradianceData; fetchedAt: number }>>({});
   const [solarData, setSolarData] = useState<SolarIrradianceData>({
     latitude: -1.2921,
     longitude: 36.8219,
@@ -1265,6 +1484,7 @@ export default function App() {
   const [simSpeed, setSimSpeed] = useState(1);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [dataSource, setDataSource] = useState<'nasa' | 'meteonorm'>('nasa');
   const [activeSection, setActiveSection] = useState<DashboardSection>('dashboard');
   const [overviewDetailsOpen, setOverviewDetailsOpen] = useState(false);
   const [priorityMode, setPriorityMode] = useState('auto');
@@ -1308,6 +1528,19 @@ export default function App() {
     ev2V2g: false,
     _graphPoint: null as GraphDataPoint | null,
   });
+  const systemLayout = useMemo(
+    () => buildVisualizationLayout(derivedSystemConfig, data, gridStatus, data.ev1Status, data.ev2Status, evSpecs),
+    [derivedSystemConfig, data, gridStatus, evSpecs]
+  );
+  const [recommendationResult, setRecommendationResult] = useState<HardwareRecommendation | null>(null);
+  const [isGeneratingRecommendation, setIsGeneratingRecommendation] = useState(false);
+  const [compareEnabled, setCompareEnabled] = useState(false);
+  const [compareLocation, setCompareLocation] = useState<LocationCoordinates | null>(null);
+  const [compareSolarData, setCompareSolarData] = useState<SolarIrradianceData | null>(null);
+  const [compareSource, setCompareSource] = useState<'nasa' | 'meteonorm'>('nasa');
+  const [compareLastUpdated, setCompareLastUpdated] = useState<number | null>(null);
+  const [compareFromCache, setCompareFromCache] = useState(false);
+  const [compareLoading, setCompareLoading] = useState(false);
 
   const accumulators = useRef({ solar: 0, savings: 0, gridImport: 0, carbonOffset: 0, batDischargeKwh: 0, feedInEarnings: 0 });
   const soilingFactorRef = useRef(1.0);
@@ -1322,7 +1555,34 @@ export default function App() {
   const dayScenarioRef = useRef(
     generateDayScenario('Sunny', new Date('2026-01-01'), 1.0, solarData, systemConfigRef.current)
   );
-  
+
+  const handleGenerateRecommendation = useCallback(async () => {
+    if (solarDataLoading) return;
+    try {
+      setIsGeneratingRecommendation(true);
+      const { createLoadProfileFromSimulation, generateRecommendation } = await import('@/lib/recommendation-engine');
+      const loadProfile = createLoadProfileFromSimulation(minuteDataRef.current);
+      const rec = generateRecommendation(loadProfile, solarData, {
+        batteryPreference: 'auto',
+        gridBackupRequired: true,
+        autonomyDays: 1.5,
+      });
+      setRecommendationResult(rec);
+    } catch (error) {
+      console.error('Failed to generate recommendations:', error);
+    } finally {
+      setIsGeneratingRecommendation(false);
+    }
+  }, [solarData]);
+
+  const handleInvalidateCache = useCallback(() => {
+    solarCacheRef.current = {};
+    setSolarLastUpdated(null);
+    setSolarFromCache(false);
+    setCompareLastUpdated(null);
+    setCompareFromCache(false);
+  }, []);
+
   // Comprehensive data tracking for export - stores all minute-by-minute data
   const minuteDataRef = useRef<SimulationMinuteRecord[]>([]);
   
@@ -1809,10 +2069,20 @@ export default function App() {
   const isNight = timeOfDay < 6 || timeOfDay > 19;
 
   // Handle location change
-  const handleLocationChange = useCallback((location: LocationCoordinates, newSolarData: SolarIrradianceData) => {
+  const handleLocationChange = useCallback((location: LocationCoordinates, newSolarData: SolarIrradianceData, source: 'nasa' | 'meteonorm', fetchedAt: number, fromCache: boolean) => {
     setCurrentLocation(location);
     setSolarData(newSolarData);
-    console.log(`Location changed to ${location.name}. Solar data:`, newSolarData);
+    setRecommendationResult(null);
+    setSolarLastUpdated(fetchedAt);
+    setSolarFromCache(fromCache);
+    console.log(`Location changed to ${location.name}. Solar data source: ${source}`, newSolarData);
+  }, []);
+  const handleCompareLocationChange = useCallback((location: LocationCoordinates, newSolarData: SolarIrradianceData, source: 'nasa' | 'meteonorm', fetchedAt: number, fromCache: boolean) => {
+    setCompareLocation(location);
+    setCompareSolarData(newSolarData);
+    setCompareSource(source);
+    setCompareLastUpdated(fetchedAt);
+    setCompareFromCache(fromCache);
   }, []);
 
   // Handle opening recommendation panel
@@ -2286,6 +2556,13 @@ export default function App() {
         simulationData={minuteDataRef.current}
         solarData={solarData}
         currentLocation={currentLocation}
+        recommendation={recommendationResult}
+        onGenerate={handleGenerateRecommendation}
+        isGenerating={isGeneratingRecommendation}
+        dataSource={dataSource}
+        isSolarLoading={solarDataLoading}
+        lastUpdated={solarLastUpdated}
+        fromCache={solarFromCache}
       />
       <EnergyReportModal
         isOpen={isReportOpen}
@@ -2314,6 +2591,71 @@ export default function App() {
       {/* Main Dashboard Content */}
       <main className="flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8">
+          <div className="flex flex-wrap items-center gap-2 text-[11px] sm:text-xs text-[var(--text-secondary)]">
+            <LocationSelector
+              currentLocation={currentLocation}
+              onLocationSelected={handleLocationChange}
+              dataSource={dataSource}
+              onDataSourceChange={setDataSource}
+              onLoadingChange={setSolarDataLoading}
+              cacheRef={solarCacheRef}
+              onInvalidateCache={handleInvalidateCache}
+              label="Primary"
+            />
+            <span className="px-2 py-1 rounded-full bg-[var(--bg-card-muted)] border border-[var(--border)] font-semibold">
+              Source: {dataSource === 'nasa' ? 'NASA POWER' : 'Meteonorm'}{solarDataLoading ? ' (loading...)' : ''}
+            </span>
+            <span className="px-2 py-1 rounded-full bg-[var(--bg-card-muted)] border border-[var(--border)] font-semibold">
+              Last updated: {solarLastUpdated ? new Date(solarLastUpdated).toLocaleString() : 'Not yet loaded'}
+            </span>
+            <span className={`px-2 py-1 rounded-full font-semibold border ${solarFromCache ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-green-50 border-green-200 text-green-700'}`}>
+              {solarFromCache ? 'Cached' : 'Fresh'}
+            </span>
+            <button
+              onClick={handleInvalidateCache}
+              className="px-2 py-1 rounded-full border border-[var(--border)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+            >
+              Invalidate Cache
+            </button>
+            {!recommendationResult && (
+              <span className="text-[var(--text-tertiary)]">
+                No recommendation generated yet for {currentLocation.name}. Choose a source and click Generate.
+              </span>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-3 text-[11px] sm:text-xs">
+            <button
+              onClick={() => setCompareEnabled((prev) => !prev)}
+              className="px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--bg-card-muted)] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            >
+              {compareEnabled ? 'Disable Comparison' : 'Enable Comparison'}
+            </button>
+            {compareEnabled && (
+              <>
+                <LocationSelector
+                  currentLocation={compareLocation || currentLocation}
+                  onLocationSelected={handleCompareLocationChange}
+                  dataSource={compareSource}
+                  onDataSourceChange={setCompareSource}
+                  onLoadingChange={setCompareLoading}
+                  cacheRef={solarCacheRef}
+                  onInvalidateCache={handleInvalidateCache}
+                  label="Compare"
+                />
+                <span className="px-2 py-1 rounded-full bg-[var(--bg-card-muted)] border border-[var(--border)] font-semibold">
+                  Last updated: {compareLastUpdated ? new Date(compareLastUpdated).toLocaleString() : 'Not loaded'}
+                </span>
+                <span className={`px-2 py-1 rounded-full font-semibold border ${compareFromCache ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-green-50 border-green-200 text-green-700'}`}>
+                  {compareFromCache ? 'Cached' : 'Fresh'}
+                </span>
+                {compareSolarData && compareLocation && (
+                  <span className="px-2 py-1 rounded-full bg-[var(--bg-card-muted)] border border-[var(--border)]">
+                    {compareLocation.name} • {compareSource === 'nasa' ? 'NASA' : 'Meteonorm'} • {compareSolarData.annualAverage.toFixed(1)} kWh/m²/day
+                  </span>
+                )}
+              </>
+            )}
+          </div>
           <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
             <div>
               <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">{activeMeta.title}</h2>
@@ -2622,15 +2964,10 @@ export default function App() {
                 </CardHeader>
                 <CardContent className="pt-0">
                   <ResidentialPanel
-                    data={data}
                     simSpeed={simSpeed}
                     weather={weather}
                     isNight={isNight}
-                    gridStatus={gridStatus}
-                    ev1Status={data.ev1Status}
-                    ev2Status={data.ev2Status}
-                    evSpecs={evSpecs}
-                    config={derivedSystemConfig}
+                    layout={systemLayout}
                   />
                 </CardContent>
               </Card>
