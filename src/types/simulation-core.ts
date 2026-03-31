@@ -3,6 +3,7 @@ export type SystemConfig = {
   panelCount: number;
   panelWatt: number;
   inverterKw: number;
+  inverterUnits: number;
   batteryKwh: number;
   maxChargeKw: number;
   maxDischargeKw: number;
