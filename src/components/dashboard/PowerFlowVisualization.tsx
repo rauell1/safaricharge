@@ -3,6 +3,7 @@
 import React from 'react';
 import { Sun, Home, Battery, UtilityPole, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useNodeSelection } from '@/hooks/useEnergySystem';
 import type { NodeType } from '@/stores/energySystemStore';
 import { useRouter } from 'next/navigation';
@@ -21,6 +22,7 @@ interface PowerFlowVisualizationProps {
     gridToHome: boolean;
   };
   detailBasePath?: string;
+  isLoading?: boolean;
 }
 
 interface NodeProps {
@@ -145,6 +147,7 @@ export function PowerFlowVisualization({
   batteryLevel,
   flowDirection,
   detailBasePath,
+  isLoading,
 }: PowerFlowVisualizationProps) {
   const { selectNode, isSelected } = useNodeSelection();
   const router = useRouter();
@@ -157,15 +160,65 @@ export function PowerFlowVisualization({
     }
   };
 
-  // Calculate flow distribution percentages
-  const totalOutput = solarPower;
-  const solarToHomePercent = totalOutput > 0 ? Math.min(100, (homePower / totalOutput) * 100) : 0;
-  const solarToBatteryPercent = totalOutput > 0 && batteryPower > 0 ? Math.min(100, (batteryPower / totalOutput) * 100) : 0;
-  const solarToGridPercent = totalOutput > 0 && gridPower < 0 ? Math.min(100, (Math.abs(gridPower) / totalOutput) * 100) : 0;
+  if (isLoading) {
+    return (
+      <Card className="dashboard-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+            <Zap className="h-5 w-5 text-[var(--battery)]" />
+            Energy Flow
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center gap-4 py-4">
+            {/* Top node */}
+            <Skeleton className="h-20 w-20 rounded-full" />
 
-  // Calculate system efficiency (useful energy / total generated)
-  const usefulEnergy = Math.min(homePower, solarPower) + (batteryPower > 0 ? Math.min(batteryPower, solarPower - homePower) : 0);
-  const systemEfficiency = solarPower > 0 ? (usefulEnergy / solarPower) * 100 : 0;
+            {/* Vertical line */}
+            <Skeleton className="h-20 w-0.5" />
+
+            {/* Middle row with 3 nodes */}
+            <div className="flex items-center justify-center w-full max-w-xl gap-6">
+              <Skeleton className="h-20 w-20 rounded-full" />
+              <Skeleton className="h-4 w-4 rounded-full" />
+              <Skeleton className="h-20 w-20 rounded-full" />
+            </div>
+
+            {/* Bottom row with 3 nodes */}
+            <div className="flex items-start justify-center w-full max-w-3xl gap-6 mt-1">
+              <div className="flex-1 flex flex-col items-center gap-2">
+                <Skeleton className="h-20 w-0.5" />
+                <Skeleton className="h-20 w-20 rounded-full" />
+              </div>
+              <div className="flex-1 flex flex-col items-center gap-2">
+                <Skeleton className="h-20 w-0.5" />
+                <Skeleton className="h-20 w-20 rounded-full" />
+              </div>
+              <div className="flex-1 flex flex-col items-center gap-2">
+                <Skeleton className="h-20 w-0.5" />
+                <Skeleton className="h-20 w-20 rounded-full" />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-3 gap-4 rounded-xl border p-4 bg-[var(--bg-secondary)] border-[var(--border)]">
+            <div className="text-center space-y-2">
+              <Skeleton className="h-3 w-16 mx-auto" />
+              <Skeleton className="h-5 w-20 mx-auto" />
+            </div>
+            <div className="text-center border-l border-r space-y-2" style={{ borderColor: 'var(--border)' }}>
+              <Skeleton className="h-3 w-20 mx-auto" />
+              <Skeleton className="h-5 w-20 mx-auto" />
+            </div>
+            <div className="text-center space-y-2">
+              <Skeleton className="h-3 w-16 mx-auto" />
+              <Skeleton className="h-5 w-20 mx-auto" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="dashboard-card">

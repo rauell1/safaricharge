@@ -3,7 +3,7 @@
 import React from 'react';
 import { Sun, Zap, Home, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Sparkline } from './Sparkline';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface StatCardProps {
   title: string;
@@ -124,64 +124,40 @@ interface StatCardsProps {
   currentPower: number;
   consumption: number;
   savings: number;
-  generationHistory?: number[];
-  powerHistory?: number[];
-  consumptionHistory?: number[];
-  savingsHistory?: number[];
-  weeklyAvgGeneration?: number;
-  weeklyAvgConsumption?: number;
-  yesterdaySavings?: number;
+  isLoading?: boolean;
 }
 
-export function StatCards({
-  totalGeneration,
-  currentPower,
-  consumption,
-  savings,
-  generationHistory = [],
-  powerHistory = [],
-  consumptionHistory = [],
-  savingsHistory = [],
-  weeklyAvgGeneration,
-  weeklyAvgConsumption,
-  yesterdaySavings,
-}: StatCardsProps) {
-  // Calculate dynamic trends
-  const generationTrend = weeklyAvgGeneration && weeklyAvgGeneration > 0
-    ? ((totalGeneration - weeklyAvgGeneration) / weeklyAvgGeneration) * 100
-    : 0;
-  const generationTrendText = weeklyAvgGeneration
-    ? `${generationTrend >= 0 ? '+' : ''}${generationTrend.toFixed(1)}%`
-    : '+0%';
-  const generationComparison = weeklyAvgGeneration
-    ? `${generationTrend >= 0 ? '↑' : '↓'} ${Math.abs(generationTrend).toFixed(1)}% vs weekly avg`
-    : undefined;
+function StatCardSkeleton() {
+  return (
+    <Card className="dashboard-card relative overflow-hidden">
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between">
+          <div className="flex-1 space-y-3">
+            <Skeleton className="h-4 w-24" />
+            <div className="flex items-baseline gap-2">
+              <Skeleton className="h-9 w-20" />
+              <Skeleton className="h-4 w-10" />
+            </div>
+            <Skeleton className="h-3 w-32" />
+          </div>
+          <Skeleton className="h-12 w-12 rounded-xl" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
-  const consumptionTrend = weeklyAvgConsumption && weeklyAvgConsumption > 0
-    ? ((consumption - weeklyAvgConsumption) / weeklyAvgConsumption) * 100
-    : 0;
-  const consumptionTrendText = weeklyAvgConsumption
-    ? `${consumptionTrend >= 0 ? '+' : ''}${consumptionTrend.toFixed(1)}%`
-    : '+0%';
-  const consumptionComparison = weeklyAvgConsumption
-    ? `${consumptionTrend >= 0 ? '↑' : '↓'} ${Math.abs(consumptionTrend).toFixed(1)}% vs weekly avg`
-    : undefined;
-
-  const savingsChange = yesterdaySavings ? savings - yesterdaySavings : 0;
-  const savingsTrendText = yesterdaySavings
-    ? `${savingsChange >= 0 ? '+' : ''}KES ${Math.abs(savingsChange).toFixed(0)}`
-    : '+KES 0';
-  const savingsComparison = yesterdaySavings
-    ? `${savingsChange >= 0 ? '↑' : '↓'} KES ${Math.abs(savingsChange).toFixed(0)} vs yesterday`
-    : undefined;
-
-  // Power trend based on recent history
-  const powerTrend = powerHistory.length >= 2
-    ? powerHistory[powerHistory.length - 1] > powerHistory[0] ? 'up' : 'down'
-    : 'neutral';
-  const powerTrendValue = powerHistory.length >= 2
-    ? `${((powerHistory[powerHistory.length - 1] - powerHistory[0]) / (powerHistory[0] || 1) * 100).toFixed(1)}%`
-    : '+0%';
+export function StatCards({ totalGeneration, currentPower, consumption, savings, isLoading }: StatCardsProps) {
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCardSkeleton />
+        <StatCardSkeleton />
+        <StatCardSkeleton />
+        <StatCardSkeleton />
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

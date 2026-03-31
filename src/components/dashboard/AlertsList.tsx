@@ -4,6 +4,7 @@ import React from 'react';
 import { AlertTriangle, AlertCircle, Info, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Alert {
   id: string;
@@ -15,6 +16,7 @@ interface Alert {
 
 interface AlertsListProps {
   alerts?: Alert[];
+  isLoading?: boolean;
 }
 
 const defaultAlerts: Alert[] = [
@@ -93,9 +95,49 @@ function formatTimestamp(date: Date): string {
   return date.toLocaleString();
 }
 
-export function AlertsList({ alerts = defaultAlerts }: AlertsListProps) {
+export function AlertsList({ alerts = defaultAlerts, isLoading }: AlertsListProps) {
   const errorCount = alerts.filter(a => a.type === 'error').length;
   const warningCount = alerts.filter(a => a.type === 'warning').length;
+
+  if (isLoading) {
+    return (
+      <Card className="dashboard-card">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+              <AlertTriangle className="h-5 w-5 text-[var(--alert)]" />
+              System Alerts
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-6 w-16" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className="flex items-start gap-3 rounded-xl border p-4"
+                style={{ backgroundColor: 'var(--bg-card-muted)', borderColor: 'var(--border)' }}
+              >
+                <Skeleton className="h-10 w-10 rounded-full flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-5 w-16" />
+                  </div>
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-3/4" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="dashboard-card">

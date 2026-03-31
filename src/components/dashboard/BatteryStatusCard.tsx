@@ -3,6 +3,7 @@
 import React from 'react';
 import { Battery, BatteryCharging, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface BatteryStatusCardProps {
   batteryLevel?: number;
@@ -11,6 +12,7 @@ interface BatteryStatusCardProps {
   voltage?: number;
   temperature?: number;
   isCharging?: boolean;
+  isLoading?: boolean;
 }
 
 export function BatteryStatusCard({
@@ -20,6 +22,7 @@ export function BatteryStatusCard({
   voltage = 48.5,
   temperature = 32,
   isCharging = true,
+  isLoading,
 }: BatteryStatusCardProps) {
   const getColor = (level: number) => {
     if (level >= 60) return { bar: 'var(--battery)', text: 'var(--battery)' };
@@ -30,6 +33,45 @@ export function BatteryStatusCard({
   const colors = getColor(batteryLevel);
   const formattedLevel = Number.isFinite(batteryLevel) ? batteryLevel.toFixed(2) : '0.00';
   const storedKwh = ((batteryLevel / 100) * capacity).toFixed(1);
+
+  if (isLoading) {
+    return (
+      <Card className="dashboard-card">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-[var(--text-primary)] text-sm">
+            <BatteryCharging className="h-4 w-4" style={{ color: 'var(--battery)' }} />
+            Battery Status
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="flex items-center justify-between mb-3">
+            <div className="space-y-2">
+              <Skeleton className="h-9 w-24" />
+              <Skeleton className="h-3 w-32" />
+            </div>
+            <Skeleton className="h-7 w-20 rounded-full" />
+          </div>
+
+          <Skeleton className="h-3 w-full rounded-full mb-4" />
+
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-lg p-2 text-center border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
+              <Skeleton className="h-4 w-12 mx-auto mb-1" />
+              <Skeleton className="h-3 w-8 mx-auto" />
+            </div>
+            <div className="rounded-lg p-2 text-center border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
+              <Skeleton className="h-4 w-12 mx-auto mb-1" />
+              <Skeleton className="h-3 w-8 mx-auto" />
+            </div>
+            <div className="rounded-lg p-2 text-center border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
+              <Skeleton className="h-4 w-12 mx-auto mb-1" />
+              <Skeleton className="h-3 w-8 mx-auto" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="dashboard-card">
