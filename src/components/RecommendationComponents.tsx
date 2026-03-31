@@ -36,13 +36,15 @@ interface LocationSelectorProps {
   currentLocation: LocationCoordinates;
   dataSource: 'nasa' | 'meteonorm';
   onDataSourceChange: (source: 'nasa' | 'meteonorm') => void;
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 export const LocationSelector: React.FC<LocationSelectorProps> = ({
   onLocationSelected,
   currentLocation,
   dataSource,
-  onDataSourceChange
+  onDataSourceChange,
+  onLoadingChange
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,6 +56,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
     setIsLoading(true);
     setError(null);
     setDataSourceLabel('');
+    onLoadingChange?.(true);
     try {
       let result;
       if (dataSource === 'meteonorm') {
@@ -72,6 +75,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
       setError('Failed to fetch solar data from all sources. Please try again.');
     } finally {
       setIsLoading(false);
+      onLoadingChange?.(false);
     }
   };
 
@@ -231,6 +235,8 @@ interface RecommendationPanelProps {
   recommendation: HardwareRecommendation | null;
   onGenerate: () => void;
   isGenerating: boolean;
+  dataSource: 'nasa' | 'meteonorm';
+  isSolarLoading: boolean;
 }
 
 export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
@@ -241,7 +247,9 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
   currentLocation,
   recommendation,
   onGenerate,
-  isGenerating
+  isGenerating,
+  dataSource,
+  isSolarLoading
 }) => {
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<{[key: string]: boolean}>({
@@ -262,36 +270,41 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
   const toggleSection = (section: string) => {
     setExpanded(prev => ({ ...prev, [section]: !prev[section] }));
   };
+  const activeSourceLabel = dataSource === 'nasa' ? 'NASA POWER' : 'Meteonorm';
+  const canGenerate = !isGenerating && !isSolarLoading && !!solarData && simulationData.length > 0;
 
   return (
     <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="p-4 bg-gradient-to-r from-sky-600 to-sky-700 text-white flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <Target size={24} className="text-sky-200" />
-            <div>
-              <h2 className="font-bold text-lg">Hardware Recommendation</h2>
-              <p className="text-xs text-sky-200 mt-0.5">
-                Optimized for {currentLocation.name} • {solarData.annualAverage.toFixed(1)} kWh/m²/day avg
-              </p>
+            <div className="flex items-center gap-3">
+              <Target size={24} className="text-sky-200" />
+              <div>
+                <h2 className="font-bold text-lg">Hardware Recommendation</h2>
+                <p className="text-xs text-sky-200 mt-0.5">
+                  Optimized for {currentLocation.name} • {solarData.annualAverage.toFixed(1)} kWh/m²/day avg
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                if (simulationData.length === 0) {
-                  setError('Run the simulation first to generate recommendations.');
-                  return;
-                }
-                setError(null);
-                onGenerate();
-              }}
-              disabled={isGenerating}
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-1 rounded-full bg-white/15 text-[10px] font-semibold">
+                Source: {activeSourceLabel} {isSolarLoading ? '(loading...)' : ''}
+              </span>
+              <button
+                onClick={() => {
+                  if (simulationData.length === 0) {
+                    setError('Run the simulation first to generate recommendations.');
+                    return;
+                  }
+                  setError(null);
+                  onGenerate();
+                }}
+              disabled={!canGenerate}
               className="px-3 py-1.5 bg-white/10 border border-white/30 rounded-full text-xs font-bold hover:bg-white/15 transition-colors disabled:opacity-70 flex items-center gap-2"
             >
-              {isGenerating && <Loader2 size={14} className="animate-spin" />}
-              {isGenerating ? 'Computing…' : 'Generate'}
+              {(isGenerating || isSolarLoading) && <Loader2 size={14} className="animate-spin" />}
+              {isGenerating ? 'Computing…' : isSolarLoading ? 'Loading data…' : 'Generate'}
             </button>
             <button onClick={onClose} className="text-white hover:text-sky-200 transition-colors">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -588,7 +601,7 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
             <div className="text-center py-12 text-slate-500 space-y-3">
               <AlertCircle size={48} className="mx-auto mb-4 text-slate-400" />
               <p className="text-sm text-slate-700">
-                Click “Generate” to create a recommendation using the latest solar data for {currentLocation.name}.
+                Select a location and click “Generate” to create a recommendation using {activeSourceLabel} data for {currentLocation.name}.
               </p>
               {error && <p className="text-xs text-red-600">{error}</p>}
               <div className="flex justify-center">
@@ -597,7 +610,8 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
                     setError(null);
                     onGenerate();
                   }}
-                  className="px-4 py-2 bg-sky-600 text-white text-xs font-bold rounded-full hover:bg-sky-700 transition-colors"
+                  disabled={!canGenerate}
+                  className="px-4 py-2 bg-sky-600 text-white text-xs font-bold rounded-full hover:bg-sky-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   Generate Recommendations
                 </button>

@@ -858,8 +858,8 @@ const PastDaysZipButton = ({ pastGraphs }: { pastGraphs: Array<{ date: string; d
   );
 };
 
-const Header = ({ onToggleAssistant, currentDate, onReset, currentLocation, onLocationSelected, onOpenRecommendation }: {
-  onToggleAssistant: () => void; currentDate: Date; onReset: () => void; currentLocation: LocationCoordinates; onLocationSelected: (location: LocationCoordinates, solarData: SolarIrradianceData, source: 'nasa' | 'meteonorm') => void; onOpenRecommendation: () => void;
+const Header = ({ onToggleAssistant, currentDate, onReset, currentLocation, onLocationSelected, onOpenRecommendation, dataSource, onDataSourceChange, isSolarLoading, onLoadingChange }: {
+  onToggleAssistant: () => void; currentDate: Date; onReset: () => void; currentLocation: LocationCoordinates; onLocationSelected: (location: LocationCoordinates, solarData: SolarIrradianceData, source: 'nasa' | 'meteonorm') => void; onOpenRecommendation: () => void; dataSource: 'nasa' | 'meteonorm'; onDataSourceChange: (src: 'nasa' | 'meteonorm') => void; isSolarLoading: boolean; onLoadingChange: (loading: boolean) => void;
 }) => (
   <div className="w-full bg-white relative z-50 shadow-sm">
     <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
@@ -886,8 +886,15 @@ const Header = ({ onToggleAssistant, currentDate, onReset, currentLocation, onLo
               currentLocation={currentLocation}
               onLocationSelected={onLocationSelected}
               dataSource={dataSource}
-              onDataSourceChange={setDataSource}
+              onDataSourceChange={onDataSourceChange}
+              onLoadingChange={onLoadingChange}
             />
+         </div>
+         <div className="flex items-center gap-2 text-[10px] sm:text-xs font-semibold text-slate-600">
+           <span className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200">
+             Source: {dataSource === 'nasa' ? 'NASA POWER' : 'Meteonorm'}
+           </span>
+           {isSolarLoading && <span className="text-sky-600">Loading…</span>}
          </div>
          <button onClick={onOpenRecommendation} className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold hover:from-green-700 hover:to-emerald-700 transition-colors shadow-lg whitespace-nowrap">
            <Target size={12} /> <span className="hidden sm:inline">Get Recommendation</span><span className="sm:hidden">Recommend</span>
@@ -1444,6 +1451,7 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout }: {
 export default function App() {
   // Location and solar data state
   const [currentLocation, setCurrentLocation] = useState<LocationCoordinates>(KENYA_LOCATIONS[0]); // Default to Nairobi
+  const [solarDataLoading, setSolarDataLoading] = useState(false);
   const [solarData, setSolarData] = useState<SolarIrradianceData>({
     latitude: -1.2921,
     longitude: 36.8219,
@@ -1538,6 +1546,7 @@ export default function App() {
   );
 
   const handleGenerateRecommendation = useCallback(async () => {
+    if (solarDataLoading) return;
     try {
       setIsGeneratingRecommendation(true);
       const { createLoadProfileFromSimulation, generateRecommendation } = await import('@/lib/recommendation-engine');
@@ -2491,6 +2500,8 @@ export default function App() {
         recommendation={recommendationResult}
         onGenerate={handleGenerateRecommendation}
         isGenerating={isGeneratingRecommendation}
+        dataSource={dataSource}
+        isSolarLoading={solarDataLoading}
       />
       <EnergyReportModal
         isOpen={isReportOpen}
@@ -2518,6 +2529,16 @@ export default function App() {
       {/* Main Dashboard Content */}
       <main className="flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8">
+          <div className="flex flex-wrap items-center gap-2 text-[11px] sm:text-xs text-[var(--text-secondary)]">
+            <span className="px-2 py-1 rounded-full bg-[var(--bg-card-muted)] border border-[var(--border)] font-semibold">
+              Source: {dataSource === 'nasa' ? 'NASA POWER' : 'Meteonorm'}{solarDataLoading ? ' (loading...)' : ''}
+            </span>
+            {!recommendationResult && (
+              <span className="text-[var(--text-tertiary)]">
+                No recommendation generated yet for {currentLocation.name}. Choose a source and click Generate.
+              </span>
+            )}
+          </div>
           <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
             <div>
               <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">{activeMeta.title}</h2>
