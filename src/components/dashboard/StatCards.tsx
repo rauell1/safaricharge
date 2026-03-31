@@ -14,9 +14,11 @@ interface StatCardProps {
   trend?: 'up' | 'down' | 'neutral';
   trendValue?: string;
   accentColor: 'solar' | 'energy' | 'info' | 'grid';
+  sparklineData?: number[];
+  comparisonText?: string;
 }
 
-function StatCard({ title, value, unit, subtitle, icon, trend, trendValue, accentColor }: StatCardProps) {
+function StatCard({ title, value, unit, subtitle, icon, trend, trendValue, accentColor, sparklineData, comparisonText }: StatCardProps) {
   const accentColorClasses = {
     solar: {
       bg: 'bg-[var(--solar-soft)]',
@@ -83,12 +85,34 @@ function StatCard({ title, value, unit, subtitle, icon, trend, trendValue, accen
                 {subtitle}
               </p>
             )}
+            {comparisonText && (
+              <p className="text-xs text-[var(--text-secondary)] mt-2 font-medium">
+                {comparisonText}
+              </p>
+            )}
           </div>
-          <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${colors.bg} border border-[var(--border)]`}>
-            <div className={colors.icon}>
-              {icon}
+          {sparklineData && sparklineData.length > 0 && (
+            <div className="flex flex-col items-end gap-2">
+              <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${colors.bg} border border-[var(--border)]`}>
+                <div className={colors.icon}>
+                  {icon}
+                </div>
+              </div>
+              <Sparkline
+                data={sparklineData}
+                color={`var(--${accentColor === 'info' ? 'consumption' : accentColor})`}
+                height={20}
+                width={60}
+              />
             </div>
-          </div>
+          )}
+          {(!sparklineData || sparklineData.length === 0) && (
+            <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${colors.bg} border border-[var(--border)]`}>
+              <div className={colors.icon}>
+                {icon}
+              </div>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -143,9 +167,11 @@ export function StatCards({ totalGeneration, currentPower, consumption, savings,
         unit="kWh"
         subtitle="Today's solar energy"
         icon={<Sun className="h-6 w-6" />}
-        trend="up"
-        trendValue="+12.5%"
+        trend={generationTrend >= 0 ? 'up' : 'down'}
+        trendValue={generationTrendText}
         accentColor="solar"
+        sparklineData={generationHistory}
+        comparisonText={generationComparison}
       />
       <StatCard
         title="Current Power"
@@ -153,9 +179,10 @@ export function StatCards({ totalGeneration, currentPower, consumption, savings,
         unit="kW"
         subtitle="Live generation"
         icon={<Zap className="h-6 w-6" />}
-        trend="up"
-        trendValue="+4.3%"
+        trend={powerTrend}
+        trendValue={powerTrendValue}
         accentColor="energy"
+        sparklineData={powerHistory}
       />
       <StatCard
         title="Consumption"
@@ -163,18 +190,22 @@ export function StatCards({ totalGeneration, currentPower, consumption, savings,
         unit="kWh"
         subtitle="Total energy used"
         icon={<Home className="h-6 w-6" />}
-        trend="up"
-        trendValue="+2.1%"
+        trend={consumptionTrend >= 0 ? 'up' : 'down'}
+        trendValue={consumptionTrendText}
         accentColor="info"
+        sparklineData={consumptionHistory}
+        comparisonText={consumptionComparison}
       />
       <StatCard
         title="Savings"
         value={`KES ${savings.toFixed(0)}`}
         subtitle="Cost saved today"
         icon={<DollarSign className="h-6 w-6" />}
-        trend="up"
-        trendValue="+KES 145"
+        trend={savingsChange >= 0 ? 'up' : 'down'}
+        trendValue={savingsTrendText}
         accentColor="energy"
+        sparklineData={savingsHistory}
+        comparisonText={savingsComparison}
       />
     </div>
   );
