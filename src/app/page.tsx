@@ -29,6 +29,7 @@ import { generateDayScenario, nextWeatherMarkov } from '@/simulation/timeEngine'
 import { runSolarSimulation } from '@/simulation/runSimulation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TREE_CO2_KG_PER_YEAR, AVG_CAR_EMISSION_KG_PER_KM, GRID_EMISSION_FACTOR } from '@/lib/tariff';
+import type { HardwareRecommendation } from '@/lib/recommendation-engine';
 
 // --- CONFIGURATION - Kenya Power Commercial Tariff (E-Mobility) ---
 // Based on actual KPLC bill for ROAM ELECTRIC LIMITED - February 2026
@@ -858,7 +859,7 @@ const PastDaysZipButton = ({ pastGraphs }: { pastGraphs: Array<{ date: string; d
 };
 
 const Header = ({ onToggleAssistant, currentDate, onReset, currentLocation, onLocationSelected, onOpenRecommendation }: {
-  onToggleAssistant: () => void; currentDate: Date; onReset: () => void; currentLocation: LocationCoordinates; onLocationSelected: (location: LocationCoordinates, solarData: SolarIrradianceData) => void; onOpenRecommendation: () => void;
+  onToggleAssistant: () => void; currentDate: Date; onReset: () => void; currentLocation: LocationCoordinates; onLocationSelected: (location: LocationCoordinates, solarData: SolarIrradianceData, source: 'nasa' | 'meteonorm') => void; onOpenRecommendation: () => void;
 }) => (
   <div className="w-full bg-white relative z-50 shadow-sm">
     <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
@@ -881,7 +882,12 @@ const Header = ({ onToggleAssistant, currentDate, onReset, currentLocation, onLo
             <Calendar size={12} className="text-[var(--text-tertiary)]" /> <span className="hidden xs:inline">{formatDate(currentDate)}</span><span className="xs:hidden">{currentDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
          </div>
          <div className="block">
-            <LocationSelector currentLocation={currentLocation} onLocationSelected={onLocationSelected} />
+            <LocationSelector
+              currentLocation={currentLocation}
+              onLocationSelected={onLocationSelected}
+              dataSource={dataSource}
+              onDataSourceChange={setDataSource}
+            />
          </div>
          <button onClick={onOpenRecommendation} className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold hover:from-green-700 hover:to-emerald-700 transition-colors shadow-lg whitespace-nowrap">
            <Target size={12} /> <span className="hidden sm:inline">Get Recommendation</span><span className="sm:hidden">Recommend</span>
@@ -1466,6 +1472,7 @@ export default function App() {
   const [simSpeed, setSimSpeed] = useState(1);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [dataSource, setDataSource] = useState<'nasa' | 'meteonorm'>('nasa');
   const [activeSection, setActiveSection] = useState<DashboardSection>('dashboard');
   const [overviewDetailsOpen, setOverviewDetailsOpen] = useState(false);
   const [priorityMode, setPriorityMode] = useState('auto');
@@ -1513,6 +1520,8 @@ export default function App() {
     () => buildVisualizationLayout(derivedSystemConfig, data, gridStatus, data.ev1Status, data.ev2Status, evSpecs),
     [derivedSystemConfig, data, gridStatus, evSpecs]
   );
+  const [recommendationResult, setRecommendationResult] = useState<HardwareRecommendation | null>(null);
+  const [isGeneratingRecommendation, setIsGeneratingRecommendation] = useState(false);
 
   const accumulators = useRef({ solar: 0, savings: 0, gridImport: 0, carbonOffset: 0, batDischargeKwh: 0, feedInEarnings: 0 });
   const soilingFactorRef = useRef(1.0);
@@ -1527,7 +1536,25 @@ export default function App() {
   const dayScenarioRef = useRef(
     generateDayScenario('Sunny', new Date('2026-01-01'), 1.0, solarData, systemConfigRef.current)
   );
-  
+
+  const handleGenerateRecommendation = useCallback(async () => {
+    try {
+      setIsGeneratingRecommendation(true);
+      const { createLoadProfileFromSimulation, generateRecommendation } = await import('@/lib/recommendation-engine');
+      const loadProfile = createLoadProfileFromSimulation(minuteDataRef.current);
+      const rec = generateRecommendation(loadProfile, solarData, {
+        batteryPreference: 'auto',
+        gridBackupRequired: true,
+        autonomyDays: 1.5,
+      });
+      setRecommendationResult(rec);
+    } catch (error) {
+      console.error('Failed to generate recommendations:', error);
+    } finally {
+      setIsGeneratingRecommendation(false);
+    }
+  }, [solarData]);
+
   // Comprehensive data tracking for export - stores all minute-by-minute data
   const minuteDataRef = useRef<SimulationMinuteRecord[]>([]);
   
@@ -2014,10 +2041,11 @@ export default function App() {
   const isNight = timeOfDay < 6 || timeOfDay > 19;
 
   // Handle location change
-  const handleLocationChange = useCallback((location: LocationCoordinates, newSolarData: SolarIrradianceData) => {
+  const handleLocationChange = useCallback((location: LocationCoordinates, newSolarData: SolarIrradianceData, source: 'nasa' | 'meteonorm') => {
     setCurrentLocation(location);
     setSolarData(newSolarData);
-    console.log(`Location changed to ${location.name}. Solar data:`, newSolarData);
+    setRecommendationResult(null);
+    console.log(`Location changed to ${location.name}. Solar data source: ${source}`, newSolarData);
   }, []);
 
   // Handle opening recommendation panel
@@ -2460,6 +2488,9 @@ export default function App() {
         simulationData={minuteDataRef.current}
         solarData={solarData}
         currentLocation={currentLocation}
+        recommendation={recommendationResult}
+        onGenerate={handleGenerateRecommendation}
+        isGenerating={isGeneratingRecommendation}
       />
       <EnergyReportModal
         isOpen={isReportOpen}

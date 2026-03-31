@@ -29,37 +29,44 @@ import {
   getSolarDataForLocation
 } from '@/lib/nasa-power-api';
 import { fetchSolarDataWithFallback } from '@/lib/meteonorm-api';
-import {
-  generateRecommendation,
-  createLoadProfileFromSimulation,
-  type HardwareRecommendation,
-  type LoadProfile
-} from '@/lib/recommendation-engine';
+import type { HardwareRecommendation, LoadProfile } from '@/lib/recommendation-engine';
 
 interface LocationSelectorProps {
-  onLocationSelected: (location: LocationCoordinates, solarData: SolarIrradianceData) => void;
+  onLocationSelected: (location: LocationCoordinates, solarData: SolarIrradianceData, source: 'nasa' | 'meteonorm') => void;
   currentLocation: LocationCoordinates;
+  dataSource: 'nasa' | 'meteonorm';
+  onDataSourceChange: (source: 'nasa' | 'meteonorm') => void;
 }
 
 export const LocationSelector: React.FC<LocationSelectorProps> = ({
   onLocationSelected,
-  currentLocation
+  currentLocation,
+  dataSource,
+  onDataSourceChange
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [customCoords, setCustomCoords] = useState({ lat: '', lon: '' });
   const [error, setError] = useState<string | null>(null);
-  const [dataSource, setDataSource] = useState<string>('');
+  const [dataSourceLabel, setDataSourceLabel] = useState<string>('');
 
   const handleLocationSelect = async (location: LocationCoordinates) => {
     setIsLoading(true);
     setError(null);
-    setDataSource('');
+    setDataSourceLabel('');
     try {
-      // Use new multi-API approach with automatic fallback
-      const result = await fetchSolarDataWithFallback(location.latitude, location.longitude, location.name);
-      setDataSource(`Data from: ${result.source === 'nasa' ? 'NASA POWER' : result.source === 'meteonorm' ? 'Open-Meteo' : 'Fallback'}`);
-      onLocationSelected(location, result.data);
+      let result;
+      if (dataSource === 'meteonorm') {
+        const { fetchMeteonormData } = await import('@/lib/meteonorm-api');
+        const data = await fetchMeteonormData(location.latitude, location.longitude, location.name);
+        result = { data, source: 'meteonorm' as const };
+      } else {
+        const { fetchSolarData } = await import('@/lib/nasa-power-api');
+        const data = await fetchSolarData(location.latitude, location.longitude, location.name);
+        result = { data, source: 'nasa' as const };
+      }
+      setDataSourceLabel(`Data from: ${result.source === 'nasa' ? 'NASA POWER' : 'Meteonorm/Open-Meteo'}`);
+      onLocationSelected(location, result.data, result.source);
       setIsOpen(false);
     } catch (err) {
       setError('Failed to fetch solar data from all sources. Please try again.');
@@ -91,15 +98,15 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 text-slate-500 text-xs font-medium bg-slate-100 px-3 py-1 rounded-full hover:bg-slate-200 transition-colors"
-        title={dataSource || 'Click to select location'}
+        title={dataSourceLabel || 'Click to select location'}
       >
         <MapPin size={14} className="text-sky-500" />
         {currentLocation.name}
         {isOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
       </button>
-      {dataSource && (
+      {dataSourceLabel && (
         <div className="absolute top-full right-0 mt-1 text-[10px] text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-200 whitespace-nowrap">
-          {dataSource}
+          {dataSourceLabel}
         </div>
       )}
 
@@ -113,6 +120,22 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
             <p className="text-xs text-slate-400 mt-1 font-normal">
               Location affects solar irradiance calculations
             </p>
+            <div className="mt-2 flex items-center gap-2 text-[11px]">
+              <span className="text-slate-300">Data Source:</span>
+              <div className="bg-white/10 rounded-full p-0.5 flex gap-1">
+                {(['nasa', 'meteonorm'] as const).map(source => (
+                  <button
+                    key={source}
+                    onClick={() => onDataSourceChange(source)}
+                    className={`px-2 py-1 rounded-full font-bold transition-colors ${
+                      dataSource === source ? 'bg-white text-sky-700' : 'text-white hover:bg-white/20'
+                    }`}
+                  >
+                    {source === 'nasa' ? 'NASA' : 'Meteonorm'}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="max-h-96 overflow-y-auto">
@@ -205,6 +228,9 @@ interface RecommendationPanelProps {
   }>;
   solarData: SolarIrradianceData;
   currentLocation: LocationCoordinates;
+  recommendation: HardwareRecommendation | null;
+  onGenerate: () => void;
+  isGenerating: boolean;
 }
 
 export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
@@ -212,10 +238,11 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
   onClose,
   simulationData,
   solarData,
-  currentLocation
+  currentLocation,
+  recommendation,
+  onGenerate,
+  isGenerating
 }) => {
-  const [recommendation, setRecommendation] = useState<HardwareRecommendation | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<{[key: string]: boolean}>({
     solar: true,
@@ -225,33 +252,10 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
   });
 
   useEffect(() => {
-    if (isOpen) {
-      setRecommendation(null);
-      setError(null);
-    }
+    if (!isOpen) return;
+    const resetTimeout = setTimeout(() => setError(null), 0);
+    return () => clearTimeout(resetTimeout);
   }, [isOpen, solarData, simulationData]);
-
-  const generateRecommendations = () => {
-    if (simulationData.length === 0) {
-      setError('Run the simulation first to generate recommendations.');
-      return;
-    }
-    setError(null);
-    setIsLoading(true);
-    try {
-      const loadProfile = createLoadProfileFromSimulation(simulationData);
-      const rec = generateRecommendation(loadProfile, solarData, {
-        batteryPreference: 'auto',
-        gridBackupRequired: true,
-        autonomyDays: 1.5
-      });
-      setRecommendation(rec);
-    } catch (error) {
-      console.error('Failed to generate recommendations:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   if (!isOpen) return null;
 
@@ -275,12 +279,19 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={generateRecommendations}
-              disabled={isLoading}
+              onClick={() => {
+                if (simulationData.length === 0) {
+                  setError('Run the simulation first to generate recommendations.');
+                  return;
+                }
+                setError(null);
+                onGenerate();
+              }}
+              disabled={isGenerating}
               className="px-3 py-1.5 bg-white/10 border border-white/30 rounded-full text-xs font-bold hover:bg-white/15 transition-colors disabled:opacity-70 flex items-center gap-2"
             >
-              {isLoading && <Loader2 size={14} className="animate-spin" />}
-              {isLoading ? 'Computing…' : 'Generate'}
+              {isGenerating && <Loader2 size={14} className="animate-spin" />}
+              {isGenerating ? 'Computing…' : 'Generate'}
             </button>
             <button onClick={onClose} className="text-white hover:text-sky-200 transition-colors">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -292,7 +303,7 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
 
         {/* Content */}
         <div className="flex-1 overflow-auto p-6">
-          {isLoading ? (
+          {isGenerating ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
                 <Loader2 size={48} className="animate-spin text-sky-600 mx-auto mb-4" />
@@ -582,7 +593,10 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
               {error && <p className="text-xs text-red-600">{error}</p>}
               <div className="flex justify-center">
                 <button
-                  onClick={generateRecommendations}
+                  onClick={() => {
+                    setError(null);
+                    onGenerate();
+                  }}
                   className="px-4 py-2 bg-sky-600 text-white text-xs font-bold rounded-full hover:bg-sky-700 transition-colors"
                 >
                   Generate Recommendations
