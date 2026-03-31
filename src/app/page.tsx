@@ -1061,8 +1061,8 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
   const gridFlowDir = data.netGridPower < 0 ? 'up' : 'down';
 
   return (
-    <div className="flex flex-col items-center w-full h-full p-2 sm:p-3 md:p-6 bg-[var(--bg-card-muted)] rounded-2xl sm:rounded-3xl border border-[var(--border)] overflow-x-auto">
-      <div className="min-w-[360px] sm:min-w-[540px] lg:min-w-[620px] flex flex-col items-center w-full px-1 sm:px-2">
+    <div className="flex flex-col items-center w-full h-full p-2 sm:p-3 md:p-6 bg-[var(--bg-card-muted)] rounded-2xl sm:rounded-3xl border border-[var(--border)]">
+      <div className="flex flex-col items-center w-full max-w-[800px] mx-auto px-1 sm:px-2">
        <div className="mb-0"><SolarPanelProduct power={data.solarR} capacity={50.0} weather={weather} isNight={isNight} /></div>
        <div className="flex flex-col items-center">
           <RigidCable height={30} active={isSolarActive} color={isSolarActive ? "bg-green-500" : "bg-slate-300"} speed={simSpeed} arrowColor="text-green-100" />
@@ -1084,10 +1084,10 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
              <RigidCable height={30} active={isSolarActive} color={isSolarActive ? "bg-green-500" : "bg-slate-300"} speed={simSpeed} arrowColor="text-green-100" />
              <RigidCable height={30} active={isSolarActive} color={isSolarActive ? "bg-green-500" : "bg-slate-300"} speed={simSpeed} arrowColor="text-green-100" />
           </div>
-          <div className="w-[550px] h-4 bg-slate-800 rounded-full shadow-md z-10 relative flex items-center justify-center">
+          <div className="w-full max-w-[550px] h-4 bg-slate-800 rounded-full shadow-md z-10 relative flex items-center justify-center">
              <div className="text-[8px] text-white font-mono tracking-widest">AC DISTRIBUTION BUS</div>
           </div>
-          <div className="flex justify-between w-[500px]">
+          <div className="flex justify-between w-full max-w-[500px]">
              <RigidCable 
                height={40} 
                active={data.netGridPower !== 0 && gridStatus === 'Online'} 
@@ -2370,38 +2370,59 @@ export default function App() {
 
           {activeSection === 'simulation' && (
             <>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <Card className="dashboard-card">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-                        <Settings className="h-5 w-5 text-[var(--battery)]" />
-                        Core Simulation Engine
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <CentralDisplay
-                        data={data}
-                        timeOfDay={timeOfDay}
-                        onTimeChange={setTimeOfDay}
-                        isAutoMode={isAutoMode}
-                        onToggleAuto={() => setIsAutoMode(!isAutoMode)}
-                        simSpeed={simSpeed}
-                        onSpeedChange={setSimSpeed}
-                        onOpenReport={() => setIsReportOpen(true)}
-                        priorityMode={priorityMode}
-                        onTogglePriority={() => setPriorityMode(prev => prev === 'battery' ? 'load' : prev === 'load' ? 'auto' : 'battery')}
-                        weather={weather}
-                        isNight={isNight}
-                        gridStatus={gridStatus}
-                        onToggleGrid={() => setGridStatus(prev => prev === 'Online' ? 'Offline' : 'Online')}
-                        displayPriority={data.effectivePriority}
-                        ev1Status={data.ev1Status}
-                        ev2Status={data.ev2Status}
-                      />
-                    </CardContent>
-                  </Card>
-                </div>
+              {/* System Visualization - Full Width Hero Section */}
+              <Card className="dashboard-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+                    <Building2 className="h-5 w-5 text-[var(--solar)]" />
+                    System Visualization
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <ResidentialPanel
+                    data={data}
+                    simSpeed={simSpeed}
+                    weather={weather}
+                    isNight={isNight}
+                    gridStatus={gridStatus}
+                    ev1Status={data.ev1Status}
+                    ev2Status={data.ev2Status}
+                    evSpecs={evSpecs}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Simulation Engine + Scenario Controls - Two Columns */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="dashboard-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+                      <Settings className="h-5 w-5 text-[var(--battery)]" />
+                      Core Simulation Engine
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <CentralDisplay
+                      data={data}
+                      timeOfDay={timeOfDay}
+                      onTimeChange={setTimeOfDay}
+                      isAutoMode={isAutoMode}
+                      onToggleAuto={() => setIsAutoMode(!isAutoMode)}
+                      simSpeed={simSpeed}
+                      onSpeedChange={setSimSpeed}
+                      onOpenReport={() => setIsReportOpen(true)}
+                      priorityMode={priorityMode}
+                      onTogglePriority={() => setPriorityMode(prev => prev === 'battery' ? 'load' : prev === 'load' ? 'auto' : 'battery')}
+                      weather={weather}
+                      isNight={isNight}
+                      gridStatus={gridStatus}
+                      onToggleGrid={() => setGridStatus(prev => prev === 'Online' ? 'Offline' : 'Online')}
+                      displayPriority={data.effectivePriority}
+                      ev1Status={data.ev1Status}
+                      ev2Status={data.ev2Status}
+                    />
+                  </CardContent>
+                </Card>
                 <Card className="dashboard-card">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
@@ -2468,38 +2489,15 @@ export default function App() {
                 </Card>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <PowerFlowVisualization
-                    solarPower={data.solarR}
-                    batteryPower={data.batteryPower}
-                    gridPower={data.netGridPower}
-                    homePower={data.homeLoad + data.ev1Load + data.ev2Load}
-                    batteryLevel={data.batteryLevel}
-                    flowDirection={flowDirection}
-                  />
-                </div>
-                <Card className="dashboard-card h-full">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-                      <Building2 className="h-5 w-5 text-[var(--solar)]" />
-                      System Visualization
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <ResidentialPanel
-                      data={data}
-                      simSpeed={simSpeed}
-                      weather={weather}
-                      isNight={isNight}
-                      gridStatus={gridStatus}
-                      ev1Status={data.ev1Status}
-                      ev2Status={data.ev2Status}
-                      evSpecs={evSpecs}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
+              {/* Energy Flow - Demoted to Secondary Section */}
+              <PowerFlowVisualization
+                solarPower={data.solarR}
+                batteryPower={data.batteryPower}
+                gridPower={data.netGridPower}
+                homePower={data.homeLoad + data.ev1Load + data.ev2Load}
+                batteryLevel={data.batteryLevel}
+                flowDirection={flowDirection}
+              />
 
               <Card className="dashboard-card">
                 <CardHeader>
