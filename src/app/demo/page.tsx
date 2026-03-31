@@ -28,6 +28,9 @@ import { BarChart3, PieChart, TrendingUp, Leaf, Car, Trees } from 'lucide-react'
 import { EnergyReportModal } from '@/components/EnergyReportModal';
 import type { SolarIrradianceData } from '@/lib/nasa-power-api';
 
+// Force dynamic rendering - no static generation
+export const dynamic = 'force-dynamic';
+
 // Default Nairobi solar data for report generation
 const NAIROBI_SOLAR_DATA: SolarIrradianceData = {
   latitude: -1.2921,

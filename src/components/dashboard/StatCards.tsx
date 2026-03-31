@@ -4,6 +4,7 @@ import React from 'react';
 import { Sun, Zap, Home, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Sparkline } from './Sparkline';
 
 interface StatCardProps {
   title: string;
@@ -124,6 +125,13 @@ interface StatCardsProps {
   currentPower: number;
   consumption: number;
   savings: number;
+  generationHistory?: number[];
+  powerHistory?: number[];
+  consumptionHistory?: number[];
+  savingsHistory?: number[];
+  weeklyAvgGeneration?: number;
+  weeklyAvgConsumption?: number;
+  yesterdaySavings?: number;
   isLoading?: boolean;
 }
 
@@ -147,7 +155,20 @@ function StatCardSkeleton() {
   );
 }
 
-export function StatCards({ totalGeneration, currentPower, consumption, savings, isLoading }: StatCardsProps) {
+export function StatCards({
+  totalGeneration,
+  currentPower,
+  consumption,
+  savings,
+  generationHistory = [],
+  powerHistory = [],
+  consumptionHistory = [],
+  savingsHistory = [],
+  weeklyAvgGeneration = 0,
+  weeklyAvgConsumption = 0,
+  yesterdaySavings = 0,
+  isLoading
+}: StatCardsProps) {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -158,6 +179,42 @@ export function StatCards({ totalGeneration, currentPower, consumption, savings,
       </div>
     );
   }
+
+  // Calculate trends for generation
+  const generationTrend = weeklyAvgGeneration > 0
+    ? ((totalGeneration - weeklyAvgGeneration) / weeklyAvgGeneration) * 100
+    : 0;
+  const generationTrendText = `${generationTrend >= 0 ? '+' : ''}${generationTrend.toFixed(1)}%`;
+  const generationComparison = weeklyAvgGeneration > 0
+    ? `vs ${weeklyAvgGeneration.toFixed(1)} kWh weekly avg`
+    : undefined;
+
+  // Calculate trends for power (comparing current to average of history)
+  const avgPower = powerHistory.length > 0
+    ? powerHistory.reduce((a, b) => a + b, 0) / powerHistory.length
+    : 0;
+  const powerTrend = currentPower >= avgPower ? 'up' : 'down';
+  const powerTrendValue = avgPower > 0
+    ? `${currentPower >= avgPower ? '+' : ''}${(((currentPower - avgPower) / avgPower) * 100).toFixed(1)}%`
+    : undefined;
+
+  // Calculate trends for consumption
+  const consumptionTrend = weeklyAvgConsumption > 0
+    ? ((consumption - weeklyAvgConsumption) / weeklyAvgConsumption) * 100
+    : 0;
+  const consumptionTrendText = `${consumptionTrend >= 0 ? '+' : ''}${consumptionTrend.toFixed(1)}%`;
+  const consumptionComparison = weeklyAvgConsumption > 0
+    ? `vs ${weeklyAvgConsumption.toFixed(1)} kWh weekly avg`
+    : undefined;
+
+  // Calculate trends for savings
+  const savingsChange = yesterdaySavings > 0
+    ? ((savings - yesterdaySavings) / yesterdaySavings) * 100
+    : 0;
+  const savingsTrendText = `${savingsChange >= 0 ? '+' : ''}${savingsChange.toFixed(1)}%`;
+  const savingsComparison = yesterdaySavings > 0
+    ? `vs KES ${yesterdaySavings.toFixed(0)} yesterday`
+    : undefined;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

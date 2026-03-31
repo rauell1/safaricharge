@@ -220,6 +220,16 @@ export function PowerFlowVisualization({
     );
   }
 
+  // Calculate system efficiency and flow distribution
+  const usefulEnergy = Math.min(homePower, solarPower) + (batteryPower > 0 ? Math.min(batteryPower, solarPower - homePower) : 0);
+  const systemEfficiency = solarPower > 0 ? (usefulEnergy / solarPower) * 100 : 0;
+
+  // Calculate solar flow distribution percentages
+  const totalSolarUse = homePower + Math.abs(batteryPower) + Math.abs(gridPower < 0 ? gridPower : 0);
+  const solarToHomePercent = totalSolarUse > 0 ? (Math.min(homePower, solarPower) / totalSolarUse) * 100 : 0;
+  const solarToBatteryPercent = totalSolarUse > 0 && batteryPower > 0 ? (batteryPower / totalSolarUse) * 100 : 0;
+  const solarToGridPercent = totalSolarUse > 0 && gridPower < 0 ? (Math.abs(gridPower) / totalSolarUse) * 100 : 0;
+
   return (
     <Card className="dashboard-card">
       <CardHeader>
