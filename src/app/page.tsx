@@ -1078,43 +1078,55 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
           <InverterProduct id={2} power={data.solarR / 3} />
           <InverterProduct id={3} power={data.solarR / 3} />
        </div>
-       <div className="flex flex-col items-center">
+       <div className="flex flex-col items-center w-full max-w-[900px]">
           <div className="flex justify-between w-[240px]">
              <RigidCable height={30} active={isSolarActive} color={isSolarActive ? "bg-green-500" : "bg-slate-300"} speed={simSpeed} arrowColor="text-green-100" />
              <RigidCable height={30} active={isSolarActive} color={isSolarActive ? "bg-green-500" : "bg-slate-300"} speed={simSpeed} arrowColor="text-green-100" />
              <RigidCable height={30} active={isSolarActive} color={isSolarActive ? "bg-green-500" : "bg-slate-300"} speed={simSpeed} arrowColor="text-green-100" />
           </div>
-          <div className="w-full max-w-full sm:max-w-[450px] md:max-w-[550px] h-4 bg-slate-800 rounded-full shadow-md z-10 relative flex items-center justify-center">
-             <div className="text-[6px] sm:text-[8px] text-white font-mono tracking-widest">AC DISTRIBUTION BUS</div>
-          </div>
-          <div className="flex justify-between w-full max-w-full sm:max-w-[400px] md:max-w-[500px] gap-1 sm:gap-2">
-             <RigidCable 
-               height={40} 
-               active={data.netGridPower !== 0 && gridStatus === 'Online'} 
-               flowDirection={gridFlowDir} 
-               color={gridStatus === 'Offline' ? 'bg-red-200' : data.netGridPower < 0 ? "bg-sky-500" : data.netGridPower > 0 ? "bg-green-500" : "bg-slate-300"} 
-               speed={simSpeed}
-               arrowColor={data.netGridPower < 0 ? "text-sky-100" : "text-green-100"}
-             />
-             <RigidCable height={40} active={data.homeLoad > 0} color="bg-slate-800" speed={simSpeed} arrowColor="text-slate-200" />
-             <RigidCable height={40} active={ev1Status === 'Charging'} color={ev1Status === 'Charging' ? "bg-slate-800" : "bg-slate-200"} speed={simSpeed} arrowColor="text-slate-200" />
-             <RigidCable height={40} active={ev2Status === 'Charging'} color={ev2Status === 'Charging' ? "bg-slate-800" : "bg-slate-200"} speed={simSpeed} arrowColor="text-slate-200" />
-             <RigidCable 
-               height={40} 
-               active={data.batteryStatus !== 'Idle'} 
-               flowDirection={data.batteryStatus === 'Charging' ? 'down' : 'up'} 
-               color={data.batteryStatus === 'Charging' ? "bg-green-500" : data.batteryStatus === 'Discharging' ? "bg-orange-500" : "bg-slate-300"} 
-               speed={simSpeed}
-               arrowColor={data.batteryStatus === 'Charging' ? "text-green-100" : "text-orange-100"}
-             />
+          <div className="relative w-full mt-1 sm:mt-2">
+             <div className="absolute inset-x-0 top-0 h-4 bg-slate-800 rounded-full shadow-md z-0 flex items-center justify-center">
+               <div className="text-[6px] sm:text-[8px] text-white font-mono tracking-widest">AC DISTRIBUTION BUS</div>
+             </div>
+             <div className="grid grid-cols-5 gap-1 sm:gap-2 pt-6">
+               <div className="flex justify-center">
+                 <RigidCable 
+                   height={40} 
+                   active={data.netGridPower !== 0 && gridStatus === 'Online'} 
+                   flowDirection={gridFlowDir} 
+                   color={gridStatus === 'Offline' ? 'bg-red-200' : data.netGridPower < 0 ? "bg-sky-500" : data.netGridPower > 0 ? "bg-green-500" : "bg-slate-300"} 
+                   speed={simSpeed}
+                   arrowColor={data.netGridPower < 0 ? "text-sky-100" : "text-green-100"}
+                 />
+               </div>
+               <div className="flex justify-center">
+                 <RigidCable height={40} active={data.homeLoad > 0} color="bg-slate-800" speed={simSpeed} arrowColor="text-slate-200" />
+               </div>
+               <div className="flex justify-center">
+                 <RigidCable height={40} active={ev1Status === 'Charging'} color={ev1Status === 'Charging' ? "bg-slate-800" : "bg-slate-200"} speed={simSpeed} arrowColor="text-slate-200" />
+               </div>
+               <div className="flex justify-center">
+                 <RigidCable height={40} active={ev2Status === 'Charging'} color={ev2Status === 'Charging' ? "bg-slate-800" : "bg-slate-200"} speed={simSpeed} arrowColor="text-slate-200" />
+               </div>
+               <div className="flex justify-center">
+                 <RigidCable 
+                   height={40} 
+                   active={data.batteryStatus !== 'Idle'} 
+                   flowDirection={data.batteryStatus === 'Charging' ? 'down' : 'up'} 
+                   color={data.batteryStatus === 'Charging' ? "bg-green-500" : data.batteryStatus === 'Discharging' ? "bg-orange-500" : "bg-slate-300"} 
+                   speed={simSpeed}
+                   arrowColor={data.batteryStatus === 'Charging' ? "text-green-100" : "text-orange-100"}
+                 />
+               </div>
+             </div>
           </div>
        </div>
-        <div className="flex gap-2 sm:gap-3 md:gap-4 justify-between w-full max-w-full sm:max-w-[480px] md:max-w-[600px] mt-0 scale-75 sm:scale-90 md:scale-100">
-          <div className="flex-1 flex justify-center scale-90"><GridProduct power={data.netGridPower} isImporting={data.netGridPower < 0} isExporting={data.netGridPower > 0} gridStatus={gridStatus} /></div>
-          <div className="flex-1 flex justify-center scale-90"><HomeProduct power={data.homeLoad} /></div>
-          <div className="flex-1 flex justify-center scale-90"><EVChargerProduct id={1} status={ev1Status} soc={data.ev1Soc} power={data.ev1Load} carName="EV 1 (Commuter)" capacity={evSpecs.ev1.capacity} maxRate={evSpecs.ev1.rate} onToggle={() => {}} v2g={data.ev1V2g} /></div>
-          <div className="flex-1 flex justify-center scale-90"><EVChargerProduct id={2} status={ev2Status} soc={data.ev2Soc} power={data.ev2Load} carName="EV 2 (Uber)" capacity={evSpecs.ev2.capacity} maxRate={evSpecs.ev2.rate} onToggle={() => {}} v2g={data.ev2V2g} /></div>
-          <div className="flex-1 flex justify-center scale-90"><BatteryProduct level={data.batteryLevel} status={data.batteryStatus} power={data.batteryPower} health={data.batteryHealth} cycles={data.batteryCycles} /></div>
+        <div className="grid grid-cols-5 gap-2 sm:gap-3 md:gap-4 w-full max-w-[900px] mt-2 scale-75 sm:scale-90 md:scale-100">
+          <div className="flex justify-center scale-90"><GridProduct power={data.netGridPower} isImporting={data.netGridPower < 0} isExporting={data.netGridPower > 0} gridStatus={gridStatus} /></div>
+          <div className="flex justify-center scale-90"><HomeProduct power={data.homeLoad} /></div>
+          <div className="flex justify-center scale-90"><EVChargerProduct id={1} status={ev1Status} soc={data.ev1Soc} power={data.ev1Load} carName="EV 1 (Commuter)" capacity={evSpecs.ev1.capacity} maxRate={evSpecs.ev1.rate} onToggle={() => {}} v2g={data.ev1V2g} /></div>
+          <div className="flex justify-center scale-90"><EVChargerProduct id={2} status={ev2Status} soc={data.ev2Soc} power={data.ev2Load} carName="EV 2 (Uber)" capacity={evSpecs.ev2.capacity} maxRate={evSpecs.ev2.rate} onToggle={() => {}} v2g={data.ev2V2g} /></div>
+          <div className="flex justify-center scale-90"><BatteryProduct level={data.batteryLevel} status={data.batteryStatus} power={data.batteryPower} health={data.batteryHealth} cycles={data.batteryCycles} /></div>
         </div>
       </div>
     </div>
@@ -2372,28 +2384,6 @@ export default function App() {
 
           {activeSection === 'simulation' && (
             <>
-              {/* System Visualization - Full Width Hero Section */}
-              <Card className="dashboard-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-                    <Building2 className="h-5 w-5 text-[var(--solar)]" />
-                    System Visualization
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <ResidentialPanel
-                    data={data}
-                    simSpeed={simSpeed}
-                    weather={weather}
-                    isNight={isNight}
-                    gridStatus={gridStatus}
-                    ev1Status={data.ev1Status}
-                    ev2Status={data.ev2Status}
-                    evSpecs={evSpecs}
-                  />
-                </CardContent>
-              </Card>
-
               {/* Simulation Engine + Scenario Controls - Two Columns */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="dashboard-card">
@@ -2490,6 +2480,28 @@ export default function App() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* System Visualization - Full Width Hero Section */}
+              <Card className="dashboard-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+                    <Building2 className="h-5 w-5 text-[var(--solar)]" />
+                    System Visualization
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <ResidentialPanel
+                    data={data}
+                    simSpeed={simSpeed}
+                    weather={weather}
+                    isNight={isNight}
+                    gridStatus={gridStatus}
+                    ev1Status={data.ev1Status}
+                    ev2Status={data.ev2Status}
+                    evSpecs={evSpecs}
+                  />
+                </CardContent>
+              </Card>
 
               {/* Energy Flow - Demoted to Secondary Section */}
               <PowerFlowVisualization
