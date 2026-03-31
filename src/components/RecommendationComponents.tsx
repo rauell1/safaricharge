@@ -36,12 +36,16 @@ interface LocationSelectorProps {
     location: LocationCoordinates,
     solarData: SolarIrradianceData,
     source: 'nasa' | 'meteonorm',
-    fetchedAt: number
+    fetchedAt: number,
+    fromCache: boolean
   ) => void;
   currentLocation: LocationCoordinates;
   dataSource: 'nasa' | 'meteonorm';
   onDataSourceChange: (source: 'nasa' | 'meteonorm') => void;
   onLoadingChange?: (loading: boolean) => void;
+  cacheRef?: React.MutableRefObject<Record<string, { data: SolarIrradianceData; fetchedAt: number }>>;
+  onInvalidateCache?: () => void;
+  label?: string;
 }
 
 export const LocationSelector: React.FC<LocationSelectorProps> = ({
@@ -49,14 +53,18 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
   currentLocation,
   dataSource,
   onDataSourceChange,
-  onLoadingChange
+  onLoadingChange,
+  cacheRef,
+  onInvalidateCache,
+  label
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [customCoords, setCustomCoords] = useState({ lat: '', lon: '' });
   const [error, setError] = useState<string | null>(null);
   const [dataSourceLabel, setDataSourceLabel] = useState<string>('');
-  const cacheRef = useRef<Record<string, { data: SolarIrradianceData; fetchedAt: number }>>({});
+  const fallbackCacheRef = useRef<Record<string, { data: SolarIrradianceData; fetchedAt: number }>>({});
+  const localCacheRef = cacheRef ?? fallbackCacheRef;
 
   const handleLocationSelect = async (location: LocationCoordinates) => {
     setIsLoading(true);
@@ -65,10 +73,10 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
     onLoadingChange?.(true);
     try {
       const cacheKey = `${dataSource}:${location.name}`;
-      const cached = cacheRef.current[cacheKey];
+      const cached = localCacheRef.current[cacheKey];
       if (cached) {
         setDataSourceLabel(`Data from cache: ${dataSource === 'nasa' ? 'NASA POWER' : 'Meteonorm/Open-Meteo'}`);
-        onLocationSelected(location, cached.data, dataSource, cached.fetchedAt);
+        onLocationSelected(location, cached.data, dataSource, cached.fetchedAt, true);
         setIsOpen(false);
         return;
       }
@@ -84,9 +92,9 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
         result = { data, source: 'nasa' as const };
       }
       const fetchedAt = Date.now();
-      cacheRef.current[cacheKey] = { data: result.data, fetchedAt };
+      localCacheRef.current[cacheKey] = { data: result.data, fetchedAt };
       setDataSourceLabel(`Data from: ${result.source === 'nasa' ? 'NASA POWER' : 'Meteonorm/Open-Meteo'}`);
-      onLocationSelected(location, result.data, result.source, fetchedAt);
+      onLocationSelected(location, result.data, result.source, fetchedAt, false);
       setIsOpen(false);
     } catch (err) {
       setError('Failed to fetch solar data from all sources. Please try again.');
@@ -122,7 +130,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
         title={dataSourceLabel || 'Click to select location'}
       >
         <MapPin size={14} className="text-sky-500" />
-        {currentLocation.name}
+        {label ? `${label}: ${currentLocation.name}` : currentLocation.name}
         {isOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
       </button>
       {dataSourceLabel && (
@@ -221,6 +229,18 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
                 )}
               </button>
             </div>
+            <div className="p-3 border-t border-slate-200 bg-white">
+              <button
+                onClick={() => {
+                  if (onInvalidateCache) onInvalidateCache();
+                  if (!cacheRef) localCacheRef.current = {};
+                  setDataSourceLabel('');
+                }}
+                className="w-full text-xs font-bold text-red-600 border border-red-200 bg-red-50 hover:bg-red-100 rounded-lg py-2 transition-colors"
+              >
+                Invalidate Cache
+              </button>
+            </div>
           </div>
 
           {error && (
@@ -255,6 +275,7 @@ interface RecommendationPanelProps {
   dataSource: 'nasa' | 'meteonorm';
   isSolarLoading: boolean;
   lastUpdated: number | null;
+  fromCache: boolean;
 }
 
 export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
@@ -268,7 +289,8 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
   isGenerating,
   dataSource,
   isSolarLoading,
-  lastUpdated
+  lastUpdated,
+  fromCache
 }) => {
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<{[key: string]: boolean}>({
@@ -292,6 +314,7 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
   const activeSourceLabel = dataSource === 'nasa' ? 'NASA POWER' : 'Meteonorm';
   const canGenerate = !isGenerating && !isSolarLoading && !!solarData && simulationData.length > 0;
   const updatedLabel = lastUpdated ? new Date(lastUpdated).toLocaleString() : 'Not yet loaded';
+  const cacheBadge = fromCache ? 'Cached' : 'Fresh';
 
   return (
     <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -313,6 +336,9 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
               </span>
               <span className="px-2 py-1 rounded-full bg-white/10 text-[10px] font-semibold border border-white/20">
                 Last updated: {updatedLabel}
+              </span>
+              <span className={`px-2 py-1 rounded-full text-[10px] font-semibold ${fromCache ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
+                {cacheBadge}
               </span>
               <button
                 onClick={() => {
@@ -636,7 +662,7 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
                   disabled={!canGenerate}
                   className="px-4 py-2 bg-sky-600 text-white text-xs font-bold rounded-full hover:bg-sky-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  Generate Recommendations
+                  {fromCache ? 'Generate (cached data)' : 'Generate Recommendations'}
                 </button>
               </div>
             </div>

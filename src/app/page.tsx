@@ -1453,6 +1453,8 @@ export default function App() {
   const [currentLocation, setCurrentLocation] = useState<LocationCoordinates>(KENYA_LOCATIONS[0]); // Default to Nairobi
   const [solarDataLoading, setSolarDataLoading] = useState(false);
   const [solarLastUpdated, setSolarLastUpdated] = useState<number | null>(null);
+  const [solarFromCache, setSolarFromCache] = useState(false);
+  const solarCacheRef = useRef<Record<string, { data: SolarIrradianceData; fetchedAt: number }>>({});
   const [solarData, setSolarData] = useState<SolarIrradianceData>({
     latitude: -1.2921,
     longitude: 36.8219,
@@ -1531,6 +1533,13 @@ export default function App() {
   );
   const [recommendationResult, setRecommendationResult] = useState<HardwareRecommendation | null>(null);
   const [isGeneratingRecommendation, setIsGeneratingRecommendation] = useState(false);
+  const [compareEnabled, setCompareEnabled] = useState(false);
+  const [compareLocation, setCompareLocation] = useState<LocationCoordinates | null>(null);
+  const [compareSolarData, setCompareSolarData] = useState<SolarIrradianceData | null>(null);
+  const [compareSource, setCompareSource] = useState<'nasa' | 'meteonorm'>('nasa');
+  const [compareLastUpdated, setCompareLastUpdated] = useState<number | null>(null);
+  const [compareFromCache, setCompareFromCache] = useState(false);
+  const [compareLoading, setCompareLoading] = useState(false);
 
   const accumulators = useRef({ solar: 0, savings: 0, gridImport: 0, carbonOffset: 0, batDischargeKwh: 0, feedInEarnings: 0 });
   const soilingFactorRef = useRef(1.0);
@@ -1564,6 +1573,14 @@ export default function App() {
       setIsGeneratingRecommendation(false);
     }
   }, [solarData]);
+
+  const handleInvalidateCache = useCallback(() => {
+    solarCacheRef.current = {};
+    setSolarLastUpdated(null);
+    setSolarFromCache(false);
+    setCompareLastUpdated(null);
+    setCompareFromCache(false);
+  }, []);
 
   // Comprehensive data tracking for export - stores all minute-by-minute data
   const minuteDataRef = useRef<SimulationMinuteRecord[]>([]);
@@ -2051,12 +2068,20 @@ export default function App() {
   const isNight = timeOfDay < 6 || timeOfDay > 19;
 
   // Handle location change
-  const handleLocationChange = useCallback((location: LocationCoordinates, newSolarData: SolarIrradianceData, source: 'nasa' | 'meteonorm', fetchedAt: number) => {
+  const handleLocationChange = useCallback((location: LocationCoordinates, newSolarData: SolarIrradianceData, source: 'nasa' | 'meteonorm', fetchedAt: number, fromCache: boolean) => {
     setCurrentLocation(location);
     setSolarData(newSolarData);
     setRecommendationResult(null);
     setSolarLastUpdated(fetchedAt);
+    setSolarFromCache(fromCache);
     console.log(`Location changed to ${location.name}. Solar data source: ${source}`, newSolarData);
+  }, []);
+  const handleCompareLocationChange = useCallback((location: LocationCoordinates, newSolarData: SolarIrradianceData, source: 'nasa' | 'meteonorm', fetchedAt: number, fromCache: boolean) => {
+    setCompareLocation(location);
+    setCompareSolarData(newSolarData);
+    setCompareSource(source);
+    setCompareLastUpdated(fetchedAt);
+    setCompareFromCache(fromCache);
   }, []);
 
   // Handle opening recommendation panel
@@ -2505,6 +2530,7 @@ export default function App() {
         dataSource={dataSource}
         isSolarLoading={solarDataLoading}
         lastUpdated={solarLastUpdated}
+        fromCache={solarFromCache}
       />
       <EnergyReportModal
         isOpen={isReportOpen}
@@ -2532,18 +2558,70 @@ export default function App() {
       {/* Main Dashboard Content */}
       <main className="flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8">
-        <div className="flex flex-wrap items-center gap-2 text-[11px] sm:text-xs text-[var(--text-secondary)]">
-          <span className="px-2 py-1 rounded-full bg-[var(--bg-card-muted)] border border-[var(--border)] font-semibold">
-            Source: {dataSource === 'nasa' ? 'NASA POWER' : 'Meteonorm'}{solarDataLoading ? ' (loading...)' : ''}
-          </span>
-          <span className="px-2 py-1 rounded-full bg-[var(--bg-card-muted)] border border-[var(--border)] font-semibold">
-            Last updated: {solarLastUpdated ? new Date(solarLastUpdated).toLocaleString() : 'Not yet loaded'}
-          </span>
-          {!recommendationResult && (
-            <span className="text-[var(--text-tertiary)]">
-              No recommendation generated yet for {currentLocation.name}. Choose a source and click Generate.
+          <div className="flex flex-wrap items-center gap-2 text-[11px] sm:text-xs text-[var(--text-secondary)]">
+            <LocationSelector
+              currentLocation={currentLocation}
+              onLocationSelected={handleLocationChange}
+              dataSource={dataSource}
+              onDataSourceChange={setDataSource}
+              onLoadingChange={setSolarDataLoading}
+              cacheRef={solarCacheRef}
+              onInvalidateCache={handleInvalidateCache}
+              label="Primary"
+            />
+            <span className="px-2 py-1 rounded-full bg-[var(--bg-card-muted)] border border-[var(--border)] font-semibold">
+              Source: {dataSource === 'nasa' ? 'NASA POWER' : 'Meteonorm'}{solarDataLoading ? ' (loading...)' : ''}
             </span>
-          )}
+            <span className="px-2 py-1 rounded-full bg-[var(--bg-card-muted)] border border-[var(--border)] font-semibold">
+              Last updated: {solarLastUpdated ? new Date(solarLastUpdated).toLocaleString() : 'Not yet loaded'}
+            </span>
+            <span className={`px-2 py-1 rounded-full font-semibold border ${solarFromCache ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-green-50 border-green-200 text-green-700'}`}>
+              {solarFromCache ? 'Cached' : 'Fresh'}
+            </span>
+            <button
+              onClick={handleInvalidateCache}
+              className="px-2 py-1 rounded-full border border-[var(--border)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+            >
+              Invalidate Cache
+            </button>
+            {!recommendationResult && (
+              <span className="text-[var(--text-tertiary)]">
+                No recommendation generated yet for {currentLocation.name}. Choose a source and click Generate.
+              </span>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-3 text-[11px] sm:text-xs">
+            <button
+              onClick={() => setCompareEnabled((prev) => !prev)}
+              className="px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--bg-card-muted)] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            >
+              {compareEnabled ? 'Disable Comparison' : 'Enable Comparison'}
+            </button>
+            {compareEnabled && (
+              <>
+                <LocationSelector
+                  currentLocation={compareLocation || currentLocation}
+                  onLocationSelected={handleCompareLocationChange}
+                  dataSource={compareSource}
+                  onDataSourceChange={setCompareSource}
+                  onLoadingChange={setCompareLoading}
+                  cacheRef={solarCacheRef}
+                  onInvalidateCache={handleInvalidateCache}
+                  label="Compare"
+                />
+                <span className="px-2 py-1 rounded-full bg-[var(--bg-card-muted)] border border-[var(--border)] font-semibold">
+                  Last updated: {compareLastUpdated ? new Date(compareLastUpdated).toLocaleString() : 'Not loaded'}
+                </span>
+                <span className={`px-2 py-1 rounded-full font-semibold border ${compareFromCache ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-green-50 border-green-200 text-green-700'}`}>
+                  {compareFromCache ? 'Cached' : 'Fresh'}
+                </span>
+                {compareSolarData && compareLocation && (
+                  <span className="px-2 py-1 rounded-full bg-[var(--bg-card-muted)] border border-[var(--border)]">
+                    {compareLocation.name} • {compareSource === 'nasa' ? 'NASA' : 'Meteonorm'} • {compareSolarData.annualAverage.toFixed(1)} kWh/m²/day
+                  </span>
+                )}
+              </>
+            )}
           </div>
           <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
             <div>
