@@ -14,8 +14,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body style={{ fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif" }}>
+    <html lang="en" className="overflow-x-hidden">
+      <body style={{ fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif" }} className="overflow-x-hidden">
         {children}
         <Analytics />
         <SpeedInsights />

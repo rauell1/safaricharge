@@ -1062,7 +1062,7 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
 
   return (
     <div className="flex flex-col items-center w-full h-full p-2 sm:p-3 md:p-6 bg-[var(--bg-card-muted)] rounded-2xl sm:rounded-3xl border border-[var(--border)]">
-      <div className="flex flex-col items-center w-full max-w-[800px] mx-auto px-1 sm:px-2">
+      <div className="flex flex-col items-center w-full max-w-full sm:max-w-[600px] md:max-w-[800px] mx-auto px-1 sm:px-2">
        <div className="mb-0"><SolarPanelProduct power={data.solarR} capacity={50.0} weather={weather} isNight={isNight} /></div>
        <div className="flex flex-col items-center">
           <RigidCable height={30} active={isSolarActive} color={isSolarActive ? "bg-green-500" : "bg-slate-300"} speed={simSpeed} arrowColor="text-green-100" />
@@ -1073,7 +1073,7 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
              <RigidCable height={20} active={isSolarActive} color={isSolarActive ? "bg-green-500" : "bg-slate-300"} speed={simSpeed} arrowColor="text-green-100" />
           </div>
        </div>
-       <div className="flex gap-8 justify-center items-start mb-0">
+       <div className="flex gap-4 sm:gap-6 md:gap-8 justify-center items-start mb-0 scale-75 sm:scale-90 md:scale-100">
           <InverterProduct id={1} power={data.solarR / 3} />
           <InverterProduct id={2} power={data.solarR / 3} />
           <InverterProduct id={3} power={data.solarR / 3} />
@@ -1084,10 +1084,10 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
              <RigidCable height={30} active={isSolarActive} color={isSolarActive ? "bg-green-500" : "bg-slate-300"} speed={simSpeed} arrowColor="text-green-100" />
              <RigidCable height={30} active={isSolarActive} color={isSolarActive ? "bg-green-500" : "bg-slate-300"} speed={simSpeed} arrowColor="text-green-100" />
           </div>
-          <div className="w-full max-w-[550px] h-4 bg-slate-800 rounded-full shadow-md z-10 relative flex items-center justify-center">
-             <div className="text-[8px] text-white font-mono tracking-widest">AC DISTRIBUTION BUS</div>
+          <div className="w-full max-w-full sm:max-w-[450px] md:max-w-[550px] h-4 bg-slate-800 rounded-full shadow-md z-10 relative flex items-center justify-center">
+             <div className="text-[6px] sm:text-[8px] text-white font-mono tracking-widest">AC DISTRIBUTION BUS</div>
           </div>
-          <div className="flex justify-between w-full max-w-[500px]">
+          <div className="flex justify-between w-full max-w-full sm:max-w-[400px] md:max-w-[500px] gap-1 sm:gap-2">
              <RigidCable 
                height={40} 
                active={data.netGridPower !== 0 && gridStatus === 'Online'} 
@@ -1109,7 +1109,7 @@ const ResidentialPanel = React.memo(({ data, simSpeed, weather, isNight, gridSta
              />
           </div>
        </div>
-        <div className="flex gap-3 sm:gap-4 justify-between w-full max-w-[600px] mt-0">
+        <div className="flex gap-2 sm:gap-3 md:gap-4 justify-between w-full max-w-full sm:max-w-[480px] md:max-w-[600px] mt-0 scale-75 sm:scale-90 md:scale-100">
           <div className="flex-1 flex justify-center scale-90"><GridProduct power={data.netGridPower} isImporting={data.netGridPower < 0} isExporting={data.netGridPower > 0} gridStatus={gridStatus} /></div>
           <div className="flex-1 flex justify-center scale-90"><HomeProduct power={data.homeLoad} /></div>
           <div className="flex-1 flex justify-center scale-90"><EVChargerProduct id={1} status={ev1Status} soc={data.ev1Soc} power={data.ev1Load} carName="EV 1 (Commuter)" capacity={evSpecs.ev1.capacity} maxRate={evSpecs.ev1.rate} onToggle={() => {}} v2g={data.ev1V2g} /></div>
@@ -2169,24 +2169,25 @@ export default function App() {
       />
 
       {/* Main Dashboard Content */}
-      <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
-        <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
-          <div className="flex flex-wrap items-start justify-between gap-4">
+      <main className="flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 lg:px-8">
+        <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8">
+          <div className="flex flex-wrap items-start justify-between gap-3 sm:gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-[var(--text-primary)]">{activeMeta.title}</h2>
-              <p className="text-sm text-[var(--text-tertiary)]">
+              <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">{activeMeta.title}</h2>
+              <p className="text-xs sm:text-sm text-[var(--text-tertiary)]">
                 {activeMeta.subtitle} {isAutoMode ? `Auto Mode (x${simSpeed})` : 'Manual Mode'}
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
               <TimeRangeSwitcher selectedRange={timeRange} onRangeChange={setTimeRange} />
               <button
                 onClick={() => setIsAssistantOpen(true)}
-                className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+                className="flex items-center gap-2 rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors"
                 style={{ backgroundColor: 'var(--consumption-soft)', color: 'var(--consumption)' }}
               >
-                <MessageSquare className="h-4 w-4" />
-                AI Assistant
+                <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">AI Assistant</span>
+                <span className="sm:hidden">AI</span>
               </button>
             </div>
           </div>
@@ -2201,22 +2202,23 @@ export default function App() {
               <button
                 key={tab.id}
                 onClick={() => setActiveSection(tab.id)}
-                className={`flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex items-center justify-center gap-1 sm:gap-2 rounded-lg border px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium transition-colors ${
                   activeSection === tab.id
                     ? 'border-transparent'
                     : 'border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 }`}
                 style={activeSection === tab.id ? { backgroundColor: 'var(--battery-soft)', color: 'var(--battery)' } : undefined}
               >
-                <tab.icon className="h-4 w-4" />
-                {tab.label}
+                <tab.icon className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
               </button>
             ))}
           </div>
 
           {activeSection === 'dashboard' && (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
                 {[
                   { label: 'Solar Production', value: `${data.totalSolar.toFixed(1)} kWh`, color: 'var(--solar)', tint: 'var(--solar-soft)' },
                   { label: 'Energy Consumption', value: `${todayLoadKwh.toFixed(1)} kWh`, color: 'var(--consumption)', tint: 'var(--consumption-soft)' },
@@ -2225,9 +2227,9 @@ export default function App() {
                   { label: 'Cost Today', value: `KES ${estimatedCostToday.toFixed(0)}`, color: 'var(--battery)', tint: 'var(--battery-soft)' },
                 ].map((metric) => (
                   <Card key={metric.label} className="dashboard-card">
-                    <CardContent className="p-5">
-                      <p className="text-xs uppercase tracking-wide text-[var(--text-tertiary)]">{metric.label}</p>
-                      <p className="mt-2 text-2xl font-bold" style={{ color: metric.color }}>{metric.value}</p>
+                    <CardContent className="p-4 sm:p-5">
+                      <p className="text-[10px] sm:text-xs uppercase tracking-wide text-[var(--text-tertiary)]">{metric.label}</p>
+                      <p className="mt-2 text-xl sm:text-2xl font-bold" style={{ color: metric.color }}>{metric.value}</p>
                       <div className="mt-3 h-1.5 w-full rounded-full" style={{ backgroundColor: metric.tint }} />
                     </CardContent>
                   </Card>
@@ -2333,7 +2335,7 @@ export default function App() {
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <div className="flex gap-2 overflow-x-auto pb-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
                           {pastGraphs.map(({ date, data: pastData }) => {
                             const peakSolar = pastData.reduce((maxValue, point) => point.solar > maxValue ? point.solar : maxValue, 0).toFixed(1);
                             const peakLoad = pastData.reduce((maxValue, point) => point.load > maxValue ? point.load : maxValue, 0).toFixed(1);
@@ -2345,7 +2347,7 @@ export default function App() {
                                   const svg = buildGraphSVG(pastData, date);
                                   triggerJPGDownload(svg, `SafariCharge_DailyGraph_${date}.jpg`);
                                 }}
-                                className="flex-shrink-0 flex flex-col gap-1 rounded-lg border p-3 transition-all duration-300 hover:-translate-y-0.5 w-36 text-left"
+                                className="flex flex-col gap-1 rounded-lg border p-3 transition-all duration-300 hover:-translate-y-0.5 text-left w-full"
                                 style={{ backgroundColor: 'var(--bg-card-muted)', borderColor: 'var(--border)' }}
                               >
                                 <div className="flex items-center justify-between">
