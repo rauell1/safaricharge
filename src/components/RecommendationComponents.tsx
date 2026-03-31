@@ -46,6 +46,7 @@ interface LocationSelectorProps {
   cacheRef?: React.MutableRefObject<Record<string, { data: SolarIrradianceData; fetchedAt: number }>>;
   onInvalidateCache?: () => void;
   label?: string;
+  embedded?: boolean;
 }
 
 export const LocationSelector: React.FC<LocationSelectorProps> = ({
@@ -56,7 +57,8 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
   onLoadingChange,
   cacheRef,
   onInvalidateCache,
-  label
+  label,
+  embedded = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
