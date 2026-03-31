@@ -39,11 +39,14 @@ import {
 interface LocationSelectorProps {
   onLocationSelected: (location: LocationCoordinates, solarData: SolarIrradianceData) => void;
   currentLocation: LocationCoordinates;
+  /** When true, renders the location list inline (no trigger button, no dropdown) */
+  embedded?: boolean;
 }
 
 export const LocationSelector: React.FC<LocationSelectorProps> = ({
   onLocationSelected,
-  currentLocation
+  currentLocation,
+  embedded = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -86,6 +89,93 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
     await handleLocationSelect(location);
   };
 
+  const locationListContent = (
+    <div className={embedded ? '' : 'max-h-96 overflow-y-auto'}>
+      {/* Predefined locations */}
+      <div className="p-2">
+        <p className="text-xs font-bold text-slate-500 uppercase px-2 py-1">Kenya Cities</p>
+        {KENYA_LOCATIONS.map((location) => (
+          <button
+            key={location.name}
+            onClick={() => handleLocationSelect(location)}
+            disabled={isLoading}
+            className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-slate-100 transition-colors ${
+              currentLocation.name === location.name ? 'bg-sky-50 text-sky-600 font-medium' : 'text-slate-700'
+            } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            <div className="flex items-center justify-between">
+              <span>{location.name}</span>
+              {currentLocation.name === location.name && (
+                <CheckCircle2 size={14} className="text-sky-600" />
+              )}
+            </div>
+            <span className="text-xs text-slate-400">
+              {location.latitude.toFixed(2)}°, {location.longitude.toFixed(2)}°
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Custom coordinates */}
+      <div className="p-3 border-t border-slate-200 bg-slate-50">
+        <p className="text-xs font-bold text-slate-500 uppercase mb-2">Custom Coordinates</p>
+        <div className="flex gap-2 mb-2">
+          <input
+            type="number"
+            placeholder="Latitude"
+            value={customCoords.lat}
+            onChange={(e) => setCustomCoords({ ...customCoords, lat: e.target.value })}
+            className="flex-1 px-2 py-1 text-sm border border-slate-300 rounded"
+            step="0.01"
+          />
+          <input
+            type="number"
+            placeholder="Longitude"
+            value={customCoords.lon}
+            onChange={(e) => setCustomCoords({ ...customCoords, lon: e.target.value })}
+            className="flex-1 px-2 py-1 text-sm border border-slate-300 rounded"
+            step="0.01"
+          />
+        </div>
+        <button
+          onClick={handleCustomLocation}
+          disabled={isLoading}
+          className="w-full bg-sky-600 text-white text-xs font-bold py-2 rounded hover:bg-sky-700 transition-colors disabled:opacity-50"
+        >
+          {isLoading ? (
+            <span className="flex items-center justify-center gap-2">
+              <Loader2 size={12} className="animate-spin" />
+              Loading...
+            </span>
+          ) : (
+            'Apply Custom Location'
+          )}
+        </button>
+      </div>
+    </div>
+  );
+
+  if (embedded) {
+    return (
+      <div>
+        {dataSource && (
+          <div className="mb-3 text-[10px] text-slate-500 bg-slate-100 px-2 py-1 rounded">
+            {dataSource}
+          </div>
+        )}
+        {locationListContent}
+        {error && (
+          <div className="p-2 mt-2 bg-red-50 border border-red-200 rounded">
+            <p className="text-xs text-red-600 flex items-center gap-1">
+              <AlertCircle size={12} />
+              {error}
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="relative">
       <button
@@ -115,69 +205,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
             </p>
           </div>
 
-          <div className="max-h-96 overflow-y-auto">
-            {/* Predefined locations */}
-            <div className="p-2">
-              <p className="text-xs font-bold text-slate-500 uppercase px-2 py-1">Kenya Cities</p>
-              {KENYA_LOCATIONS.map((location) => (
-                <button
-                  key={location.name}
-                  onClick={() => handleLocationSelect(location)}
-                  disabled={isLoading}
-                  className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-slate-100 transition-colors ${
-                    currentLocation.name === location.name ? 'bg-sky-50 text-sky-600 font-medium' : 'text-slate-700'
-                  } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span>{location.name}</span>
-                    {currentLocation.name === location.name && (
-                      <CheckCircle2 size={14} className="text-sky-600" />
-                    )}
-                  </div>
-                  <span className="text-xs text-slate-400">
-                    {location.latitude.toFixed(2)}°, {location.longitude.toFixed(2)}°
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            {/* Custom coordinates */}
-            <div className="p-3 border-t border-slate-200 bg-slate-50">
-              <p className="text-xs font-bold text-slate-500 uppercase mb-2">Custom Coordinates</p>
-              <div className="flex gap-2 mb-2">
-                <input
-                  type="number"
-                  placeholder="Latitude"
-                  value={customCoords.lat}
-                  onChange={(e) => setCustomCoords({ ...customCoords, lat: e.target.value })}
-                  className="flex-1 px-2 py-1 text-sm border border-slate-300 rounded"
-                  step="0.01"
-                />
-                <input
-                  type="number"
-                  placeholder="Longitude"
-                  value={customCoords.lon}
-                  onChange={(e) => setCustomCoords({ ...customCoords, lon: e.target.value })}
-                  className="flex-1 px-2 py-1 text-sm border border-slate-300 rounded"
-                  step="0.01"
-                />
-              </div>
-              <button
-                onClick={handleCustomLocation}
-                disabled={isLoading}
-                className="w-full bg-sky-600 text-white text-xs font-bold py-2 rounded hover:bg-sky-700 transition-colors disabled:opacity-50"
-              >
-                {isLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 size={12} className="animate-spin" />
-                    Loading...
-                  </span>
-                ) : (
-                  'Apply Custom Location'
-                )}
-              </button>
-            </div>
-          </div>
+          {locationListContent}
 
           {error && (
             <div className="p-2 bg-red-50 border-t border-red-200">

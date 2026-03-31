@@ -2273,6 +2273,7 @@ export default function App() {
                   setSolarData(solar);
                   setIsLocationSelectorOpen(false);
                 }}
+                embedded={true}
               />
             </div>
           </div>
@@ -2684,17 +2685,52 @@ export default function App() {
                     Location, Tariff, and EV Setup
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-0">
+                <CardContent className="pt-0 space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div className="rounded-lg border border-[var(--border)] p-4 bg-[var(--bg-card-muted)]">
-                      <p className="text-[var(--text-tertiary)]">Current Location</p>
-                      <p className="text-[var(--text-primary)] font-semibold mt-1">{currentLocation.name}</p>
-                      <p className="text-[var(--text-secondary)] mt-1">{solarData.annualAverage.toFixed(2)} kWh/m2/day annual average</p>
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-[var(--text-tertiary)]">Current Location</p>
+                          <p className="text-[var(--text-primary)] font-semibold mt-1">{currentLocation.name}</p>
+                          <p className="text-[var(--text-secondary)] mt-1">{solarData.annualAverage.toFixed(2)} kWh/m²/day annual average</p>
+                        </div>
+                        <button
+                          onClick={() => setIsLocationSelectorOpen(true)}
+                          className="flex-shrink-0 flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--solar)] hover:text-[var(--solar)]"
+                        >
+                          <MapPin className="h-3 w-3" />
+                          Change
+                        </button>
+                      </div>
                     </div>
                     <div className="rounded-lg border border-[var(--border)] p-4 bg-[var(--bg-card-muted)]">
                       <p className="text-[var(--text-tertiary)]">Tariff Profile</p>
                       <p className="text-[var(--text-primary)] font-semibold mt-1">Peak {KPLC_TARIFF.getHighRateWithVAT().toFixed(2)} KES/kWh</p>
                       <p className="text-[var(--text-secondary)] mt-1">Off-peak {KPLC_TARIFF.getLowRateWithVAT().toFixed(2)} KES/kWh</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">EV Configuration</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {[
+                        { label: 'EV #1', capacity: evSpecs.ev1.capacity, rate: evSpecs.ev1.rate },
+                        { label: 'EV #2', capacity: evSpecs.ev2.capacity, rate: evSpecs.ev2.rate },
+                      ].map((ev) => (
+                        <div key={ev.label} className="rounded-lg border border-[var(--border)] p-4 bg-[var(--bg-card-muted)] text-sm">
+                          <p className="text-[var(--text-tertiary)] font-medium">{ev.label}</p>
+                          <div className="mt-2 space-y-1">
+                            <div className="flex justify-between">
+                              <span className="text-[var(--text-secondary)]">Battery capacity</span>
+                              <span className="text-[var(--text-primary)] font-semibold">{ev.capacity} kWh</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-[var(--text-secondary)]">Max charge rate</span>
+                              <span className="text-[var(--text-primary)] font-semibold">{ev.rate} kW</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </CardContent>
