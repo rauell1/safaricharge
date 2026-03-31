@@ -32,7 +32,12 @@ import { fetchSolarDataWithFallback } from '@/lib/meteonorm-api';
 import type { HardwareRecommendation, LoadProfile } from '@/lib/recommendation-engine';
 
 interface LocationSelectorProps {
-  onLocationSelected: (location: LocationCoordinates, solarData: SolarIrradianceData, source: 'nasa' | 'meteonorm') => void;
+  onLocationSelected: (
+    location: LocationCoordinates,
+    solarData: SolarIrradianceData,
+    source: 'nasa' | 'meteonorm',
+    fetchedAt: number
+  ) => void;
   currentLocation: LocationCoordinates;
   dataSource: 'nasa' | 'meteonorm';
   onDataSourceChange: (source: 'nasa' | 'meteonorm') => void;
@@ -51,6 +56,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
   const [customCoords, setCustomCoords] = useState({ lat: '', lon: '' });
   const [error, setError] = useState<string | null>(null);
   const [dataSourceLabel, setDataSourceLabel] = useState<string>('');
+  const cacheRef = useRef<Record<string, { data: SolarIrradianceData; fetchedAt: number }>>({});
 
   const handleLocationSelect = async (location: LocationCoordinates) => {
     setIsLoading(true);
@@ -58,6 +64,15 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
     setDataSourceLabel('');
     onLoadingChange?.(true);
     try {
+      const cacheKey = `${dataSource}:${location.name}`;
+      const cached = cacheRef.current[cacheKey];
+      if (cached) {
+        setDataSourceLabel(`Data from cache: ${dataSource === 'nasa' ? 'NASA POWER' : 'Meteonorm/Open-Meteo'}`);
+        onLocationSelected(location, cached.data, dataSource, cached.fetchedAt);
+        setIsOpen(false);
+        return;
+      }
+
       let result;
       if (dataSource === 'meteonorm') {
         const { fetchMeteonormData } = await import('@/lib/meteonorm-api');
@@ -68,8 +83,10 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
         const data = await fetchSolarData(location.latitude, location.longitude, location.name);
         result = { data, source: 'nasa' as const };
       }
+      const fetchedAt = Date.now();
+      cacheRef.current[cacheKey] = { data: result.data, fetchedAt };
       setDataSourceLabel(`Data from: ${result.source === 'nasa' ? 'NASA POWER' : 'Meteonorm/Open-Meteo'}`);
-      onLocationSelected(location, result.data, result.source);
+      onLocationSelected(location, result.data, result.source, fetchedAt);
       setIsOpen(false);
     } catch (err) {
       setError('Failed to fetch solar data from all sources. Please try again.');
@@ -237,6 +254,7 @@ interface RecommendationPanelProps {
   isGenerating: boolean;
   dataSource: 'nasa' | 'meteonorm';
   isSolarLoading: boolean;
+  lastUpdated: number | null;
 }
 
 export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
@@ -249,7 +267,8 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
   onGenerate,
   isGenerating,
   dataSource,
-  isSolarLoading
+  isSolarLoading,
+  lastUpdated
 }) => {
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<{[key: string]: boolean}>({
@@ -272,6 +291,7 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
   };
   const activeSourceLabel = dataSource === 'nasa' ? 'NASA POWER' : 'Meteonorm';
   const canGenerate = !isGenerating && !isSolarLoading && !!solarData && simulationData.length > 0;
+  const updatedLabel = lastUpdated ? new Date(lastUpdated).toLocaleString() : 'Not yet loaded';
 
   return (
     <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -288,8 +308,11 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="px-2 py-1 rounded-full bg-white/15 text-[10px] font-semibold">
-                Source: {activeSourceLabel} {isSolarLoading ? '(loading...)' : ''}
+              <span className={`px-2 py-1 rounded-full text-[10px] font-semibold ${dataSource === 'nasa' ? 'bg-sky-100 text-sky-700' : 'bg-purple-100 text-purple-700'}`}>
+                Source: {activeSourceLabel}
+              </span>
+              <span className="px-2 py-1 rounded-full bg-white/10 text-[10px] font-semibold border border-white/20">
+                Last updated: {updatedLabel}
               </span>
               <button
                 onClick={() => {
