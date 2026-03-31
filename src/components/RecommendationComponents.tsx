@@ -216,6 +216,7 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
 }) => {
   const [recommendation, setRecommendation] = useState<HardwareRecommendation | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<{[key: string]: boolean}>({
     solar: true,
     battery: true,
@@ -224,12 +225,18 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
   });
 
   useEffect(() => {
-    if (isOpen && simulationData.length > 0) {
-      generateRecommendations();
+    if (isOpen) {
+      setRecommendation(null);
+      setError(null);
     }
-  }, [isOpen, simulationData, solarData]);
+  }, [isOpen, solarData, simulationData]);
 
   const generateRecommendations = () => {
+    if (simulationData.length === 0) {
+      setError('Run the simulation first to generate recommendations.');
+      return;
+    }
+    setError(null);
     setIsLoading(true);
     try {
       const loadProfile = createLoadProfileFromSimulation(simulationData);
@@ -266,11 +273,21 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-white hover:text-sky-200 transition-colors">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={generateRecommendations}
+              disabled={isLoading}
+              className="px-3 py-1.5 bg-white/10 border border-white/30 rounded-full text-xs font-bold hover:bg-white/15 transition-colors disabled:opacity-70 flex items-center gap-2"
+            >
+              {isLoading && <Loader2 size={14} className="animate-spin" />}
+              {isLoading ? 'Computing…' : 'Generate'}
+            </button>
+            <button onClick={onClose} className="text-white hover:text-sky-200 transition-colors">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -557,10 +574,20 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
               )}
             </div>
           ) : (
-            <div className="text-center py-12 text-slate-500">
+            <div className="text-center py-12 text-slate-500 space-y-3">
               <AlertCircle size={48} className="mx-auto mb-4 text-slate-400" />
-              <p>No simulation data available.</p>
-              <p className="text-sm">Run the simulation first to get recommendations.</p>
+              <p className="text-sm text-slate-700">
+                Click “Generate” to create a recommendation using the latest solar data for {currentLocation.name}.
+              </p>
+              {error && <p className="text-xs text-red-600">{error}</p>}
+              <div className="flex justify-center">
+                <button
+                  onClick={generateRecommendations}
+                  className="px-4 py-2 bg-sky-600 text-white text-xs font-bold rounded-full hover:bg-sky-700 transition-colors"
+                >
+                  Generate Recommendations
+                </button>
+              </div>
             </div>
           )}
         </div>
