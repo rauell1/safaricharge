@@ -364,8 +364,8 @@ const buildVisualizationLayout = (
   const canShowEv = config.evChargerKw > 0;
   const ev1LoadRaw = Math.max(0, data?.ev1Load ?? 0);
   const ev2LoadRaw = Math.max(0, data?.ev2Load ?? 0);
-  const ev1Share = totalLoads > 0 ? ev1LoadRaw / totalLoads : 0;
-  const ev2Share = totalLoads > 0 ? ev2LoadRaw / totalLoads : 0;
+  const ev1Share = totalLoadKw > 0 ? ev1LoadRaw / totalLoadKw : 0;
+  const ev2Share = totalLoadKw > 0 ? ev2LoadRaw / totalLoadKw : 0;
   if (canShowEv && (config.evCommuterScale ?? 1) > 0) {
     loads.push({
       type: 'ev',
