@@ -187,6 +187,10 @@ const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
   loadScale: 1,
   evCommuterScale: 1,
   evFleetScale: 1,
+  homeLoadEnabled: true,
+  homeLoadKw: 5,
+  commercialLoadEnabled: false,
+  commercialLoadKw: 20,
 };
 
 const derivePvCapacity = (config: SystemConfig): number => {
@@ -295,13 +299,27 @@ const buildVisualizationLayout = (
     active: gridStatus === 'Online' && netGridPower !== 0,
   });
 
-  const homeLoad = Math.max(0, data?.homeLoad ?? 0);
-  loads.push({
-    type: 'home',
-    name: 'Home',
-    powerKw: homeLoad,
-    active: homeLoad > 0,
-  });
+  // Home load - show if enabled
+  if (config.homeLoadEnabled) {
+    const homeLoad = Math.max(0, data?.homeLoad ?? 0);
+    loads.push({
+      type: 'home',
+      name: 'Home',
+      powerKw: homeLoad,
+      active: homeLoad > 0,
+    });
+  }
+
+  // Commercial load - show if enabled
+  if (config.commercialLoadEnabled) {
+    const commercialLoad = Math.max(0, data?.commercialLoad ?? 0);
+    loads.push({
+      type: 'home', // Reuse home visual type
+      name: 'Commercial',
+      powerKw: commercialLoad,
+      active: commercialLoad > 0,
+    });
+  }
 
   const canShowEv = config.evChargerKw > 0;
   if (canShowEv && (config.evCommuterScale ?? 1) > 0) {
@@ -1508,7 +1526,7 @@ export default function App() {
   }), []);
 
   const [data, setData] = useState({
-    solarR: 0, homeLoad: 5, ev1Load: 0, ev2Load: 0, 
+    solarR: 0, homeLoad: 5, commercialLoad: 0, ev1Load: 0, ev2Load: 0, 
     ev1Status: 'Idle', ev2Status: 'Idle',
     ev1Soc: 60, ev2Soc: 50,
     batteryPower: 0, batteryLevel: 50, batteryStatus: 'Idle',
@@ -2921,6 +2939,74 @@ export default function App() {
                         className="w-full"
                       />
                       <p className="text-xs text-[var(--text-secondary)] mt-1">{systemConfig.batteryKwh.toFixed(1)} kWh</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[var(--text-tertiary)] mb-2">Inverter Units</p>
+                      <input
+                        type="range"
+                        min={1}
+                        max={4}
+                        step={1}
+                        value={systemConfig.inverterUnits}
+                        onChange={(event) => setSystemConfig(prev => ({ ...prev, inverterUnits: Number(event.target.value), mode: 'advanced' }))}
+                        className="w-full"
+                      />
+                      <p className="text-xs text-[var(--text-secondary)] mt-1">{systemConfig.inverterUnits} unit{systemConfig.inverterUnits !== 1 ? 's' : ''} × {(systemConfig.inverterKw / systemConfig.inverterUnits).toFixed(1)} kW</p>
+                    </div>
+                    <div className="border-t border-[var(--border)] pt-3">
+                      <p className="text-xs font-semibold text-[var(--text-tertiary)] mb-2 uppercase">Load Configuration</p>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={systemConfig.homeLoadEnabled}
+                              onChange={(e) => setSystemConfig(prev => ({ ...prev, homeLoadEnabled: e.target.checked, mode: 'advanced' }))}
+                              className="w-4 h-4 rounded border-[var(--border)] text-[var(--battery)] focus:ring-2 focus:ring-[var(--battery)]"
+                            />
+                            <span className="text-xs text-[var(--text-primary)]">Home Load</span>
+                          </label>
+                          {systemConfig.homeLoadEnabled && (
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="range"
+                                min={1}
+                                max={20}
+                                step={0.5}
+                                value={systemConfig.homeLoadKw}
+                                onChange={(e) => setSystemConfig(prev => ({ ...prev, homeLoadKw: Number(e.target.value), mode: 'advanced' }))}
+                                className="w-20"
+                              />
+                              <span className="text-xs text-[var(--text-secondary)] min-w-[40px]">{systemConfig.homeLoadKw.toFixed(1)} kW</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={systemConfig.commercialLoadEnabled}
+                              onChange={(e) => setSystemConfig(prev => ({ ...prev, commercialLoadEnabled: e.target.checked, mode: 'advanced' }))}
+                              className="w-4 h-4 rounded border-[var(--border)] text-[var(--battery)] focus:ring-2 focus:ring-[var(--battery)]"
+                            />
+                            <span className="text-xs text-[var(--text-primary)]">Commercial Load</span>
+                          </label>
+                          {systemConfig.commercialLoadEnabled && (
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="range"
+                                min={5}
+                                max={50}
+                                step={1}
+                                value={systemConfig.commercialLoadKw}
+                                onChange={(e) => setSystemConfig(prev => ({ ...prev, commercialLoadKw: Number(e.target.value), mode: 'advanced' }))}
+                                className="w-20"
+                              />
+                              <span className="text-xs text-[var(--text-secondary)] min-w-[40px]">{systemConfig.commercialLoadKw.toFixed(1)} kW</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <button

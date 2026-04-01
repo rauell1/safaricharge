@@ -68,8 +68,25 @@ export const runSolarSimulation = (
 
   const solar = simulateSolar(t, scenario, systemConfig, cloudNoise);
 
+  // Constrain solar power to inverter capacity
+  // The inverter is the bottleneck - can't convert more DC power than its rating
+  const solarConstrainedByInverter = Math.min(solar, systemConfig.inverterKw);
+
   const hIdx = Math.floor(t);
-  const houseLoad = scenario.houseLoadProfile[hIdx % 24] * Math.max(0.5, 1 + gaussianRandom(0, 0.08));
+
+  // Calculate home load based on profile and configuration
+  let houseLoad = 0;
+  if (systemConfig.homeLoadEnabled) {
+    const profileLoad = scenario.houseLoadProfile[hIdx % 24] * Math.max(0.5, 1 + gaussianRandom(0, 0.08));
+    // Scale the profile load to match the configured homeLoadKw
+    const profileAvg = scenario.houseLoadProfile.reduce((a, b) => a + b, 0) / scenario.houseLoadProfile.length;
+    houseLoad = (profileLoad / profileAvg) * systemConfig.homeLoadKw;
+  }
+
+  // Add commercial load if enabled (constant throughout the day)
+  if (systemConfig.commercialLoadEnabled) {
+    houseLoad += systemConfig.commercialLoadKw * Math.max(0.9, 1 + gaussianRandom(0, 0.05));
+  }
 
   const effectiveCapacity = systemConfig.batteryKwh * batteryHealth;
   const effectiveReserve = Math.max(systemConfig.batteryKwh * 0.15, 8) * batteryHealth;
@@ -117,7 +134,7 @@ export const runSolarSimulation = (
   }
 
   const inverterEff = getInverterEfficiency(totalLoad / systemConfig.inverterKw);
-  const effectiveSolar = solar * inverterEff;
+  const effectiveSolar = solarConstrainedByInverter * inverterEff;
 
   if (ev1Load > 0) prevEv1Soc = Math.min(100, prevEv1Soc + (ev1Load * timeStep / evSpecs.ev1.cap * 100));
   if (ev2Load > 0) prevEv2Soc = Math.min(100, prevEv2Soc + (ev2Load * timeStep / evSpecs.ev2.cap * 100));
@@ -154,6 +171,12 @@ export const runSolarSimulation = (
     if (priorityMode === 'battery') {
       if (newBatKwh < effectiveCapacity) {
         const capRem = effectiveCapacity - newBatKwh;
+        // Realistic battery charging physics:
+        // - Constrained by maxChargeKw (inverter/charger limit)
+        // - Constrained by available excess solar power
+        // - Constrained by remaining battery capacity
+        // Result: Larger batteries take longer to charge with same solar array
+        //         More panels charge battery faster (more excess power)
         const chargeFraction = Math.min(excess, systemConfig.maxChargeKw) / systemConfig.maxChargeKw;
         const batEff = getBatteryEfficiency(chargeFraction);
         batCharge = Math.min(excess, systemConfig.maxChargeKw, (capRem / batEff) / timeStep);
@@ -176,6 +199,10 @@ export const runSolarSimulation = (
     let deficit = totalLoad - augmentedSolar;
     if (newBatKwh > effectiveReserve) {
       const enAvail = newBatKwh - effectiveReserve;
+      // Realistic battery discharge physics:
+      // - Constrained by maxDischargeKw (inverter limit)
+      // - Constrained by load deficit (demand)
+      // - Constrained by available battery energy (minus reserve)
       const dischargeFraction = Math.min(deficit, systemConfig.maxDischargeKw) / systemConfig.maxDischargeKw;
       const batEff = getBatteryEfficiency(dischargeFraction);
       batDischarge = Math.min(deficit, systemConfig.maxDischargeKw, (enAvail * batEff) / timeStep);
