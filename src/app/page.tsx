@@ -30,6 +30,7 @@ import { runSolarSimulation } from '@/simulation/runSimulation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TREE_CO2_KG_PER_YEAR, AVG_CAR_EMISSION_KG_PER_KM, GRID_EMISSION_FACTOR } from '@/lib/tariff';
 import type { HardwareRecommendation } from '@/lib/recommendation-engine';
+import type { SystemConfig, DerivedSystemConfig } from '@/types/simulation-core';
 
 // --- CONFIGURATION - Kenya Power Commercial Tariff (E-Mobility) ---
 // Based on actual KPLC bill for ROAM ELECTRIC LIMITED - February 2026
@@ -91,24 +92,6 @@ const KPLC_TARIFF = {
   }
 };
 
-type SystemConfig = {
-  mode: 'auto' | 'advanced';
-  panelCount: number;
-  panelWatt: number;
-  inverterKw: number;
-  inverterUnits: number;
-  batteryKwh: number;
-  maxChargeKw: number;
-  maxDischargeKw: number;
-  evChargerKw: number;
-  loadScale: number;
-  loadProfile: 'residential' | 'commercial' | 'industrial';
-  evCommuterScale: number;
-  evFleetScale: number;
-};
-
-type DerivedSystemConfig = SystemConfig & { pvCapacityKw: number };
-
 type GridDirection = 'import' | 'export' | 'neutral';
 type StorageDirection = 'charge' | 'discharge' | 'idle';
 
@@ -154,7 +137,7 @@ type LoadNode =
       maxKw?: number;
     }
   | {
-      type: 'home';
+      type: 'home' | 'commercial';
       name: string;
       powerKw: number;
       active: boolean;
@@ -195,6 +178,18 @@ type DerivedVisualizationLayout = {
   storage: StorageNode[];
   distribution: { hasACBus: boolean };
   loads: LoadNode[];
+  meta: {
+    solarKw: number;
+    inverterThroughputKw: number;
+    gridImportKw: number;
+    gridExportKw: number;
+    batteryChargeKw: number;
+    batteryDischargeKw: number;
+    residentialLoadKw: number;
+    commercialLoadKw: number;
+    evLoadKw: number;
+    totalLoadKw: number;
+  };
 };
 
 const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
@@ -287,16 +282,32 @@ const buildVisualizationLayout = (
       ]
     : [];
 
-  const inverterUnits = Math.min(8, Math.max(1, Math.round(config.inverterUnits || 1)));
+  const residentialLoad = config.homeLoadEnabled ? Math.max(0, data?.residentialLoad ?? data?.homeLoad ?? 0) : 0;
+  const commercialLoad = config.commercialLoadEnabled ? Math.max(0, data?.commercialLoad ?? 0) : 0;
+  const baseLoadKw = residentialLoad + commercialLoad;
+  const ev1LoadKw = Math.max(0, data?.ev1Load ?? 0);
+  const ev2LoadKw = Math.max(0, data?.ev2Load ?? 0);
+  const totalLoadKw = baseLoadKw + ev1LoadKw + ev2LoadKw;
+
+  const netGridPower = data?.netGridPower ?? 0;
+  const gridDirection: GridDirection = netGridPower < 0 ? 'import' : netGridPower > 0 ? 'export' : 'neutral';
+  const gridImportKw = Math.max(0, netGridPower);
+  const gridExportKw = Math.max(0, -netGridPower);
+  const batteryChargeKw = Math.max(0, data?.batteryPower ?? 0);
+  const batteryDischargeKw = Math.max(0, -(data?.batteryPower ?? 0));
+
+  const inverterUnits = Math.max(1, Math.round(config.inverterUnits || 1));
   const perInverterKw = inverterUnits > 0 ? config.inverterKw / inverterUnits : config.inverterKw;
-  const inverterOutput = Math.max(0, Math.min(perInverterKw, safeSolar / inverterUnits));
+  const inverterThroughputKw = Math.max(
+    0,
+    Math.min(config.inverterKw, totalLoadKw + batteryChargeKw + gridExportKw - gridImportKw)
+  );
   const conversion: ConversionNode[] = Array.from({ length: inverterUnits }).map((_, idx) => ({
     type: 'inverter',
     id: idx + 1,
     ratingKw: perInverterKw,
-    outputKw: inverterOutput,
-    active: safeSolar > 0.1,
-    maxKw: perInverterKw,
+    outputKw: Math.min(perInverterKw, inverterThroughputKw / inverterUnits),
+    active: inverterThroughputKw > 0.05,
   }));
 
   const storage: StorageNode[] = [];
@@ -320,8 +331,6 @@ const buildVisualizationLayout = (
   }
 
   const loads: LoadNode[] = [];
-  const netGridPower = data?.netGridPower ?? 0;
-  const gridDirection: GridDirection = netGridPower < 0 ? 'import' : netGridPower > 0 ? 'export' : 'neutral';
   loads.push({
     type: 'grid',
     name: 'Grid',
@@ -332,16 +341,25 @@ const buildVisualizationLayout = (
     maxKw: config.inverterKw,
   });
 
-  const homeLoad = Math.max(0, data?.homeLoad ?? 0);
-  const totalLoads = Math.max(0.0001, homeLoad + Math.max(0, data?.ev1Load ?? 0) + Math.max(0, data?.ev2Load ?? 0));
-  const homeShare = homeLoad / totalLoads;
-  loads.push({
-    type: 'home',
-    name: 'Home',
-    powerKw: flow.inverterToLoad * homeShare + flow.gridToLoad * homeShare,
-    active: homeLoad > 0,
-    maxKw: config.inverterKw,
-  });
+  // Home load - show if enabled
+  if (config.homeLoadEnabled) {
+    loads.push({
+      type: 'home',
+      name: 'Home',
+      powerKw: residentialLoad,
+      active: residentialLoad > 0,
+    });
+  }
+
+  // Commercial load - show if enabled
+  if (config.commercialLoadEnabled) {
+    loads.push({
+      type: 'commercial',
+      name: 'Commercial',
+      powerKw: commercialLoad,
+      active: commercialLoad > 0,
+    });
+  }
 
   const canShowEv = config.evChargerKw > 0;
   const ev1LoadRaw = Math.max(0, data?.ev1Load ?? 0);
@@ -359,8 +377,7 @@ const buildVisualizationLayout = (
       maxRate: evSpecs.ev1.rate,
       soc: Math.max(0, data?.ev1Soc ?? 0),
       v2g: data?.ev1V2g ?? false,
-      active: ev1Status === 'Charging',
-      maxKw: evSpecs.ev1.rate,
+      active: Math.max(0, data?.ev1Load ?? 0) > 0 || Boolean(data?.ev1V2g),
     });
   }
   if (canShowEv && (config.evFleetScale ?? 1) > 0) {
@@ -374,8 +391,7 @@ const buildVisualizationLayout = (
       maxRate: evSpecs.ev2.rate,
       soc: Math.max(0, data?.ev2Soc ?? 0),
       v2g: data?.ev2V2g ?? false,
-      active: ev2Status === 'Charging',
-      maxKw: evSpecs.ev2.rate,
+      active: Math.max(0, data?.ev2Load ?? 0) > 0 || Boolean(data?.ev2V2g),
     });
   }
 
@@ -385,6 +401,18 @@ const buildVisualizationLayout = (
     storage,
     distribution: { hasACBus: true },
     loads,
+    meta: {
+      solarKw: safeSolar,
+      inverterThroughputKw,
+      gridImportKw,
+      gridExportKw,
+      batteryChargeKw,
+      batteryDischargeKw,
+      residentialLoadKw: residentialLoad,
+      commercialLoadKw: commercialLoad,
+      evLoadKw: ev1LoadKw + ev2LoadKw,
+      totalLoadKw,
+    },
   };
 };
 
@@ -639,13 +667,13 @@ const GridProduct = React.memo(({ power, isImporting, isExporting, gridStatus }:
   </div>
 ));
 
-const HomeProduct = React.memo(({ power }: { power: number }) => (
+const HomeProduct = React.memo(({ power, label = 'Home Load', icon: Icon = Home }: { power: number; label?: string; icon?: React.ElementType }) => (
   <div className="flex flex-col items-center z-20">
     <div className="w-24 h-32 flex items-center justify-center bg-[var(--bg-card-muted)] rounded-2xl border border-[var(--border)]">
-       <Home size={40} className="text-[var(--text-secondary)]" strokeWidth={1.5} />
+       <Icon size={40} className="text-[var(--text-secondary)]" strokeWidth={1.5} />
     </div>
     <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] backdrop-blur-sm">
-      <div className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase">Home Load</div>
+      <div className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase">{label}</div>
       <div className="text-sm font-black text-[var(--text-primary)]">{power.toFixed(1)} kW</div>
     </div>
   </div>
@@ -1497,23 +1525,28 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
   );
 };
 
-const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showValues, flow }: {
-  simSpeed: number; weather: string; isNight: boolean; layout: DerivedVisualizationLayout; showValues: boolean; flow: SystemFlow;
+const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showFlowDebug, flowDebug }: {
+  simSpeed: number; weather: string; isNight: boolean; layout: DerivedVisualizationLayout; showFlowDebug: boolean; flowDebug: {
+    inverterThroughputKw: number;
+    gridImportKw: number;
+    gridExportKw: number;
+    batteryDirection: string;
+    batteryPowerKw: number;
+    balanceDeltaKw: number;
+    balanceOk: boolean;
+    sourcesKw: number;
+    sinksKw: number;
+  };
 }) => {
   const pvNode = layout.generation[0];
   const isSolarActive = (pvNode?.outputKw ?? 0) > 0.1;
   const inverterUnits = Math.max(1, layout.conversion.length || 1);
-  const busNodes: Array<{
-    key: string;
-    powerKw: number;
-    capacityKw: number;
-    flowDirection: 'up' | 'down';
-    color: string;
-    arrowColor: string;
-    active: boolean;
-    glowColor?: string;
-    node: React.ReactNode;
-  }> = [];
+  const hasBatteryDischarge = layout.storage.some((s) => s.direction === 'discharge' && s.active);
+  const inverterFlowActive = layout.conversion.some((c) => c.active && c.outputKw > 0.01);
+  const inverterFlowColor = hasBatteryDischarge ? 'bg-orange-500' : isSolarActive ? 'bg-green-500' : 'bg-slate-300';
+  const mapFlowSpeed = (kw: number) => Math.min(10, Math.max(0.5, kw / 5));
+  const mapFlowThickness = (kw: number) => Math.min(10, Math.max(2, kw / 4 + 2));
+  const busNodes: Array<{ key: string; cable: React.ReactNode; node: React.ReactNode }> = [];
 
   layout.loads.forEach((load) => {
     if (load.type === 'grid') {
@@ -1527,16 +1560,21 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showV
               ? 'bg-red-500'
               : 'bg-slate-300';
       const arrowColor =
-        load.direction === 'import' ? 'text-sky-100' : load.direction === 'export' ? 'text-red-100' : 'text-slate-200';
+        load.direction === 'import' ? 'text-sky-100' : load.direction === 'export' ? 'text-green-100' : 'text-slate-200';
+      const speedVal = mapFlowSpeed(Math.abs(load.powerKw));
       busNodes.push({
         key: 'grid',
-        powerKw: Math.abs(load.powerKw),
-        capacityKw: Math.max(1, load.maxKw ?? 1),
-        flowDirection,
-        color: cableColor,
-        arrowColor,
-        active: load.active,
-        glowColor: load.direction === 'import' ? 'var(--grid)' : 'var(--alert)',
+        cable: (
+          <RigidCable
+            height={40}
+            active={load.active}
+            flowDirection={flowDirection}
+            color={cableColor}
+            speed={speedVal}
+            width={mapFlowThickness(Math.abs(load.powerKw))}
+            arrowColor={arrowColor}
+          />
+        ),
         node: (
           <GridProduct
             power={load.powerKw}
@@ -1549,32 +1587,37 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showV
       return;
     }
 
-    if (load.type === 'home') {
+    if (load.type === 'home' || load.type === 'commercial') {
+      const icon = load.type === 'commercial' ? Building2 : Home;
+      const label = load.name || (load.type === 'commercial' ? 'Commercial Load' : 'Home Load');
+      const speedVal = mapFlowSpeed(load.powerKw);
       busNodes.push({
-        key: 'home',
-        powerKw: Math.abs(load.powerKw),
-        capacityKw: Math.max(1, load.maxKw ?? 1),
-        flowDirection: 'down',
-        color: 'bg-slate-800',
-        arrowColor: 'text-slate-200',
-        active: load.active,
-        glowColor: 'var(--consumption)',
-        node: <HomeProduct power={load.powerKw} />,
+        key: load.type,
+        cable: <RigidCable height={40} active={load.active} color="bg-slate-800" speed={speedVal} width={mapFlowThickness(load.powerKw)} arrowColor="text-slate-200" />,
+        node: <HomeProduct power={load.powerKw} label={label} icon={icon} />,
       });
       return;
     }
 
     if (load.type === 'ev') {
-      const isCharging = load.status === 'Charging';
+      const flowDirection = load.v2g ? 'up' : 'down';
+      const isActive = load.active;
+      const cableColor = load.v2g ? 'bg-orange-500' : 'bg-slate-800';
+      const arrowColor = load.v2g ? 'text-orange-100' : 'text-slate-200';
+      const speedVal = mapFlowSpeed(Math.max(0, load.powerKw));
       busNodes.push({
         key: `ev-${load.id}`,
-        powerKw: Math.abs(load.powerKw),
-        capacityKw: Math.max(1, load.maxKw ?? load.maxRate ?? 1),
-        flowDirection: load.v2g ? 'up' : 'down',
-        color: isCharging ? 'bg-slate-800' : 'bg-slate-200',
-        arrowColor: 'text-slate-200',
-        active: isCharging || load.v2g,
-        glowColor: load.v2g ? 'var(--grid)' : 'var(--consumption)',
+        cable: (
+          <RigidCable
+            height={40}
+            active={isActive}
+            flowDirection={flowDirection}
+            color={isActive ? cableColor : 'bg-slate-200'}
+            speed={speedVal}
+            width={mapFlowThickness(Math.max(0, load.powerKw))}
+            arrowColor={arrowColor}
+          />
+        ),
         node: (
           <EVChargerProduct
             id={load.id}
@@ -1601,16 +1644,20 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showV
           ? 'bg-orange-500'
           : 'bg-slate-300';
     const arrowColor = storage.direction === 'charge' ? 'text-green-100' : 'text-orange-100';
-    const storageFlowKw = storage.direction === 'charge' ? flow.batteryCharge : flow.batteryDischarge;
+    const speedVal = mapFlowSpeed(Math.abs(storage.powerKw));
     busNodes.push({
       key: 'battery',
-      powerKw: Math.abs(storageFlowKw),
-      capacityKw: storage.direction === 'charge' ? Math.max(1, storage.maxChargeKw) : Math.max(1, storage.maxDischargeKw),
-      flowDirection,
-      color,
-      arrowColor,
-      active: storage.active,
-      glowColor: storage.direction === 'charge' ? 'var(--battery)' : 'var(--alert)',
+      cable: (
+        <RigidCable
+          height={40}
+          active={storage.active}
+          flowDirection={flowDirection}
+          color={color}
+          speed={speedVal}
+          width={mapFlowThickness(Math.abs(storage.powerKw))}
+          arrowColor={arrowColor}
+        />
+      ),
       node: (
         <BatteryProduct
           level={storage.levelPct}
@@ -1630,51 +1677,52 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showV
   const busFlowMaxKw = busNodes.reduce((max, node) => Math.max(max, node.powerKw), 0);
 
   return (
-    <div className="flex flex-col items-center w-full h-full p-2 sm:p-3 md:p-6 bg-[var(--bg-card-muted)] rounded-2xl sm:rounded-3xl border border-[var(--border)]">
+    <div className="flex flex-col items-center w-full h-full p-2 sm:p-3 md:p-6 bg-[var(--bg-card-muted)] rounded-2xl sm:rounded-3xl border border-[var(--border)] relative">
+      {showFlowDebug && (
+        <div className="absolute top-2 right-2 z-30 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-3 py-2 shadow-lg text-[10px] space-y-1">
+          <div className="font-bold text-[var(--text-primary)]">Flow Debug</div>
+          <div className="text-[var(--text-secondary)]">Inverter: {flowDebug.inverterThroughputKw.toFixed(1)} kW</div>
+          <div className="text-[var(--text-secondary)]">
+            Grid: {flowDebug.gridImportKw > 0 ? `Import ${flowDebug.gridImportKw.toFixed(1)} kW` : flowDebug.gridExportKw > 0 ? `Export ${flowDebug.gridExportKw.toFixed(1)} kW` : 'Idle'}
+          </div>
+          <div className="text-[var(--text-secondary)]">
+            Battery: {flowDebug.batteryDirection} ({Math.abs(flowDebug.batteryPowerKw).toFixed(1)} kW)
+          </div>
+          <div className={`text-[var(--text-secondary)] ${flowDebug.balanceOk ? 'text-[var(--battery)]' : 'text-[var(--alert)]'}`}>
+            Balance Δ: {flowDebug.balanceDeltaKw.toFixed(2)} kW
+          </div>
+          <div className="text-[var(--text-tertiary)]">Sources {flowDebug.sourcesKw.toFixed(1)} kW → Sinks {flowDebug.sinksKw.toFixed(1)} kW</div>
+        </div>
+      )}
       <div className="flex flex-col items-center w-full max-w-full sm:max-w-[600px] md:max-w-[800px] mx-auto px-1 sm:px-2">
         <div className="mb-0">
           <SolarPanelProduct power={pvNode?.outputKw ?? 0} capacity={pvNode?.capacityKw ?? 0} weather={weather} isNight={isNight} />
         </div>
-        <div className="flex flex-col items-center w-full max-w-[720px]">
-          <RigidCable
-            height={30}
-            active={isSolarActive}
-            color={isSolarActive ? 'bg-green-500' : 'bg-slate-300'}
-            speed={simSpeed}
-            arrowColor="text-green-100"
-            powerKw={pvNode?.outputKw ?? 0}
-            capacityKw={pvNode?.capacityKw ?? 1}
-            glowColor="var(--solar)"
-            showLabel={showValues}
-          />
-          <HorizontalCable
-            width="100%"
-            active={isSolarActive}
-            color={isSolarActive ? 'bg-green-500' : 'bg-slate-300'}
-            powerKw={pvNode?.outputKw ?? 0}
-            capacityKw={pvNode?.capacityKw ?? 1}
-            flowDirection="right"
-            glowColor="var(--solar)"
-            showLabel={showValues}
-          />
-          <div className="grid justify-between w-full max-w-[520px] gap-2" style={{ gridTemplateColumns: `repeat(${inverterUnits}, minmax(0, 1fr))` }}>
-            {Array.from({ length: inverterUnits }).map((_, idx) => (
-              <div key={`inv-cable-${idx}`} className="flex justify-center">
-                <RigidCable
-                  height={20}
-                  active={isSolarActive}
-                  color={isSolarActive ? 'bg-green-500' : 'bg-slate-300'}
-                  speed={simSpeed}
-                  arrowColor="text-green-100"
-                  powerKw={layout.conversion[idx]?.outputKw ?? pvNode?.outputKw ?? 0}
-                  capacityKw={layout.conversion[idx]?.ratingKw ?? pvNode?.capacityKw ?? 1}
-                  glowColor="var(--solar)"
-                  showLabel={showValues}
-                />
-              </div>
-            ))}
+          <div className="flex flex-col items-center w-full max-w-[720px]">
+            <RigidCable
+              height={30}
+              active={isSolarActive}
+              color={isSolarActive ? 'bg-green-500' : 'bg-slate-300'}
+              speed={mapFlowSpeed(pvNode?.outputKw ?? 0)}
+              width={mapFlowThickness(pvNode?.outputKw ?? 0)}
+              arrowColor="text-green-100"
+            />
+            <HorizontalCable width="100%" color={isSolarActive ? 'bg-green-500' : 'bg-slate-300'} />
+            <div className="grid justify-between w-full max-w-[520px] gap-2" style={{ gridTemplateColumns: `repeat(${inverterUnits}, minmax(0, 1fr))` }}>
+              {Array.from({ length: inverterUnits }).map((_, idx) => (
+                <div key={`inv-cable-${idx}`} className="flex justify-center">
+                  <RigidCable
+                    height={20}
+                    active={isSolarActive}
+                    color={isSolarActive ? 'bg-green-500' : 'bg-slate-300'}
+                    speed={mapFlowSpeed((pvNode?.outputKw ?? 0) / inverterUnits)}
+                    width={mapFlowThickness((pvNode?.outputKw ?? 0) / inverterUnits)}
+                    arrowColor="text-green-100"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
         <div className="grid gap-3 sm:gap-4 md:gap-5 justify-items-center mb-0 scale-75 sm:scale-90 md:scale-100 w-full max-w-[800px]" style={inverterTemplate}>
           {layout.conversion.map((converter) => (
             <InverterProduct
@@ -1687,16 +1735,7 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showV
         </div>
         <div className="flex flex-col items-center w-full max-w-[900px]">
           <div className="flex justify-between w-full max-w-[720px]">
-          <HorizontalCable
-            width="100%"
-            color={isSolarActive ? 'bg-green-500' : 'bg-slate-300'}
-            active={busFlowMaxKw > 0}
-            powerKw={busFlowMaxKw}
-            capacityKw={Math.max(1, layout.conversion.reduce((sum, inv) => sum + (inv.ratingKw ?? 0), 0))}
-            flowDirection="right"
-            glowColor={isSolarActive ? 'var(--solar)' : 'var(--text-secondary)'}
-            showLabel={showValues}
-          />
+            <HorizontalCable width="100%" color={inverterFlowActive ? inverterFlowColor : 'bg-slate-300'} />
           </div>
           <div className="relative w-full mt-1 sm:mt-2">
             <div className="absolute inset-x-0 top-0 h-4 bg-slate-800 rounded-full shadow-md z-0 flex items-center justify-center">
@@ -1810,7 +1849,7 @@ export default function App() {
   }), []);
 
   const [data, setData] = useState({
-    solarR: 0, solarAvailable: 0, solarLoss: 0, homeLoad: 5, ev1Load: 0, ev2Load: 0, 
+    solarR: 0, homeLoad: 5, residentialLoad: 5, commercialLoad: 0, ev1Load: 0, ev2Load: 0, 
     ev1Status: 'Idle', ev2Status: 'Idle',
     ev1Soc: 60, ev2Soc: 50,
     batteryPower: 0, batteryLevel: 50, batteryStatus: 'Idle',
@@ -1864,6 +1903,30 @@ export default function App() {
     () => buildVisualizationLayout(derivedSystemConfig, data, gridStatus, data.ev1Status, data.ev2Status, evSpecs, systemFlow),
     [derivedSystemConfig, data, gridStatus, evSpecs, systemFlow]
   );
+  const flowDebug = useMemo(() => {
+    const meta = systemLayout.meta;
+    const solar = Math.max(0, meta.solarKw);
+    const load = Math.max(0, meta.totalLoadKw);
+    const gridImport = Math.max(0, meta.gridImportKw);
+    const gridExport = Math.max(0, meta.gridExportKw);
+    const batteryCharge = Math.max(0, meta.batteryChargeKw);
+    const batteryDischarge = Math.max(0, meta.batteryDischargeKw);
+    const sources = solar + gridImport + batteryDischarge;
+    const sinks = load + batteryCharge + gridExport;
+    const delta = sources - sinks;
+    const batteryDirection = data.batteryPower > 0.05 ? 'Charging' : data.batteryPower < -0.05 ? 'Discharging' : 'Idle';
+    return {
+      inverterThroughputKw: meta.inverterThroughputKw,
+      gridImportKw: gridImport,
+      gridExportKw: gridExport,
+      batteryDirection,
+      batteryPowerKw: data.batteryPower,
+      balanceDeltaKw: delta,
+      balanceOk: Math.abs(delta) < 0.25,
+      sourcesKw: sources,
+      sinksKw: sinks,
+    };
+  }, [data.batteryPower, systemLayout]);
   const [recommendationResult, setRecommendationResult] = useState<HardwareRecommendation | null>(null);
   const [isGeneratingRecommendation, setIsGeneratingRecommendation] = useState(false);
   const [compareEnabled, setCompareEnabled] = useState(false);
@@ -1872,6 +1935,7 @@ export default function App() {
   const [compareSource, setCompareSource] = useState<'nasa' | 'meteonorm'>('nasa');
   const [compareLastUpdated, setCompareLastUpdated] = useState<number | null>(null);
   const [compareFromCache, setCompareFromCache] = useState(false);
+  const [showFlowDebug, setShowFlowDebug] = useState(false);
   const [compareLoading, setCompareLoading] = useState(false);
 
   const accumulators = useRef({ solar: 0, savings: 0, gridImport: 0, carbonOffset: 0, batDischargeKwh: 0, feedInEarnings: 0 });
@@ -2239,6 +2303,8 @@ export default function App() {
               solarAvailable: finalState.availableSolarKw,
               solarLoss: finalState.solarLossKw,
               homeLoad: finalState.houseLoad,
+              residentialLoad: finalState.residentialLoad,
+              commercialLoad: finalState.commercialLoad,
               ev1Load: finalState.ev1Kw,
               ev1Status: finalState.ev1Kw > 0 ? 'Charging' : (finalState.ev1IsHome ? 'Idle' : 'Away'),
               ev1Soc: finalState.ev1Soc,
@@ -2367,6 +2433,8 @@ export default function App() {
          solarAvailable: state.availableSolarKw,
          solarLoss: state.solarLossKw,
          homeLoad: state.houseLoad,
+         residentialLoad: state.residentialLoad,
+         commercialLoad: state.commercialLoad,
          ev1Load: state.ev1Kw, ev1Status: state.ev1Kw > 0 ? 'Charging' : (state.ev1IsHome ? 'Idle' : 'Away'), ev1Soc: state.ev1Soc,
          ev2Load: state.ev2Kw, ev2Status: state.ev2Kw > 0 ? 'Charging' : (state.ev2IsHome ? 'Idle' : 'Away'), ev2Soc: state.ev2Soc,
          ev1V2g: state.ev1V2g ?? false,
@@ -2814,12 +2882,13 @@ export default function App() {
   }, [data.batteryLevel, data.batteryPower, data.isPeakTime, data.netGridPower, data.solarAvailable, data.solarLoss, data.solarR, derivedSystemConfig.inverterKw, derivedSystemConfig.maxChargeKw, derivedSystemConfig.maxDischargeKw, totalLoadKw]);
 
   // Calculate flow directions for PowerFlowVisualization
+  const totalLoadForFlow = Math.max(0, data.homeLoad ?? 0) + Math.max(0, data.ev1Load ?? 0) + Math.max(0, data.ev2Load ?? 0);
   const flowDirection = {
-    solarToHome: data.solarR > 0 && data.homeLoad > 0,
-    solarToBattery: data.batteryPower > 0,
-    solarToGrid: data.netGridPower < 0,
-    batteryToHome: data.batteryPower < 0,
-    gridToHome: data.netGridPower > 0,
+    solarToHome: data.solarR > 0 && totalLoadForFlow > 0,
+    solarToBattery: data.batteryPower > 0.05,
+    solarToGrid: data.netGridPower < -0.05,
+    batteryToHome: data.batteryPower < -0.05 && totalLoadForFlow > 0,
+    gridToHome: data.netGridPower > 0.05,
   };
 
   // Environmental impact calculations
@@ -3121,6 +3190,9 @@ export default function App() {
                 batteryPower={data.batteryPower}
                 gridPower={data.netGridPower}
                 homePower={data.homeLoad + data.ev1Load + data.ev2Load}
+                residentialPower={data.residentialLoad ?? data.homeLoad}
+                commercialPower={data.commercialLoad ?? 0}
+                evPower={data.ev1Load + data.ev2Load}
                 batteryLevel={data.batteryLevel}
                 flowDirection={flowDirection}
               />
@@ -3334,18 +3406,60 @@ export default function App() {
                       />
                       <p className="text-xs text-[var(--text-secondary)] mt-1">{systemConfig.inverterUnits} units • {(systemConfig.inverterKw / Math.max(1, systemConfig.inverterUnits)).toFixed(1)} kW each</p>
                     </div>
-                    <div>
-                      <p className="text-xs text-[var(--text-tertiary)] mb-2">Inverter Bank</p>
-                      <input
-                        type="range"
-                        min={10}
-                        max={120}
-                        step={2}
-                        value={systemConfig.inverterKw}
-                        onChange={(event) => setSystemConfig(prev => ({ ...prev, inverterKw: Number(event.target.value), mode: 'advanced' }))}
-                        className="w-full"
-                      />
-                      <p className="text-xs text-[var(--text-secondary)] mt-1">{systemConfig.inverterKw.toFixed(0)} kW total</p>
+                    <div className="border-t border-[var(--border)] pt-3">
+                      <p className="text-xs font-semibold text-[var(--text-tertiary)] mb-2 uppercase">Load Configuration</p>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={systemConfig.homeLoadEnabled}
+                              onChange={(e) => setSystemConfig(prev => ({ ...prev, homeLoadEnabled: e.target.checked, mode: 'advanced' }))}
+                              className="w-4 h-4 rounded border-[var(--border)] text-[var(--battery)] focus:ring-2 focus:ring-[var(--battery)]"
+                            />
+                            <span className="text-xs text-[var(--text-primary)]">Home Load</span>
+                          </label>
+                          {systemConfig.homeLoadEnabled && (
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="range"
+                                min={1}
+                                max={20}
+                                step={0.5}
+                                value={systemConfig.homeLoadKw}
+                                onChange={(e) => setSystemConfig(prev => ({ ...prev, homeLoadKw: Number(e.target.value), mode: 'advanced' }))}
+                                className="w-20"
+                              />
+                              <span className="text-xs text-[var(--text-secondary)] min-w-[40px]">{systemConfig.homeLoadKw.toFixed(1)} kW</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={systemConfig.commercialLoadEnabled}
+                              onChange={(e) => setSystemConfig(prev => ({ ...prev, commercialLoadEnabled: e.target.checked, mode: 'advanced' }))}
+                              className="w-4 h-4 rounded border-[var(--border)] text-[var(--battery)] focus:ring-2 focus:ring-[var(--battery)]"
+                            />
+                            <span className="text-xs text-[var(--text-primary)]">Commercial Load</span>
+                          </label>
+                          {systemConfig.commercialLoadEnabled && (
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="range"
+                                min={5}
+                                max={100}
+                                step={1}
+                                value={systemConfig.commercialLoadKw}
+                                onChange={(e) => setSystemConfig(prev => ({ ...prev, commercialLoadKw: Number(e.target.value), mode: 'advanced' }))}
+                                className="w-20"
+                              />
+                              <span className="text-xs text-[var(--text-secondary)] min-w-[40px]">{systemConfig.commercialLoadKw.toFixed(1)} kW</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <button
@@ -3382,10 +3496,18 @@ export default function App() {
               {/* System Visualization - Full Width Hero Section */}
               <Card className="dashboard-card">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-                    <Building2 className="h-5 w-5 text-[var(--solar)]" />
-                    System Visualization
-                  </CardTitle>
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+                      <Building2 className="h-5 w-5 text-[var(--solar)]" />
+                      System Visualization
+                    </CardTitle>
+                    <button
+                      onClick={() => setShowFlowDebug(prev => !prev)}
+                      className={`text-[10px] px-2 py-1 rounded border transition-colors ${showFlowDebug ? 'border-[var(--battery)] text-[var(--battery)] bg-[var(--battery-soft)]' : 'border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+                    >
+                      {showFlowDebug ? 'Hide Flow Debug' : 'Show Flow Debug'}
+                    </button>
+                  </div>
                 </CardHeader>
                 <CardContent className="pt-0">
                   <ResidentialPanel
@@ -3393,8 +3515,8 @@ export default function App() {
                     weather={weather}
                     isNight={isNight}
                     layout={systemLayout}
-                    showValues={showFlowValues}
-                    flow={systemFlow}
+                    showFlowDebug={showFlowDebug}
+                    flowDebug={flowDebug}
                   />
                 </CardContent>
               </Card>
@@ -3405,6 +3527,9 @@ export default function App() {
                 batteryPower={data.batteryPower}
                 gridPower={data.netGridPower}
                 homePower={data.homeLoad + data.ev1Load + data.ev2Load}
+                residentialPower={data.residentialLoad ?? data.homeLoad}
+                commercialPower={data.commercialLoad ?? 0}
+                evPower={data.ev1Load + data.ev2Load}
                 batteryLevel={data.batteryLevel}
                 flowDirection={flowDirection}
               />

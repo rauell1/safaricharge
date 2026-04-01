@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Sun, Home, Battery, UtilityPole, Zap } from 'lucide-react';
+import { Sun, Home, Battery, UtilityPole, Zap, Building2, Car } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNodeSelection } from '@/hooks/useEnergySystem';
@@ -13,6 +13,9 @@ interface PowerFlowVisualizationProps {
   batteryPower: number;
   gridPower: number;
   homePower: number;
+  residentialPower?: number;
+  commercialPower?: number;
+  evPower?: number;
   batteryLevel: number;
   flowDirection: {
     solarToHome: boolean;
@@ -107,9 +110,10 @@ interface FlowPathProps {
   accent: string;
   tint: string;
   reversed?: boolean;
+  powerKw?: number;
 }
 
-function FlowPath({ active, vertical = false, accent, tint, reversed = false }: FlowPathProps) {
+function FlowPath({ active, vertical = false, accent, tint, reversed = false, powerKw = 0 }: FlowPathProps) {
   const base = vertical
     ? 'w-0.5 h-20 mx-auto'
     : 'h-0.5 w-20 my-auto';
@@ -117,12 +121,20 @@ function FlowPath({ active, vertical = false, accent, tint, reversed = false }: 
     return <div className={`${base} rounded-full`} style={{ backgroundColor: 'var(--border)' }} />;
   }
 
+  const thickness = Math.min(12, Math.max(2, powerKw / 3 + 2));
+  const speedFactor = Math.min(10, Math.max(0.5, powerKw / 3 + 0.5));
   const particleAnimation = vertical
     ? (reversed ? 'flow-up' : 'flow-down')
     : (reversed ? 'flow-right-to-left' : 'flow-left-to-right');
 
   return (
-    <div className={`${base} relative overflow-hidden rounded-full`} style={{ backgroundColor: tint }}>
+    <div
+      className={`${base} relative overflow-hidden rounded-full`}
+      style={{
+        backgroundColor: tint,
+        ...(vertical ? { width: thickness } : { height: thickness })
+      }}
+    >
       <div
         className="absolute rounded-full"
         style={{
@@ -130,8 +142,8 @@ function FlowPath({ active, vertical = false, accent, tint, reversed = false }: 
             ? `linear-gradient(${reversed ? '0deg' : '180deg'}, transparent, ${accent})`
             : `linear-gradient(${reversed ? '270deg' : '90deg'}, transparent, ${accent})`,
           ...(vertical
-            ? { width: '100%', height: '40%', animation: `${particleAnimation} 1.2s linear infinite` }
-            : { height: '100%', width: '40%', animation: `${particleAnimation} 1.2s linear infinite` }
+            ? { width: '100%', height: '40%', animation: `${particleAnimation} ${1.2 / speedFactor}s linear infinite` }
+            : { height: '100%', width: '40%', animation: `${particleAnimation} ${1.2 / speedFactor}s linear infinite` }
           )
         }}
       />
@@ -144,6 +156,9 @@ export function PowerFlowVisualization({
   batteryPower,
   gridPower,
   homePower,
+  residentialPower,
+  commercialPower,
+  evPower,
   batteryLevel,
   flowDirection,
   detailBasePath,
@@ -220,13 +235,19 @@ export function PowerFlowVisualization({
     );
   }
 
+  const hasBreakdown = residentialPower !== undefined || commercialPower !== undefined || evPower !== undefined;
+  const residentialKw = residentialPower ?? homePower;
+  const commercialKw = commercialPower ?? (hasBreakdown ? 0 : 0);
+  const evKw = evPower ?? (hasBreakdown ? 0 : 0);
+  const siteLoad = hasBreakdown ? residentialKw + commercialKw + evKw : homePower;
+
   // Calculate system efficiency and flow distribution
-  const usefulEnergy = Math.min(homePower, solarPower) + (batteryPower > 0 ? Math.min(batteryPower, solarPower - homePower) : 0);
+  const usefulEnergy = Math.min(siteLoad, solarPower) + (batteryPower > 0 ? Math.min(batteryPower, Math.max(0, solarPower - siteLoad)) : 0);
   const systemEfficiency = solarPower > 0 ? (usefulEnergy / solarPower) * 100 : 0;
 
   // Calculate solar flow distribution percentages
-  const totalSolarUse = homePower + Math.abs(batteryPower) + Math.abs(gridPower < 0 ? gridPower : 0);
-  const solarToHomePercent = totalSolarUse > 0 ? (Math.min(homePower, solarPower) / totalSolarUse) * 100 : 0;
+  const totalSolarUse = siteLoad + Math.abs(batteryPower) + Math.abs(gridPower < 0 ? gridPower : 0);
+  const solarToHomePercent = totalSolarUse > 0 ? (Math.min(siteLoad, solarPower) / totalSolarUse) * 100 : 0;
   const solarToBatteryPercent = totalSolarUse > 0 && batteryPower > 0 ? (batteryPower / totalSolarUse) * 100 : 0;
   const solarToGridPercent = totalSolarUse > 0 && gridPower < 0 ? (Math.abs(gridPower) / totalSolarUse) * 100 : 0;
 
@@ -259,6 +280,7 @@ export function PowerFlowVisualization({
               vertical
               accent="var(--solar)"
               tint="var(--solar-soft)"
+              powerKw={solarPower}
             />
           </div>
 
@@ -268,6 +290,7 @@ export function PowerFlowVisualization({
                 active={flowDirection.solarToBattery}
                 accent="var(--battery)"
                 tint="var(--battery-soft)"
+                powerKw={Math.max(0, batteryPower)}
               />
             </div>
             <div className="h-4 w-4 rounded-full border-2 shadow-[0_0_0_6px_rgba(245,158,11,0.1)]"
@@ -278,6 +301,7 @@ export function PowerFlowVisualization({
                 accent="var(--grid)"
                 tint="var(--grid-soft)"
                 reversed
+                powerKw={Math.max(0, -gridPower)}
               />
             </div>
           </div>
@@ -289,6 +313,7 @@ export function PowerFlowVisualization({
                 vertical
                 accent="var(--battery)"
                 tint="var(--battery-soft)"
+                powerKw={Math.abs(batteryPower)}
               />
               <EnergyNode
                 icon={Battery}
@@ -310,18 +335,43 @@ export function PowerFlowVisualization({
                 vertical
                 accent="var(--solar)"
                 tint="var(--solar-soft)"
+                powerKw={siteLoad}
               />
-              <EnergyNode
-                icon={Home}
-                label="Home"
-                valueLine={`${homePower.toFixed(2)} kW`}
-                subLabel="Consumption"
-                accent="var(--consumption)"
-                tint="var(--consumption-soft)"
-                nodeType="home"
-                onClick={handleNodeClick}
-                isSelected={isSelected('home')}
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full max-w-xs">
+                <EnergyNode
+                  icon={Home}
+                  label="Residential"
+                  valueLine={`${residentialKw.toFixed(2)} kW`}
+                  subLabel="Household"
+                  accent="var(--consumption)"
+                  tint="var(--consumption-soft)"
+                  nodeType="home"
+                  onClick={handleNodeClick}
+                  isSelected={isSelected('home')}
+                />
+                <EnergyNode
+                  icon={Building2}
+                  label="Commercial"
+                  valueLine={`${commercialKw.toFixed(2)} kW`}
+                  subLabel="Business"
+                  accent="var(--grid)"
+                  tint="var(--grid-soft)"
+                  nodeType="home"
+                  onClick={handleNodeClick}
+                  isSelected={false}
+                />
+                <EnergyNode
+                  icon={Car}
+                  label="EVs"
+                  valueLine={`${evKw.toFixed(2)} kW`}
+                  subLabel="Charging"
+                  accent="var(--battery)"
+                  tint="var(--battery-soft)"
+                  nodeType="ev1"
+                  onClick={handleNodeClick}
+                  isSelected={isSelected('ev1') || isSelected('ev2')}
+                />
+              </div>
             </div>
 
             <div className="flex-1 flex flex-col items-center gap-2">
@@ -354,8 +404,9 @@ export function PowerFlowVisualization({
               <div className="text-base font-bold" style={{ color: 'var(--solar)' }}>{solarPower.toFixed(2)} kW</div>
             </div>
             <div className="text-center border-l border-r" style={{ borderColor: 'var(--border)' }}>
-              <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Home Load</div>
-              <div className="text-base font-bold" style={{ color: 'var(--consumption)' }}>{homePower.toFixed(2)} kW</div>
+              <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Site Load</div>
+              <div className="text-base font-bold" style={{ color: 'var(--consumption)' }}>{siteLoad.toFixed(2)} kW</div>
+              <div className="text-[9px] text-[var(--text-tertiary)]">R {residentialKw.toFixed(1)} / C {commercialKw.toFixed(1)} / EV {evKw.toFixed(1)}</div>
             </div>
             <div className="text-center">
               <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Net Grid</div>
@@ -395,7 +446,7 @@ export function PowerFlowVisualization({
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-1.5">
                     <div className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--consumption)' }} />
-                    <span className="text-[var(--text-secondary)]">To Home</span>
+                    <span className="text-[var(--text-secondary)]">To Loads</span>
                   </div>
                   <span className="font-bold text-[var(--text-primary)]">{solarToHomePercent.toFixed(0)}%</span>
                 </div>
