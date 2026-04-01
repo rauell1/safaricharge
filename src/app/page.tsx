@@ -1788,7 +1788,7 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
 
 // --- 6. APP COMPONENT ---
 
-export default function App() {
+export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { initialSection?: DashboardSection }) {
   // Location and solar data state
   const [currentLocation, setCurrentLocation] = useState<LocationCoordinates>(KENYA_LOCATIONS[0]); // Default to Nairobi
   const [solarDataLoading, setSolarDataLoading] = useState(false);
@@ -1825,7 +1825,10 @@ export default function App() {
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [dataSource, setDataSource] = useState<'nasa' | 'meteonorm'>('nasa');
-  const [activeSection, setActiveSection] = useState<DashboardSection>('dashboard');
+  const [activeSection, setActiveSection] = useState<DashboardSection>(initialSection);
+  useEffect(() => {
+    setActiveSection(initialSection);
+  }, [initialSection]);
   const [overviewDetailsOpen, setOverviewDetailsOpen] = useState(false);
   const [priorityMode, setPriorityMode] = useState('auto');
   const [gridStatus, setGridStatus] = useState('Online');
@@ -3053,7 +3056,7 @@ export default function App() {
       />
 
       {/* Main Dashboard Content */}
-      <main className="flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 lg:px-8">
+      <main className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto px-3 py-4 sm:px-4 sm:py-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8">
           <div className="flex flex-wrap items-center gap-2 text-[11px] sm:text-xs text-[var(--text-secondary)]">
             <LocationSelector
@@ -3715,4 +3718,8 @@ export default function App() {
       </main>
     </DashboardLayout>
   );
+}
+
+export default function App() {
+  return <SafariChargeDashboardApp initialSection="dashboard" />;
 }

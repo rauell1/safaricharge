@@ -30,7 +30,7 @@ export function EnergyDetailShell({ title, subtitle, rightSlot, children }: Ener
         notificationCount={3}
       />
 
-      <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
+      <main className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto px-4 py-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
