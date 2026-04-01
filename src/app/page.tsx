@@ -174,6 +174,21 @@ type LoadNode =
       maxKw?: number;
     };
 
+type SystemFlow = {
+  solarToInverter: number;
+  solarToLoad: number;
+  solarToBattery: number;
+  solarToGrid: number;
+  batteryDischarge: number;
+  batteryCharge: number;
+  batteryToLoad: number;
+  batteryToGrid: number;
+  inverterToLoad: number;
+  inverterToGrid: number;
+  gridToLoad: number;
+  evDemand: number;
+};
+
 type DerivedVisualizationLayout = {
   generation: GenerationNode[];
   conversion: ConversionNode[];
@@ -251,7 +266,8 @@ const buildVisualizationLayout = (
   gridStatus: string,
   ev1Status: string,
   ev2Status: string,
-  evSpecs: { ev1: { capacity: number; rate: number }; ev2: { capacity: number; rate: number } }
+  evSpecs: { ev1: { capacity: number; rate: number }; ev2: { capacity: number; rate: number } },
+  flow: SystemFlow
 ): DerivedVisualizationLayout => {
   const safeSolar = Math.max(0, data?.solarR ?? 0);
   const pvEnabled = config.panelCount > 0 && config.panelWatt > 0 && config.pvCapacityKw > 0;
@@ -305,7 +321,7 @@ const buildVisualizationLayout = (
   loads.push({
     type: 'grid',
     name: 'Grid',
-    powerKw: netGridPower,
+    powerKw: gridDirection === 'import' ? Math.max(flow.gridToLoad, 0) : Math.max(flow.inverterToGrid, 0),
     status: gridStatus,
     direction: gridDirection,
     active: gridStatus === 'Online' && netGridPower !== 0,
@@ -313,21 +329,27 @@ const buildVisualizationLayout = (
   });
 
   const homeLoad = Math.max(0, data?.homeLoad ?? 0);
+  const totalLoads = Math.max(0.0001, homeLoad + Math.max(0, data?.ev1Load ?? 0) + Math.max(0, data?.ev2Load ?? 0));
+  const homeShare = homeLoad / totalLoads;
   loads.push({
     type: 'home',
     name: 'Home',
-    powerKw: homeLoad,
+    powerKw: flow.inverterToLoad * homeShare + flow.gridToLoad * homeShare,
     active: homeLoad > 0,
     maxKw: config.inverterKw,
   });
 
   const canShowEv = config.evChargerKw > 0;
+  const ev1LoadRaw = Math.max(0, data?.ev1Load ?? 0);
+  const ev2LoadRaw = Math.max(0, data?.ev2Load ?? 0);
+  const ev1Share = totalLoads > 0 ? ev1LoadRaw / totalLoads : 0;
+  const ev2Share = totalLoads > 0 ? ev2LoadRaw / totalLoads : 0;
   if (canShowEv && (config.evCommuterScale ?? 1) > 0) {
     loads.push({
       type: 'ev',
       id: 1,
       name: 'EV 1 (Commuter)',
-      powerKw: Math.max(0, data?.ev1Load ?? 0),
+      powerKw: flow.inverterToLoad * ev1Share + flow.gridToLoad * ev1Share,
       status: ev1Status,
       capacity: evSpecs.ev1.capacity,
       maxRate: evSpecs.ev1.rate,
@@ -342,7 +364,7 @@ const buildVisualizationLayout = (
       type: 'ev',
       id: 2,
       name: 'EV 2 (Uber)',
-      powerKw: Math.max(0, data?.ev2Load ?? 0),
+      powerKw: flow.inverterToLoad * ev2Share + flow.gridToLoad * ev2Share,
       status: ev2Status,
       capacity: evSpecs.ev2.capacity,
       maxRate: evSpecs.ev2.rate,
@@ -1471,8 +1493,8 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
   );
 };
 
-const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showValues }: {
-  simSpeed: number; weather: string; isNight: boolean; layout: DerivedVisualizationLayout; showValues: boolean;
+const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showValues, flow }: {
+  simSpeed: number; weather: string; isNight: boolean; layout: DerivedVisualizationLayout; showValues: boolean; flow: SystemFlow;
 }) => {
   const pvNode = layout.generation[0];
   const isSolarActive = (pvNode?.outputKw ?? 0) > 0.1;
@@ -1575,9 +1597,10 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showV
           ? 'bg-orange-500'
           : 'bg-slate-300';
     const arrowColor = storage.direction === 'charge' ? 'text-green-100' : 'text-orange-100';
+    const storageFlowKw = storage.direction === 'charge' ? flow.batteryCharge : flow.batteryDischarge;
     busNodes.push({
       key: 'battery',
-      powerKw: Math.abs(storage.powerKw),
+      powerKw: Math.abs(storageFlowKw),
       capacityKw: storage.direction === 'charge' ? Math.max(1, storage.maxChargeKw) : Math.max(1, storage.maxDischargeKw),
       flowDirection,
       color,
@@ -1803,9 +1826,39 @@ export default function App() {
     ev2V2g: false,
     _graphPoint: null as GraphDataPoint | null,
   });
+  const systemFlow = useMemo<SystemFlow>(() => {
+    const solar = Math.max(0, data.solarR ?? 0);
+    const loadDemand = Math.max(0, (data.homeLoad ?? 0) + (data.ev1Load ?? 0) + (data.ev2Load ?? 0));
+    const evDemand = Math.max(0, (data.ev1Load ?? 0) + (data.ev2Load ?? 0));
+    const batteryCharge = Math.max(0, data.batteryPower ?? 0);
+    const batteryDischarge = Math.max(0, -(data.batteryPower ?? 0));
+    const inverterSupply = solar + batteryDischarge;
+    const inverterToLoad = Math.min(inverterSupply, loadDemand);
+    const inverterToGrid = Math.max(0, inverterSupply - loadDemand);
+    const gridToLoad = Math.max(0, loadDemand - inverterSupply);
+    const solarToLoad = Math.min(solar, loadDemand);
+    const solarToBattery = Math.min(Math.max(0, solar - solarToLoad), batteryCharge);
+    const solarToGrid = Math.max(0, solar - solarToLoad - solarToBattery);
+    const batteryToLoad = Math.min(batteryDischarge, Math.max(0, loadDemand - solar));
+    const batteryToGrid = Math.max(0, inverterToGrid - solarToGrid);
+    return {
+      solarToInverter: solar,
+      solarToLoad,
+      solarToBattery,
+      solarToGrid,
+      batteryDischarge,
+      batteryCharge,
+      batteryToLoad,
+      batteryToGrid,
+      inverterToLoad,
+      inverterToGrid,
+      gridToLoad,
+      evDemand,
+    };
+  }, [data.batteryPower, data.ev1Load, data.ev2Load, data.homeLoad, data.solarR]);
   const systemLayout = useMemo(
-    () => buildVisualizationLayout(derivedSystemConfig, data, gridStatus, data.ev1Status, data.ev2Status, evSpecs),
-    [derivedSystemConfig, data, gridStatus, evSpecs]
+    () => buildVisualizationLayout(derivedSystemConfig, data, gridStatus, data.ev1Status, data.ev2Status, evSpecs, systemFlow),
+    [derivedSystemConfig, data, gridStatus, evSpecs, systemFlow]
   );
   const [recommendationResult, setRecommendationResult] = useState<HardwareRecommendation | null>(null);
   const [isGeneratingRecommendation, setIsGeneratingRecommendation] = useState(false);
@@ -3337,6 +3390,7 @@ export default function App() {
                     isNight={isNight}
                     layout={systemLayout}
                     showValues={showFlowValues}
+                    flow={systemFlow}
                   />
                 </CardContent>
               </Card>
