@@ -69,7 +69,20 @@ export const runSolarSimulation = (
   const solar = simulateSolar(t, scenario, systemConfig, cloudNoise);
 
   const hIdx = Math.floor(t);
-  const houseLoad = scenario.houseLoadProfile[hIdx % 24] * Math.max(0.5, 1 + gaussianRandom(0, 0.08));
+
+  // Calculate home load based on profile and configuration
+  let houseLoad = 0;
+  if (systemConfig.homeLoadEnabled) {
+    const profileLoad = scenario.houseLoadProfile[hIdx % 24] * Math.max(0.5, 1 + gaussianRandom(0, 0.08));
+    // Scale the profile load to match the configured homeLoadKw
+    const profileAvg = scenario.houseLoadProfile.reduce((a, b) => a + b, 0) / scenario.houseLoadProfile.length;
+    houseLoad = (profileLoad / profileAvg) * systemConfig.homeLoadKw;
+  }
+
+  // Add commercial load if enabled (constant throughout the day)
+  if (systemConfig.commercialLoadEnabled) {
+    houseLoad += systemConfig.commercialLoadKw * Math.max(0.9, 1 + gaussianRandom(0, 0.05));
+  }
 
   const effectiveCapacity = systemConfig.batteryKwh * batteryHealth;
   const effectiveReserve = Math.max(systemConfig.batteryKwh * 0.15, 8) * batteryHealth;
