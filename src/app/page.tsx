@@ -1525,7 +1525,7 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
   );
 };
 
-const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showFlowDebug, flowDebug }: {
+const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showFlowDebug, flowDebug, showValues }: {
   simSpeed: number; weather: string; isNight: boolean; layout: DerivedVisualizationLayout; showFlowDebug: boolean; flowDebug: {
     inverterThroughputKw: number;
     gridImportKw: number;
@@ -1536,7 +1536,7 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
     balanceOk: boolean;
     sourcesKw: number;
     sinksKw: number;
-  };
+  }; showValues: boolean;
 }) => {
   const pvNode = layout.generation[0];
   const isSolarActive = (pvNode?.outputKw ?? 0) > 0.1;
@@ -3520,6 +3520,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                     layout={systemLayout}
                     showFlowDebug={showFlowDebug}
                     flowDebug={flowDebug}
+                    showValues={showFlowValues}
                   />
                 </CardContent>
               </Card>
