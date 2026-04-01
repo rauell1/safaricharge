@@ -382,6 +382,7 @@ const FEED_IN_TARIFF_RATE = 5.0;
 
 // KPLC maximum demand charge (KES per kW of monthly peak grid import)
 const KPLC_DEMAND_CHARGE_KES_PER_KW = 750.0;
+const GRAPH_STEP_H = 24 / 420; // 420 steps per day for graphs & slider
 
 
 // --- UTILITIES ---
@@ -406,8 +407,8 @@ const getWeekNumber = (date: Date): number => {
 
 // --- 2. VISUAL COMPONENTS ---
 
-const RigidCable = React.memo(({ height = 40, width = 2, active = false, color = 'bg-slate-300', flowDirection = 'down', speed = 1, arrowColor = 'text-white', powerKw = 0, capacityKw = 0, glowColor = 'var(--solar)' }: {
-  height?: number; width?: number; active?: boolean; color?: string; flowDirection?: string; speed?: number; arrowColor?: string; powerKw?: number; capacityKw?: number; glowColor?: string;
+const RigidCable = React.memo(({ height = 40, width = 2, active = false, color = 'bg-slate-300', flowDirection = 'down', speed = 1, arrowColor = 'text-white', powerKw = 0, capacityKw = 0, glowColor = 'var(--solar)', showLabel = false }: {
+  height?: number; width?: number; active?: boolean; color?: string; flowDirection?: string; speed?: number; arrowColor?: string; powerKw?: number; capacityKw?: number; glowColor?: string; showLabel?: boolean;
 }) => {
   const intensity = Math.min(1, Math.max(0, capacityKw > 0 ? Math.abs(powerKw) / capacityKw : active ? 0.5 : 0));
   const thickness = Math.max(width, 2 + intensity * 6);
@@ -435,12 +436,17 @@ const RigidCable = React.memo(({ height = 40, width = 2, active = false, color =
           </div>
         </div>
       )}
+      {showLabel && active && (
+        <div className="absolute left-1/2 -translate-x-1/2 -bottom-4 px-2 py-0.5 rounded-full bg-[var(--bg-card)] border border-[var(--border)] text-[9px] font-bold text-[var(--text-primary)] shadow-sm whitespace-nowrap">
+          {`${Math.abs(powerKw).toFixed(1)} kW`}
+        </div>
+      )}
     </div>
   );
 });
 
-const HorizontalCable = React.memo(({ width = '100%', height = 2, color = 'bg-slate-300', active = false, powerKw = 0, capacityKw = 0, flowDirection = 'right', glowColor = 'var(--solar)', speed = 1 }: {
-  width?: string | number; height?: number; color?: string; active?: boolean; powerKw?: number; capacityKw?: number; flowDirection?: 'left' | 'right'; glowColor?: string; speed?: number;
+const HorizontalCable = React.memo(({ width = '100%', height = 2, color = 'bg-slate-300', active = false, powerKw = 0, capacityKw = 0, flowDirection = 'right', glowColor = 'var(--solar)', speed = 1, showLabel = false }: {
+  width?: string | number; height?: number; color?: string; active?: boolean; powerKw?: number; capacityKw?: number; flowDirection?: 'left' | 'right'; glowColor?: string; speed?: number; showLabel?: boolean;
 }) => {
   const intensity = Math.min(1, Math.max(0, capacityKw > 0 ? Math.abs(powerKw) / capacityKw : active ? 0.5 : 0));
   const thickness = Math.max(height, 2 + intensity * 6);
@@ -469,6 +475,11 @@ const HorizontalCable = React.memo(({ width = '100%', height = 2, color = 'bg-sl
             animation: `${flowDirection === 'right' ? 'flow-left-to-right' : 'flow-right-to-left'} ${duration} linear infinite`,
           }}
         />
+      )}
+      {showLabel && active && (
+        <div className="absolute left-1/2 -translate-x-1/2 -top-5 px-2 py-0.5 rounded-full bg-[var(--bg-card)] border border-[var(--border)] text-[9px] font-bold text-[var(--text-primary)] shadow-sm whitespace-nowrap">
+          {`${Math.abs(powerKw).toFixed(1)} kW`}
+        </div>
       )}
     </div>
   );
@@ -995,6 +1006,18 @@ const SystemConfigPanel = ({
   const isAdvanced = config.mode === 'advanced';
   const { pvCapacityKw, ...baseConfig } = config;
   const perInverterKw = config.inverterKw / Math.max(1, config.inverterUnits || 1);
+  const buildPreview = (profile: SystemConfig['loadProfile']): number[] => {
+    if (profile === 'commercial') {
+      return [1,1,1.2,1.5,2,3,5,6,7,7.5,8,8.2,8.5,8.3,8,7.5,6.5,5.5,4,3,2.5,2,1.5,1.2];
+    }
+    if (profile === 'industrial') {
+      return Array(24).fill(4).map((v, idx) => v + (idx >= 6 && idx < 18 ? 1 : 0.5));
+    }
+    // residential default
+    return [0.8,0.7,0.7,0.8,1,1.2,3,4.5,3.5,2.5,2.2,2.4,2.6,2.4,2.2,2.5,4,6.5,7.5,6.8,4.5,3.2,2,1.2];
+  };
+  const previewValues = useMemo(() => buildPreview(config.loadProfile).map(v => v * config.loadScale), [config.loadProfile, config.loadScale]);
+  const previewMax = Math.max(...previewValues, 1);
 
   const updateField = (key: keyof SystemConfig, value: number) => {
     let safeNumber = Number.isFinite(value) ? Math.max(0, value) : 0;
@@ -1182,6 +1205,35 @@ const SystemConfigPanel = ({
         </div>
       </div>
 
+      <div className="mt-3 bg-[var(--bg-card-muted)] border border-[var(--border)] rounded-xl p-3">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">Load Profile Preview</span>
+          <span className="text-[10px] text-[var(--text-secondary)] font-mono">{config.loadProfile}</span>
+        </div>
+        <svg viewBox="0 0 260 70" className="mt-2 w-full">
+          <polyline
+            fill="none"
+            stroke="var(--battery)"
+            strokeWidth="2"
+            points={previewValues.map((v, idx) => {
+              const x = (idx / 23) * 260;
+              const y = 70 - (v / previewMax) * 60 - 5;
+              return `${x},${y}`;
+            }).join(' ')}
+          />
+          {previewValues.map((v, idx) => {
+            const x = (idx / 23) * 260;
+            const y = 70 - (v / previewMax) * 60 - 5;
+            return <circle key={idx} cx={x} cy={y} r="1.5" fill="var(--battery)" />;
+          })}
+        </svg>
+        <div className="flex justify-between text-[9px] text-[var(--text-secondary)] mt-1">
+          <span>00:00</span>
+          <span>12:00</span>
+          <span>24:00</span>
+        </div>
+      </div>
+
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mt-3">
       <div className="flex flex-wrap gap-2">
         <StatPill label="PV Array" value={`${pvCapacityKw.toFixed(1)} kW`} sub={`${config.panelCount}x ${config.panelWatt}W`} />
@@ -1214,8 +1266,8 @@ const SystemConfigPanel = ({
   );
 };
 
-const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAuto, simSpeed, onSpeedChange, onOpenReport, priorityMode, onTogglePriority, weather, isNight, gridStatus, onToggleGrid, displayPriority, ev1Status, ev2Status, stateBadges, systemWarnings }: {
-  data: any; timeOfDay: number; onTimeChange: (t: number) => void; isAutoMode: boolean; onToggleAuto: () => void; simSpeed: number; onSpeedChange: (s: number) => void; onOpenReport: () => void; priorityMode: string; onTogglePriority: () => void; weather: string; isNight: boolean; gridStatus: string; onToggleGrid: () => void; displayPriority: string; ev1Status: string; ev2Status: string; stateBadges: Array<{ label: string; tone: string }>; systemWarnings: string[];
+const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAuto, simSpeed, onSpeedChange, onOpenReport, priorityMode, onTogglePriority, weather, isNight, gridStatus, onToggleGrid, displayPriority, ev1Status, ev2Status, stateBadges, systemWarnings, showValues, onToggleValues }: {
+  data: any; timeOfDay: number; onTimeChange: (t: number) => void; isAutoMode: boolean; onToggleAuto: () => void; simSpeed: number; onSpeedChange: (s: number) => void; onOpenReport: () => void; priorityMode: string; onTogglePriority: () => void; weather: string; isNight: boolean; gridStatus: string; onToggleGrid: () => void; displayPriority: string; ev1Status: string; ev2Status: string; stateBadges: Array<{ label: string; tone: string }>; systemWarnings: Array<{ level: 'critical' | 'warning' | 'info'; message: string }>; showValues: boolean; onToggleValues: () => void;
 }) => {
   const toneClass: Record<string, string> = {
     green: 'bg-emerald-100 text-emerald-700 border-emerald-200',
@@ -1262,7 +1314,7 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
              </button>
              <div className="relative w-full">
                <div className="absolute inset-0 h-2 rounded-lg bg-gradient-to-r from-slate-800 via-amber-400/30 to-slate-800 pointer-events-none" />
-               <div className="absolute inset-x-0 -top-4 flex justify-between text-[8px] text-[var(--text-tertiary)] font-semibold">
+               <div className="absolute inset-x-0 -top-4 flex justify-between text-[8px] text-[var(--text-tertiary)] font-semibold pointer-events-none">
                  <span>0h</span>
                  <span>6h</span>
                  <span>Noon</span>
@@ -1274,20 +1326,30 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
                  type="range"
                  min="0"
                  max="24"
-                 step="0.05"
+                 step={GRAPH_STEP_H}
                  value={timeOfDay}
                  onChange={(e) => { onTimeChange(parseFloat(e.target.value)); if(isAutoMode) onToggleAuto(); }}
                  disabled={isAutoMode}
-                 className="relative w-full h-2 bg-transparent rounded-lg appearance-none cursor-pointer accent-[var(--battery)] disabled:opacity-50 disabled:cursor-not-allowed"
+                 className="relative w-full h-3 bg-transparent rounded-lg appearance-none cursor-pointer accent-[var(--battery)] disabled:opacity-50 disabled:cursor-not-allowed"
+                 style={{ accentColor: 'var(--battery)', touchAction: 'pan-y' }}
                />
              </div>
-          </div>
+           </div>
 
           <div className="flex justify-center gap-1.5 sm:gap-2 mt-2 sm:mt-3 pt-2 border-t border-[var(--border)] flex-wrap">
              {[1, 10, 50].map(speed => (
                <button key={speed} onClick={() => onSpeedChange(speed)} className={`text-[8px] sm:text-[9px] px-1.5 sm:px-2 py-1 rounded font-bold transition-all ${simSpeed === speed ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] scale-110' : 'bg-[var(--bg-card)] text-[var(--text-tertiary)] hover:opacity-80'}`}>x{speed}</button>
              ))}
           </div>
+          <div className="mt-2 flex flex-wrap justify-center gap-1.5">
+            <button
+              onClick={onToggleValues}
+              className={`px-2 py-1 rounded-full text-[9px] font-bold border transition-all ${showValues ? 'border-[var(--battery)] text-[var(--battery)] bg-[var(--bg-card)]' : 'border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--battery)] hover:text-[var(--battery)]'}`}
+            >
+              {showValues ? 'Hide Values' : 'Show Values'}
+            </button>
+          </div>
+
           <div className="mt-2 flex flex-wrap justify-center gap-1.5">
             {stateBadges.map((badge) => (
               <span
@@ -1301,12 +1363,19 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
 
           {systemWarnings.length > 0 && (
             <div className="mt-3 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-2 space-y-1">
-              {systemWarnings.map((warning, idx) => (
-                <div key={idx} className="flex items-center gap-1 text-[9px] text-[var(--alert)] font-semibold">
-                  <AlertTriangle size={10} />
-                  <span>{warning}</span>
-                </div>
-              ))}
+              {systemWarnings.map((warning, idx) => {
+                const palette = warning.level === 'critical'
+                  ? 'text-red-500'
+                  : warning.level === 'warning'
+                    ? 'text-amber-400'
+                    : 'text-sky-400';
+                return (
+                  <div key={idx} className={`flex items-center gap-1 text-[9px] font-semibold ${palette}`}>
+                    <AlertTriangle size={10} />
+                    <span>{warning.message}</span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -1402,8 +1471,8 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
   );
 };
 
-const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout }: {
-  simSpeed: number; weather: string; isNight: boolean; layout: DerivedVisualizationLayout;
+const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showValues }: {
+  simSpeed: number; weather: string; isNight: boolean; layout: DerivedVisualizationLayout; showValues: boolean;
 }) => {
   const pvNode = layout.generation[0];
   const isSolarActive = (pvNode?.outputKw ?? 0) > 0.1;
@@ -1429,10 +1498,10 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout }: {
           : load.direction === 'import'
             ? 'bg-sky-500'
             : load.direction === 'export'
-              ? 'bg-green-500'
+              ? 'bg-red-500'
               : 'bg-slate-300';
       const arrowColor =
-        load.direction === 'import' ? 'text-sky-100' : load.direction === 'export' ? 'text-green-100' : 'text-slate-200';
+        load.direction === 'import' ? 'text-sky-100' : load.direction === 'export' ? 'text-red-100' : 'text-slate-200';
       busNodes.push({
         key: 'grid',
         powerKw: Math.abs(load.powerKw),
@@ -1441,7 +1510,7 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout }: {
         color: cableColor,
         arrowColor,
         active: load.active,
-        glowColor: load.direction === 'import' ? 'var(--grid)' : 'var(--battery)',
+        glowColor: load.direction === 'import' ? 'var(--grid)' : 'var(--alert)',
         node: (
           <GridProduct
             power={load.powerKw}
@@ -1549,6 +1618,7 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout }: {
             powerKw={pvNode?.outputKw ?? 0}
             capacityKw={pvNode?.capacityKw ?? 1}
             glowColor="var(--solar)"
+            showLabel={showValues}
           />
           <HorizontalCable
             width="100%"
@@ -1558,6 +1628,7 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout }: {
             capacityKw={pvNode?.capacityKw ?? 1}
             flowDirection="right"
             glowColor="var(--solar)"
+            showLabel={showValues}
           />
           <div className="grid justify-between w-full max-w-[520px] gap-2" style={{ gridTemplateColumns: `repeat(${inverterUnits}, minmax(0, 1fr))` }}>
             {Array.from({ length: inverterUnits }).map((_, idx) => (
@@ -1571,6 +1642,7 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout }: {
                   powerKw={layout.conversion[idx]?.outputKw ?? pvNode?.outputKw ?? 0}
                   capacityKw={layout.conversion[idx]?.ratingKw ?? pvNode?.capacityKw ?? 1}
                   glowColor="var(--solar)"
+                  showLabel={showValues}
                 />
               </div>
             ))}
@@ -1588,21 +1660,22 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout }: {
         </div>
         <div className="flex flex-col items-center w-full max-w-[900px]">
           <div className="flex justify-between w-full max-w-[720px]">
-            <HorizontalCable
-              width="100%"
-              color={isSolarActive ? 'bg-green-500' : 'bg-slate-300'}
-              active={busFlowMaxKw > 0}
-              powerKw={busFlowMaxKw}
-              capacityKw={Math.max(1, layout.conversion.reduce((sum, inv) => sum + (inv.ratingKw ?? 0), 0))}
-              flowDirection="right"
-              glowColor={isSolarActive ? 'var(--solar)' : 'var(--text-secondary)'}
-            />
+          <HorizontalCable
+            width="100%"
+            color={isSolarActive ? 'bg-green-500' : 'bg-slate-300'}
+            active={busFlowMaxKw > 0}
+            powerKw={busFlowMaxKw}
+            capacityKw={Math.max(1, layout.conversion.reduce((sum, inv) => sum + (inv.ratingKw ?? 0), 0))}
+            flowDirection="right"
+            glowColor={isSolarActive ? 'var(--solar)' : 'var(--text-secondary)'}
+            showLabel={showValues}
+          />
           </div>
           <div className="relative w-full mt-1 sm:mt-2">
             <div className="absolute inset-x-0 top-0 h-4 bg-slate-800 rounded-full shadow-md z-0 flex items-center justify-center">
               <div className="text-[6px] sm:text-[8px] text-white font-mono tracking-widest">AC DISTRIBUTION BUS</div>
             </div>
-            <div className="grid gap-1 sm:gap-2 pt-6" style={busTemplate}>
+            <div className="grid gap-1 sm:gap-2 pt-6 place-items-center" style={busTemplate}>
               {busNodes.map((node) => (
                 <div key={`cable-${node.key}`} className="flex justify-center">
                   <RigidCable
@@ -1615,17 +1688,31 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout }: {
                     powerKw={node.powerKw}
                     capacityKw={node.capacityKw}
                     glowColor={node.glowColor}
+                    showLabel={showValues}
                   />
                 </div>
               ))}
             </div>
           </div>
         </div>
-        <div className="grid gap-2 sm:gap-3 md:gap-4 w-full max-w-[900px] mt-2 scale-75 sm:scale-90 md:scale-100" style={busTemplate}>
+        <div className="grid gap-2 sm:gap-3 md:gap-4 w-full max-w-[900px] mt-2 scale-75 sm:scale-90 md:scale-100 place-items-center" style={busTemplate}>
           {busNodes.map((node) => (
             <div key={`node-${node.key}`} className="flex justify-center scale-90">
               {node.node}
             </div>
+          ))}
+        </div>
+        <div className="mt-3 flex flex-wrap justify-center gap-2 text-[10px]">
+          {[
+            { label: 'Solar', style: { backgroundColor: 'var(--solar)', color: '#0a0e1a' } },
+            { label: 'Battery', style: { backgroundColor: 'var(--battery)', color: '#0a0e1a' } },
+            { label: 'Grid Import', style: { backgroundColor: 'var(--grid)', color: '#0a0e1a' } },
+            { label: 'Grid Export', style: { backgroundColor: 'var(--alert)', color: '#fff' } },
+            { label: 'Loads', style: { backgroundColor: '#1f2937', color: '#fff' } },
+          ].map((item) => (
+            <span key={item.label} className="px-2 py-1 rounded-full border border-[var(--border)] bg-opacity-80" style={item.style}>
+              {item.label}
+            </span>
           ))}
         </div>
       </div>
@@ -1678,6 +1765,7 @@ export default function App() {
   const [gridStatus, setGridStatus] = useState('Online');
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month' | 'year'>('today');
   const [weather, setWeather] = useState('Sunny');
+  const [showFlowValues, setShowFlowValues] = useState(true);
   const [financialInputs, setFinancialInputs] = useState<FinancialInputs>({
     chargingTariffKes: 45,
     discountRatePct: 12,
@@ -1911,7 +1999,6 @@ export default function App() {
 
     const processTick = () => {
       const { simSpeed: spd, priorityMode: curPriority, evSpecs: curEvSpecs, systemConfig: curSystemConfig } = computeParamsRef.current;
-      const GRAPH_STEP_H = 24 / 420;
       const totalAdvance = Math.min(24.0, GRAPH_STEP_H * spd);
       const numSteps = Math.max(1, Math.ceil(totalAdvance / GRAPH_STEP_H));
       const actualStep = totalAdvance / numSteps;
@@ -2627,28 +2714,47 @@ export default function App() {
   }, [data.batteryPower, data.netGridPower, data.solarR, totalLoadKw]);
 
   const systemWarnings = useMemo(() => {
-    const warnings: string[] = [];
+    const warnings: Array<{ level: 'critical' | 'warning' | 'info'; message: string }> = [];
+    const availableSolar = data.solarAvailable ?? data.solarR;
+    const clippedKw = Math.max(0, availableSolar - derivedSystemConfig.inverterKw);
     const inverterLoading = (totalLoadKw + Math.max(0, data.batteryPower)) / Math.max(1, derivedSystemConfig.inverterKw);
-    if (inverterLoading > 0.95 || (data.solarAvailable ?? data.solarR) > derivedSystemConfig.inverterKw + 0.5) {
-      warnings.push('⚠️ Inverter bottleneck — solar or loads near limit');
+
+    if (clippedKw > 0.2) {
+      warnings.push({ level: 'critical', message: `Inverter clipping: ${clippedKw.toFixed(1)} kW curtailed` });
+    } else if (inverterLoading > 0.95) {
+      warnings.push({ level: 'warning', message: 'Inverter near limit — watch headroom' });
     }
+
     if (totalLoadKw > derivedSystemConfig.inverterKw + 0.5) {
-      warnings.push('⚠️ Load exceeds inverter bank; clipping expected');
+      warnings.push({ level: 'critical', message: `Loads exceed inverter bank by ${(totalLoadKw - derivedSystemConfig.inverterKw).toFixed(1)} kW` });
     }
+
     if (data.batteryPower > 0.1 && data.batteryPower >= derivedSystemConfig.maxChargeKw - 0.25 && data.solarR > totalLoadKw) {
-      warnings.push('⚠️ Battery charge capped; solar may spill');
+      warnings.push({ level: 'warning', message: 'Battery charge capped; solar may spill' });
     }
+
+    if (data.netGridPower > 0.5 && data.batteryPower < derivedSystemConfig.maxChargeKw * 0.4 && data.batteryLevel < 90) {
+      warnings.push({ level: 'info', message: 'Battery underutilized while exporting — increase charge priority?' });
+    }
+
     if (data.batteryPower < -0.1 && Math.abs(data.batteryPower) >= derivedSystemConfig.maxDischargeKw - 0.25) {
-      warnings.push('⚠️ Battery discharge limited by max rate');
+      warnings.push({ level: 'warning', message: 'Battery discharge limited by max rate' });
     }
+
+    if (data.isPeakTime && data.netGridPower > 0.5) {
+      warnings.push({ level: 'critical', message: `Peak hour import ${data.netGridPower.toFixed(1)} kW` });
+    }
+
     if (data.batteryLevel < 15 && totalLoadKw > data.solarR) {
-      warnings.push('⚠️ Battery reserve low — grid dependency likely');
+      warnings.push({ level: 'warning', message: 'Battery reserve low — grid dependency likely' });
     }
+
     if ((data.solarLoss ?? 0) > 0.1) {
-      warnings.push(`⚠️ Wiring & conversion losses ~${(data.solarLoss ?? 0).toFixed(1)} kW`);
+      warnings.push({ level: 'info', message: `Wiring & conversion losses ${(data.solarLoss ?? 0).toFixed(1)} kW` });
     }
-    return warnings.slice(0, 3);
-  }, [data.batteryLevel, data.batteryPower, data.solarAvailable, data.solarLoss, data.solarR, derivedSystemConfig.inverterKw, derivedSystemConfig.maxChargeKw, derivedSystemConfig.maxDischargeKw, totalLoadKw]);
+
+    return warnings.slice(0, 4);
+  }, [data.batteryLevel, data.batteryPower, data.isPeakTime, data.netGridPower, data.solarAvailable, data.solarLoss, data.solarR, derivedSystemConfig.inverterKw, derivedSystemConfig.maxChargeKw, derivedSystemConfig.maxDischargeKw, totalLoadKw]);
 
   // Calculate flow directions for PowerFlowVisualization
   const flowDirection = {
@@ -3119,6 +3225,8 @@ export default function App() {
                       ev2Status={data.ev2Status}
                       stateBadges={stateBadges}
                       systemWarnings={systemWarnings}
+                      showValues={showFlowValues}
+                      onToggleValues={() => setShowFlowValues(prev => !prev)}
                     />
                   </CardContent>
                 </Card>
@@ -3228,6 +3336,7 @@ export default function App() {
                     weather={weather}
                     isNight={isNight}
                     layout={systemLayout}
+                    showValues={showFlowValues}
                   />
                 </CardContent>
               </Card>
