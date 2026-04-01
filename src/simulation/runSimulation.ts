@@ -9,6 +9,8 @@ export interface EVSpecs {
 
 export interface SolarSimulationResult {
   solar: number;
+  availableSolarKw: number;
+  solarLossKw: number;
   load: number;
   houseLoad: number;
   residentialLoad: number;
@@ -51,6 +53,9 @@ const getEVTaperedRate = (soc: number, maxRate: number): number => {
   return maxRate;
 };
 
+const DC_CABLE_LOSS_FRACTION = 0.015; // 1.5% DC wiring loss
+const AC_CABLE_LOSS_FRACTION = 0.01;  // 1% AC bus loss
+
 export const runSolarSimulation = (
   t: number,
   prevBatKwh: number,
@@ -66,9 +71,8 @@ export const runSolarSimulation = (
   isPeakTime: boolean
 ): SolarSimulationResult => {
   const timeStep = actualTimeStep;
-  const soiling = scenario.soilingFactor ?? 1.0;
 
-  const solar = simulateSolar(t, scenario, systemConfig, cloudNoise);
+  const rawSolar = simulateSolar(t, scenario, systemConfig, cloudNoise);
 
   // Constrain solar power to inverter capacity
   // The inverter is the bottleneck - can't convert more DC power than its rating
@@ -138,7 +142,12 @@ export const runSolarSimulation = (
   }
 
   const inverterEff = getInverterEfficiency(totalLoad / systemConfig.inverterKw);
-  const effectiveSolar = solarConstrainedByInverter * inverterEff;
+  const dcLoss = rawSolar * DC_CABLE_LOSS_FRACTION;
+  const solarAfterDc = Math.max(0, rawSolar - dcLoss);
+  const solarAfterInverter = solarAfterDc * inverterEff;
+  const acLoss = solarAfterInverter * AC_CABLE_LOSS_FRACTION;
+  const effectiveSolar = Math.max(0, solarAfterInverter - acLoss);
+  const solarLossKw = Math.max(0, rawSolar - effectiveSolar);
 
   if (ev1Load > 0) prevEv1Soc = Math.min(100, prevEv1Soc + (ev1Load * timeStep / evSpecs.ev1.cap * 100));
   if (ev2Load > 0) prevEv2Soc = Math.min(100, prevEv2Soc + (ev2Load * timeStep / evSpecs.ev2.cap * 100));
@@ -217,7 +226,9 @@ export const runSolarSimulation = (
   }
 
   return {
-    solar,
+    solar: effectiveSolar,
+    availableSolarKw: rawSolar,
+    solarLossKw,
     load: totalLoad,
     houseLoad,
     residentialLoad,

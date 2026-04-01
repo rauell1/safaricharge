@@ -68,6 +68,47 @@ export const generateDayScenario = (
   const latitude = solarData?.latitude ?? -1.2921;
   const peakSolarHour = getSeasonalPeakHour(month, latitude);
   const hvacBase = weather === 'Sunny' ? 3.5 : weather === 'Cloudy' ? 2.0 : 0.5;
+  const loadProfile = systemConfig?.loadProfile ?? 'residential';
+  const loadScale = systemConfig?.loadScale ?? 1;
+
+  const residentialProfile = Array(24).fill(0).map((_, h) => {
+    if (isWeekend) {
+      if (h >= 7 && h < 10) return 5.5 + Math.random() * 2;
+      if (h >= 10 && h < 16) return 3.0 + Math.random() * 1.5 + (weather === 'Sunny' ? hvacBase * Math.random() * 0.6 : 0);
+      if (h >= 16 && h < 22) return 7.0 + Math.random() * 2.5;
+      return 1.4;
+    } else {
+      if (h >= 5 && h < 8) return 5.5 + Math.random() * 2.5;
+      if (h >= 8 && h < 17) return 2.4 + Math.random() * 1 + (weather === 'Sunny' && h >= 11 && h < 16 ? hvacBase * Math.random() * 0.5 : 0);
+      if (h >= 17 && h < 22) return 7.0 + Math.random() * 3;
+      return 1.1;
+    }
+  });
+
+  const commercialProfile = Array(24).fill(0).map((_, h) => {
+    if (isWeekend) {
+      if (h >= 9 && h < 14) return 2.5 + Math.random() * 1.5;
+      if (h >= 14 && h < 18) return 2.0 + Math.random();
+      return 0.8;
+    }
+    if (h >= 6 && h < 8) return 3.0 + Math.random();
+    if (h >= 8 && h < 12) return 6.0 + Math.random() * 2 + (weather === 'Sunny' ? hvacBase * 0.3 : 0);
+    if (h >= 12 && h < 16) return 7.0 + Math.random() * 2.5 + (weather === 'Sunny' ? hvacBase * 0.6 : 0);
+    if (h >= 16 && h < 20) return 5.5 + Math.random() * 1.5;
+    return 1.2;
+  });
+
+  const industrialProfile = Array(24).fill(0).map((_, h) => {
+    const base = 4.5 + Math.random() * 0.8;
+    if (h >= 6 && h < 18) return base + 2.0 + (weather === 'Sunny' ? hvacBase * 0.4 : 0);
+    if (h >= 18 && h < 22) return base + 1.0;
+    return base - 1.0;
+  });
+
+  const baseLoadProfile =
+    loadProfile === 'commercial' ? commercialProfile
+      : loadProfile === 'industrial' ? industrialProfile
+        : residentialProfile;
 
   return {
     initialBatSoc: 30.0,
@@ -99,18 +140,6 @@ export const generateDayScenario = (
     },
     weatherFactor: weather === 'Sunny' ? 1.0 : weather === 'Cloudy' ? 0.6 : 0.2,
     cloudNoiseSeed: Math.random(),
-    houseLoadProfile: Array(24).fill(0).map((_, h) => {
-      if (isWeekend) {
-        if (h >= 8 && h < 11) return 4.0 + Math.random() * 2;
-        if (h >= 11 && h < 16) return 3.0 + Math.random() * 1.5 + (weather === 'Sunny' ? hvacBase * Math.random() * 0.6 : 0);
-        if (h >= 16 && h < 23) return 6.5 + Math.random() * 2.5;
-        return 1.2;
-      } else {
-        if (h >= 6 && h < 9) return 5.0 + Math.random() * 2;
-        if (h >= 9 && h < 18) return 2.0 + Math.random() + (weather === 'Sunny' && h >= 11 && h < 17 ? hvacBase * Math.random() * 0.5 : 0);
-        if (h >= 18 && h < 22) return 6.0 + Math.random() * 3;
-        return 0.8;
-      }
-    }).map(v => v * (systemConfig?.loadScale ?? 1))
+    houseLoadProfile: baseLoadProfile.map(v => v * loadScale)
   };
 };
