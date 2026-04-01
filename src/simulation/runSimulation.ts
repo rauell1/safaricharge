@@ -76,7 +76,7 @@ export const runSolarSimulation = (
 
   // Constrain solar power to inverter capacity
   // The inverter is the bottleneck - can't convert more DC power than its rating
-  const solarConstrainedByInverter = Math.min(solar, systemConfig.inverterKw);
+  const solarConstrainedByInverter = Math.min(rawSolar, systemConfig.inverterKw);
 
   const hIdx = Math.floor(t);
 
@@ -142,8 +142,8 @@ export const runSolarSimulation = (
   }
 
   const inverterEff = getInverterEfficiency(totalLoad / systemConfig.inverterKw);
-  const dcLoss = rawSolar * DC_CABLE_LOSS_FRACTION;
-  const solarAfterDc = Math.max(0, rawSolar - dcLoss);
+  const dcLoss = solarConstrainedByInverter * DC_CABLE_LOSS_FRACTION;
+  const solarAfterDc = Math.max(0, solarConstrainedByInverter - dcLoss);
   const solarAfterInverter = solarAfterDc * inverterEff;
   const acLoss = solarAfterInverter * AC_CABLE_LOSS_FRACTION;
   const effectiveSolar = Math.max(0, solarAfterInverter - acLoss);
