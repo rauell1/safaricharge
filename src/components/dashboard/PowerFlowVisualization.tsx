@@ -313,9 +313,9 @@ export function PowerFlowVisualization({
               />
               <EnergyNode
                 icon={Home}
-                label="Home"
+                label="Load"
                 valueLine={`${homePower.toFixed(2)} kW`}
-                subLabel="Consumption"
+                subLabel="Demand"
                 accent="var(--consumption)"
                 tint="var(--consumption-soft)"
                 nodeType="home"
@@ -354,7 +354,7 @@ export function PowerFlowVisualization({
               <div className="text-base font-bold" style={{ color: 'var(--solar)' }}>{solarPower.toFixed(2)} kW</div>
             </div>
             <div className="text-center border-l border-r" style={{ borderColor: 'var(--border)' }}>
-              <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Home Load</div>
+              <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Site Load</div>
               <div className="text-base font-bold" style={{ color: 'var(--consumption)' }}>{homePower.toFixed(2)} kW</div>
             </div>
             <div className="text-center">
@@ -395,7 +395,7 @@ export function PowerFlowVisualization({
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-1.5">
                     <div className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--consumption)' }} />
-                    <span className="text-[var(--text-secondary)]">To Home</span>
+                    <span className="text-[var(--text-secondary)]">To Loads</span>
                   </div>
                   <span className="font-bold text-[var(--text-primary)]">{solarToHomePercent.toFixed(0)}%</span>
                 </div>

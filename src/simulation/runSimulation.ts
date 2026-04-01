@@ -11,6 +11,8 @@ export interface SolarSimulationResult {
   solar: number;
   load: number;
   houseLoad: number;
+  residentialLoad: number;
+  commercialLoad: number;
   ev1Kw: number;
   ev2Kw: number;
   ev1IsHome: boolean;
@@ -75,18 +77,20 @@ export const runSolarSimulation = (
   const hIdx = Math.floor(t);
 
   // Calculate home load based on profile and configuration
-  let houseLoad = 0;
+  let residentialLoad = 0;
   if (systemConfig.homeLoadEnabled) {
     const profileLoad = scenario.houseLoadProfile[hIdx % 24] * Math.max(0.5, 1 + gaussianRandom(0, 0.08));
     // Scale the profile load to match the configured homeLoadKw
     const profileAvg = scenario.houseLoadProfile.reduce((a, b) => a + b, 0) / scenario.houseLoadProfile.length;
-    houseLoad = (profileLoad / profileAvg) * systemConfig.homeLoadKw;
+    residentialLoad = (profileLoad / profileAvg) * systemConfig.homeLoadKw;
   }
 
   // Add commercial load if enabled (constant throughout the day)
-  if (systemConfig.commercialLoadEnabled) {
-    houseLoad += systemConfig.commercialLoadKw * Math.max(0.9, 1 + gaussianRandom(0, 0.05));
-  }
+  const commercialLoad = systemConfig.commercialLoadEnabled
+    ? systemConfig.commercialLoadKw * Math.max(0.9, 1 + gaussianRandom(0, 0.05))
+    : 0;
+
+  const houseLoad = residentialLoad + commercialLoad;
 
   const effectiveCapacity = systemConfig.batteryKwh * batteryHealth;
   const effectiveReserve = Math.max(systemConfig.batteryKwh * 0.15, 8) * batteryHealth;
@@ -216,6 +220,8 @@ export const runSolarSimulation = (
     solar,
     load: totalLoad,
     houseLoad,
+    residentialLoad,
+    commercialLoad,
     ev1Kw: ev1Load,
     ev2Kw: ev2Load,
     ev1IsHome,

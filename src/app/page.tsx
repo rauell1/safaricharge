@@ -30,6 +30,7 @@ import { runSolarSimulation } from '@/simulation/runSimulation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TREE_CO2_KG_PER_YEAR, AVG_CAR_EMISSION_KG_PER_KM, GRID_EMISSION_FACTOR } from '@/lib/tariff';
 import type { HardwareRecommendation } from '@/lib/recommendation-engine';
+import type { SystemConfig, DerivedSystemConfig } from '@/types/simulation-core';
 
 // --- CONFIGURATION - Kenya Power Commercial Tariff (E-Mobility) ---
 // Based on actual KPLC bill for ROAM ELECTRIC LIMITED - February 2026
@@ -91,23 +92,6 @@ const KPLC_TARIFF = {
   }
 };
 
-type SystemConfig = {
-  mode: 'auto' | 'advanced';
-  panelCount: number;
-  panelWatt: number;
-  inverterKw: number;
-  inverterUnits: number;
-  batteryKwh: number;
-  maxChargeKw: number;
-  maxDischargeKw: number;
-  evChargerKw: number;
-  loadScale: number;
-  evCommuterScale: number;
-  evFleetScale: number;
-};
-
-type DerivedSystemConfig = SystemConfig & { pvCapacityKw: number };
-
 type GridDirection = 'import' | 'export' | 'neutral';
 type StorageDirection = 'charge' | 'discharge' | 'idle';
 
@@ -148,7 +132,7 @@ type LoadNode =
       active: boolean;
     }
   | {
-      type: 'home';
+      type: 'home' | 'commercial';
       name: string;
       powerKw: number;
       active: boolean;
@@ -258,15 +242,31 @@ const buildVisualizationLayout = (
       ]
     : [];
 
+  const residentialLoad = config.homeLoadEnabled ? Math.max(0, data?.residentialLoad ?? data?.homeLoad ?? 0) : 0;
+  const commercialLoad = config.commercialLoadEnabled ? Math.max(0, data?.commercialLoad ?? 0) : 0;
+  const baseLoadKw = residentialLoad + commercialLoad;
+  const ev1LoadKw = Math.max(0, data?.ev1Load ?? 0);
+  const ev2LoadKw = Math.max(0, data?.ev2Load ?? 0);
+  const totalLoadKw = baseLoadKw + ev1LoadKw + ev2LoadKw;
+
+  const netGridPower = data?.netGridPower ?? 0;
+  const gridDirection: GridDirection = netGridPower < 0 ? 'import' : netGridPower > 0 ? 'export' : 'neutral';
+  const gridImportKw = Math.max(0, netGridPower);
+  const gridExportKw = Math.max(0, -netGridPower);
+  const batteryChargeKw = Math.max(0, data?.batteryPower ?? 0);
+
   const inverterUnits = Math.max(1, Math.round(config.inverterUnits || 1));
   const perInverterKw = inverterUnits > 0 ? config.inverterKw / inverterUnits : config.inverterKw;
-  const inverterOutput = Math.max(0, Math.min(perInverterKw, safeSolar / inverterUnits));
+  const inverterThroughputKw = Math.max(
+    0,
+    Math.min(config.inverterKw, totalLoadKw + batteryChargeKw + gridExportKw - gridImportKw)
+  );
   const conversion: ConversionNode[] = Array.from({ length: inverterUnits }).map((_, idx) => ({
     type: 'inverter',
     id: idx + 1,
     ratingKw: perInverterKw,
-    outputKw: inverterOutput,
-    active: safeSolar > 0.1,
+    outputKw: Math.min(perInverterKw, inverterThroughputKw / inverterUnits),
+    active: inverterThroughputKw > 0.05,
   }));
 
   const storage: StorageNode[] = [];
@@ -288,8 +288,6 @@ const buildVisualizationLayout = (
   }
 
   const loads: LoadNode[] = [];
-  const netGridPower = data?.netGridPower ?? 0;
-  const gridDirection: GridDirection = netGridPower < 0 ? 'import' : netGridPower > 0 ? 'export' : 'neutral';
   loads.push({
     type: 'grid',
     name: 'Grid',
@@ -301,20 +299,18 @@ const buildVisualizationLayout = (
 
   // Home load - show if enabled
   if (config.homeLoadEnabled) {
-    const homeLoad = Math.max(0, data?.homeLoad ?? 0);
     loads.push({
       type: 'home',
       name: 'Home',
-      powerKw: homeLoad,
-      active: homeLoad > 0,
+      powerKw: residentialLoad,
+      active: residentialLoad > 0,
     });
   }
 
   // Commercial load - show if enabled
   if (config.commercialLoadEnabled) {
-    const commercialLoad = Math.max(0, data?.commercialLoad ?? 0);
     loads.push({
-      type: 'home', // Reuse home visual type
+      type: 'commercial',
       name: 'Commercial',
       powerKw: commercialLoad,
       active: commercialLoad > 0,
@@ -333,7 +329,7 @@ const buildVisualizationLayout = (
       maxRate: evSpecs.ev1.rate,
       soc: Math.max(0, data?.ev1Soc ?? 0),
       v2g: data?.ev1V2g ?? false,
-      active: ev1Status === 'Charging',
+      active: Math.max(0, data?.ev1Load ?? 0) > 0 || Boolean(data?.ev1V2g),
     });
   }
   if (canShowEv && (config.evFleetScale ?? 1) > 0) {
@@ -347,7 +343,7 @@ const buildVisualizationLayout = (
       maxRate: evSpecs.ev2.rate,
       soc: Math.max(0, data?.ev2Soc ?? 0),
       v2g: data?.ev2V2g ?? false,
-      active: ev2Status === 'Charging',
+      active: Math.max(0, data?.ev2Load ?? 0) > 0 || Boolean(data?.ev2V2g),
     });
   }
 
@@ -555,13 +551,13 @@ const GridProduct = React.memo(({ power, isImporting, isExporting, gridStatus }:
   </div>
 ));
 
-const HomeProduct = React.memo(({ power }: { power: number }) => (
+const HomeProduct = React.memo(({ power, label = 'Home Load', icon: Icon = Home }: { power: number; label?: string; icon?: React.ElementType }) => (
   <div className="flex flex-col items-center z-20">
     <div className="w-24 h-32 flex items-center justify-center bg-[var(--bg-card-muted)] rounded-2xl border border-[var(--border)]">
-       <Home size={40} className="text-[var(--text-secondary)]" strokeWidth={1.5} />
+       <Icon size={40} className="text-[var(--text-secondary)]" strokeWidth={1.5} />
     </div>
     <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] backdrop-blur-sm">
-      <div className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase">Home Load</div>
+      <div className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase">{label}</div>
       <div className="text-sm font-black text-[var(--text-primary)]">{power.toFixed(1)} kW</div>
     </div>
   </div>
@@ -1292,6 +1288,9 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout }: {
   const pvNode = layout.generation[0];
   const isSolarActive = (pvNode?.outputKw ?? 0) > 0.1;
   const inverterUnits = Math.max(1, layout.conversion.length || 1);
+  const hasBatteryDischarge = layout.storage.some((s) => s.direction === 'discharge' && s.active);
+  const inverterFlowActive = layout.conversion.some((c) => c.active && c.outputKw > 0.01);
+  const inverterFlowColor = hasBatteryDischarge ? 'bg-orange-500' : isSolarActive ? 'bg-green-500' : 'bg-slate-300';
   const busNodes: Array<{ key: string; cable: React.ReactNode; node: React.ReactNode }> = [];
 
   layout.loads.forEach((load) => {
@@ -1331,26 +1330,32 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout }: {
       return;
     }
 
-    if (load.type === 'home') {
+    if (load.type === 'home' || load.type === 'commercial') {
+      const icon = load.type === 'commercial' ? Building2 : Home;
+      const label = load.name || (load.type === 'commercial' ? 'Commercial Load' : 'Home Load');
       busNodes.push({
-        key: 'home',
+        key: load.type,
         cable: <RigidCable height={40} active={load.active} color="bg-slate-800" speed={simSpeed} arrowColor="text-slate-200" />,
-        node: <HomeProduct power={load.powerKw} />,
+        node: <HomeProduct power={load.powerKw} label={label} icon={icon} />,
       });
       return;
     }
 
     if (load.type === 'ev') {
-      const isCharging = load.status === 'Charging';
+      const flowDirection = load.v2g ? 'up' : 'down';
+      const isActive = load.active;
+      const cableColor = load.v2g ? 'bg-orange-500' : 'bg-slate-800';
+      const arrowColor = load.v2g ? 'text-orange-100' : 'text-slate-200';
       busNodes.push({
         key: `ev-${load.id}`,
         cable: (
           <RigidCable
             height={40}
-            active={isCharging}
-            color={isCharging ? 'bg-slate-800' : 'bg-slate-200'}
+            active={isActive}
+            flowDirection={flowDirection}
+            color={isActive ? cableColor : 'bg-slate-200'}
             speed={simSpeed}
-            arrowColor="text-slate-200"
+            arrowColor={arrowColor}
           />
         ),
         node: (
@@ -1437,7 +1442,7 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout }: {
         </div>
         <div className="flex flex-col items-center w-full max-w-[900px]">
           <div className="flex justify-between w-full max-w-[720px]">
-            <HorizontalCable width="100%" color={isSolarActive ? 'bg-green-500' : 'bg-slate-300'} />
+            <HorizontalCable width="100%" color={inverterFlowActive ? inverterFlowColor : 'bg-slate-300'} />
           </div>
           <div className="relative w-full mt-1 sm:mt-2">
             <div className="absolute inset-x-0 top-0 h-4 bg-slate-800 rounded-full shadow-md z-0 flex items-center justify-center">
@@ -1526,7 +1531,7 @@ export default function App() {
   }), []);
 
   const [data, setData] = useState({
-    solarR: 0, homeLoad: 5, commercialLoad: 0, ev1Load: 0, ev2Load: 0, 
+    solarR: 0, homeLoad: 5, residentialLoad: 5, commercialLoad: 0, ev1Load: 0, ev2Load: 0, 
     ev1Status: 'Idle', ev2Status: 'Idle',
     ev1Soc: 60, ev2Soc: 50,
     batteryPower: 0, batteryLevel: 50, batteryStatus: 'Idle',
@@ -1924,6 +1929,8 @@ export default function App() {
               ...prev,
               solarR: finalState.solar,
               homeLoad: finalState.houseLoad,
+              residentialLoad: finalState.residentialLoad,
+              commercialLoad: finalState.commercialLoad,
               ev1Load: finalState.ev1Kw,
               ev1Status: finalState.ev1Kw > 0 ? 'Charging' : (finalState.ev1IsHome ? 'Idle' : 'Away'),
               ev1Soc: finalState.ev1Soc,
@@ -2050,6 +2057,8 @@ export default function App() {
          ...prev,
          solarR: state.solar,
          homeLoad: state.houseLoad,
+         residentialLoad: state.residentialLoad,
+         commercialLoad: state.commercialLoad,
          ev1Load: state.ev1Kw, ev1Status: state.ev1Kw > 0 ? 'Charging' : (state.ev1IsHome ? 'Idle' : 'Away'), ev1Soc: state.ev1Soc,
          ev2Load: state.ev2Kw, ev2Status: state.ev2Kw > 0 ? 'Charging' : (state.ev2IsHome ? 'Idle' : 'Away'), ev2Soc: state.ev2Soc,
          ev1V2g: state.ev1V2g ?? false,
@@ -2437,12 +2446,13 @@ export default function App() {
   }, []);
 
   // Calculate flow directions for PowerFlowVisualization
+  const totalLoadForFlow = Math.max(0, data.homeLoad ?? 0) + Math.max(0, data.ev1Load ?? 0) + Math.max(0, data.ev2Load ?? 0);
   const flowDirection = {
-    solarToHome: data.solarR > 0 && data.homeLoad > 0,
-    solarToBattery: data.batteryPower > 0,
-    solarToGrid: data.netGridPower < 0,
-    batteryToHome: data.batteryPower < 0,
-    gridToHome: data.netGridPower > 0,
+    solarToHome: data.solarR > 0 && totalLoadForFlow > 0,
+    solarToBattery: data.batteryPower > 0.05,
+    solarToGrid: data.netGridPower < -0.05,
+    batteryToHome: data.batteryPower < -0.05 && totalLoadForFlow > 0,
+    gridToHome: data.netGridPower > 0.05,
   };
 
   // Environmental impact calculations
@@ -2996,7 +3006,7 @@ export default function App() {
                               <input
                                 type="range"
                                 min={5}
-                                max={50}
+                                max={100}
                                 step={1}
                                 value={systemConfig.commercialLoadKw}
                                 onChange={(e) => setSystemConfig(prev => ({ ...prev, commercialLoadKw: Number(e.target.value), mode: 'advanced' }))}
