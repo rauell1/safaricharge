@@ -19,14 +19,14 @@ export function DashboardLayout({
 }: DashboardLayoutProps) {
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="flex min-h-screen w-full bg-[var(--bg-primary)] text-[var(--text-primary)]">
+      <div className="flex min-h-screen w-full overflow-x-hidden bg-[var(--bg-primary)] text-[var(--text-primary)]">
         <DashboardSidebar
           activeSection={activeSection}
           onSectionChange={onSectionChange}
           contextualMetrics={contextualMetrics}
         />
-        <SidebarInset className="flex-1 flex flex-col bg-[var(--bg-primary)]">
-          <div className="relative min-h-screen w-full bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.08)_0,_transparent_32%),_radial-gradient(circle_at_80%_18%,_rgba(16,185,129,0.07)_0,_transparent_28%),_linear-gradient(to_bottom,_rgba(12,18,34,0.9),_var(--bg-primary))]">
+        <SidebarInset className="flex-1 min-w-0 overflow-x-hidden flex flex-col bg-[var(--bg-primary)]">
+          <div className="relative min-h-screen w-full min-w-0 overflow-x-hidden bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.08)_0,_transparent_32%),_radial-gradient(circle_at_80%_18%,_rgba(16,185,129,0.07)_0,_transparent_28%),_linear-gradient(to_bottom,_rgba(12,18,34,0.9),_var(--bg-primary))]">
             {children}
           </div>
         </SidebarInset>
