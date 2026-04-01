@@ -211,6 +211,10 @@ const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
   loadProfile: 'residential',
   evCommuterScale: 1,
   evFleetScale: 1,
+  homeLoadEnabled: true,
+  homeLoadKw: 5,
+  commercialLoadEnabled: false,
+  commercialLoadKw: 20,
 };
 
 const derivePvCapacity = (config: SystemConfig): number => {

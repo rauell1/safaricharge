@@ -12,6 +12,10 @@ export type SystemConfig = {
   loadProfile: 'residential' | 'commercial' | 'industrial';
   evCommuterScale: number;
   evFleetScale: number;
+  homeLoadEnabled: boolean;
+  homeLoadKw: number;
+  commercialLoadEnabled: boolean;
+  commercialLoadKw: number;
 };
 
 export type DerivedSystemConfig = SystemConfig & { pvCapacityKw: number };
