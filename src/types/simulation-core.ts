@@ -9,6 +9,7 @@ export type SystemConfig = {
   maxDischargeKw: number;
   evChargerKw: number;
   loadScale: number;
+  loadProfile: 'residential' | 'commercial' | 'industrial';
   evCommuterScale: number;
   evFleetScale: number;
 };
