@@ -559,10 +559,14 @@ const SolarPanelProduct = React.memo(({ power, capacity, weather, isNight }: {
 }) => {
   const safeCapacity = Math.max(0, capacity);
   const utilization = safeCapacity > 0 ? Math.min(1, power / safeCapacity) : 0;
+  const isActive = power > 0.1 && !isNight;
+  const frameClasses = `w-48 h-28 rounded-lg border-2 shadow-xl relative overflow-hidden transform transition-all duration-500 hover:scale-105 ${
+    isNight ? 'bg-slate-900 border-slate-700' : 'bg-gradient-to-br from-sky-900 to-slate-900 border-slate-300'
+  } ${isActive ? '' : 'opacity-60 border-slate-700'}`;
 
   return (
     <div className="flex flex-col items-center z-20">
-      <div className={`w-48 h-28 rounded-lg border-2 border-slate-300 shadow-xl relative overflow-hidden transform transition-all duration-500 hover:scale-105 ${isNight ? 'bg-slate-900' : 'bg-gradient-to-br from-sky-900 to-slate-900'}`}>
+      <div className={frameClasses}>
         <div className="absolute inset-0 grid grid-cols-6 grid-rows-2 gap-0.5 opacity-30 pointer-events-none">
           {[...Array(12)].map((_, i) => <div key={i} className="bg-slate-300"></div>)}
         </div>
@@ -593,10 +597,8 @@ const BatteryProduct = React.memo(({ level, status, power, health = 1.0, cycles 
       <div className="absolute top-3 text-[7px] font-black text-[var(--border)] tracking-widest">SAFARICHARGE</div>
       <div className="w-3 h-24 bg-[var(--bg-card-muted)] rounded-full overflow-hidden relative border border-[var(--border)] shadow-inner">
          <div 
-           className={`absolute bottom-0 left-0 w-full transition-all duration-500 
-             ${status === 'Charging' ? 'bg-green-500 animate-pulse' : status === 'Discharging' ? 'bg-orange-500' : 'bg-green-600'}
-           `} 
-           style={{ height: `${level}%` }}
+           className={`absolute bottom-0 left-0 w-full transition-all duration-500 ${status === 'Charging' ? 'animate-pulse' : ''}`}
+           style={{ height: `${level}%`, backgroundColor: 'var(--battery)', opacity: status === 'Discharging' ? 0.9 : 1 }}
          ></div>
          <div className="absolute bottom-[20%] w-full h-0.5 bg-red-400 z-10"></div>
       </div>
@@ -605,7 +607,7 @@ const BatteryProduct = React.memo(({ level, status, power, health = 1.0, cycles 
     <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] min-w-[90px] backdrop-blur-sm">
       <div className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase">Storage ({(capacityKwh * health).toFixed(0)}kWh)</div>
       <div className="text-sm font-black text-[var(--text-primary)]">{level.toFixed(1)}%</div>
-      <div className={`text-[9px] font-bold ${health < 0.85 ? 'text-orange-500' : 'text-[var(--text-tertiary)]'}`}>
+      <div className={`text-[10px] font-semibold ${health < 0.85 ? 'text-orange-500' : 'text-[var(--text-primary)]'}`}>
         Health: {(health * 100).toFixed(1)}% · {cycles.toFixed(1)} cyc
       </div>
     </div>
@@ -616,13 +618,13 @@ const EVChargerProduct = React.memo(({ id, status, power, soc, carName, capacity
   id: number; status: string; power: number; soc: number; carName: string; capacity: number; maxRate: number; onToggle: () => void; v2g?: boolean;
 }) => (
   <div className="flex flex-col items-center z-20" onClick={onToggle}>
-    <div className={`relative w-20 h-28 bg-slate-800 rounded-xl shadow-lg border-l-4 border-slate-600 flex flex-col items-center pt-3 group transition-all duration-500 hover:-translate-y-1 ring-2 ${status === 'Charging' ? 'ring-sky-400' : 'ring-transparent'}`}>
+    <div className={`relative w-20 h-28 bg-slate-800 rounded-xl shadow-lg border-l-4 border-slate-600 flex flex-col items-center pt-3 group transition-all duration-500 hover:-translate-y-1 ring-2 ${status === 'Charging' ? 'ring-sky-200 shadow-[0_0_12px_#7dd3fc]' : 'ring-transparent'}`}>
       <div className="w-12 h-6 bg-black rounded border border-slate-600 flex items-center justify-center mb-2 overflow-hidden relative">
          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20 opacity-50 z-10 pointer-events-none"></div>
          {v2g ? (
            <span className="text-purple-400 text-[8px] font-mono animate-pulse z-20">V2G↑</span>
          ) : status === 'Charging' ? (
-           <span className="text-green-500 text-[9px] font-mono animate-pulse z-20">{power.toFixed(1)}kW</span>
+           <span className="text-sky-100 text-[9px] font-semibold animate-pulse z-20">{power.toFixed(1)}kW</span>
          ) : status === 'Away' ? (
            <span className="text-red-500 text-[8px] z-20">AWAY</span>
          ) : (
@@ -630,11 +632,11 @@ const EVChargerProduct = React.memo(({ id, status, power, soc, carName, capacity
          )}
       </div>
       <div className="w-12 h-8 border-4 border-slate-700 rounded-b-full border-t-0"></div>
-      <div className={`absolute top-2 right-2 w-1.5 h-1.5 rounded-full ${status === 'Charging' ? 'bg-sky-500 shadow-[0_0_8px_#0ea5e9]' : status === 'Away' ? 'bg-red-500' : 'bg-slate-600'}`}></div>
+      <div className={`absolute top-2 right-2 w-1.5 h-1.5 rounded-full ${status === 'Charging' ? 'bg-sky-200 shadow-[0_0_10px_#7dd3fc]' : status === 'Away' ? 'bg-red-500' : 'bg-slate-600'}`}></div>
     </div>
     <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] backdrop-blur-sm min-w-[90px]">
       <div className="text-[8px] font-bold text-[var(--text-tertiary)] uppercase">{carName}</div>
-      <div className="text-[7px] text-[var(--text-tertiary)]">{capacity}kWh • {maxRate}kW</div>
+      <div className="text-[9px] sm:text-[10px] text-[var(--text-secondary)] font-semibold">{capacity}kWh • {maxRate}kW</div>
       <div className="flex justify-between items-end px-1 mt-1 border-t border-[var(--border)] pt-0.5">
          <span className="text-[8px] text-[var(--text-tertiary)]">SoC</span>
          <span className={`text-[10px] font-bold ${soc < 20 ? 'text-[var(--alert)]' : 'text-[var(--battery)]'}`}>{(soc || 0).toFixed(0)}%</span>
@@ -1558,7 +1560,10 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
   const inverterUnits = Math.max(1, layout.conversion.length || 1);
   const hasBatteryDischarge = layout.storage.some((s) => s.direction === 'discharge' && s.active);
   const inverterFlowActive = layout.conversion.some((c) => c.active && c.outputKw > 0.01);
-  const inverterFlowColor = hasBatteryDischarge ? 'bg-orange-500' : isSolarActive ? 'bg-green-500' : 'bg-slate-300';
+  const solarFlowColor = isSolarActive ? 'bg-[var(--solar)]' : 'bg-slate-300';
+  const inverterFlowColor = hasBatteryDischarge ? 'bg-[var(--battery)]' : solarFlowColor;
+  const inverterGlowColor = hasBatteryDischarge ? 'var(--battery)' : 'var(--solar)';
+  const inverterArrowColor = hasBatteryDischarge ? 'text-emerald-100' : 'text-amber-100';
   const mapFlowSpeed = (kw: number) => Math.min(10, Math.max(0.5, kw / 5));
   const mapFlowThickness = (kw: number) => Math.min(10, Math.max(2, kw / 4 + 2));
   const busNodes: Array<{ key: string; cable: React.ReactNode; node: React.ReactNode }> = [];
@@ -1652,13 +1657,8 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
 
   layout.storage.forEach((storage) => {
     const flowDirection = storage.direction === 'charge' ? 'down' : 'up';
-    const color =
-      storage.direction === 'charge'
-        ? 'bg-green-500'
-        : storage.direction === 'discharge'
-          ? 'bg-orange-500'
-          : 'bg-slate-300';
-    const arrowColor = storage.direction === 'charge' ? 'text-green-100' : 'text-orange-100';
+    const color = storage.active ? 'bg-[var(--battery)]' : 'bg-slate-300';
+    const arrowColor = storage.direction === 'charge' ? 'text-emerald-100' : 'text-emerald-100';
     const speedVal = mapFlowSpeed(Math.abs(storage.powerKw));
     busNodes.push({
       key: 'battery',
@@ -1671,6 +1671,7 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
           speed={speedVal}
           width={mapFlowThickness(Math.abs(storage.powerKw))}
           arrowColor={arrowColor}
+          glowColor="var(--battery)"
         />
       ),
       node: (
@@ -1717,22 +1718,22 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
             <RigidCable
               height={30}
               active={isSolarActive}
-              color={isSolarActive ? 'bg-green-500' : 'bg-slate-300'}
+              color={solarFlowColor}
               speed={mapFlowSpeed(pvNode?.outputKw ?? 0)}
               width={mapFlowThickness(pvNode?.outputKw ?? 0)}
-              arrowColor="text-green-100"
+              arrowColor="text-amber-100"
             />
-            <HorizontalCable width="100%" color={isSolarActive ? 'bg-green-500' : 'bg-slate-300'} />
+            <HorizontalCable width="100%" color={solarFlowColor} glowColor="var(--solar)" />
             <div className="grid justify-between w-full max-w-[520px] gap-2" style={{ gridTemplateColumns: `repeat(${inverterUnits}, minmax(0, 1fr))` }}>
               {Array.from({ length: inverterUnits }).map((_, idx) => (
                 <div key={`inv-cable-${idx}`} className="flex justify-center">
                   <RigidCable
                     height={20}
                     active={isSolarActive}
-                    color={isSolarActive ? 'bg-green-500' : 'bg-slate-300'}
+                    color={solarFlowColor}
                     speed={mapFlowSpeed((pvNode?.outputKw ?? 0) / inverterUnits)}
                     width={mapFlowThickness((pvNode?.outputKw ?? 0) / inverterUnits)}
-                    arrowColor="text-green-100"
+                    arrowColor="text-amber-100"
                   />
                 </div>
               ))}
@@ -1759,17 +1760,24 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
                   color={converter.active ? inverterFlowColor : 'bg-slate-300'}
                   speed={mapFlowSpeed(converter.outputKw)}
                   width={mapFlowThickness(converter.outputKw)}
-                  arrowColor="text-white"
+                  arrowColor={inverterArrowColor}
                   powerKw={converter.outputKw}
                   capacityKw={converter.ratingKw}
-                  glowColor={hasBatteryDischarge ? 'var(--consumption)' : 'var(--solar)'}
+                  glowColor={inverterGlowColor}
                   showLabel={showValues}
                 />
               </div>
             ))}
           </div>
           <div className="flex justify-between w-full max-w-[720px]">
-            <HorizontalCable width="100%" color={inverterFlowActive ? inverterFlowColor : 'bg-slate-300'} active={inverterFlowActive} powerKw={layout.meta.inverterThroughputKw} capacityKw={config.inverterKw} />
+            <HorizontalCable
+              width="100%"
+              color={inverterFlowActive ? inverterFlowColor : 'bg-slate-300'}
+              active={inverterFlowActive}
+              powerKw={layout.meta.inverterThroughputKw}
+              capacityKw={config.inverterKw}
+              glowColor={inverterGlowColor}
+            />
           </div>
           <div className="relative w-full mt-1 sm:mt-2">
             <div className="absolute inset-x-0 top-0 h-4 bg-slate-800 rounded-full shadow-md z-0 flex items-center justify-center">
