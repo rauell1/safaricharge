@@ -777,7 +777,14 @@ const estimateStepHours = (record: SimulationMinuteRecord) => {
 const computeBatteryEfficiencyMetrics = (
   records: SimulationMinuteRecord[],
   date: Date
-): { chargeKwh: number; dischargeKwh: number; efficiency: number; previousEfficiency: number; drop: number } => {
+): {
+  chargeKwh: number;
+  dischargeKwh: number;
+  efficiency: number;
+  previousEfficiency: number;
+  drop: number;
+  dischargePattern: ReturnType<typeof classifyDischargePattern>;
+} => {
   const dayKey = date.toISOString().split('T')[0];
   const prevKey = new Date(date.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
@@ -807,6 +814,20 @@ const computeBatteryEfficiencyMetrics = (
     efficiency: current.efficiency,
     previousEfficiency: previous.efficiency,
     drop,
+    dischargePattern: classifyDischargePattern(
+      records
+        .filter((record) => record.date === dayKey)
+        .reduce<Record<number, number>>((acc, record) => {
+          const step = estimateStepHours(record);
+          if (step > 0 && typeof record.batteryPowerKW === 'number') {
+            const energy = record.batteryPowerKW * step;
+            if (energy < 0) {
+              acc[record.hour] = (acc[record.hour] ?? 0) + Math.abs(energy);
+            }
+          }
+          return acc;
+        }, {})
+    ),
   };
 };
 
@@ -940,13 +961,20 @@ const SafariChargeAIAssistant = ({
 
     const peakSolarWindow = formatWindow(findPeakHour(hourlySolar), '12:00-15:00');
     const peakLoadWindow = formatWindow(findPeakHour(hourlyLoad), '18:00-21:00');
-    const dischargePattern = classifyDischargePattern(hourlyDischarge);
+    const dischargePattern = batteryMetrics.dischargePattern;
     const likelyCause =
       batteryMetrics.drop > 0.1 && dischargePattern === 'evening-heavy'
         ? 'evening-heavy discharge'
-        : undefined;
-    const causeConfidence =
-      likelyCause === 'evening-heavy discharge' ? 0.8 : batteryMetrics.drop > 0.1 ? 0.4 : undefined;
+        : batteryMetrics.drop > 0.1
+          ? dischargePattern
+          : undefined;
+    let causeConfidence = batteryMetrics.drop > 0.1 ? 0.5 : undefined;
+    if (causeConfidence !== undefined) {
+      if (batteryMetrics.drop > 0.15) causeConfidence += 0.2;
+      if (dischargePattern === 'evening-heavy') causeConfidence += 0.2;
+      if (batteryMetrics.chargeKwh > 0 && batteryMetrics.dischargeKwh / batteryMetrics.chargeKwh > 1.0) causeConfidence += 0.1;
+      causeConfidence = Math.min(causeConfidence, 0.95);
+    }
 
     const batteryCyclesToday =
       batteryMetrics.dischargeKwh > 0 && systemConfig?.batteryKwh
@@ -2846,6 +2874,16 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
           : confidence >= 0.5
             ? ' (medium confidence)'
             : ' (low confidence)';
+    const confidenceDots =
+      confidence === undefined
+        ? ''
+        : confidence >= 0.75
+          ? '●●●●○'
+          : confidence >= 0.5
+            ? '●●●○○'
+            : confidence >= 0.25
+              ? '●●○○○'
+              : '●○○○○';
     const severityType = drop > 0.2 ? 'error' : 'warning';
     const title = drop > 0.2 ? 'Critical battery efficiency drop' : 'Battery efficiency dropping';
     const causeText = cause ? ` Likely cause: ${cause}${confidenceLabel}.` : '';
@@ -2855,7 +2893,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
         id: 'battery-efficiency-drop',
         type: severityType,
         title,
-        message: `Efficiency fell from ${prevPct || 0}% to ${currentPct}% (~${dropPct}% loss).${causeText} Shift charging to peak solar and reduce deep evening discharge.`,
+        message: `Efficiency fell from ${prevPct || 0}% to ${currentPct}% (~${dropPct}% loss).${causeText} ${confidenceDots ? `Confidence: ${confidenceDots}. ` : ''}Shift charging to peak solar and reduce deep evening discharge.`,
         timestamp: new Date(),
       },
     ];
