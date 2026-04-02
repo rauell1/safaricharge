@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import ZAI from 'z-ai-web-dev-sdk';
+import OpenAI from 'openai';
 import { z } from 'zod';
 import {
   AI_MAX_BODY_BYTES,
@@ -200,14 +200,26 @@ async function callGemini(payload: AiRequest, systemInstruction: string) {
 
 async function callZaiFallback(payload: AiRequest, systemInstruction: string) {
   try {
-    const zai = await ZAI.create();
+    const zaiApiKey = process.env.ZAI_API_KEY;
+    if (!zaiApiKey) {
+      return { text: null as string | null, error: 'ZAI_API_KEY missing' };
+    }
+
+    const client = new OpenAI({
+      apiKey: zaiApiKey,
+      baseURL: 'https://api.z.ai/api/paas/v4/',
+    });
+
     const zaiHistory = payload.conversationHistory.slice(-AI_MAX_HISTORY_TURNS);
-    const completion = await zai.chat.completions.create({
+    const completion = await client.chat.completions.create({
+      model: 'glm-5-turbo',
       messages: [
         { role: 'system', content: systemInstruction },
         ...zaiHistory,
         { role: 'user', content: payload.userPrompt },
       ],
+      temperature: 0.7,
+      max_tokens: 1024,
     });
     const responseText =
       completion.choices?.[0]?.message?.content || "I couldn't generate a response.";
