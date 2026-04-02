@@ -79,6 +79,13 @@ const systemDataSchema = z.object({
       cause_confidence: z.number().optional(),
       confidence_factors: z.array(z.string()).optional(),
       battery_health_score: z.number().optional(),
+      battery_health_breakdown: z
+        .object({
+          efficiency: z.number().optional(),
+          cycles: z.number().optional(),
+          confidence: z.number().optional(),
+        })
+        .optional(),
     })
     .optional(),
 });
@@ -262,6 +269,11 @@ type DerivedMetrics = {
   cause_confidence?: number;
   confidence_factors?: string[];
   battery_health_score?: number;
+  battery_health_breakdown?: {
+    efficiency?: number;
+    cycles?: number;
+    confidence?: number;
+  };
 };
 
 function computeDerivedMetrics(systemData: AiRequest['systemData']): DerivedMetrics {
@@ -286,6 +298,7 @@ function computeDerivedMetrics(systemData: AiRequest['systemData']): DerivedMetr
   const causeConfidence = systemData.derived?.cause_confidence;
   const confidenceFactors = systemData.derived?.confidence_factors;
   const batteryHealthScore = systemData.derived?.battery_health_score;
+  const batteryHealthBreakdown = systemData.derived?.battery_health_breakdown;
 
   return {
     solar_utilization: Number.isFinite(solarUtilization) ? solarUtilization : 0,
@@ -298,6 +311,7 @@ function computeDerivedMetrics(systemData: AiRequest['systemData']): DerivedMetr
     battery_health_score: Number.isFinite(batteryHealthScore ?? NaN)
       ? batteryHealthScore
       : undefined,
+    battery_health_breakdown: batteryHealthBreakdown,
   };
 }
 
@@ -326,6 +340,10 @@ function buildEnergyPrompt({
   }${
     derived.battery_health_score !== undefined
       ? `\n- Battery health score: ${derived.battery_health_score.toFixed(0)}`
+      : ''
+  }${
+    derived.battery_health_breakdown
+      ? `\n- Health breakdown: efficiency ${derived.battery_health_breakdown.efficiency ?? 0}, cycles ${derived.battery_health_breakdown.cycles ?? 0}, confidence ${derived.battery_health_breakdown.confidence ?? 0}`
       : ''
   }`;
 

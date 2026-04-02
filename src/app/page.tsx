@@ -750,6 +750,11 @@ type AiSystemData = {
     cause_confidence?: number;
     confidence_factors?: string[];
     battery_health_score?: number;
+    battery_health_breakdown?: {
+      efficiency?: number;
+      cycles?: number;
+      confidence?: number;
+    };
   };
 };
 
@@ -786,6 +791,7 @@ const computeBatteryEfficiencyMetrics = (
   previousEfficiency: number;
   drop: number;
   dischargePattern: ReturnType<typeof classifyDischargePattern>;
+  cycleEstimate: number;
 } => {
   const dayKey = date.toISOString().split('T')[0];
   const prevKey = new Date(date.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
@@ -809,6 +815,10 @@ const computeBatteryEfficiencyMetrics = (
   const current = aggregateForDay(dayKey);
   const previous = aggregateForDay(prevKey);
   const drop = previous.efficiency > 0 ? previous.efficiency - current.efficiency : 0;
+  const cycleEstimate =
+    current.charge > 0 && systemConfig?.batteryKwh
+      ? current.discharge / Math.max(systemConfig.batteryKwh, 1)
+      : 0;
 
   return {
     chargeKwh: current.charge,
@@ -830,6 +840,7 @@ const computeBatteryEfficiencyMetrics = (
           return acc;
         }, {})
     ),
+    cycleEstimate,
   };
 };
 
@@ -992,9 +1003,12 @@ const SafariChargeAIAssistant = ({
         ? Number((batteryMetrics.dischargeKwh / Math.max(systemConfig.batteryKwh, 1)).toFixed(2))
         : 0;
 
+    const efficiencyImpact = -(batteryMetrics.drop * 50);
+    const cycleImpact = -(batteryCyclesToday * 2);
+    const confidenceImpact = (causeConfidence ?? 0) * 10;
     const batteryHealthScore = Math.max(
       0,
-      Math.min(100, 100 - batteryMetrics.drop * 50 - batteryCyclesToday * 2 + (causeConfidence ?? 0) * 10)
+      Math.min(100, 100 + efficiencyImpact + cycleImpact + confidenceImpact)
     );
 
     const simulatedTimestamp = new Date(
@@ -1030,6 +1044,11 @@ const SafariChargeAIAssistant = ({
         cause_confidence: causeConfidence,
         confidence_factors: confidenceFactors,
         battery_health_score: Number(batteryHealthScore.toFixed(0)),
+        battery_health_breakdown: {
+          efficiency: Number(efficiencyImpact.toFixed(1)),
+          cycles: Number(cycleImpact.toFixed(1)),
+          confidence: Number(confidenceImpact.toFixed(1)),
+        },
       },
     };
   };
@@ -2874,8 +2893,18 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
 
   const isNight = timeOfDay < 6 || timeOfDay > 19;
 
+  const systemSnapshot = useMemo(() => buildSystemData(), [
+    data,
+    timeOfDay,
+    weather,
+    currentDate,
+    isAutoMode,
+    minuteData,
+    systemConfig,
+  ]);
+
   const batteryAlerts = useMemo<DashboardAlert[]>(() => {
-    const snapshot = buildSystemData();
+    const snapshot = systemSnapshot;
     const drop = snapshot.derived?.battery_efficiency_drop ?? 0;
     if (drop <= 0.1) return [];
 
@@ -2919,7 +2948,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
         timestamp: new Date(),
       },
     ];
-  }, [data, timeOfDay, currentDate, isAutoMode, minuteData, systemConfig]);
+  }, [systemSnapshot]);
 
   // Handle location change
   const handleLocationChange = useCallback((location: LocationCoordinates, newSolarData: SolarIrradianceData, source: 'nasa' | 'meteonorm', fetchedAt: number, fromCache: boolean) => {
@@ -3681,23 +3710,111 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
 
               {overviewDetailsOpen && (
                 <>
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <WeatherCard
-                      condition={weather}
-                      locationName={currentLocation.name}
-                      irradiance={Math.round(data.solarR * 100 / (derivedSystemConfig.pvCapacityKw || 1))}
-                    />
-                    <BatteryStatusCard
-                      batteryLevel={data.batteryLevel}
-                      batteryPower={Math.abs(data.batteryPower)}
-                      capacity={derivedSystemConfig.batteryKwh}
-                      isCharging={data.batteryPower > 0}
-                    />
-                    <Card className="dashboard-card">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-                          <AlertTriangle className="h-5 w-5 text-[var(--alert)]" />
-                          System Snapshot
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <WeatherCard
+                  condition={weather}
+                  locationName={currentLocation.name}
+                  irradiance={Math.round(data.solarR * 100 / (derivedSystemConfig.pvCapacityKw || 1))}
+                />
+                <BatteryStatusCard
+                  batteryLevel={data.batteryLevel}
+                  batteryPower={Math.abs(data.batteryPower)}
+                  capacity={derivedSystemConfig.batteryKwh}
+                  isCharging={data.batteryPower > 0}
+                />
+                <Card className="dashboard-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+                      <Battery className="h-5 w-5 text-[var(--battery)]" />
+                      Battery Health
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0 space-y-3">
+                    {(() => {
+                      const drop = systemSnapshot.derived?.battery_efficiency_drop ?? 0;
+                      const score = systemSnapshot.derived?.battery_health_score ?? 0;
+                      const severity =
+                        drop > 0.2 ? { label: 'Critical', color: 'var(--alert)' } :
+                        drop > 0.1 ? { label: 'Warning', color: 'var(--solar)' } :
+                        { label: 'Healthy', color: 'var(--battery)' };
+                      const confidence = systemSnapshot.derived?.cause_confidence;
+                      const confidenceDots =
+                        confidence === undefined
+                          ? ''
+                          : confidence >= 0.75
+                            ? '●●●●○'
+                            : confidence >= 0.5
+                              ? '●●●○○'
+                              : confidence >= 0.25
+                                ? '●●○○○'
+                                : '●○○○○';
+                      const confidenceLabel =
+                        confidence === undefined
+                          ? ''
+                          : confidence >= 0.75
+                            ? 'High'
+                            : confidence >= 0.5
+                              ? 'Medium'
+                              : 'Low';
+                      return (
+                        <>
+                          <div className="flex items-baseline justify-between">
+                            <div className="text-3xl font-bold text-[var(--text-primary)]">
+                              {score}/100
+                            </div>
+                            <div className="text-sm font-semibold" style={{ color: severity.color }}>
+                              {severity.label}
+                            </div>
+                          </div>
+                          <div className="text-sm text-[var(--text-secondary)]">
+                            Efficiency drop: {(drop * 100).toFixed(0)}%
+                          </div>
+                          <div className="space-y-2">
+                            {systemSnapshot.derived?.likely_cause && (
+                              <div className="text-sm text-[var(--text-primary)]">
+                                Cause: {systemSnapshot.derived.likely_cause}
+                              </div>
+                            )}
+                            {confidence !== undefined && (
+                              <div className="text-sm text-[var(--text-primary)] flex items-center gap-2">
+                                Confidence: {confidenceDots}
+                                <span className="text-[var(--text-secondary)]">
+                                  ({confidenceLabel})
+                                </span>
+                              </div>
+                            )}
+                            {systemSnapshot.derived?.confidence_factors?.length ? (
+                              <div className="text-sm text-[var(--text-secondary)] space-y-1">
+                                <div className="font-medium text-[var(--text-primary)]">Factors:</div>
+                                <ul className="list-disc list-inside space-y-0.5">
+                                  {systemSnapshot.derived.confidence_factors.map((f) => (
+                                    <li key={f}>{f}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ) : null}
+                            {systemSnapshot.derived?.battery_health_breakdown && (
+                              <div className="text-sm text-[var(--text-secondary)] space-y-1">
+                                <div className="font-medium text-[var(--text-primary)]">Breakdown:</div>
+                                <div>- Efficiency: {systemSnapshot.derived.battery_health_breakdown.efficiency ?? 0}</div>
+                                <div>- Cycles: {systemSnapshot.derived.battery_health_breakdown.cycles ?? 0}</div>
+                                <div>+ Confidence: {systemSnapshot.derived.battery_health_breakdown.confidence ?? 0}</div>
+                              </div>
+                            )}
+                            <div className="text-sm text-[var(--text-primary)]">
+                              Action: Shift charging to 12–3 PM to recover 10–15% usable energy.
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </CardContent>
+                </Card>
+                <Card className="dashboard-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+                      <AlertTriangle className="h-5 w-5 text-[var(--alert)]" />
+                      System Snapshot
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="pt-0">
