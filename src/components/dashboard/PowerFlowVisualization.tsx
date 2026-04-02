@@ -51,7 +51,7 @@ function EnergyNode({ icon: Icon, label, valueLine, subLabel, accent, tint, badg
 
   return (
     <div
-      className="flex min-w-[108px] flex-col items-center gap-3 cursor-pointer group"
+      className="flex min-w-[112px] flex-col items-center gap-3 cursor-pointer group"
       onClick={handleClick}
       role="button"
       tabIndex={0}
@@ -98,7 +98,7 @@ function EnergyNode({ icon: Icon, label, valueLine, subLabel, accent, tint, badg
       </div>
       <div className="text-center space-y-0.5">
         <p className="text-xs font-semibold text-[var(--text-primary)] group-hover:underline">{label}</p>
-        <p className="text-sm font-bold" style={{ color: accent }}>{valueLine}</p>
+        <p className="text-sm font-bold tabular-nums" style={{ color: accent }}>{valueLine}</p>
         <p className="text-[10px] text-[var(--text-tertiary)]">{subLabel}</p>
       </div>
     </div>
@@ -263,8 +263,9 @@ export function PowerFlowVisualization({
           <span className="text-xs text-[var(--text-tertiary)] font-normal ml-2">(Click nodes for details)</span>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="flex flex-col items-center gap-4 py-4">
+      <CardContent className="space-y-6">
+        <div className="rounded-xl border border-[var(--border)] bg-[linear-gradient(180deg,rgba(15,23,42,0.65)_0%,rgba(15,23,42,0.2)_100%)] px-2 sm:px-4 py-4">
+        <div className="flex flex-col items-center gap-4">
           <EnergyNode
             icon={Sun}
             label="Solar"
@@ -309,7 +310,7 @@ export function PowerFlowVisualization({
             </div>
           </div>
 
-          <div className="flex items-start justify-center w-full max-w-4xl gap-8 lg:gap-10 mt-1">
+          <div className="flex items-start justify-center w-full max-w-4xl gap-4 sm:gap-8 lg:gap-10 mt-1">
             <div className="flex-1 min-w-0 flex flex-col items-center gap-2">
               <FlowPath
                 active={flowDirection.solarToBattery || flowDirection.batteryToHome}
@@ -332,7 +333,7 @@ export function PowerFlowVisualization({
               />
             </div>
 
-            <div className="flex-1 flex flex-col items-center gap-2">
+            <div className="flex-1 min-w-0 flex flex-col items-center gap-2">
               <FlowPath
                 active={flowDirection.solarToHome}
                 vertical
@@ -340,51 +341,66 @@ export function PowerFlowVisualization({
                 tint="var(--solar-soft)"
                 powerKw={siteLoad}
               />
-              <div className="flex w-full flex-wrap items-start justify-center gap-x-6 gap-y-5 px-1 sm:gap-x-8">
-                <EnergyNode
-                  icon={Home}
-                  label="Residential"
-                  valueLine={`${residentialKw.toFixed(2)} kW`}
-                  subLabel="Household"
-                  accent="var(--consumption)"
-                  tint="var(--consumption-soft)"
-                  nodeType="home"
-                  onClick={handleNodeClick}
-                  isSelected={isSelected('home')}
-                />
-                <EnergyNode
-                  icon={Building2}
-                  label="Commercial"
-                  valueLine={`${commercialKw.toFixed(2)} kW`}
-                  subLabel="Business"
-                  accent="var(--grid)"
-                  tint="var(--grid-soft)"
-                  nodeType="home"
-                  onClick={handleNodeClick}
-                  isSelected={false}
-                />
-                <EnergyNode
-                  icon={Factory}
-                  label="Industrial"
-                  valueLine={`${industrialKw.toFixed(2)} kW`}
-                  subLabel="Facility"
-                  accent="var(--alert)"
-                  tint="rgba(239,68,68,0.12)"
-                  nodeType="home"
-                  onClick={handleNodeClick}
-                  isSelected={false}
-                />
-                <EnergyNode
-                  icon={Car}
-                  label="EVs"
-                  valueLine={`${evKw.toFixed(2)} kW`}
-                  subLabel="Charging"
-                  accent="var(--battery)"
-                  tint="var(--battery-soft)"
-                  nodeType="ev1"
-                  onClick={handleNodeClick}
-                  isSelected={isSelected('ev1') || isSelected('ev2')}
-                />
+              <div className="w-full">
+                <div className="sm:hidden mb-2 text-center text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">
+                  Swipe to view all load nodes
+                </div>
+                <div className="overflow-x-auto sm:overflow-visible pb-2 sm:pb-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="mx-auto flex min-w-max sm:min-w-0 w-max sm:w-full items-start justify-start sm:justify-center gap-4 sm:gap-x-8 px-2 sm:px-1 snap-x snap-mandatory">
+                    <div className="snap-center shrink-0">
+                      <EnergyNode
+                        icon={Home}
+                        label="Residential"
+                        valueLine={`${residentialKw.toFixed(2)} kW`}
+                        subLabel="Household"
+                        accent="var(--consumption)"
+                        tint="var(--consumption-soft)"
+                        nodeType="home"
+                        onClick={handleNodeClick}
+                        isSelected={isSelected('home')}
+                      />
+                    </div>
+                    <div className="snap-center shrink-0">
+                      <EnergyNode
+                        icon={Building2}
+                        label="Commercial"
+                        valueLine={`${commercialKw.toFixed(2)} kW`}
+                        subLabel="Business"
+                        accent="var(--grid)"
+                        tint="var(--grid-soft)"
+                        nodeType="home"
+                        onClick={handleNodeClick}
+                        isSelected={false}
+                      />
+                    </div>
+                    <div className="snap-center shrink-0">
+                      <EnergyNode
+                        icon={Factory}
+                        label="Industrial"
+                        valueLine={`${industrialKw.toFixed(2)} kW`}
+                        subLabel="Facility"
+                        accent="var(--alert)"
+                        tint="rgba(239,68,68,0.12)"
+                        nodeType="home"
+                        onClick={handleNodeClick}
+                        isSelected={false}
+                      />
+                    </div>
+                    <div className="snap-center shrink-0">
+                      <EnergyNode
+                        icon={Car}
+                        label="EVs"
+                        valueLine={`${evKw.toFixed(2)} kW`}
+                        subLabel="Charging"
+                        accent="var(--battery)"
+                        tint="var(--battery-soft)"
+                        nodeType="ev1"
+                        onClick={handleNodeClick}
+                        isSelected={isSelected('ev1') || isSelected('ev2')}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -408,6 +424,7 @@ export function PowerFlowVisualization({
               />
             </div>
           </div>
+        </div>
         </div>
 
         <div className="mt-6 space-y-4">

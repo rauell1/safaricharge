@@ -73,7 +73,7 @@ export function SolarComponentLibrary() {
   }, []);
 
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card-muted)] p-4 space-y-3">
+    <div className="rounded-2xl border border-[var(--border)] bg-[linear-gradient(180deg,rgba(30,41,59,0.28)_0%,rgba(15,23,42,0.18)_100%)] p-4 sm:p-5 space-y-4 shadow-[0_12px_30px_rgba(2,6,23,0.25)]">
       <div className="flex items-center gap-2">
         <BookOpen className="h-4 w-4 text-[var(--battery)]" />
         <p className="text-sm font-semibold text-[var(--text-primary)]">Component Knowledge Base</p>
@@ -84,9 +84,9 @@ export function SolarComponentLibrary() {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
         {categoryCounts.map((item) => (
-          <div key={item.category} className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-2 py-1.5">
-            <p className="text-[10px] uppercase text-[var(--text-tertiary)]">{item.category}</p>
-            <p className="text-sm font-semibold text-[var(--text-primary)]">{item.count}</p>
+          <div key={item.category} className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-2.5 py-2">
+            <p className="text-[10px] uppercase text-[var(--text-tertiary)] leading-tight">{item.category}</p>
+            <p className="text-base font-semibold text-[var(--text-primary)] leading-tight mt-0.5">{item.count}</p>
           </div>
         ))}
       </div>
@@ -136,13 +136,13 @@ export function SolarComponentLibrary() {
         Showing {filtered.length} component{filtered.length === 1 ? '' : 's'} from {new Set(filtered.map((entry) => entry.brand)).size} brand{new Set(filtered.map((entry) => entry.brand)).size === 1 ? '' : 's'}.
       </p>
 
-      <ScrollArea className="max-h-[280px] rounded-lg border border-[var(--border)] bg-[var(--bg-card)]">
+      <ScrollArea className="max-h-[300px] rounded-xl border border-[var(--border)] bg-[var(--bg-card)]">
         <div className="divide-y divide-[var(--border)]">
           {filtered.map((entry) => (
             <button
               key={entry.id}
               onClick={() => setSelectedId(entry.id)}
-              className={`w-full text-left px-3 py-2 transition-colors ${selected?.id === entry.id ? 'bg-[var(--battery-soft)]/60' : 'hover:bg-[var(--bg-card-muted)]'}`}
+              className={`w-full text-left px-3 py-2.5 transition-colors ${selected?.id === entry.id ? 'bg-[var(--battery-soft)]/60' : 'hover:bg-[var(--bg-card-muted)]'}`}
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
