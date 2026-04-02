@@ -748,6 +748,8 @@ type AiSystemData = {
     battery_efficiency_drop?: number;
     likely_cause?: string;
     cause_confidence?: number;
+    confidence_factors?: string[];
+    battery_health_score?: number;
   };
 };
 
@@ -969,17 +971,31 @@ const SafariChargeAIAssistant = ({
           ? dischargePattern
           : undefined;
     let causeConfidence = batteryMetrics.drop > 0.1 ? 0.5 : undefined;
+    const confidenceFactors: string[] = [];
     if (causeConfidence !== undefined) {
-      if (batteryMetrics.drop > 0.15) causeConfidence += 0.2;
-      if (dischargePattern === 'evening-heavy') causeConfidence += 0.2;
-      if (batteryMetrics.chargeKwh > 0 && batteryMetrics.dischargeKwh / batteryMetrics.chargeKwh > 1.0) causeConfidence += 0.1;
+      if (batteryMetrics.drop > 0.15) {
+        causeConfidence += 0.2;
+        confidenceFactors.push('high efficiency drop');
+      }
+      if (dischargePattern === 'evening-heavy') {
+        causeConfidence += 0.2;
+        confidenceFactors.push('evening-heavy discharge');
+      }
+      if (batteryMetrics.chargeKwh > 0 && batteryMetrics.dischargeKwh / batteryMetrics.chargeKwh > 1.0) {
+        causeConfidence += 0.1;
+        confidenceFactors.push('high discharge ratio');
+      }
       causeConfidence = Math.min(causeConfidence, 0.95);
     }
-
     const batteryCyclesToday =
       batteryMetrics.dischargeKwh > 0 && systemConfig?.batteryKwh
         ? Number((batteryMetrics.dischargeKwh / Math.max(systemConfig.batteryKwh, 1)).toFixed(2))
         : 0;
+
+    const batteryHealthScore = Math.max(
+      0,
+      Math.min(100, 100 - batteryMetrics.drop * 50 - batteryCyclesToday * 2 + (causeConfidence ?? 0) * 10)
+    );
 
     const simulatedTimestamp = new Date(
       currentDate.getTime() + timeOfDay * 60 * 60 * 1000
@@ -1012,6 +1028,8 @@ const SafariChargeAIAssistant = ({
         battery_efficiency_drop: Number(batteryMetrics.drop.toFixed(2)),
         likely_cause: likelyCause,
         cause_confidence: causeConfidence,
+        confidence_factors: confidenceFactors,
+        battery_health_score: Number(batteryHealthScore.toFixed(0)),
       },
     };
   };
@@ -2884,6 +2902,10 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
             : confidence >= 0.25
               ? '●●○○○'
               : '●○○○○';
+    const factors = snapshot.derived?.confidence_factors?.length
+      ? ` Factors: ${snapshot.derived.confidence_factors.join(', ')}.`
+      : '';
+    const health = snapshot.derived?.battery_health_score;
     const severityType = drop > 0.2 ? 'error' : 'warning';
     const title = drop > 0.2 ? 'Critical battery efficiency drop' : 'Battery efficiency dropping';
     const causeText = cause ? ` Likely cause: ${cause}${confidenceLabel}.` : '';
@@ -2893,7 +2915,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
         id: 'battery-efficiency-drop',
         type: severityType,
         title,
-        message: `Efficiency fell from ${prevPct || 0}% to ${currentPct}% (~${dropPct}% loss).${causeText} ${confidenceDots ? `Confidence: ${confidenceDots}. ` : ''}Shift charging to peak solar and reduce deep evening discharge.`,
+        message: `Efficiency fell from ${prevPct || 0}% to ${currentPct}% (~${dropPct}% loss).${causeText} ${confidenceDots ? `Confidence: ${confidenceDots}. ` : ''}Shift charging to peak solar and reduce deep evening discharge.${factors}${health !== undefined ? ` Health score: ${health}/100.` : ''}`,
         timestamp: new Date(),
       },
     ];

@@ -77,6 +77,8 @@ const systemDataSchema = z.object({
       battery_efficiency_drop: z.number().optional(),
       likely_cause: z.string().optional(),
       cause_confidence: z.number().optional(),
+      confidence_factors: z.array(z.string()).optional(),
+      battery_health_score: z.number().optional(),
     })
     .optional(),
 });
@@ -258,6 +260,8 @@ type DerivedMetrics = {
   battery_efficiency_drop: number;
   likely_cause?: string;
   cause_confidence?: number;
+  confidence_factors?: string[];
+  battery_health_score?: number;
 };
 
 function computeDerivedMetrics(systemData: AiRequest['systemData']): DerivedMetrics {
@@ -280,6 +284,8 @@ function computeDerivedMetrics(systemData: AiRequest['systemData']): DerivedMetr
         : 0;
   const likelyCause = systemData.derived?.likely_cause;
   const causeConfidence = systemData.derived?.cause_confidence;
+  const confidenceFactors = systemData.derived?.confidence_factors;
+  const batteryHealthScore = systemData.derived?.battery_health_score;
 
   return {
     solar_utilization: Number.isFinite(solarUtilization) ? solarUtilization : 0,
@@ -288,6 +294,10 @@ function computeDerivedMetrics(systemData: AiRequest['systemData']): DerivedMetr
     battery_efficiency_drop: Number.isFinite(batteryEfficiencyDrop) ? batteryEfficiencyDrop : 0,
     likely_cause: likelyCause,
     cause_confidence: Number.isFinite(causeConfidence ?? NaN) ? causeConfidence : undefined,
+    confidence_factors: confidenceFactors,
+    battery_health_score: Number.isFinite(batteryHealthScore ?? NaN)
+      ? batteryHealthScore
+      : undefined,
   };
 }
 
@@ -308,6 +318,14 @@ function buildEnergyPrompt({
   }${
     derived.cause_confidence !== undefined
       ? `\n- Cause confidence: ${derived.cause_confidence.toFixed(2)}`
+      : ''
+  }${
+    derived.confidence_factors?.length
+      ? `\n- Confidence factors: ${derived.confidence_factors.join(', ')}`
+      : ''
+  }${
+    derived.battery_health_score !== undefined
+      ? `\n- Battery health score: ${derived.battery_health_score.toFixed(0)}`
       : ''
   }`;
 
