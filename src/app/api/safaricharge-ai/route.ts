@@ -36,6 +36,7 @@ Rules:
 - Focus on optimization (cost, efficiency, solar usage)
 - Do NOT give generic advice
 - Prioritize high-impact actions
+- If battery efficiency drop exceeds 0.10, highlight the degradation, likely causes, and specific corrective actions to recover efficiency
 
 Output format:
 - Insight (what is happening)
@@ -69,6 +70,13 @@ const systemDataSchema = z.object({
     peak_usage_hours: z.string(),
   }),
   timestamp: z.string(),
+  derived: z
+    .object({
+      battery_efficiency: z.number().optional(),
+      previous_battery_efficiency: z.number().optional(),
+      battery_efficiency_drop: z.number().optional(),
+    })
+    .optional(),
 });
 
 const aiRequestSchema = z
@@ -244,6 +252,8 @@ function logProviderMetrics(metrics: {
 type DerivedMetrics = {
   solar_utilization: number;
   grid_dependency: number;
+  battery_efficiency: number;
+  battery_efficiency_drop: number;
 };
 
 function computeDerivedMetrics(systemData: AiRequest['systemData']): DerivedMetrics {
@@ -253,10 +263,23 @@ function computeDerivedMetrics(systemData: AiRequest['systemData']): DerivedMetr
     safeConsumption > 0 ? Number((systemData.solar.daily_kwh / safeConsumption).toFixed(2)) : 0;
   const gridDependency =
     safeConsumption > 0 ? Number((systemData.grid.import_kwh / safeConsumption).toFixed(2)) : 0;
+  const batteryEfficiency =
+    typeof systemData.derived?.battery_efficiency === 'number'
+      ? systemData.derived.battery_efficiency
+      : 0;
+  const batteryEfficiencyDrop =
+    typeof systemData.derived?.battery_efficiency_drop === 'number'
+      ? systemData.derived.battery_efficiency_drop
+      : typeof systemData.derived?.previous_battery_efficiency === 'number' &&
+          systemData.derived.previous_battery_efficiency > 0
+        ? systemData.derived.previous_battery_efficiency - batteryEfficiency
+        : 0;
 
   return {
     solar_utilization: Number.isFinite(solarUtilization) ? solarUtilization : 0,
     grid_dependency: Number.isFinite(gridDependency) ? gridDependency : 0,
+    battery_efficiency: Number.isFinite(batteryEfficiency) ? batteryEfficiency : 0,
+    battery_efficiency_drop: Number.isFinite(batteryEfficiencyDrop) ? batteryEfficiencyDrop : 0,
   };
 }
 
@@ -270,7 +293,15 @@ function buildEnergyPrompt({
   const derived = computeDerivedMetrics(systemData);
   const derivedSection = `Derived metrics:
 - Solar utilization: ${derived.solar_utilization.toFixed(2)}
-- Grid dependency: ${derived.grid_dependency.toFixed(2)}`;
+- Grid dependency: ${derived.grid_dependency.toFixed(2)}
+- Battery efficiency: ${derived.battery_efficiency.toFixed(2)}
+- Battery efficiency drop: ${derived.battery_efficiency_drop.toFixed(2)}`;
+
+  const batteryDropCue =
+    derived.battery_efficiency_drop > 0.1
+      ? `
+High-priority: Battery efficiency has dropped significantly. Highlight the degradation, suggest likely causes, and give corrective actions to restore efficiency.`
+      : '';
 
   return [
     { role: 'system', content: SYSTEM_PROMPT },
@@ -285,6 +316,7 @@ ${JSON.stringify(systemData, null, 2)}
 ${derivedSection}
 
 Analyze this system and provide optimization insights.
+${batteryDropCue}
       `.trim(),
     },
   ];

@@ -742,6 +742,70 @@ type AiSystemData = {
     peak_usage_hours: string;
   };
   timestamp: string;
+  derived?: {
+    battery_efficiency?: number;
+    previous_battery_efficiency?: number;
+    battery_efficiency_drop?: number;
+  };
+};
+
+type DashboardAlert = {
+  id: string;
+  type: 'error' | 'warning' | 'info' | 'success';
+  title: string;
+  message: string;
+  timestamp: Date;
+};
+
+const estimateStepHours = (record: SimulationMinuteRecord) => {
+  const candidates = [];
+  if (record.solarKW > 0) {
+    candidates.push((record.solarEnergyKWh ?? 0) / Math.max(record.solarKW, 0.0001));
+  }
+  if (record.gridImportKW > 0) {
+    candidates.push((record.gridImportKWh ?? 0) / Math.max(record.gridImportKW, 0.0001));
+  }
+  if (record.gridExportKW > 0) {
+    candidates.push((record.gridExportKWh ?? 0) / Math.max(record.gridExportKW, 0.0001));
+  }
+  const positive = candidates.filter((v) => v > 0);
+  return positive[0] ?? 0.05;
+};
+
+const computeBatteryEfficiencyMetrics = (
+  records: SimulationMinuteRecord[],
+  date: Date
+): { chargeKwh: number; dischargeKwh: number; efficiency: number; previousEfficiency: number; drop: number } => {
+  const dayKey = date.toISOString().split('T')[0];
+  const prevKey = new Date(date.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+  const aggregateForDay = (key: string) => {
+    let charge = 0;
+    let discharge = 0;
+    records
+      .filter((record) => record.date === key)
+      .forEach((record) => {
+        const step = estimateStepHours(record);
+        if (step <= 0 || !Number.isFinite(step)) return;
+        const energy = (record.batteryPowerKW ?? 0) * step;
+        if (energy > 0) charge += energy;
+        if (energy < 0) discharge += Math.abs(energy);
+      });
+    const efficiency = charge > 0 ? discharge / charge : 0;
+    return { charge, discharge, efficiency };
+  };
+
+  const current = aggregateForDay(dayKey);
+  const previous = aggregateForDay(prevKey);
+  const drop = previous.efficiency > 0 ? previous.efficiency - current.efficiency : 0;
+
+  return {
+    chargeKwh: current.charge,
+    dischargeKwh: current.discharge,
+    efficiency: current.efficiency,
+    previousEfficiency: previous.efficiency,
+    drop,
+  };
 };
 
 // Renders AI message text: converts **bold**, newlines, and bullet points
@@ -786,21 +850,6 @@ const SafariChargeAIAssistant = ({
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const deriveStepHours = (record: SimulationMinuteRecord) => {
-    const candidates = [];
-    if (record.solarKW > 0) {
-      candidates.push((record.solarEnergyKWh ?? 0) / Math.max(record.solarKW, 0.0001));
-    }
-    if (record.gridImportKW > 0) {
-      candidates.push((record.gridImportKWh ?? 0) / Math.max(record.gridImportKW, 0.0001));
-    }
-    if (record.gridExportKW > 0) {
-      candidates.push((record.gridExportKWh ?? 0) / Math.max(record.gridExportKW, 0.0001));
-    }
-    const positive = candidates.filter((v) => v > 0);
-    return positive[0] ?? 0.05;
-  };
-
   const findPeakHour = (totals: Record<number, number>): number | null => {
     const entries = Object.entries(totals);
     if (!entries.length) return null;
@@ -835,6 +884,8 @@ const SafariChargeAIAssistant = ({
   };
 
   const buildSystemData = (): AiSystemData => {
+    const batteryMetrics = computeBatteryEfficiencyMetrics(minuteData ?? [], currentDate);
+
     const dayKey = currentDate.toISOString().split('T')[0];
     const todayRecords = (minuteData ?? []).filter((record) => record.date === dayKey);
 
@@ -845,10 +896,9 @@ const SafariChargeAIAssistant = ({
     const hourlyLoad: Record<number, number> = {};
     const hourlySolar: Record<number, number> = {};
     const hourlyDischarge: Record<number, number> = {};
-    let dischargeEnergyKwh = 0;
 
     todayRecords.forEach((record) => {
-      const stepHours = deriveStepHours(record);
+      const stepHours = estimateStepHours(record);
       const loadKwh =
         (record.homeLoadKWh ?? 0) +
         (record.ev1LoadKWh ?? 0) +
@@ -867,7 +917,6 @@ const SafariChargeAIAssistant = ({
         const energy = record.batteryPowerKW * stepHours;
         if (energy < 0) {
           const discharged = Math.abs(energy);
-          dischargeEnergyKwh += discharged;
           hourlyDischarge[record.hour] = (hourlyDischarge[record.hour] ?? 0) + discharged;
         }
       }
@@ -892,8 +941,8 @@ const SafariChargeAIAssistant = ({
     const dischargePattern = classifyDischargePattern(hourlyDischarge);
 
     const batteryCyclesToday =
-      dischargeEnergyKwh > 0 && systemConfig?.batteryKwh
-        ? Number((dischargeEnergyKwh / Math.max(systemConfig.batteryKwh, 1)).toFixed(2))
+      batteryMetrics.dischargeKwh > 0 && systemConfig?.batteryKwh
+        ? Number((batteryMetrics.dischargeKwh / Math.max(systemConfig.batteryKwh, 1)).toFixed(2))
         : 0;
 
     const simulatedTimestamp = new Date(
@@ -921,6 +970,11 @@ const SafariChargeAIAssistant = ({
         peak_usage_hours: peakLoadWindow,
       },
       timestamp: simulatedTimestamp,
+      derived: {
+        battery_efficiency: Number(batteryMetrics.efficiency.toFixed(2)),
+        previous_battery_efficiency: Number(batteryMetrics.previousEfficiency.toFixed(2)),
+        battery_efficiency_drop: Number(batteryMetrics.drop.toFixed(2)),
+      },
     };
   };
   
@@ -2764,6 +2818,25 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
 
   const isNight = timeOfDay < 6 || timeOfDay > 19;
 
+  const batteryAlerts = useMemo<DashboardAlert[]>(() => {
+    const metrics = computeBatteryEfficiencyMetrics(minuteDataRef.current, currentDate);
+    if (metrics.drop > 0.1) {
+      const currentPct = Math.round(metrics.efficiency * 100);
+      const prevPct = Math.round(metrics.previousEfficiency * 100);
+      const dropPct = Math.round(metrics.drop * 100);
+      return [
+        {
+          id: 'battery-efficiency-drop',
+          type: 'warning',
+          title: 'Battery efficiency dropped',
+          message: `Efficiency fell from ${prevPct || 0}% to ${currentPct}% (~${dropPct}% loss). Charge earlier in peak solar and reduce deep evening discharge.`,
+          timestamp: new Date(),
+        },
+      ];
+    }
+    return [];
+  }, [currentDate, data.batteryPower, data.batteryLevel]);
+
   // Handle location change
   const handleLocationChange = useCallback((location: LocationCoordinates, newSolarData: SolarIrradianceData, source: 'nasa' | 'meteonorm', fetchedAt: number, fromCache: boolean) => {
     setCurrentLocation(location);
@@ -3572,7 +3645,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
 
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     <PanelStatusTable />
-                    <AlertsList />
+                    <AlertsList alerts={batteryAlerts} />
                   </div>
 
                   {pastGraphs.length > 0 && (
