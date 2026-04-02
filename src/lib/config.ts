@@ -141,6 +141,12 @@ export const GEMINI_TIMEOUT_MS = 10_000;
 /** Timeout for each Z.AI API call (milliseconds) */
 export const ZAI_TIMEOUT_MS = 8_000;
 
+/** Number of retries for transient AI provider failures */
+export const AI_MAX_RETRIES = 1;
+
+/** AI response cache TTL in milliseconds (5 minutes) */
+export const AI_CACHE_TTL_MS = 5 * 60 * 1000;
+
 /**
  * Absolute upper bound on simulation data points accepted by report/export
  * endpoints. 420 points/day × 365 days × 25 years ≈ 3.83 M records.

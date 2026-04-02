@@ -7,6 +7,8 @@ import {
   AI_MAX_PROMPT_CHARS,
   GEMINI_TIMEOUT_MS,
   ZAI_TIMEOUT_MS,
+  AI_MAX_RETRIES,
+  AI_CACHE_TTL_MS,
 } from '@/lib/config';
 import {
   buildCorsHeaders,
@@ -98,6 +100,91 @@ const GEMINI_MODELS = [
   'gemini-1.5-pro',
   'gemini-2.0-flash',
 ];
+
+// Simple in-memory cache for AI responses
+type CacheEntry = {
+  response: string;
+  timestamp: number;
+};
+
+const responseCache = new Map<string, CacheEntry>();
+
+/**
+ * Generate cache key from messages for deduplication
+ */
+function getCacheKey(payload: AiRequest): string {
+  return JSON.stringify({
+    prompt: payload.userPrompt,
+    history: payload.conversationHistory.slice(-3), // Only last 3 turns for key
+  });
+}
+
+/**
+ * Get cached response if available and not expired
+ */
+function getCachedResponse(key: string): string | null {
+  const entry = responseCache.get(key);
+  if (!entry) return null;
+
+  const age = Date.now() - entry.timestamp;
+  if (age > AI_CACHE_TTL_MS) {
+    responseCache.delete(key);
+    return null;
+  }
+
+  console.log(`[AI] Cache hit (age: ${Math.round(age / 1000)}s)`);
+  return entry.response;
+}
+
+/**
+ * Store response in cache
+ */
+function setCachedResponse(key: string, response: string): void {
+  responseCache.set(key, {
+    response,
+    timestamp: Date.now(),
+  });
+
+  // Simple cleanup: remove expired entries when cache grows large
+  if (responseCache.size > 100) {
+    const now = Date.now();
+    for (const [k, v] of responseCache.entries()) {
+      if (now - v.timestamp > AI_CACHE_TTL_MS) {
+        responseCache.delete(k);
+      }
+    }
+  }
+}
+
+/**
+ * Retry helper for transient failures
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  retries: number = AI_MAX_RETRIES,
+  attempt: number = 1
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    if (retries > 0) {
+      const isRetryable =
+        err instanceof Error &&
+        (err.message.includes('network') ||
+          err.message.includes('timeout') ||
+          err.message.includes('ECONNRESET') ||
+          err.message.includes('429')); // Rate limit
+
+      if (isRetryable) {
+        console.log(`[AI] Retry attempt ${attempt} after transient error`);
+        // Exponential backoff: 500ms, 1000ms, 2000ms...
+        await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+        return withRetry(fn, retries - 1, attempt + 1);
+      }
+    }
+    throw err;
+  }
+}
 
 /**
  * Normalize AI response to consistent format across providers
@@ -228,16 +315,18 @@ async function callGemini(payload: AiRequest, systemInstruction: string): Promis
   for (const model of GEMINI_MODELS) {
     const startTime = Date.now();
     try {
-      const res = await withTimeout(
-        fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody),
-          }
-        ),
-        GEMINI_TIMEOUT_MS
+      const res = await withRetry(() =>
+        withTimeout(
+          fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(requestBody),
+            }
+          ),
+          GEMINI_TIMEOUT_MS
+        )
       );
 
       const latency = Date.now() - startTime;
@@ -306,18 +395,20 @@ async function callZaiFallback(
 
     try {
       const zaiHistory = payload.conversationHistory.slice(-AI_MAX_HISTORY_TURNS);
-      const completion = await client.chat.completions.create({
-        model: 'glm-5-turbo',
-        messages: [
-          { role: 'system', content: systemInstruction },
-          ...zaiHistory,
-          { role: 'user', content: payload.userPrompt },
-        ],
-        temperature: 0.7,
-        max_tokens: 1024,
-        // @ts-expect-error - OpenAI SDK accepts signal for abort
-        signal: controller.signal,
-      });
+      const completion = await withRetry(() =>
+        client.chat.completions.create({
+          model: 'glm-5-turbo',
+          messages: [
+            { role: 'system', content: systemInstruction },
+            ...zaiHistory,
+            { role: 'user', content: payload.userPrompt },
+          ],
+          temperature: 0.7,
+          max_tokens: 1024,
+          // @ts-expect-error - OpenAI SDK accepts signal for abort
+          signal: controller.signal,
+        })
+      );
 
       const latency = Date.now() - startTime;
       const text = normalizeResponse(completion);
@@ -408,9 +499,17 @@ export async function POST(request: NextRequest) {
   const payload = validation.data;
   const systemInstruction = buildSystemInstruction(payload.systemContext);
 
+  // Check cache first
+  const cacheKey = getCacheKey(payload);
+  const cachedResponse = getCachedResponse(cacheKey);
+  if (cachedResponse) {
+    return jsonResponse({ response: cachedResponse, cached: true }, { status: 200, headers });
+  }
+
   // Try Gemini first, then fallback to Z.AI
   const geminiResult = await callAI('gemini', payload, systemInstruction);
   if (geminiResult.text) {
+    setCachedResponse(cacheKey, geminiResult.text);
     return jsonResponse({ response: geminiResult.text }, { status: 200, headers });
   }
 
@@ -418,6 +517,7 @@ export async function POST(request: NextRequest) {
 
   const zaiResult = await callAI('zai', payload, systemInstruction);
   if (zaiResult.text) {
+    setCachedResponse(cacheKey, zaiResult.text);
     return jsonResponse({ response: zaiResult.text }, { status: 200, headers });
   }
 
