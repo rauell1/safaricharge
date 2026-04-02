@@ -26,7 +26,6 @@ import { BatteryPredictionCard, type BatteryPrediction } from '@/components/dash
 import { PanelStatusTable } from '@/components/dashboard/PanelStatusTable';
 import { EnergyReportModal } from '@/components/EnergyReportModal';
 import { AlertsList } from '@/components/dashboard/AlertsList';
-import { TimeRangeSwitcher } from '@/components/dashboard/TimeRangeSwitcher';
 import { generateDayScenario, nextWeatherMarkov } from '@/simulation/timeEngine';
 import { runSolarSimulation } from '@/simulation/runSimulation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -2333,7 +2332,6 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
   const [overviewDetailsOpen, setOverviewDetailsOpen] = useState(false);
   const [priorityMode, setPriorityMode] = useState('auto');
   const [gridStatus, setGridStatus] = useState('Online');
-  const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month' | 'year'>('today');
   const [weather, setWeather] = useState('Sunny');
   const [showFlowValues, setShowFlowValues] = useState(true);
   const [financialInputs, setFinancialInputs] = useState<FinancialInputs>({
@@ -3736,25 +3734,11 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
               label="Primary"
             />
             <span className="px-2 py-1 rounded-full bg-[var(--bg-card-muted)] border border-[var(--border)] font-semibold">
-              Source: NASA POWER{solarDataLoading ? ' (loading...)' : ''}
-            </span>
-            <span className="px-2 py-1 rounded-full bg-[var(--bg-card-muted)] border border-[var(--border)] font-semibold">
               Last updated: {solarLastUpdated ? new Date(solarLastUpdated).toLocaleString() : 'Not yet loaded'}
             </span>
             <span className={`px-2 py-1 rounded-full font-semibold border ${solarFromCache ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-green-50 border-green-200 text-green-700'}`}>
               {solarFromCache ? 'Cached' : 'Fresh'}
             </span>
-            <button
-              onClick={handleInvalidateCache}
-              className="px-2 py-1 rounded-full border border-[var(--border)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-            >
-              Invalidate Cache
-            </button>
-            {!recommendationResult && (
-              <span className="text-[var(--text-tertiary)]">
-                No recommendation generated yet for {currentLocation.name}. Load solar data and click Generate.
-              </span>
-            )}
           </div>
           <div className="flex flex-wrap items-center gap-3 text-[11px] sm:text-xs">
             <button
@@ -3795,7 +3779,6 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
               </p>
             </div>
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-              <TimeRangeSwitcher selectedRange={timeRange} onRangeChange={setTimeRange} />
               <button
                 onClick={() => setIsAssistantOpen(true)}
                 className="flex items-center gap-2 rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors"
@@ -3859,6 +3842,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                 homePower={data.homeLoad + data.ev1Load + data.ev2Load}
                 residentialPower={data.residentialLoad ?? data.homeLoad}
                 commercialPower={data.commercialLoad ?? 0}
+                industrialPower={data.industrialLoad ?? 0}
                 evPower={data.ev1Load + data.ev2Load}
                 batteryLevel={data.batteryLevel}
                 flowDirection={flowDirection}
@@ -4233,6 +4217,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                 homePower={data.homeLoad + data.ev1Load + data.ev2Load}
                 residentialPower={data.residentialLoad ?? data.homeLoad}
                 commercialPower={data.commercialLoad ?? 0}
+                industrialPower={data.industrialLoad ?? 0}
                 evPower={data.ev1Load + data.ev2Load}
                 batteryLevel={data.batteryLevel}
                 flowDirection={flowDirection}
