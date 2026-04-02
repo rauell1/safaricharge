@@ -34,6 +34,32 @@ export interface GraphDataPoint {
   batSoc: number;
 }
 
+const MIN_MAX_KW = 10;
+
+const computeMaxKw = (data: GraphDataPoint[]): number => {
+  if (!data || data.length === 0) return 60;
+  const maxVal = data.reduce((max, point) => Math.max(max, point.load, point.solar), 0);
+  const padded = Math.max(MIN_MAX_KW, maxVal * 1.1);
+  const exponent = Math.pow(10, Math.floor(Math.log10(padded)));
+  const normalized = padded / exponent;
+  let nice = 10;
+  if (normalized <= 1.5) nice = 1.5;
+  else if (normalized <= 2) nice = 2;
+  else if (normalized <= 3) nice = 3;
+  else if (normalized <= 5) nice = 5;
+  else if (normalized <= 7.5) nice = 7.5;
+  return nice * exponent;
+};
+
+const formatKwLabel = (value: number) => {
+  if (!Number.isFinite(value)) return '0 kW';
+  if (value >= 1000) {
+    const mw = value / 1000;
+    return `${mw.toFixed(mw >= 10 ? 0 : 1)} MW`;
+  }
+  return `${value.toFixed(0)} kW`;
+};
+
 // Exported so page.tsx can call it for past-day downloads too
 export function buildGraphSVG(data: GraphDataPoint[], dateLabel?: string): string {
   const palette = {
@@ -50,7 +76,7 @@ export function buildGraphSVG(data: GraphDataPoint[], dateLabel?: string): strin
   const pad = { top: 40, right: 60, bottom: 40, left: 60 };
   const iw = w - pad.left - pad.right;
   const ih = h - pad.top - pad.bottom;
-  const maxKw = 60;
+  const maxKw = computeMaxKw(data);
 
   const gx = (t: number) => pad.left + (t / 24) * iw;
   const gy = (v: number) => pad.top + ih - (v / maxKw) * ih;
@@ -68,10 +94,10 @@ export function buildGraphSVG(data: GraphDataPoint[], dateLabel?: string): strin
 
   const gridLines = [0, 0.25, 0.5, 0.75, 1].map(r => {
     const y = pad.top + ih * r;
-    const kw = Math.round(maxKw - r * maxKw);
+    const kw = maxKw - r * maxKw;
     const soc = Math.round(100 - r * 100);
     return `<line x1="${pad.left}" y1="${y.toFixed(1)}" x2="${w - pad.right}" y2="${y.toFixed(1)}" stroke="${palette.border}" stroke-dasharray="4 6"/>
-      <text x="${pad.left - 8}" y="${(y + 3).toFixed(1)}" text-anchor="end" fill="${palette.text}" font-size="9" font-weight="bold">${kw} kW</text>
+      <text x="${pad.left - 8}" y="${(y + 3).toFixed(1)}" text-anchor="end" fill="${palette.text}" font-size="9" font-weight="bold">${formatKwLabel(kw)}</text>
       <text x="${w - pad.right + 8}" y="${(y + 3).toFixed(1)}" text-anchor="start" fill="${palette.soc}" font-size="9" font-weight="bold">${soc}%</text>`;
   }).join('\n');
 
@@ -191,7 +217,7 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
   const padding = { top: 20, right: 50, bottom: 30, left: 50 };
   const innerWidth = width - padding.left - padding.right;
   const innerHeight = height - padding.top - padding.bottom;
-  const maxKw = 60;
+  const maxKw = computeMaxKw(data);
 
   const getX = (t: number) => padding.left + (t / 24) * innerWidth;
   const getY_Kw = (val: number) => padding.top + innerHeight - (val / maxKw) * innerHeight;
@@ -244,7 +270,7 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
 
             {[0, 0.25, 0.5, 0.75, 1].map(ratio => {
               const y = padding.top + innerHeight * ratio;
-              const kwVal = Math.round(maxKw - ratio * maxKw);
+              const kwVal = maxKw - ratio * maxKw;
               const socVal = Math.round(100 - ratio * 100);
               return (
                 <g key={ratio}>
@@ -254,7 +280,7 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
                     stroke={palette.border} strokeDasharray="4 6"
                   />
                   <text x={padding.left - 6} y={y + 3} textAnchor="end" fill={palette.text} fontSize="9" fontWeight="bold">
-                    {kwVal} kW
+                    {formatKwLabel(kwVal)}
                   </text>
                   <text x={width - padding.right + 6} y={y + 3} textAnchor="start" fill={palette.soc} fontSize="9" fontWeight="bold">
                     {socVal}%

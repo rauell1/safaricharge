@@ -31,12 +31,13 @@ Your job is to analyze solar, battery, grid, and load data and provide:
 3. Actionable recommendations to improve energy usage
 
 Rules:
-- Be concise and practical
-- Use real numbers from the data
+- Be practical and evidence-first
+- Use real numbers from the data and add comparable real-world benchmarks when helpful
 - Focus on optimization (cost, efficiency, solar usage)
 - Do NOT give generic advice
 - Prioritize high-impact actions
 - If battery efficiency drop exceeds 0.10, highlight the degradation, likely causes, and specific corrective actions to recover efficiency
+- Provide 2-3 concise references (title + URL) from credible, real-world sources (eg: IEA, IRENA, World Bank, utility regulators). If no reliable source exists, say so instead of fabricating.
 
 Output format:
 - Insight (what is happening)
@@ -366,6 +367,8 @@ ${JSON.stringify(systemData, null, 2)}
 ${derivedSection}
 
 Analyze this system and provide optimization insights.
+Keep the structure: Insight, Recommendation, Expected benefit (with kWh/KES/% where possible).
+Finish with a brief "Sources:" list (title + URL) citing real-world, verifiable references; if you cannot find a credible source for a claim, say so explicitly.
 ${batteryDropCue}
       `.trim(),
     },
@@ -393,8 +396,8 @@ function buildGeminiBody(payload: AiRequest, messages: ChatMessage[]) {
       },
     ],
     generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 1024,
+      temperature: 0.55,
+      maxOutputTokens: 1400,
     },
   };
 }
@@ -501,8 +504,8 @@ async function callZaiFallback(
             ...zaiHistory,
             { role: 'user', content: userMessage?.content ?? payload.userQuery },
           ],
-          temperature: 0.7,
-          max_tokens: 1024,
+          temperature: 0.55,
+          max_tokens: 1400,
           // @ts-expect-error - OpenAI SDK accepts signal for abort
           signal: controller.signal,
         })
