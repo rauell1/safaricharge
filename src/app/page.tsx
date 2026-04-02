@@ -26,6 +26,7 @@ import { BatteryPredictionCard, type BatteryPrediction } from '@/components/dash
 import { PanelStatusTable } from '@/components/dashboard/PanelStatusTable';
 import { EnergyReportModal } from '@/components/EnergyReportModal';
 import { AlertsList } from '@/components/dashboard/AlertsList';
+import { SolarComponentLibrary } from '@/components/SolarComponentLibrary';
 import { generateDayScenario, nextWeatherMarkov } from '@/simulation/timeEngine';
 import { runSolarSimulation } from '@/simulation/runSimulation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1804,23 +1805,25 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
             ))}
           </div>
 
-          {systemWarnings.length > 0 && (
-            <div className="mt-3 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-2 space-y-1">
-              {systemWarnings.map((warning, idx) => {
-                const palette = warning.level === 'critical'
-                  ? 'text-red-500'
-                  : warning.level === 'warning'
-                    ? 'text-amber-400'
-                    : 'text-sky-400';
-                return (
-                  <div key={idx} className={`flex items-center gap-1 text-[9px] font-semibold ${palette}`}>
-                    <AlertTriangle size={10} />
-                    <span>{warning.message}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <div className="mt-3 min-h-[60px]">
+            {systemWarnings.length > 0 && (
+              <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-2 space-y-1">
+                {systemWarnings.slice(0, 3).map((warning, idx) => {
+                  const palette = warning.level === 'critical'
+                    ? 'text-red-500'
+                    : warning.level === 'warning'
+                      ? 'text-amber-400'
+                      : 'text-sky-400';
+                  return (
+                    <div key={idx} className={`flex items-center gap-1 text-[9px] font-semibold ${palette}`}>
+                      <AlertTriangle size={10} />
+                      <span>{warning.message}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="mt-3 sm:mt-4 flex flex-col gap-2 w-full max-w-sm mx-auto">
@@ -2551,6 +2554,20 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
   }, []);
 
   useEffect(() => {
+    setSystemConfig((prev) => {
+      const safeInverterKw = Math.max(1, prev.inverterKw);
+      const nextCharge = Math.min(prev.maxChargeKw, safeInverterKw);
+      const nextDischarge = Math.min(prev.maxDischargeKw, safeInverterKw);
+      if (nextCharge === prev.maxChargeKw && nextDischarge === prev.maxDischargeKw) return prev;
+      return {
+        ...prev,
+        maxChargeKw: nextCharge,
+        maxDischargeKw: nextDischarge,
+      };
+    });
+  }, [systemConfig.inverterKw]);
+
+  useEffect(() => {
     const updatedScenario = generateDayScenario(
       weatherRef.current,
       currentDate,
@@ -2566,7 +2583,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
     batKwhRef.current = cappedEnergy;
     setData(prev => ({
       ...prev,
-      batteryLevel: (batKwhRef.current / (systemConfigRef.current.batteryKwh * batteryHealthRef.current)) * 100,
+      batteryLevel: (batKwhRef.current / Math.max(1, systemConfigRef.current.batteryKwh * batteryHealthRef.current)) * 100,
     }));
   }, [derivedSystemConfig, solarData, currentDate]);
 
@@ -4045,41 +4062,68 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                       <p className="text-xs text-[var(--text-tertiary)] mb-2">Solar Capacity</p>
                       <input
                         type="range"
-                        min={40}
-                        max={220}
-                        step={2}
+                        min={100}
+                        max={5000}
+                        step={25}
                         value={systemConfig.panelCount}
                         onChange={(event) => setSystemConfig(prev => ({ ...prev, panelCount: Number(event.target.value), mode: 'advanced' }))}
                         className="w-full"
                       />
-                      <p className="text-xs text-[var(--text-secondary)] mt-1">{derivedSystemConfig.pvCapacityKw.toFixed(1)} kW</p>
+                      <p className="text-xs text-[var(--text-secondary)] mt-1">{derivedSystemConfig.pvCapacityKw.toFixed(1)} kW ({(derivedSystemConfig.pvCapacityKw / 1000).toFixed(2)} MWp)</p>
                     </div>
                     <div>
                       <p className="text-xs text-[var(--text-tertiary)] mb-2">Battery Capacity</p>
                       <input
                         type="range"
-                        min={20}
-                        max={240}
-                        step={2}
+                        min={50}
+                        max={4000}
+                        step={25}
                         value={systemConfig.batteryKwh}
                         onChange={(event) => setSystemConfig(prev => ({ ...prev, batteryKwh: Number(event.target.value), mode: 'advanced' }))}
                         className="w-full"
                       />
-                      <p className="text-xs text-[var(--text-secondary)] mt-1">{systemConfig.batteryKwh.toFixed(1)} kWh</p>
+                      <p className="text-xs text-[var(--text-secondary)] mt-1">{systemConfig.batteryKwh.toFixed(1)} kWh ({(systemConfig.batteryKwh / 1000).toFixed(2)} MWh)</p>
                     </div>
                     <div>
-                      <p className="text-xs text-[var(--text-tertiary)] mb-2">Inverter Units</p>
+                      <p className="text-xs text-[var(--text-tertiary)] mb-2">Inverter Capacity</p>
                       <input
                         type="range"
-                        min={1}
-                        max={8}
-                        step={1}
-                        value={systemConfig.inverterUnits}
-                        onChange={(event) => setSystemConfig(prev => ({ ...prev, inverterUnits: Math.min(8, Number(event.target.value)), mode: 'advanced' }))}
+                        min={20}
+                        max={2000}
+                        step={10}
+                        value={systemConfig.inverterKw}
+                        onChange={(event) => setSystemConfig(prev => ({ ...prev, inverterKw: Number(event.target.value), mode: 'advanced' }))}
                         className="w-full"
                       />
-                      <p className="text-xs text-[var(--text-secondary)] mt-1">{systemConfig.inverterUnits} units • {(systemConfig.inverterKw / Math.max(1, systemConfig.inverterUnits)).toFixed(1)} kW each</p>
+                      <p className="text-xs text-[var(--text-secondary)] mt-1">{systemConfig.inverterKw.toFixed(1)} kW ({(systemConfig.inverterKw / 1000).toFixed(2)} MW)</p>
                     </div>
+                    <div>
+                      <p className="text-xs text-[var(--text-tertiary)] mb-2">Battery Max Charge Rate</p>
+                      <input
+                        type="range"
+                        min={5}
+                        max={2000}
+                        step={5}
+                        value={systemConfig.maxChargeKw}
+                        onChange={(event) => setSystemConfig(prev => ({ ...prev, maxChargeKw: Math.min(Number(event.target.value), prev.inverterKw), mode: 'advanced' }))}
+                        className="w-full"
+                      />
+                      <p className="text-xs text-[var(--text-secondary)] mt-1">{systemConfig.maxChargeKw.toFixed(1)} kW</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[var(--text-tertiary)] mb-2">Battery Max Discharge Rate</p>
+                      <input
+                        type="range"
+                        min={5}
+                        max={2000}
+                        step={5}
+                        value={systemConfig.maxDischargeKw}
+                        onChange={(event) => setSystemConfig(prev => ({ ...prev, maxDischargeKw: Math.min(Number(event.target.value), prev.inverterKw), mode: 'advanced' }))}
+                        className="w-full"
+                      />
+                      <p className="text-xs text-[var(--text-secondary)] mt-1">{systemConfig.maxDischargeKw.toFixed(1)} kW</p>
+                    </div>
+                    <SolarComponentLibrary />
                     <div className="border-t border-[var(--border)] pt-3">
                       <p className="text-xs font-semibold text-[var(--text-tertiary)] mb-2 uppercase">Load Configuration</p>
                       <div className="space-y-3">
