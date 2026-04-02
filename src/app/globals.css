@@ -94,11 +94,11 @@ html, body {
 }
 
 .animate-flow-down {
-  animation: flow-down 0.8s linear infinite;
+  animation: flow-down 0.9s ease-in-out infinite;
 }
 
 .animate-flow-up {
-  animation: flow-up 0.8s linear infinite;
+  animation: flow-up 0.9s ease-in-out infinite;
 }
 
 .animate-slide-in-right {

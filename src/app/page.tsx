@@ -560,7 +560,7 @@ const SolarPanelProduct = React.memo(({ power, capacity, weather, isNight }: {
   const safeCapacity = Math.max(0, capacity);
   const utilization = safeCapacity > 0 ? Math.min(1, power / safeCapacity) : 0;
   const isActive = power > 0.1 && !isNight;
-  const frameClasses = `w-48 h-28 rounded-lg border-2 shadow-xl relative overflow-hidden transform transition-all duration-500 hover:scale-105 ${
+  const frameClasses = `w-48 h-28 rounded-xl border-2 shadow-xl relative overflow-hidden transform transition-all duration-500 ease-out hover:scale-[1.03] active:scale-95 ${
     isNight ? 'bg-slate-900 border-slate-700' : 'bg-gradient-to-br from-sky-900 to-slate-900 border-slate-300'
   } ${isActive ? '' : 'opacity-60 border-slate-700'}`;
 
@@ -593,7 +593,7 @@ const BatteryProduct = React.memo(({ level, status, power, health = 1.0, cycles 
   level: number; status: string; power: number; health?: number; cycles?: number; capacityKwh?: number;
 }) => (
   <div className="flex flex-col items-center z-20">
-    <div className="relative w-28 h-40 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] shadow-lg flex flex-col items-center justify-center overflow-hidden group transition-all duration-500 hover:-translate-y-1">
+    <div className="relative w-28 h-40 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] shadow-lg flex flex-col items-center justify-center overflow-hidden group transition-all duration-500 ease-out hover:-translate-y-1 hover:scale-[1.02] active:scale-95">
       <div className="absolute top-3 text-[7px] font-black text-[var(--border)] tracking-widest">SAFARICHARGE</div>
       <div className="w-3 h-24 bg-[var(--bg-card-muted)] rounded-full overflow-hidden relative border border-[var(--border)] shadow-inner">
          <div 
@@ -618,7 +618,7 @@ const EVChargerProduct = React.memo(({ id, status, power, soc, carName, capacity
   id: number; status: string; power: number; soc: number; carName: string; capacity: number; maxRate: number; onToggle: () => void; v2g?: boolean;
 }) => (
   <div className="flex flex-col items-center z-20" onClick={onToggle}>
-    <div className={`relative w-20 h-28 bg-slate-800 rounded-xl shadow-lg border-l-4 border-slate-600 flex flex-col items-center pt-3 group transition-all duration-500 hover:-translate-y-1 ring-2 ${status === 'Charging' ? 'ring-sky-200 shadow-[0_0_12px_#7dd3fc]' : 'ring-transparent'}`}>
+    <div className={`relative w-20 h-28 bg-slate-800 rounded-xl shadow-lg border-l-4 border-slate-600 flex flex-col items-center pt-3 group transition-all duration-500 ease-out hover:-translate-y-1 hover:scale-[1.02] active:scale-95 ring-2 ${status === 'Charging' ? 'ring-sky-200 shadow-[0_0_12px_#7dd3fc]' : 'ring-transparent'}`}>
       <div className="w-12 h-6 bg-black rounded border border-slate-600 flex items-center justify-center mb-2 overflow-hidden relative">
          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20 opacity-50 z-10 pointer-events-none"></div>
          {v2g ? (
@@ -646,7 +646,7 @@ const EVChargerProduct = React.memo(({ id, status, power, soc, carName, capacity
 ));
 
 const InverterProduct = React.memo(({ id, power, ratedCapacityKw }: { id: number; power: number; ratedCapacityKw: number }) => (
-  <div className="flex flex-col items-center bg-[var(--bg-card)] rounded-lg border border-[var(--border)] w-24 p-2 z-20 transition-transform hover:scale-105">
+  <div className="flex flex-col items-center bg-[var(--bg-card)] rounded-xl border border-[var(--border)] w-24 p-2 z-20 transition-transform duration-300 ease-out hover:scale-[1.03] active:scale-95">
     <div className="w-full flex justify-between items-center mb-1 border-b border-[var(--border)] pb-1">
        <span className="text-[8px] font-bold text-[var(--text-tertiary)]">{ratedCapacityKw.toFixed(0)}kW Inverter #{id}</span>
        <div className={`w-1.5 h-1.5 rounded-full ${power > 0 ? 'bg-green-500 animate-pulse' : 'bg-[var(--border)]'}`}></div>
@@ -661,7 +661,7 @@ const GridProduct = React.memo(({ power, isImporting, isExporting, gridStatus }:
   power: number; isImporting: boolean; isExporting: boolean; gridStatus: string;
 }) => (
   <div className="flex flex-col items-center z-20">
-     <div className="w-24 h-32 flex items-center justify-center relative">
+     <div className="w-24 h-32 flex items-center justify-center relative transition-transform duration-300 ease-out hover:scale-[1.03] active:scale-95">
         <UtilityPole size={64} className={gridStatus === 'Online' ? "text-[var(--text-secondary)]" : "text-red-300"} strokeWidth={1} />
         {gridStatus === 'Offline' && (
            <div className="absolute inset-0 flex items-center justify-center">
@@ -669,13 +669,13 @@ const GridProduct = React.memo(({ power, isImporting, isExporting, gridStatus }:
            </div>
         )}
         {gridStatus === 'Online' && (isImporting || isExporting) && (
-           <div className={`absolute top-0 right-0 p-1 rounded bg-[var(--bg-card)] border border-[var(--border)] flex items-center gap-1 ${isImporting ? 'text-[var(--consumption)]' : 'text-[var(--battery)]'}`}>
+           <div className={`absolute top-0 right-0 p-1 rounded bg-[var(--bg-card)] border border-[var(--border)] flex items-center gap-1 ${isImporting ? 'text-slate-600' : 'text-[var(--alert)]'}`}>
               {isImporting ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
               <span className="text-[9px] font-bold">{Math.abs(power).toFixed(1)} kW</span>
            </div>
         )}
      </div>
-     <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] backdrop-blur-sm">
+    <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] backdrop-blur-sm">
         <div className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase">Utility Grid</div>
         <div className="text-[9px] font-bold text-[var(--text-primary)]">
            {gridStatus === 'Offline' ? 'OFFLINE' : isImporting ? 'IMPORTING' : isExporting ? 'EXPORTING' : 'IDLE'}
@@ -686,7 +686,7 @@ const GridProduct = React.memo(({ power, isImporting, isExporting, gridStatus }:
 
 const HomeProduct = React.memo(({ power, label = 'Home Load', icon: Icon = Home }: { power: number; label?: string; icon?: React.ElementType }) => (
   <div className="flex flex-col items-center z-20">
-    <div className="w-24 h-32 flex items-center justify-center bg-[var(--bg-card-muted)] rounded-2xl border border-[var(--border)]">
+    <div className="w-24 h-32 flex items-center justify-center bg-[var(--bg-card-muted)] rounded-xl border border-[var(--border)] transition-transform duration-300 ease-out hover:scale-[1.02] active:scale-95">
        <Icon size={40} className="text-[var(--text-secondary)]" strokeWidth={1.5} />
     </div>
     <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] backdrop-blur-sm">
@@ -1577,12 +1577,12 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
         load.status === 'Offline'
           ? 'bg-red-200'
           : load.direction === 'import'
-            ? 'bg-sky-500'
+            ? 'bg-slate-500'
             : load.direction === 'export'
               ? 'bg-red-500'
               : 'bg-slate-300';
       const arrowColor =
-        load.direction === 'import' ? 'text-sky-100' : load.direction === 'export' ? 'text-green-100' : 'text-slate-200';
+        load.direction === 'import' ? 'text-slate-100' : load.direction === 'export' ? 'text-red-100' : 'text-slate-200';
       const speedVal = mapFlowSpeed(Math.abs(load.powerKw));
       busNodes.push({
         key: 'grid',
