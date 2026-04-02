@@ -30,7 +30,7 @@ import { runSolarSimulation } from '@/simulation/runSimulation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TREE_CO2_KG_PER_YEAR, AVG_CAR_EMISSION_KG_PER_KM, GRID_EMISSION_FACTOR } from '@/lib/tariff';
 import type { HardwareRecommendation } from '@/lib/recommendation-engine';
-import type { SystemConfig, DerivedSystemConfig } from '@/types/simulation-core';
+import type { SystemConfig, DerivedSystemConfig, SimulationMinuteRecord } from '@/types/simulation-core';
 
 // --- CONFIGURATION - Kenya Power Commercial Tariff (E-Mobility) ---
 // Based on actual KPLC bill for ROAM ELECTRIC LIMITED - February 2026
@@ -709,6 +709,141 @@ const SUGGESTION_CHIPS = [
   "Tips for Nairobi rainy season?",
 ];
 
+type AssistantProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  data: any;
+  timeOfDay: number;
+  weather: string;
+  currentDate: Date;
+  isAutoMode: boolean;
+  minuteData: SimulationMinuteRecord[];
+  systemConfig: DerivedSystemConfig;
+};
+
+type AiSystemData = {
+  solar: {
+    production_kw: number;
+    peak_hours: string;
+    daily_kwh: number;
+  };
+  battery: {
+    capacity_kwh: number;
+    current_charge: number;
+    charge_cycles_today: number;
+    discharge_pattern: string;
+  };
+  grid: {
+    import_kwh: number;
+    export_kwh: number;
+  };
+  load: {
+    consumption_kwh: number;
+    peak_usage_hours: string;
+  };
+  timestamp: string;
+  derived?: {
+    battery_efficiency?: number;
+    previous_battery_efficiency?: number;
+    battery_efficiency_drop?: number;
+    likely_cause?: string;
+    cause_confidence?: number;
+    confidence_factors?: string[];
+    battery_health_score?: number;
+    battery_health_breakdown?: {
+      efficiency?: number;
+      cycles?: number;
+      confidence?: number;
+    };
+  };
+};
+
+type DashboardAlert = {
+  id: string;
+  type: 'error' | 'warning' | 'info' | 'success';
+  title: string;
+  message: string;
+  timestamp: Date;
+};
+
+const estimateStepHours = (record: SimulationMinuteRecord) => {
+  const candidates = [];
+  if (record.solarKW > 0) {
+    candidates.push((record.solarEnergyKWh ?? 0) / Math.max(record.solarKW, 0.0001));
+  }
+  if (record.gridImportKW > 0) {
+    candidates.push((record.gridImportKWh ?? 0) / Math.max(record.gridImportKW, 0.0001));
+  }
+  if (record.gridExportKW > 0) {
+    candidates.push((record.gridExportKWh ?? 0) / Math.max(record.gridExportKW, 0.0001));
+  }
+  const positive = candidates.filter((v) => v > 0);
+  return positive[0] ?? 0.05;
+};
+
+const computeBatteryEfficiencyMetrics = (
+  records: SimulationMinuteRecord[],
+  date: Date
+): {
+  chargeKwh: number;
+  dischargeKwh: number;
+  efficiency: number;
+  previousEfficiency: number;
+  drop: number;
+  dischargePattern: ReturnType<typeof classifyDischargePattern>;
+  cycleEstimate: number;
+} => {
+  const dayKey = date.toISOString().split('T')[0];
+  const prevKey = new Date(date.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+  const aggregateForDay = (key: string) => {
+    let charge = 0;
+    let discharge = 0;
+    records
+      .filter((record) => record.date === key)
+      .forEach((record) => {
+        const step = estimateStepHours(record);
+        if (step <= 0 || !Number.isFinite(step)) return;
+        const energy = (record.batteryPowerKW ?? 0) * step;
+        if (energy > 0) charge += energy;
+        if (energy < 0) discharge += Math.abs(energy);
+      });
+    const efficiency = charge > 0 ? discharge / charge : 0;
+    return { charge, discharge, efficiency };
+  };
+
+  const current = aggregateForDay(dayKey);
+  const previous = aggregateForDay(prevKey);
+  const drop = previous.efficiency > 0 ? previous.efficiency - current.efficiency : 0;
+  const cycleEstimate =
+    current.charge > 0 && systemConfig?.batteryKwh
+      ? current.discharge / Math.max(systemConfig.batteryKwh, 1)
+      : 0;
+
+  return {
+    chargeKwh: current.charge,
+    dischargeKwh: current.discharge,
+    efficiency: current.efficiency,
+    previousEfficiency: previous.efficiency,
+    drop,
+    dischargePattern: classifyDischargePattern(
+      records
+        .filter((record) => record.date === dayKey)
+        .reduce<Record<number, number>>((acc, record) => {
+          const step = estimateStepHours(record);
+          if (step > 0 && typeof record.batteryPowerKW === 'number') {
+            const energy = record.batteryPowerKW * step;
+            if (energy < 0) {
+              acc[record.hour] = (acc[record.hour] ?? 0) + Math.abs(energy);
+            }
+          }
+          return acc;
+        }, {})
+    ),
+    cycleEstimate,
+  };
+};
+
 // Renders AI message text: converts **bold**, newlines, and bullet points
 const AIMessageText = ({ text }: { text: string }) => {
   const lines = text.split('\n');
@@ -732,9 +867,17 @@ const AIMessageText = ({ text }: { text: string }) => {
   );
 };
 
-const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, currentDate, isAutoMode }: {
-  isOpen: boolean; onClose: () => void; data: any; timeOfDay: number; weather: string; currentDate: Date; isAutoMode: boolean;
-}) => {
+const SafariChargeAIAssistant = ({
+  isOpen,
+  onClose,
+  data,
+  timeOfDay,
+  weather,
+  currentDate,
+  isAutoMode,
+  minuteData,
+  systemConfig,
+}: AssistantProps) => {
   const [messages, setMessages] = useState<Array<{ role: string; text: string }>>([
     { role: 'assistant', text: "Hello! I'm **SafariCharge AI**, your intelligent solar energy advisor.\n\nI have live access to your system data and deep knowledge of solar, batteries, KPLC tariffs, and EV charging in Kenya. Ask me anything! ☀️🔋" }
   ]);
@@ -742,6 +885,173 @@ const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, cu
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const findPeakHour = (totals: Record<number, number>): number | null => {
+    const entries = Object.entries(totals);
+    if (!entries.length) return null;
+    const [hour] = entries.reduce<[string, number]>(
+      (max, entry) => (entry[1] > max[1] ? entry : max),
+      entries[0]
+    );
+    return Number(hour);
+  };
+
+  const formatWindow = (hour: number | null, fallback: string) => {
+    if (hour === null || Number.isNaN(hour)) return fallback;
+    const start = Math.max(0, hour - 1);
+    const end = Math.min(23, hour + 2);
+    const startLabel = `${start.toString().padStart(2, '0')}:00`;
+    const endLabel = `${end.toString().padStart(2, '0')}:00`;
+    return `${startLabel}-${endLabel}`;
+  };
+
+  const sumHours = (hours: number[], totals: Record<number, number>) =>
+    hours.reduce((sum, hr) => sum + (totals[hr] ?? 0), 0);
+
+  const classifyDischargePattern = (hourlyDischarge: Record<number, number>) => {
+    const evening = sumHours([17, 18, 19, 20, 21, 22], hourlyDischarge);
+    const daytime = sumHours([9, 10, 11, 12, 13, 14, 15, 16], hourlyDischarge);
+    const overnight = sumHours([23, 0, 1, 2, 3, 4, 5, 6], hourlyDischarge);
+    const maxBand = Math.max(evening, daytime, overnight);
+    if (maxBand < 0.05) return 'minimal';
+    if (maxBand === evening) return 'evening-heavy';
+    if (maxBand === daytime) return 'daytime-heavy';
+    return 'overnight-heavy';
+  };
+
+  const buildSystemData = (): AiSystemData => {
+    const batteryMetrics = computeBatteryEfficiencyMetrics(minuteData ?? [], currentDate);
+
+    const dayKey = currentDate.toISOString().split('T')[0];
+    const todayRecords = (minuteData ?? []).filter((record) => record.date === dayKey);
+
+    let totalConsumptionKwh = 0;
+    let totalGridImportKwh = 0;
+    let totalGridExportKwh = 0;
+    let totalSolarKwh = 0;
+    const hourlyLoad: Record<number, number> = {};
+    const hourlySolar: Record<number, number> = {};
+    const hourlyDischarge: Record<number, number> = {};
+
+    todayRecords.forEach((record) => {
+      const stepHours = estimateStepHours(record);
+      const loadKwh =
+        (record.homeLoadKWh ?? 0) +
+        (record.ev1LoadKWh ?? 0) +
+        (record.ev2LoadKWh ?? 0);
+      totalConsumptionKwh += loadKwh;
+      hourlyLoad[record.hour] = (hourlyLoad[record.hour] ?? 0) + loadKwh;
+
+      const solarKwh = record.solarEnergyKWh ?? 0;
+      totalSolarKwh += solarKwh;
+      hourlySolar[record.hour] = (hourlySolar[record.hour] ?? 0) + solarKwh;
+
+      totalGridImportKwh += record.gridImportKWh ?? 0;
+      totalGridExportKwh += record.gridExportKWh ?? 0;
+
+      if (stepHours > 0 && typeof record.batteryPowerKW === 'number') {
+        const energy = record.batteryPowerKW * stepHours;
+        if (energy < 0) {
+          const discharged = Math.abs(energy);
+          hourlyDischarge[record.hour] = (hourlyDischarge[record.hour] ?? 0) + discharged;
+        }
+      }
+    });
+
+    const liveLoadKw = Math.max(
+      0,
+      (data.homeLoad ?? 0) + (data.ev1Load ?? 0) + (data.ev2Load ?? 0)
+    );
+    const gridImport = totalGridImportKwh || data.totalGridImport || 0;
+    const gridExport =
+      totalGridExportKwh ||
+      (typeof data.feedInEarnings === 'number' ? data.feedInEarnings / FEED_IN_TARIFF_RATE : 0);
+
+    const consumptionKwh =
+      totalConsumptionKwh ||
+      Math.max(0, (data.totalSolar ?? 0) + gridImport - gridExport) ||
+      liveLoadKw * 0.25;
+
+    const peakSolarWindow = formatWindow(findPeakHour(hourlySolar), '12:00-15:00');
+    const peakLoadWindow = formatWindow(findPeakHour(hourlyLoad), '18:00-21:00');
+    const dischargePattern = batteryMetrics.dischargePattern;
+    const likelyCause =
+      batteryMetrics.drop > 0.1 && dischargePattern === 'evening-heavy'
+        ? 'evening-heavy discharge'
+        : batteryMetrics.drop > 0.1
+          ? dischargePattern
+          : undefined;
+    let causeConfidence = batteryMetrics.drop > 0.1 ? 0.5 : undefined;
+    const confidenceFactors: string[] = [];
+    if (causeConfidence !== undefined) {
+      if (batteryMetrics.drop > 0.15) {
+        causeConfidence += 0.2;
+        confidenceFactors.push('high efficiency drop');
+      }
+      if (dischargePattern === 'evening-heavy') {
+        causeConfidence += 0.2;
+        confidenceFactors.push('evening-heavy discharge');
+      }
+      if (batteryMetrics.chargeKwh > 0 && batteryMetrics.dischargeKwh / batteryMetrics.chargeKwh > 1.0) {
+        causeConfidence += 0.1;
+        confidenceFactors.push('high discharge ratio');
+      }
+      causeConfidence = Math.min(causeConfidence, 0.95);
+    }
+    const batteryCyclesToday =
+      batteryMetrics.dischargeKwh > 0 && systemConfig?.batteryKwh
+        ? Number((batteryMetrics.dischargeKwh / Math.max(systemConfig.batteryKwh, 1)).toFixed(2))
+        : 0;
+
+    const efficiencyImpact = -(batteryMetrics.drop * 50);
+    const cycleImpact = -(batteryCyclesToday * 2);
+    const confidenceImpact = (causeConfidence ?? 0) * 10;
+    const batteryHealthScore = Math.max(
+      0,
+      Math.min(100, 100 + efficiencyImpact + cycleImpact + confidenceImpact)
+    );
+
+    const simulatedTimestamp = new Date(
+      currentDate.getTime() + timeOfDay * 60 * 60 * 1000
+    ).toISOString();
+
+    return {
+      solar: {
+        production_kw: Math.max(0, data.solarR ?? 0),
+        peak_hours: peakSolarWindow,
+        daily_kwh: totalSolarKwh || data.totalSolar || 0,
+      },
+      battery: {
+        capacity_kwh: systemConfig?.batteryKwh ?? 0,
+        current_charge: Math.max(0, Math.min(1, (data.batteryLevel ?? 0) / 100)),
+        charge_cycles_today: batteryCyclesToday,
+        discharge_pattern: dischargePattern,
+      },
+      grid: {
+        import_kwh: gridImport,
+        export_kwh: gridExport,
+      },
+      load: {
+        consumption_kwh: consumptionKwh,
+        peak_usage_hours: peakLoadWindow,
+      },
+      timestamp: simulatedTimestamp,
+      derived: {
+        battery_efficiency: Number(batteryMetrics.efficiency.toFixed(2)),
+        previous_battery_efficiency: Number(batteryMetrics.previousEfficiency.toFixed(2)),
+        battery_efficiency_drop: Number(batteryMetrics.drop.toFixed(2)),
+        likely_cause: likelyCause,
+        cause_confidence: causeConfidence,
+        confidence_factors: confidenceFactors,
+        battery_health_score: Number(batteryHealthScore.toFixed(0)),
+        battery_health_breakdown: {
+          efficiency: Number(efficiencyImpact.toFixed(1)),
+          cycles: Number(cycleImpact.toFixed(1)),
+          confidence: Number(confidenceImpact.toFixed(1)),
+        },
+      },
+    };
+  };
   
   useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [messages, isTyping]);
 
@@ -753,31 +1063,7 @@ const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, cu
     setIsTyping(true);
     setError(null);
 
-    // Build rich live context for the API
-    const hh = Math.floor(timeOfDay).toString().padStart(2, '0');
-    const mm = Math.floor((timeOfDay % 1) * 60).toString().padStart(2, '0');
-    const systemContext = {
-      time: `${hh}:${mm}`,
-      date: currentDate.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
-      weather,
-      solar: `${data.solarR.toFixed(1)} kW`,
-      solarTotal: data.totalSolar?.toFixed(1) ?? '0',
-      battery: `${data.batteryLevel.toFixed(1)}% SoC, ${data.batteryPower > 0 ? '+' : ''}${data.batteryPower.toFixed(1)} kW (${data.batteryStatus})`,
-      batteryHealth: `${((data.batteryHealth ?? 1) * 100).toFixed(1)}%`,
-      batteryCycles: data.batteryCycles ?? 0,
-      grid: `${data.netGridPower > 0 ? 'Importing' : data.netGridPower < 0 ? 'Exporting' : 'Balanced'} ${Math.abs(data.netGridPower).toFixed(1)} kW`,
-      savings: data.displaySavings?.toFixed(0) ?? '0',
-      feedInEarnings: data.feedInEarnings?.toFixed(0) ?? '0',
-      carbonOffset: data.carbonOffset?.toFixed(1) ?? '0',
-      peakTime: data.isPeakTime,
-      tariffRate: data.currentTariffRate?.toFixed(2) ?? '0',
-      ev1: `SoC ${data.ev1Soc?.toFixed(0)}%, ${data.ev1Load?.toFixed(1)} kW (${data.ev1Status})${data.ev1V2g ? ' [V2G active]' : ''}`,
-      ev2: `SoC ${data.ev2Soc?.toFixed(0)}%, ${data.ev2Load?.toFixed(1)} kW (${data.ev2Status})${data.ev2V2g ? ' [V2G active]' : ''}`,
-      v2gActive: data.ev1V2g || data.ev2V2g,
-      monthlyPeakDemand: `${data.monthlyPeakDemandKW?.toFixed(1) ?? '0'} kW (est. KES ${data.estimatedDemandChargeKES?.toFixed(0) ?? '0'})`,
-      priorityMode: data.effectivePriority,
-      simRunning: isAutoMode,
-    };
+    const systemData = buildSystemData();
 
     // Conversation history for the API (exclude welcome message, convert to API format)
     const conversationHistory = messages
@@ -788,7 +1074,7 @@ const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, cu
       const res = await fetch('/api/safaricharge-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userPrompt: text, conversationHistory, systemContext }),
+        body: JSON.stringify({ userQuery: text, conversationHistory, systemData }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'API error');
@@ -2607,6 +2893,82 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
 
   const isNight = timeOfDay < 6 || timeOfDay > 19;
 
+  const systemSnapshot = useMemo(() => buildSystemData(), [
+    data,
+    timeOfDay,
+    weather,
+    currentDate,
+    isAutoMode,
+    minuteData,
+    systemConfig,
+  ]);
+
+  // Track recent battery health scores for a tiny sparkline
+  const healthHistoryRef = useRef<number[]>([]);
+  const lastScoreRef = useRef<number | null>(null);
+  const scoreDeltaRef = useRef<number>(0);
+  useEffect(() => {
+    const score = systemSnapshot.derived?.battery_health_score;
+    if (typeof score === 'number') {
+      const arr = healthHistoryRef.current;
+      if (arr.length === 0 || arr[arr.length - 1] !== score) {
+        arr.push(score);
+        if (arr.length > 12) arr.shift();
+      }
+      if (lastScoreRef.current !== null) {
+        scoreDeltaRef.current = score - lastScoreRef.current;
+      }
+      lastScoreRef.current = score;
+    }
+  }, [systemSnapshot.derived?.battery_health_score]);
+
+  const batteryAlerts = useMemo<DashboardAlert[]>(() => {
+    const snapshot = systemSnapshot;
+    const drop = snapshot.derived?.battery_efficiency_drop ?? 0;
+    if (drop <= 0.1) return [];
+
+    const currentPct = Math.round((snapshot.derived?.battery_efficiency ?? 0) * 100);
+    const prevPct = Math.round((snapshot.derived?.previous_battery_efficiency ?? 0) * 100);
+    const dropPct = Math.round(drop * 100);
+    const cause = snapshot.derived?.likely_cause;
+    const confidence = snapshot.derived?.cause_confidence;
+    const confidenceLabel =
+      confidence === undefined
+        ? ''
+        : confidence >= 0.75
+          ? ' (high confidence)'
+          : confidence >= 0.5
+            ? ' (medium confidence)'
+            : ' (low confidence)';
+    const confidenceDots =
+      confidence === undefined
+        ? ''
+        : confidence >= 0.75
+          ? '●●●●○'
+          : confidence >= 0.5
+            ? '●●●○○'
+            : confidence >= 0.25
+              ? '●●○○○'
+              : '●○○○○';
+    const factors = snapshot.derived?.confidence_factors?.length
+      ? ` Factors: ${snapshot.derived.confidence_factors.join(', ')}.`
+      : '';
+    const health = snapshot.derived?.battery_health_score;
+    const severityType = drop > 0.2 ? 'error' : 'warning';
+    const title = drop > 0.2 ? 'Critical battery efficiency drop' : 'Battery efficiency dropping';
+    const causeText = cause ? ` Likely cause: ${cause}${confidenceLabel}.` : '';
+
+    return [
+      {
+        id: 'battery-efficiency-drop',
+        type: severityType,
+        title,
+        message: `Efficiency fell from ${prevPct || 0}% to ${currentPct}% (~${dropPct}% loss).${causeText} ${confidenceDots ? `Confidence: ${confidenceDots}. ` : ''}Shift charging to peak solar and reduce deep evening discharge.${factors}${health !== undefined ? ` Health score: ${health}/100.` : ''}`,
+        timestamp: new Date(),
+      },
+    ];
+  }, [systemSnapshot]);
+
   // Handle location change
   const handleLocationChange = useCallback((location: LocationCoordinates, newSolarData: SolarIrradianceData, source: 'nasa' | 'meteonorm', fetchedAt: number, fromCache: boolean) => {
     setCurrentLocation(location);
@@ -3118,7 +3480,17 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
       contextualMetrics={sidebarMetrics}
     >
       {/* Keep all modals */}
-      <SafariChargeAIAssistant isOpen={isAssistantOpen} onClose={() => setIsAssistantOpen(false)} data={data} timeOfDay={timeOfDay} weather={weather} currentDate={currentDate} isAutoMode={isAutoMode} />
+      <SafariChargeAIAssistant
+        isOpen={isAssistantOpen}
+        onClose={() => setIsAssistantOpen(false)}
+        data={data}
+        timeOfDay={timeOfDay}
+        weather={weather}
+        currentDate={currentDate}
+        isAutoMode={isAutoMode}
+        minuteData={minuteDataRef.current}
+        systemConfig={derivedSystemConfig}
+      />
 
       {/* Location Selector Modal */}
       {isLocationSelectorOpen && (
@@ -3357,23 +3729,163 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
 
               {overviewDetailsOpen && (
                 <>
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <WeatherCard
-                      condition={weather}
-                      locationName={currentLocation.name}
-                      irradiance={Math.round(data.solarR * 100 / (derivedSystemConfig.pvCapacityKw || 1))}
-                    />
-                    <BatteryStatusCard
-                      batteryLevel={data.batteryLevel}
-                      batteryPower={Math.abs(data.batteryPower)}
-                      capacity={derivedSystemConfig.batteryKwh}
-                      isCharging={data.batteryPower > 0}
-                    />
-                    <Card className="dashboard-card">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-                          <AlertTriangle className="h-5 w-5 text-[var(--alert)]" />
-                          System Snapshot
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <WeatherCard
+                  condition={weather}
+                  locationName={currentLocation.name}
+                  irradiance={Math.round(data.solarR * 100 / (derivedSystemConfig.pvCapacityKw || 1))}
+                />
+                <BatteryStatusCard
+                  batteryLevel={data.batteryLevel}
+                  batteryPower={Math.abs(data.batteryPower)}
+                  capacity={derivedSystemConfig.batteryKwh}
+                  isCharging={data.batteryPower > 0}
+                />
+                <Card className="dashboard-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+                      <Battery className="h-5 w-5 text-[var(--battery)]" />
+                      Battery Health
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0 space-y-3">
+                    {(() => {
+                      const drop = systemSnapshot.derived?.battery_efficiency_drop ?? 0;
+                      const score = systemSnapshot.derived?.battery_health_score ?? 0;
+                      const severity =
+                        drop > 0.2 ? { label: 'Critical', color: 'var(--alert)' } :
+                        drop > 0.1 ? { label: 'Warning', color: 'var(--solar)' } :
+                        { label: 'Healthy', color: 'var(--battery)' };
+                      const bandColor =
+                        score >= 80 ? 'var(--battery)' :
+                        score >= 60 ? 'var(--solar)' :
+                        'var(--alert)';
+                      const confidence = systemSnapshot.derived?.cause_confidence;
+                      const confidenceDots =
+                        confidence === undefined
+                          ? ''
+                          : confidence >= 0.75
+                            ? '●●●●○'
+                            : confidence >= 0.5
+                              ? '●●●○○'
+                              : confidence >= 0.25
+                                ? '●●○○○'
+                                : '●○○○○';
+                      const confidenceLabel =
+                        confidence === undefined
+                          ? ''
+                          : confidence >= 0.75
+                            ? 'High'
+                            : confidence >= 0.5
+                            ? 'Medium'
+                            : 'Low';
+                      const biggestFactor = (() => {
+                        const breakdown = systemSnapshot.derived?.battery_health_breakdown;
+                        if (!breakdown) return null;
+                        const entries: Array<{ label: string; value: number }> = [
+                          { label: 'Efficiency', value: breakdown.efficiency ?? 0 },
+                          { label: 'Cycles', value: breakdown.cycles ?? 0 },
+                          { label: 'Confidence', value: breakdown.confidence ?? 0 },
+                        ];
+                        return entries.reduce((max, curr) =>
+                          Math.abs(curr.value) > Math.abs(max.value) ? curr : max,
+                          entries[0]
+                        );
+                      })();
+                      const sparkline = (() => {
+                        const history = healthHistoryRef.current;
+                        if (!history.length) return '';
+                        const chars = ['▁','▂','▃','▄','▅','▆','▇','█'];
+                        const min = Math.min(...history);
+                        const max = Math.max(...history);
+                        const range = Math.max(max - min, 1);
+                        return history
+                          .slice(-10)
+                          .map((v) => {
+                            const idx = Math.min(chars.length - 1, Math.floor(((v - min) / range) * (chars.length - 1)));
+                            return chars[idx];
+                          })
+                          .join('');
+                      })();
+                      const delta = scoreDeltaRef.current;
+                      const deltaLabel =
+                        delta === 0 ? '0' : delta > 0 ? `↑ +${delta.toFixed(1)}` : `↓ ${delta.toFixed(1)}`;
+                      const deltaColor =
+                        delta === 0 ? 'var(--text-secondary)' : delta > 0 ? 'var(--battery)' : 'var(--alert)';
+                      const sparklineLabel = healthHistoryRef.current.length ? '7-day trend' : '';
+
+                      return (
+                        <>
+                          <div className="flex items-baseline justify-between">
+                            <div className="text-3xl font-bold" style={{ color: bandColor }}>
+                              {score}/100
+                            </div>
+                            <div className="text-sm font-semibold" style={{ color: severity.color }}>
+                              {severity.label}
+                            </div>
+                          </div>
+                          <div className="text-sm font-medium" style={{ color: deltaColor }}>
+                            {deltaLabel}
+                          </div>
+                          {sparkline && (
+                            <div className="text-xs font-mono text-[var(--text-secondary)]">
+                              {sparklineLabel ? `${sparklineLabel}: ` : ''}{sparkline}
+                            </div>
+                          )}
+                          <div className="text-sm text-[var(--text-secondary)]">
+                            Efficiency drop: {(drop * 100).toFixed(0)}%
+                          </div>
+                          {biggestFactor && (
+                            <div className="text-sm text-[var(--text-primary)]">
+                              Main impact: {biggestFactor.label} ({biggestFactor.value})
+                            </div>
+                          )}
+                          <div className="space-y-2">
+                            {systemSnapshot.derived?.likely_cause && (
+                              <div className="text-sm text-[var(--text-primary)]">
+                                Cause: {systemSnapshot.derived.likely_cause}
+                              </div>
+                            )}
+                            {confidence !== undefined && (
+                              <div className="text-sm text-[var(--text-primary)] flex items-center gap-2">
+                                Confidence: {confidenceDots}
+                                <span className="text-[var(--text-secondary)]">
+                                  ({confidenceLabel})
+                                </span>
+                              </div>
+                            )}
+                            {systemSnapshot.derived?.confidence_factors?.length ? (
+                              <div className="text-sm text-[var(--text-secondary)] space-y-1">
+                                <div className="font-medium text-[var(--text-primary)]">Factors:</div>
+                                <ul className="list-disc list-inside space-y-0.5">
+                                  {systemSnapshot.derived.confidence_factors.map((f) => (
+                                    <li key={f}>{f}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ) : null}
+                            {systemSnapshot.derived?.battery_health_breakdown && (
+                              <div className="text-sm text-[var(--text-secondary)] space-y-1">
+                                <div className="font-medium text-[var(--text-primary)]">Breakdown:</div>
+                                <div>- Efficiency: {systemSnapshot.derived.battery_health_breakdown.efficiency ?? 0}</div>
+                                <div>- Cycles: {systemSnapshot.derived.battery_health_breakdown.cycles ?? 0}</div>
+                                <div>+ Confidence: {systemSnapshot.derived.battery_health_breakdown.confidence ?? 0}</div>
+                              </div>
+                            )}
+                            <div className="text-sm text-[var(--text-primary)]">
+                              Action: Shift charging to 12–3 PM to recover 10–15% usable energy.
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </CardContent>
+                </Card>
+                <Card className="dashboard-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+                      <AlertTriangle className="h-5 w-5 text-[var(--alert)]" />
+                      System Snapshot
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="pt-0">
@@ -3405,7 +3917,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
 
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     <PanelStatusTable />
-                    <AlertsList />
+                    <AlertsList alerts={batteryAlerts} />
                   </div>
 
                   {pastGraphs.length > 0 && (
