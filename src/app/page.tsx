@@ -29,7 +29,9 @@ import { AlertsList } from '@/components/dashboard/AlertsList';
 import { SolarComponentLibrary } from '@/components/SolarComponentLibrary';
 import { generateDayScenario, nextWeatherMarkov } from '@/simulation/timeEngine';
 import { runSolarSimulation } from '@/simulation/runSimulation';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { TREE_CO2_KG_PER_YEAR, AVG_CAR_EMISSION_KG_PER_KM, GRID_EMISSION_FACTOR } from '@/lib/tariff';
 import type { HardwareRecommendation } from '@/lib/recommendation-engine';
 import type { SystemConfig, DerivedSystemConfig, SimulationMinuteRecord } from '@/types/simulation-core';
@@ -2347,6 +2349,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
   const [simSpeed, setSimSpeed] = useState(1);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [isComponentLibraryOpen, setIsComponentLibraryOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<DashboardSection>(initialSection);
   useEffect(() => {
     setActiveSection(initialSection);
@@ -4123,7 +4126,31 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                       />
                       <p className="text-xs text-[var(--text-secondary)] mt-1">{systemConfig.maxDischargeKw.toFixed(1)} kW</p>
                     </div>
-                    <SolarComponentLibrary />
+                    <Dialog open={isComponentLibraryOpen} onOpenChange={setIsComponentLibraryOpen}>
+                      <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] p-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <div>
+                            <p className="text-xs font-semibold text-[var(--text-primary)]">Component Knowledge Base</p>
+                            <p className="text-[11px] text-[var(--text-secondary)] mt-1">
+                              Browse manufacturer modules, inverters, and batteries without crowding the controls.
+                            </p>
+                          </div>
+                          <DialogTrigger asChild>
+                            <Button size="sm" variant="outline" className="whitespace-nowrap">
+                              Open Library
+                            </Button>
+                          </DialogTrigger>
+                        </div>
+                        <p className="text-[10px] text-[var(--text-tertiary)] mt-1">
+                          Opens in a dedicated panel so filters and specs no longer overlap other scenario settings.
+                        </p>
+                      </div>
+                      <DialogContent className="max-w-5xl w-full max-h-[90vh] overflow-hidden p-0">
+                        <div className="p-4 overflow-y-auto max-h-[90vh]">
+                          <SolarComponentLibrary />
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                     <div className="border-t border-[var(--border)] pt-3">
                       <p className="text-xs font-semibold text-[var(--text-tertiary)] mb-2 uppercase">Load Configuration</p>
                       <div className="space-y-3">
