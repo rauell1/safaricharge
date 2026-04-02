@@ -1361,8 +1361,8 @@ const PastDaysZipButton = ({ pastGraphs }: { pastGraphs: Array<{ date: string; d
   );
 };
 
-const Header = ({ onToggleAssistant, currentDate, onReset, currentLocation, onLocationSelected, onOpenRecommendation, dataSource, onDataSourceChange, isSolarLoading, onLoadingChange }: {
-  onToggleAssistant: () => void; currentDate: Date; onReset: () => void; currentLocation: LocationCoordinates; onLocationSelected: (location: LocationCoordinates, solarData: SolarIrradianceData, source: 'nasa' | 'meteonorm', fetchedAt: number) => void; onOpenRecommendation: () => void; dataSource: 'nasa' | 'meteonorm'; onDataSourceChange: (src: 'nasa' | 'meteonorm') => void; isSolarLoading: boolean; onLoadingChange: (loading: boolean) => void;
+const Header = ({ onToggleAssistant, currentDate, onReset, currentLocation, onLocationSelected, onOpenRecommendation, isSolarLoading, onLoadingChange }: {
+  onToggleAssistant: () => void; currentDate: Date; onReset: () => void; currentLocation: LocationCoordinates; onLocationSelected: (location: LocationCoordinates, solarData: SolarIrradianceData, fetchedAt: number, fromCache: boolean) => void; onOpenRecommendation: () => void; isSolarLoading: boolean; onLoadingChange: (loading: boolean) => void;
 }) => (
   <div className="w-full bg-white relative z-50 shadow-sm">
     <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
@@ -1388,14 +1388,12 @@ const Header = ({ onToggleAssistant, currentDate, onReset, currentLocation, onLo
             <LocationSelector
               currentLocation={currentLocation}
               onLocationSelected={onLocationSelected}
-              dataSource={dataSource}
-              onDataSourceChange={onDataSourceChange}
               onLoadingChange={onLoadingChange}
             />
          </div>
          <div className="flex items-center gap-2 text-[10px] sm:text-xs font-semibold text-slate-600">
            <span className="px-2 py-1 rounded-full bg-slate-100 border border-slate-200">
-             Source: {dataSource === 'nasa' ? 'NASA POWER' : 'Meteonorm'}
+             Source: NASA POWER
            </span>
            {isSolarLoading && <span className="text-sky-600">Loading…</span>}
          </div>
@@ -2313,7 +2311,6 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
   const [simSpeed, setSimSpeed] = useState(1);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
-  const [dataSource, setDataSource] = useState<'nasa' | 'meteonorm'>('nasa');
   const [activeSection, setActiveSection] = useState<DashboardSection>(initialSection);
   useEffect(() => {
     setActiveSection(initialSection);
@@ -2424,7 +2421,6 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
   const [compareEnabled, setCompareEnabled] = useState(false);
   const [compareLocation, setCompareLocation] = useState<LocationCoordinates | null>(null);
   const [compareSolarData, setCompareSolarData] = useState<SolarIrradianceData | null>(null);
-  const [compareSource, setCompareSource] = useState<'nasa' | 'meteonorm'>('nasa');
   const [compareLastUpdated, setCompareLastUpdated] = useState<number | null>(null);
   const [compareFromCache, setCompareFromCache] = useState(false);
   const [showFlowDebug, setShowFlowDebug] = useState(false);
@@ -3122,18 +3118,17 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
   }, [systemSnapshot]);
 
   // Handle location change
-  const handleLocationChange = useCallback((location: LocationCoordinates, newSolarData: SolarIrradianceData, source: 'nasa' | 'meteonorm', fetchedAt: number, fromCache: boolean) => {
+  const handleLocationChange = useCallback((location: LocationCoordinates, newSolarData: SolarIrradianceData, fetchedAt: number, fromCache: boolean) => {
     setCurrentLocation(location);
     setSolarData(newSolarData);
     setRecommendationResult(null);
     setSolarLastUpdated(fetchedAt);
     setSolarFromCache(fromCache);
-    console.log(`Location changed to ${location.name}. Solar data source: ${source}`, newSolarData);
+    console.log(`Location changed to ${location.name}. Solar data source: NASA POWER`, newSolarData);
   }, []);
-  const handleCompareLocationChange = useCallback((location: LocationCoordinates, newSolarData: SolarIrradianceData, source: 'nasa' | 'meteonorm', fetchedAt: number, fromCache: boolean) => {
+  const handleCompareLocationChange = useCallback((location: LocationCoordinates, newSolarData: SolarIrradianceData, fetchedAt: number, fromCache: boolean) => {
     setCompareLocation(location);
     setCompareSolarData(newSolarData);
-    setCompareSource(source);
     setCompareLastUpdated(fetchedAt);
     setCompareFromCache(fromCache);
   }, []);
@@ -3662,9 +3657,11 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
             <div className="p-6">
               <LocationSelector
                 currentLocation={currentLocation}
-                onLocationSelected={(location, solar) => {
+                onLocationSelected={(location, solar, fetchedAt, fromCache) => {
                   setCurrentLocation(location);
                   setSolarData(solar);
+                  setSolarLastUpdated(fetchedAt);
+                  setSolarFromCache(fromCache);
                   setIsLocationSelectorOpen(false);
                 }}
                 embedded={true}
@@ -3683,7 +3680,6 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
         recommendation={recommendationResult}
         onGenerate={handleGenerateRecommendation}
         isGenerating={isGeneratingRecommendation}
-        dataSource={dataSource}
         isSolarLoading={solarDataLoading}
         lastUpdated={solarLastUpdated}
         fromCache={solarFromCache}
@@ -3719,15 +3715,13 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
             <LocationSelector
               currentLocation={currentLocation}
               onLocationSelected={handleLocationChange}
-              dataSource={dataSource}
-              onDataSourceChange={setDataSource}
               onLoadingChange={setSolarDataLoading}
               cacheRef={solarCacheRef}
               onInvalidateCache={handleInvalidateCache}
               label="Primary"
             />
             <span className="px-2 py-1 rounded-full bg-[var(--bg-card-muted)] border border-[var(--border)] font-semibold">
-              Source: {dataSource === 'nasa' ? 'NASA POWER' : 'Meteonorm'}{solarDataLoading ? ' (loading...)' : ''}
+              Source: NASA POWER{solarDataLoading ? ' (loading...)' : ''}
             </span>
             <span className="px-2 py-1 rounded-full bg-[var(--bg-card-muted)] border border-[var(--border)] font-semibold">
               Last updated: {solarLastUpdated ? new Date(solarLastUpdated).toLocaleString() : 'Not yet loaded'}
@@ -3743,7 +3737,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
             </button>
             {!recommendationResult && (
               <span className="text-[var(--text-tertiary)]">
-                No recommendation generated yet for {currentLocation.name}. Choose a source and click Generate.
+                No recommendation generated yet for {currentLocation.name}. Load solar data and click Generate.
               </span>
             )}
           </div>
@@ -3759,8 +3753,6 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                 <LocationSelector
                   currentLocation={compareLocation || currentLocation}
                   onLocationSelected={handleCompareLocationChange}
-                  dataSource={compareSource}
-                  onDataSourceChange={setCompareSource}
                   onLoadingChange={setCompareLoading}
                   cacheRef={solarCacheRef}
                   onInvalidateCache={handleInvalidateCache}
@@ -3774,7 +3766,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                 </span>
                 {compareSolarData && compareLocation && (
                   <span className="px-2 py-1 rounded-full bg-[var(--bg-card-muted)] border border-[var(--border)]">
-                    {compareLocation.name} • {compareSource === 'nasa' ? 'NASA' : 'Meteonorm'} • {compareSolarData.annualAverage.toFixed(1)} kWh/m²/day
+                    {compareLocation.name} • NASA • {compareSolarData.annualAverage.toFixed(1)} kWh/m²/day
                   </span>
                 )}
               </>
