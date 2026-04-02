@@ -2905,6 +2905,8 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
 
   // Track recent battery health scores for a tiny sparkline
   const healthHistoryRef = useRef<number[]>([]);
+  const lastScoreRef = useRef<number | null>(null);
+  const scoreDeltaRef = useRef<number>(0);
   useEffect(() => {
     const score = systemSnapshot.derived?.battery_health_score;
     if (typeof score === 'number') {
@@ -2913,6 +2915,10 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
         arr.push(score);
         if (arr.length > 12) arr.shift();
       }
+      if (lastScoreRef.current !== null) {
+        scoreDeltaRef.current = score - lastScoreRef.current;
+      }
+      lastScoreRef.current = score;
     }
   }, [systemSnapshot.derived?.battery_health_score]);
 
@@ -3801,6 +3807,13 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                           })
                           .join('');
                       })();
+                      const delta = scoreDeltaRef.current;
+                      const deltaLabel =
+                        delta === 0 ? '0' : delta > 0 ? `↑ +${delta.toFixed(1)}` : `↓ ${delta.toFixed(1)}`;
+                      const deltaColor =
+                        delta === 0 ? 'var(--text-secondary)' : delta > 0 ? 'var(--battery)' : 'var(--alert)';
+                      const sparklineLabel = healthHistoryRef.current.length ? '7-day trend' : '';
+
                       return (
                         <>
                           <div className="flex items-baseline justify-between">
@@ -3811,9 +3824,12 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                               {severity.label}
                             </div>
                           </div>
+                          <div className="text-sm font-medium" style={{ color: deltaColor }}>
+                            {deltaLabel}
+                          </div>
                           {sparkline && (
                             <div className="text-xs font-mono text-[var(--text-secondary)]">
-                              Trend: {sparkline}
+                              {sparklineLabel ? `${sparklineLabel}: ` : ''}{sparkline}
                             </div>
                           )}
                           <div className="text-sm text-[var(--text-secondary)]">
