@@ -2903,6 +2903,19 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
     systemConfig,
   ]);
 
+  // Track recent battery health scores for a tiny sparkline
+  const healthHistoryRef = useRef<number[]>([]);
+  useEffect(() => {
+    const score = systemSnapshot.derived?.battery_health_score;
+    if (typeof score === 'number') {
+      const arr = healthHistoryRef.current;
+      if (arr.length === 0 || arr[arr.length - 1] !== score) {
+        arr.push(score);
+        if (arr.length > 12) arr.shift();
+      }
+    }
+  }, [systemSnapshot.derived?.battery_health_score]);
+
   const batteryAlerts = useMemo<DashboardAlert[]>(() => {
     const snapshot = systemSnapshot;
     const drop = snapshot.derived?.battery_efficiency_drop ?? 0;
@@ -3737,6 +3750,10 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                         drop > 0.2 ? { label: 'Critical', color: 'var(--alert)' } :
                         drop > 0.1 ? { label: 'Warning', color: 'var(--solar)' } :
                         { label: 'Healthy', color: 'var(--battery)' };
+                      const bandColor =
+                        score >= 80 ? 'var(--battery)' :
+                        score >= 60 ? 'var(--solar)' :
+                        'var(--alert)';
                       const confidence = systemSnapshot.derived?.cause_confidence;
                       const confidenceDots =
                         confidence === undefined
@@ -3754,21 +3771,59 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                           : confidence >= 0.75
                             ? 'High'
                             : confidence >= 0.5
-                              ? 'Medium'
-                              : 'Low';
+                            ? 'Medium'
+                            : 'Low';
+                      const biggestFactor = (() => {
+                        const breakdown = systemSnapshot.derived?.battery_health_breakdown;
+                        if (!breakdown) return null;
+                        const entries: Array<{ label: string; value: number }> = [
+                          { label: 'Efficiency', value: breakdown.efficiency ?? 0 },
+                          { label: 'Cycles', value: breakdown.cycles ?? 0 },
+                          { label: 'Confidence', value: breakdown.confidence ?? 0 },
+                        ];
+                        return entries.reduce((max, curr) =>
+                          Math.abs(curr.value) > Math.abs(max.value) ? curr : max,
+                          entries[0]
+                        );
+                      })();
+                      const sparkline = (() => {
+                        const history = healthHistoryRef.current;
+                        if (!history.length) return '';
+                        const chars = ['▁','▂','▃','▄','▅','▆','▇','█'];
+                        const min = Math.min(...history);
+                        const max = Math.max(...history);
+                        const range = Math.max(max - min, 1);
+                        return history
+                          .slice(-10)
+                          .map((v) => {
+                            const idx = Math.min(chars.length - 1, Math.floor(((v - min) / range) * (chars.length - 1)));
+                            return chars[idx];
+                          })
+                          .join('');
+                      })();
                       return (
                         <>
                           <div className="flex items-baseline justify-between">
-                            <div className="text-3xl font-bold text-[var(--text-primary)]">
+                            <div className="text-3xl font-bold" style={{ color: bandColor }}>
                               {score}/100
                             </div>
                             <div className="text-sm font-semibold" style={{ color: severity.color }}>
                               {severity.label}
                             </div>
                           </div>
+                          {sparkline && (
+                            <div className="text-xs font-mono text-[var(--text-secondary)]">
+                              Trend: {sparkline}
+                            </div>
+                          )}
                           <div className="text-sm text-[var(--text-secondary)]">
                             Efficiency drop: {(drop * 100).toFixed(0)}%
                           </div>
+                          {biggestFactor && (
+                            <div className="text-sm text-[var(--text-primary)]">
+                              Main impact: {biggestFactor.label} ({biggestFactor.value})
+                            </div>
+                          )}
                           <div className="space-y-2">
                             {systemSnapshot.derived?.likely_cause && (
                               <div className="text-sm text-[var(--text-primary)]">
