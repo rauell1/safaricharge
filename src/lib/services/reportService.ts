@@ -62,9 +62,10 @@ export function getReportData(): ReportData {
   const avgBatterySOC = minuteData.length > 0
     ? minuteData.reduce((sum, d) => sum + d.batteryLevelPct, 0) / minuteData.length
     : 0;
-  const peakPowerKW = minuteData.length > 0
-    ? Math.max(...minuteData.map((d) => d.solarKW))
-    : 0;
+  let peakPowerKW = 0;
+  for (const d of minuteData) {
+    if (d.solarKW > peakPowerKW) peakPowerKW = d.solarKW;
+  }
 
   // Calculate days covered
   const uniqueDates = new Set(minuteData.map((d) => d.date));
