@@ -2797,6 +2797,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
               homeLoad: finalState.houseLoad,
               residentialLoad: finalState.residentialLoad,
               commercialLoad: finalState.commercialLoad,
+              industrialLoad: finalState.industrialLoad,
               ev1Load: finalState.ev1Kw,
               ev1Status: finalState.ev1Kw > 0 ? 'Charging' : (finalState.ev1IsHome ? 'Idle' : 'Away'),
               ev1Soc: finalState.ev1Soc,
