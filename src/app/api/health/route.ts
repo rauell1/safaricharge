@@ -12,11 +12,15 @@ import { NextResponse } from 'next/server';
  * false negatives when downstream dependencies are degraded.
  */
 export async function GET() {
+  const hasDatabaseUrl = Boolean(process.env.DATABASE_URL?.trim());
+
   return NextResponse.json(
     {
       status: 'ok',
+      readiness: hasDatabaseUrl ? 'ready' : 'degraded',
       timestamp: new Date().toISOString(),
       version: process.env.npm_package_version ?? 'unknown',
+      uptimeSeconds: Math.round(process.uptime()),
     },
     {
       status: 200,

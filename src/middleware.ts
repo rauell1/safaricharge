@@ -1,4 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  RATE_LIMIT_AI_PER_WINDOW,
+  RATE_LIMIT_API_PER_WINDOW,
+  RATE_LIMIT_REPORT_PER_WINDOW,
+  RATE_LIMIT_WINDOW_MS,
+} from '@/lib/serverConfig';
+import { logger } from '@/lib/logger';
 
 /**
  * In-memory sliding-window rate limiter.
@@ -36,13 +43,13 @@ interface RateLimitRule {
  */
 const RATE_LIMIT_RULES: RateLimitRule[] = [
   // AI endpoint – each request calls an external LLM API.
-  { pattern: /^\/api\/safaricharge-ai/, limit: 10, windowMs: 60_000 },
+  { pattern: /^\/api\/safaricharge-ai/, limit: RATE_LIMIT_AI_PER_WINDOW, windowMs: RATE_LIMIT_WINDOW_MS },
   // Report generation – CPU and memory intensive.
-  { pattern: /^\/api\/formal-report/, limit: 5, windowMs: 60_000 },
+  { pattern: /^\/api\/formal-report/, limit: RATE_LIMIT_REPORT_PER_WINDOW, windowMs: RATE_LIMIT_WINDOW_MS },
   // CSV export – iterates over up to millions of data points.
-  { pattern: /^\/api\/export-report/, limit: 5, windowMs: 60_000 },
+  { pattern: /^\/api\/export-report/, limit: RATE_LIMIT_REPORT_PER_WINDOW, windowMs: RATE_LIMIT_WINDOW_MS },
   // Catch-all for any other API routes.
-  { pattern: /^\/api\//, limit: 60, windowMs: 60_000 },
+  { pattern: /^\/api\//, limit: RATE_LIMIT_API_PER_WINDOW, windowMs: RATE_LIMIT_WINDOW_MS },
 ];
 
 /** Extract the real client IP, respecting common proxy headers. */
@@ -98,12 +105,15 @@ export function middleware(request: NextRequest) {
   const key = `${rule.pattern.source}::${ip}`;
 
   if (isRateLimited(key, rule.limit, rule.windowMs)) {
+    logger.warn('Rate limit exceeded', { ip, pathname, limit: rule.limit, windowMs: rule.windowMs });
     return new NextResponse(
       JSON.stringify({ error: 'Too many requests. Please try again later.' }),
       {
         status: 429,
         headers: {
           'Content-Type': 'application/json',
+          'X-RateLimit-Limit': String(rule.limit),
+          'X-RateLimit-Window': String(rule.windowMs),
           'Retry-After': String(Math.ceil(rule.windowMs / 1000)),
         },
       }

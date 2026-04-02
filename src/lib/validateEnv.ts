@@ -17,10 +17,12 @@ interface EnvSpec {
   description: string;
 }
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const ENV_SPECS: EnvSpec[] = [
   {
     name: 'DATABASE_URL',
-    required: false,
+    required: isProduction,
     description:
       'Prisma database connection string (e.g. file:./dev.db or a PostgreSQL URL). Defaults to SQLite dev db when absent.',
   },
@@ -31,7 +33,7 @@ const ENV_SPECS: EnvSpec[] = [
   },
   {
     name: 'API_SERVICE_TOKEN',
-    required: false,
+    required: isProduction,
     description: 'Shared bearer token for protected API routes (recommended for server-to-server calls)',
   },
   {
@@ -41,13 +43,33 @@ const ENV_SPECS: EnvSpec[] = [
   },
   {
     name: 'API_ALLOWED_ORIGINS',
-    required: false,
+    required: isProduction,
     description: 'Comma-separated list of origins permitted to call API routes',
   },
   {
     name: 'ENABLE_RBAC',
     required: false,
     description: 'Set to true to enforce role-based access control via the x-sc-role header',
+  },
+  {
+    name: 'RATE_LIMIT_WINDOW_MS',
+    required: false,
+    description: 'Rate-limit window length in milliseconds (default 60000)',
+  },
+  {
+    name: 'RATE_LIMIT_API_PER_WINDOW',
+    required: false,
+    description: 'Catch-all API limit per window (default 60)',
+  },
+  {
+    name: 'RATE_LIMIT_AI_PER_WINDOW',
+    required: false,
+    description: 'AI route limit per window (default 10)',
+  },
+  {
+    name: 'RATE_LIMIT_REPORT_PER_WINDOW',
+    required: false,
+    description: 'Formal/export report limit per window (default 5)',
   },
 ];
 
