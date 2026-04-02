@@ -560,7 +560,7 @@ const SolarPanelProduct = React.memo(({ power, capacity, weather, isNight }: {
   const safeCapacity = Math.max(0, capacity);
   const utilization = safeCapacity > 0 ? Math.min(1, power / safeCapacity) : 0;
   const isActive = power > 0.1 && !isNight;
-  const frameClasses = `w-48 h-28 rounded-lg border-2 shadow-xl relative overflow-hidden transform transition-all duration-500 hover:scale-105 ${
+  const frameClasses = `w-48 h-28 rounded-xl border-2 shadow-xl relative overflow-hidden transform transition-all duration-500 ease-out hover:scale-[1.03] active:scale-95 ${
     isNight ? 'bg-slate-900 border-slate-700' : 'bg-gradient-to-br from-sky-900 to-slate-900 border-slate-300'
   } ${isActive ? '' : 'opacity-60 border-slate-700'}`;
 
@@ -593,7 +593,7 @@ const BatteryProduct = React.memo(({ level, status, power, health = 1.0, cycles 
   level: number; status: string; power: number; health?: number; cycles?: number; capacityKwh?: number;
 }) => (
   <div className="flex flex-col items-center z-20">
-    <div className="relative w-28 h-40 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] shadow-lg flex flex-col items-center justify-center overflow-hidden group transition-all duration-500 hover:-translate-y-1">
+    <div className="relative w-28 h-40 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] shadow-lg flex flex-col items-center justify-center overflow-hidden group transition-all duration-500 ease-out hover:-translate-y-1 hover:scale-[1.02] active:scale-95">
       <div className="absolute top-3 text-[7px] font-black text-[var(--border)] tracking-widest">SAFARICHARGE</div>
       <div className="w-3 h-24 bg-[var(--bg-card-muted)] rounded-full overflow-hidden relative border border-[var(--border)] shadow-inner">
          <div 
@@ -618,7 +618,7 @@ const EVChargerProduct = React.memo(({ id, status, power, soc, carName, capacity
   id: number; status: string; power: number; soc: number; carName: string; capacity: number; maxRate: number; onToggle: () => void; v2g?: boolean;
 }) => (
   <div className="flex flex-col items-center z-20" onClick={onToggle}>
-    <div className={`relative w-20 h-28 bg-slate-800 rounded-xl shadow-lg border-l-4 border-slate-600 flex flex-col items-center pt-3 group transition-all duration-500 hover:-translate-y-1 ring-2 ${status === 'Charging' ? 'ring-sky-200 shadow-[0_0_12px_#7dd3fc]' : 'ring-transparent'}`}>
+    <div className={`relative w-20 h-28 bg-slate-800 rounded-xl shadow-lg border-l-4 border-slate-600 flex flex-col items-center pt-3 group transition-all duration-500 ease-out hover:-translate-y-1 hover:scale-[1.02] active:scale-95 ring-2 ${status === 'Charging' ? 'ring-sky-200 shadow-[0_0_12px_#7dd3fc]' : 'ring-transparent'}`}>
       <div className="w-12 h-6 bg-black rounded border border-slate-600 flex items-center justify-center mb-2 overflow-hidden relative">
          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20 opacity-50 z-10 pointer-events-none"></div>
          {v2g ? (
@@ -646,7 +646,7 @@ const EVChargerProduct = React.memo(({ id, status, power, soc, carName, capacity
 ));
 
 const InverterProduct = React.memo(({ id, power, ratedCapacityKw }: { id: number; power: number; ratedCapacityKw: number }) => (
-  <div className="flex flex-col items-center bg-[var(--bg-card)] rounded-lg border border-[var(--border)] w-24 p-2 z-20 transition-transform hover:scale-105">
+  <div className="flex flex-col items-center bg-[var(--bg-card)] rounded-xl border border-[var(--border)] w-24 p-2 z-20 transition-transform duration-300 ease-out hover:scale-[1.03] active:scale-95">
     <div className="w-full flex justify-between items-center mb-1 border-b border-[var(--border)] pb-1">
        <span className="text-[8px] font-bold text-[var(--text-tertiary)]">{ratedCapacityKw.toFixed(0)}kW Inverter #{id}</span>
        <div className={`w-1.5 h-1.5 rounded-full ${power > 0 ? 'bg-green-500 animate-pulse' : 'bg-[var(--border)]'}`}></div>
@@ -661,7 +661,7 @@ const GridProduct = React.memo(({ power, isImporting, isExporting, gridStatus }:
   power: number; isImporting: boolean; isExporting: boolean; gridStatus: string;
 }) => (
   <div className="flex flex-col items-center z-20">
-     <div className="w-24 h-32 flex items-center justify-center relative">
+     <div className="w-24 h-32 flex items-center justify-center relative transition-transform duration-300 ease-out hover:scale-[1.03] active:scale-95">
         <UtilityPole size={64} className={gridStatus === 'Online' ? "text-[var(--text-secondary)]" : "text-red-300"} strokeWidth={1} />
         {gridStatus === 'Offline' && (
            <div className="absolute inset-0 flex items-center justify-center">
@@ -669,13 +669,13 @@ const GridProduct = React.memo(({ power, isImporting, isExporting, gridStatus }:
            </div>
         )}
         {gridStatus === 'Online' && (isImporting || isExporting) && (
-           <div className={`absolute top-0 right-0 p-1 rounded bg-[var(--bg-card)] border border-[var(--border)] flex items-center gap-1 ${isImporting ? 'text-[var(--consumption)]' : 'text-[var(--battery)]'}`}>
+           <div className={`absolute top-0 right-0 p-1 rounded bg-[var(--bg-card)] border border-[var(--border)] flex items-center gap-1 ${isImporting ? 'text-slate-600' : 'text-[var(--alert)]'}`}>
               {isImporting ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
               <span className="text-[9px] font-bold">{Math.abs(power).toFixed(1)} kW</span>
            </div>
         )}
      </div>
-     <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] backdrop-blur-sm">
+    <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] backdrop-blur-sm">
         <div className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase">Utility Grid</div>
         <div className="text-[9px] font-bold text-[var(--text-primary)]">
            {gridStatus === 'Offline' ? 'OFFLINE' : isImporting ? 'IMPORTING' : isExporting ? 'EXPORTING' : 'IDLE'}
@@ -686,7 +686,7 @@ const GridProduct = React.memo(({ power, isImporting, isExporting, gridStatus }:
 
 const HomeProduct = React.memo(({ power, label = 'Home Load', icon: Icon = Home }: { power: number; label?: string; icon?: React.ElementType }) => (
   <div className="flex flex-col items-center z-20">
-    <div className="w-24 h-32 flex items-center justify-center bg-[var(--bg-card-muted)] rounded-2xl border border-[var(--border)]">
+    <div className="w-24 h-32 flex items-center justify-center bg-[var(--bg-card-muted)] rounded-xl border border-[var(--border)] transition-transform duration-300 ease-out hover:scale-[1.02] active:scale-95">
        <Icon size={40} className="text-[var(--text-secondary)]" strokeWidth={1.5} />
     </div>
     <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] backdrop-blur-sm">
@@ -1564,6 +1564,8 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
   const inverterFlowColor = hasBatteryDischarge ? 'bg-[var(--battery)]' : solarFlowColor;
   const inverterGlowColor = hasBatteryDischarge ? 'var(--battery)' : 'var(--solar)';
   const inverterArrowColor = hasBatteryDischarge ? 'text-emerald-100' : 'text-amber-100';
+  const backboneColor = 'bg-[var(--battery)]';
+  const backboneGlowColor = 'var(--battery)';
   const mapFlowSpeed = (kw: number) => Math.min(10, Math.max(0.5, kw / 5));
   const mapFlowThickness = (kw: number) => Math.min(10, Math.max(2, kw / 4 + 2));
   const busNodes: Array<{ key: string; cable: React.ReactNode; node: React.ReactNode }> = [];
@@ -1575,12 +1577,12 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
         load.status === 'Offline'
           ? 'bg-red-200'
           : load.direction === 'import'
-            ? 'bg-sky-500'
+            ? 'bg-slate-500'
             : load.direction === 'export'
               ? 'bg-red-500'
               : 'bg-slate-300';
       const arrowColor =
-        load.direction === 'import' ? 'text-sky-100' : load.direction === 'export' ? 'text-green-100' : 'text-slate-200';
+        load.direction === 'import' ? 'text-slate-100' : load.direction === 'export' ? 'text-red-100' : 'text-slate-200';
       const speedVal = mapFlowSpeed(Math.abs(load.powerKw));
       busNodes.push({
         key: 'grid',
@@ -1687,10 +1689,18 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
     });
   });
 
-  const busColumns = Math.max(1, busNodes.length);
-  const busTemplate = { gridTemplateColumns: `repeat(${busColumns}, minmax(0, 1fr))` };
-  const inverterTemplate = { gridTemplateColumns: `repeat(${Math.min(inverterUnits, 4)}, minmax(100px, 1fr))` };
-  const busFlowMaxKw = busNodes.reduce((max, node) => Math.max(max, node.powerKw), 0);
+  const columnCount = Math.max(3, Math.max(inverterUnits, busNodes.length));
+  const columnTemplate = { gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))` };
+  const centerPad = <T,>(items: T[]): Array<T | null> => {
+    const offset = Math.floor((columnCount - items.length) / 2);
+    return Array.from({ length: columnCount }, (_, idx) => {
+      const sourceIdx = idx - offset;
+      return sourceIdx >= 0 && sourceIdx < items.length ? items[sourceIdx] : null;
+    });
+  };
+  const paddedConverters = centerPad(layout.conversion);
+  const paddedLoads = centerPad(busNodes);
+  const backboneActive = inverterFlowActive || isSolarActive || hasBatteryDischarge;
 
   return (
     <div className="flex flex-col items-center w-full h-full p-2 sm:p-3 md:p-6 bg-[var(--bg-card-muted)] rounded-2xl sm:rounded-3xl border border-[var(--border)] relative">
@@ -1710,11 +1720,14 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
           <div className="text-[var(--text-tertiary)]">Sources {flowDebug.sourcesKw.toFixed(1)} kW → Sinks {flowDebug.sinksKw.toFixed(1)} kW</div>
         </div>
       )}
-      <div className="flex flex-col items-center w-full max-w-full sm:max-w-[600px] md:max-w-[800px] mx-auto px-1 sm:px-2">
-        <div className="mb-0">
-          <SolarPanelProduct power={pvNode?.outputKw ?? 0} capacity={pvNode?.capacityKw ?? 0} weather={weather} isNight={isNight} />
-        </div>
-          <div className="flex flex-col items-center w-full max-w-[720px]">
+      <div className="flex flex-col items-center w-full max-w-full sm:max-w-[640px] md:max-w-[1100px] mx-auto px-1 sm:px-2">
+        {/* Desktop / Tablet grid layout */}
+        <div className="hidden md:flex flex-col items-center gap-6 w-full">
+          <div className="flex justify-center w-full">
+            <SolarPanelProduct power={pvNode?.outputKw ?? 0} capacity={pvNode?.capacityKw ?? 0} weather={weather} isNight={isNight} />
+          </div>
+
+          <div className="flex flex-col items-center w-full gap-3">
             <RigidCable
               height={30}
               active={isSolarActive}
@@ -1723,82 +1736,171 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
               width={mapFlowThickness(pvNode?.outputKw ?? 0)}
               arrowColor="text-amber-100"
             />
-            <HorizontalCable width="100%" color={solarFlowColor} glowColor="var(--solar)" />
-            <div className="grid justify-between w-full max-w-[520px] gap-2" style={{ gridTemplateColumns: `repeat(${inverterUnits}, minmax(0, 1fr))` }}>
-              {Array.from({ length: inverterUnits }).map((_, idx) => (
-                <div key={`inv-cable-${idx}`} className="flex justify-center">
-                  <RigidCable
-                    height={20}
-                    active={isSolarActive}
-                    color={solarFlowColor}
-                    speed={mapFlowSpeed((pvNode?.outputKw ?? 0) / inverterUnits)}
-                    width={mapFlowThickness((pvNode?.outputKw ?? 0) / inverterUnits)}
-                    arrowColor="text-amber-100"
-                  />
+            <HorizontalCable
+              width="100%"
+              height={6}
+              color={solarFlowColor}
+              glowColor="var(--solar)"
+              active={isSolarActive}
+              powerKw={pvNode?.outputKw ?? 0}
+              capacityKw={pvNode?.capacityKw ?? 0}
+              showLabel={showValues}
+            />
+            <div className="grid w-full gap-2" style={columnTemplate}>
+              {paddedConverters.map((converter, idx) => (
+                <div key={`inv-drop-${idx}`} className="flex justify-center">
+                  {converter ? (
+                    <RigidCable
+                      height={22}
+                      active={isSolarActive}
+                      color={solarFlowColor}
+                      speed={mapFlowSpeed((pvNode?.outputKw ?? 0) / inverterUnits)}
+                      width={mapFlowThickness((pvNode?.outputKw ?? 0) / inverterUnits)}
+                      arrowColor="text-amber-100"
+                      glowColor="var(--solar)"
+                    />
+                  ) : (
+                    <div className="h-6" />
+                  )}
                 </div>
               ))}
             </div>
           </div>
-        <div className="grid gap-3 sm:gap-4 md:gap-5 justify-items-center mb-0 scale-75 sm:scale-90 md:scale-100 w-full max-w-[800px]" style={inverterTemplate}>
-          {layout.conversion.map((converter) => (
-            <InverterProduct
-              key={`inv-${converter.id}`}
-              id={converter.id}
-              power={converter.outputKw}
-              ratedCapacityKw={converter.ratingKw}
-            />
-          ))}
-        </div>
-        <div className="flex flex-col items-center w-full max-w-[900px]">
-          {/* Individual cables from each inverter to the horizontal AC bus */}
-          <div className="grid w-full max-w-[720px] gap-2" style={{ gridTemplateColumns: `repeat(${inverterUnits}, minmax(0, 1fr))` }}>
-            {layout.conversion.map((converter) => (
-              <div key={`inv-to-bus-${converter.id}`} className="flex justify-center">
-                <RigidCable
-                  height={25}
-                  active={converter.active}
-                  color={converter.active ? inverterFlowColor : 'bg-slate-300'}
-                  speed={mapFlowSpeed(converter.outputKw)}
-                  width={mapFlowThickness(converter.outputKw)}
-                  arrowColor={inverterArrowColor}
-                  powerKw={converter.outputKw}
-                  capacityKw={converter.ratingKw}
-                  glowColor={inverterGlowColor}
-                  showLabel={showValues}
-                />
+
+          <div className="grid gap-4 justify-items-center w-full" style={columnTemplate}>
+            {paddedConverters.map((converter, idx) => (
+              <div key={`inv-${idx}`} className="flex justify-center w-full">
+                {converter ? (
+                  <div className="flex justify-center w-full">
+                    <InverterProduct
+                      id={converter.id}
+                      power={converter.outputKw}
+                      ratedCapacityKw={converter.ratingKw}
+                    />
+                  </div>
+                ) : (
+                  <div className="h-24" />
+                )}
               </div>
             ))}
           </div>
-          <div className="flex justify-between w-full max-w-[720px]">
+
+          <div className="grid w-full gap-3" style={columnTemplate}>
+            {paddedConverters.map((converter, idx) => (
+              <div key={`inv-out-${idx}`} className="flex flex-col items-center gap-1">
+                {converter && showValues && (
+                  <span className="px-2 py-1 rounded-full bg-[var(--bg-card)] border border-[var(--border)] text-[10px] font-semibold text-[var(--text-primary)] shadow-sm">
+                    {converter.outputKw.toFixed(1)} kW
+                  </span>
+                )}
+                {converter ? (
+                  <RigidCable
+                    height={28}
+                    active={converter.active}
+                    color={converter.active ? inverterFlowColor : 'bg-slate-300'}
+                    speed={mapFlowSpeed(converter.outputKw)}
+                    width={mapFlowThickness(converter.outputKw)}
+                    arrowColor={inverterArrowColor}
+                    powerKw={converter.outputKw}
+                    capacityKw={converter.ratingKw}
+                    glowColor={inverterGlowColor}
+                  />
+                ) : (
+                  <div className="h-7" />
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="w-full px-1">
             <HorizontalCable
               width="100%"
-              color={inverterFlowActive ? inverterFlowColor : 'bg-slate-300'}
-              active={inverterFlowActive}
+              height={8}
+              color={backboneActive ? backboneColor : 'bg-slate-300'}
+              active={backboneActive}
               powerKw={layout.meta.inverterThroughputKw}
               capacityKw={config.inverterKw}
-              glowColor={inverterGlowColor}
+              glowColor={backboneGlowColor}
+              showLabel={showValues}
             />
           </div>
-          <div className="relative w-full mt-1 sm:mt-2">
-            <div className="absolute inset-x-0 top-0 h-4 bg-slate-800 rounded-full shadow-md z-0 flex items-center justify-center">
-              <div className="text-[6px] sm:text-[8px] text-white font-mono tracking-widest">AC DISTRIBUTION BUS</div>
-            </div>
-            <div className="grid gap-1 sm:gap-2 pt-6 place-items-center" style={busTemplate}>
-              {busNodes.map((node) => (
-                <div key={`cable-${node.key}`} className="flex justify-center">
-                  {node.cable}
-                </div>
-              ))}
-            </div>
+
+          <div className="grid w-full gap-2" style={columnTemplate}>
+            {paddedLoads.map((node, idx) => (
+              <div key={`cable-${idx}`} className="flex justify-center">
+                {node ? node.cable : <div className="h-10" />}
+              </div>
+            ))}
+          </div>
+          <div className="grid w-full gap-3" style={columnTemplate}>
+            {paddedLoads.map((node, idx) => (
+              <div key={`node-${idx}`} className="flex justify-center w-full">
+                {node ? <div className="w-full max-w-[200px] flex justify-center">{node.node}</div> : <div className="h-24" />}
+              </div>
+            ))}
           </div>
         </div>
-        <div className="grid gap-2 sm:gap-3 md:gap-4 w-full max-w-[900px] mt-2 scale-75 sm:scale-90 md:scale-100 place-items-center" style={busTemplate}>
-          {busNodes.map((node) => (
-            <div key={`node-${node.key}`} className="flex justify-center scale-90">
-              {node.node}
-            </div>
-          ))}
+
+        {/* Mobile stacked layout */}
+        <div className="flex md:hidden flex-col gap-4 w-full">
+          <div className="flex flex-col items-center gap-2">
+            <SolarPanelProduct power={pvNode?.outputKw ?? 0} capacity={pvNode?.capacityKw ?? 0} weather={weather} isNight={isNight} />
+            <RigidCable
+              height={26}
+              active={isSolarActive}
+              color={solarFlowColor}
+              speed={mapFlowSpeed(pvNode?.outputKw ?? 0)}
+              width={mapFlowThickness(pvNode?.outputKw ?? 0)}
+              arrowColor="text-amber-100"
+            />
+          </div>
+          <div className="flex flex-col gap-3">
+            {layout.conversion.map((converter) => (
+              <div key={`m-inv-${converter.id}`} className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)]/70 p-3 shadow-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex-1 flex justify-center scale-[0.95] origin-center">
+                    <InverterProduct
+                      id={converter.id}
+                      power={converter.outputKw}
+                      ratedCapacityKw={converter.ratingKw}
+                    />
+                  </div>
+                  {showValues && (
+                    <span className="px-2 py-1 rounded-full bg-[var(--bg-card-muted)] border border-[var(--border)] text-[10px] font-semibold text-[var(--text-primary)]">
+                      {converter.outputKw.toFixed(1)} kW
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2 flex flex-col items-center gap-1">
+                  <RigidCable
+                    height={28}
+                    active={converter.active}
+                    color={converter.active ? inverterFlowColor : 'bg-slate-300'}
+                    speed={mapFlowSpeed(converter.outputKw)}
+                    width={mapFlowThickness(converter.outputKw)}
+                    arrowColor={inverterArrowColor}
+                    powerKw={converter.outputKw}
+                    capacityKw={converter.ratingKw}
+                    glowColor={inverterGlowColor}
+                  />
+                  <div className={`w-2 h-10 rounded-full ${backboneActive ? backboneColor : 'bg-slate-300'} ${backboneActive ? 'shadow-[0_0_12px_rgba(16,185,129,0.3)]' : ''}`} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-center">
+            <div className={`w-2 h-6 rounded-full ${backboneActive ? backboneColor : 'bg-slate-300'} ${backboneActive ? 'shadow-[0_0_12px_rgba(16,185,129,0.3)]' : ''}`} />
+          </div>
+          <div className="flex flex-col gap-3">
+            {busNodes.map((node) => (
+              <div key={`m-node-${node.key}`} className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)]/80 p-3 flex flex-col items-center gap-2">
+                {node.cable}
+                <div className="w-full flex justify-center scale-[0.96]">{node.node}</div>
+              </div>
+            ))}
+          </div>
         </div>
+
         <div className="mt-3 flex flex-wrap justify-center gap-2 text-[10px]">
           {[
             { label: 'Solar', style: { backgroundColor: 'var(--solar)', color: '#0a0e1a' } },
