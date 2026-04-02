@@ -76,6 +76,7 @@ const systemDataSchema = z.object({
       previous_battery_efficiency: z.number().optional(),
       battery_efficiency_drop: z.number().optional(),
       likely_cause: z.string().optional(),
+      cause_confidence: z.number().optional(),
     })
     .optional(),
 });
@@ -256,6 +257,7 @@ type DerivedMetrics = {
   battery_efficiency: number;
   battery_efficiency_drop: number;
   likely_cause?: string;
+  cause_confidence?: number;
 };
 
 function computeDerivedMetrics(systemData: AiRequest['systemData']): DerivedMetrics {
@@ -277,6 +279,7 @@ function computeDerivedMetrics(systemData: AiRequest['systemData']): DerivedMetr
         ? systemData.derived.previous_battery_efficiency - batteryEfficiency
         : 0;
   const likelyCause = systemData.derived?.likely_cause;
+  const causeConfidence = systemData.derived?.cause_confidence;
 
   return {
     solar_utilization: Number.isFinite(solarUtilization) ? solarUtilization : 0,
@@ -284,6 +287,7 @@ function computeDerivedMetrics(systemData: AiRequest['systemData']): DerivedMetr
     battery_efficiency: Number.isFinite(batteryEfficiency) ? batteryEfficiency : 0,
     battery_efficiency_drop: Number.isFinite(batteryEfficiencyDrop) ? batteryEfficiencyDrop : 0,
     likely_cause: likelyCause,
+    cause_confidence: Number.isFinite(causeConfidence ?? NaN) ? causeConfidence : undefined,
   };
 }
 
@@ -301,6 +305,10 @@ function buildEnergyPrompt({
 - Battery efficiency: ${derived.battery_efficiency.toFixed(2)}
 - Battery efficiency drop: ${derived.battery_efficiency_drop.toFixed(2)}${
     derived.likely_cause ? `\n- Likely cause: ${derived.likely_cause}` : ''
+  }${
+    derived.cause_confidence !== undefined
+      ? `\n- Cause confidence: ${derived.cause_confidence.toFixed(2)}`
+      : ''
   }`;
 
   const batteryDropCue =

@@ -747,6 +747,7 @@ type AiSystemData = {
     previous_battery_efficiency?: number;
     battery_efficiency_drop?: number;
     likely_cause?: string;
+    cause_confidence?: number;
   };
 };
 
@@ -944,6 +945,8 @@ const SafariChargeAIAssistant = ({
       batteryMetrics.drop > 0.1 && dischargePattern === 'evening-heavy'
         ? 'evening-heavy discharge'
         : undefined;
+    const causeConfidence =
+      likelyCause === 'evening-heavy discharge' ? 0.8 : batteryMetrics.drop > 0.1 ? 0.4 : undefined;
 
     const batteryCyclesToday =
       batteryMetrics.dischargeKwh > 0 && systemConfig?.batteryKwh
@@ -980,6 +983,7 @@ const SafariChargeAIAssistant = ({
         previous_battery_efficiency: Number(batteryMetrics.previousEfficiency.toFixed(2)),
         battery_efficiency_drop: Number(batteryMetrics.drop.toFixed(2)),
         likely_cause: likelyCause,
+        cause_confidence: causeConfidence,
       },
     };
   };
@@ -2833,9 +2837,18 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
     const prevPct = Math.round((snapshot.derived?.previous_battery_efficiency ?? 0) * 100);
     const dropPct = Math.round(drop * 100);
     const cause = snapshot.derived?.likely_cause;
+    const confidence = snapshot.derived?.cause_confidence;
+    const confidenceLabel =
+      confidence === undefined
+        ? ''
+        : confidence >= 0.75
+          ? ' (high confidence)'
+          : confidence >= 0.5
+            ? ' (medium confidence)'
+            : ' (low confidence)';
     const severityType = drop > 0.2 ? 'error' : 'warning';
     const title = drop > 0.2 ? 'Critical battery efficiency drop' : 'Battery efficiency dropping';
-    const causeText = cause ? ` Likely cause: ${cause}.` : '';
+    const causeText = cause ? ` Likely cause: ${cause}${confidenceLabel}.` : '';
 
     return [
       {
