@@ -188,30 +188,38 @@ export function PowerFlowVisualization({
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center gap-4 py-4">
-            {/* Top node */}
+            {/* Top node - Solar */}
             <Skeleton className="h-20 w-20 rounded-full" />
 
             {/* Vertical line */}
             <Skeleton className="h-20 w-0.5" />
 
-            {/* Middle row with 3 nodes */}
+            {/* Middle row with 3 nodes - split junction */}
             <div className="flex items-center justify-center w-full max-w-xl gap-6">
               <Skeleton className="h-20 w-20 rounded-full" />
               <Skeleton className="h-4 w-4 rounded-full" />
               <Skeleton className="h-20 w-20 rounded-full" />
             </div>
 
-            {/* Bottom row with 3 nodes */}
-            <div className="flex items-start justify-center w-full max-w-3xl gap-6 mt-1">
-              <div className="flex-1 flex flex-col items-center gap-2">
+            {/* Bottom row with 3 sections - responsive layout */}
+            <div className="flex flex-col md:flex-row items-center md:items-start justify-center w-full max-w-4xl gap-4 md:gap-6 mt-1">
+              {/* Battery */}
+              <div className="flex md:flex-1 flex-col items-center gap-2">
                 <Skeleton className="h-20 w-0.5" />
                 <Skeleton className="h-20 w-20 rounded-full" />
               </div>
-              <div className="flex-1 flex flex-col items-center gap-2">
+              {/* Loads - 4 icons */}
+              <div className="flex md:flex-1 flex-col items-center gap-2">
                 <Skeleton className="h-20 w-0.5" />
-                <Skeleton className="h-20 w-20 rounded-full" />
+                <div className="flex flex-wrap justify-center gap-4 max-w-md">
+                  <Skeleton className="h-20 w-20 rounded-full" />
+                  <Skeleton className="h-20 w-20 rounded-full" />
+                  <Skeleton className="h-20 w-20 rounded-full" />
+                  <Skeleton className="h-20 w-20 rounded-full" />
+                </div>
               </div>
-              <div className="flex-1 flex flex-col items-center gap-2">
+              {/* Grid */}
+              <div className="flex md:flex-1 flex-col items-center gap-2">
                 <Skeleton className="h-20 w-0.5" />
                 <Skeleton className="h-20 w-20 rounded-full" />
               </div>
@@ -309,8 +317,10 @@ export function PowerFlowVisualization({
             </div>
           </div>
 
-          <div className="flex items-start justify-center w-full max-w-4xl gap-8 lg:gap-10 mt-1">
-            <div className="flex-1 min-w-0 flex flex-col items-center gap-2">
+          {/* Desktop: Horizontal layout, Mobile: Vertical layout */}
+          <div className="flex flex-col md:flex-row items-center md:items-start justify-center w-full max-w-4xl gap-4 md:gap-8 lg:gap-10 mt-1">
+            {/* Battery Section */}
+            <div className="flex md:flex-1 min-w-0 flex-col items-center gap-2">
               <FlowPath
                 active={flowDirection.solarToBattery || flowDirection.batteryToHome}
                 vertical
@@ -332,7 +342,8 @@ export function PowerFlowVisualization({
               />
             </div>
 
-            <div className="flex-1 flex flex-col items-center gap-2">
+            {/* Loads Section - Centered on mobile */}
+            <div className="flex md:flex-1 flex-col items-center gap-2 w-full md:w-auto">
               <FlowPath
                 active={flowDirection.solarToHome}
                 vertical
@@ -340,7 +351,7 @@ export function PowerFlowVisualization({
                 tint="var(--solar-soft)"
                 powerKw={siteLoad}
               />
-              <div className="flex w-full flex-wrap items-start justify-center gap-x-6 gap-y-5 px-1 sm:gap-x-8">
+              <div className="flex w-full flex-wrap items-start justify-center gap-x-4 gap-y-5 px-2 sm:gap-x-6 md:gap-x-8 max-w-md md:max-w-none">
                 <EnergyNode
                   icon={Home}
                   label="Residential"
@@ -388,7 +399,8 @@ export function PowerFlowVisualization({
               </div>
             </div>
 
-            <div className="flex-1 flex flex-col items-center gap-2">
+            {/* Grid Section */}
+            <div className="flex md:flex-1 flex-col items-center gap-2">
               <FlowPath
                 active={flowDirection.solarToGrid || flowDirection.gridToHome}
                 vertical
