@@ -185,7 +185,11 @@ export function useEnergyStats(timeRange?: 'today' | 'week' | 'month' | 'year' |
     const totalGridExportKWh = data.reduce((sum, d) => sum + d.gridExportKWh, 0);
     const totalSavingsKES = data.reduce((sum, d) => sum + d.savingsKES, 0);
     const avgBatterySOC = data.reduce((sum, d) => sum + d.batteryLevelPct, 0) / data.length;
-    const peakPowerKW = Math.max(...data.map((d) => d.solarKW));
+
+    let peakPowerKW = 0;
+    for (const d of data) {
+      if (d.solarKW > peakPowerKW) peakPowerKW = d.solarKW;
+    }
 
     return {
       totalSolarKWh,

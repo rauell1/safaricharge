@@ -23,10 +23,13 @@ export default function SolarDetailPage() {
     load: d.homeLoadKW + d.ev1LoadKW + d.ev2LoadKW,
   })), [minuteData]);
 
-  const peakProduction = useMemo(
-    () => (minuteData.length ? Math.max(...minuteData.map((d) => d.solarKW)) : 0),
-    [minuteData]
-  );
+  const peakProduction = useMemo(() => {
+    let peak = 0;
+    for (const d of minuteData) {
+      if (d.solarKW > peak) peak = d.solarKW;
+    }
+    return peak;
+  }, [minuteData]);
 
   const hoursCovered = minuteData.length * 0.5 || 1;
   const capacityFactor = ((stats.totalSolarKWh / ((solar.capacityKW ?? 1) * hoursCovered)) * 100);
