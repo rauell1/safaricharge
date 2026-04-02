@@ -2078,6 +2078,7 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
   const paddedConverters = centerPad(layout.conversion);
   const paddedLoads = centerPad(busNodes);
   const backboneActive = inverterFlowActive || isSolarActive || hasBatteryDischarge;
+  const mobileColumnTemplate = { gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' };
 
   return (
     <div className="flex flex-col items-center w-full h-full p-2 sm:p-3 md:p-6 bg-[var(--bg-card-muted)] rounded-2xl sm:rounded-3xl border border-[var(--border)] relative">
@@ -2232,33 +2233,27 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
             />
           </div>
           <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)]/75 p-3 shadow-sm">
-            <div className="grid gap-2" style={columnTemplate}>
-              {paddedConverters.map((converter, idx) => (
-                <div key={`m-inv-${idx}`} className="flex flex-col items-center gap-1">
-                  {converter ? (
-                    <>
-                      <div className="scale-[0.82] origin-center">
-                        <InverterProduct
-                          id={converter.id}
-                          power={converter.outputKw}
-                          ratedCapacityKw={converter.ratingKw}
-                        />
-                      </div>
-                      <RigidCable
-                        height={22}
-                        active={converter.active}
-                        color={converter.active ? inverterFlowColor : 'bg-slate-300'}
-                        speed={mapFlowSpeed(converter.outputKw)}
-                        width={mapFlowThickness(converter.outputKw)}
-                        arrowColor={inverterArrowColor}
-                        powerKw={converter.outputKw}
-                        capacityKw={converter.ratingKw}
-                        glowColor={inverterGlowColor}
-                      />
-                    </>
-                  ) : (
-                    <div className="h-16" />
-                  )}
+            <div className="grid gap-2" style={mobileColumnTemplate}>
+              {layout.conversion.map((converter) => (
+                <div key={`m-inv-${converter.id}`} className="flex flex-col items-center gap-1">
+                  <div className="scale-[0.82] origin-center">
+                    <InverterProduct
+                      id={converter.id}
+                      power={converter.outputKw}
+                      ratedCapacityKw={converter.ratingKw}
+                    />
+                  </div>
+                  <RigidCable
+                    height={22}
+                    active={converter.active}
+                    color={converter.active ? inverterFlowColor : 'bg-slate-300'}
+                    speed={mapFlowSpeed(converter.outputKw)}
+                    width={mapFlowThickness(converter.outputKw)}
+                    arrowColor={inverterArrowColor}
+                    powerKw={converter.outputKw}
+                    capacityKw={converter.ratingKw}
+                    glowColor={inverterGlowColor}
+                  />
                 </div>
               ))}
             </div>
@@ -2276,17 +2271,11 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
             </div>
           </div>
           <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)]/80 p-3">
-            <div className="grid gap-2" style={columnTemplate}>
-              {paddedLoads.map((node, idx) => (
-                <div key={`m-node-${idx}`} className="flex flex-col items-center gap-1">
-                  {node ? (
-                    <>
-                      {node.cable}
-                      <div className="scale-[0.86] origin-center">{node.node}</div>
-                    </>
-                  ) : (
-                    <div className="h-16" />
-                  )}
+            <div className="grid gap-2" style={mobileColumnTemplate}>
+              {busNodes.map((node) => (
+                <div key={`m-node-${node.key}`} className="flex flex-col items-center gap-1">
+                  {node.cable}
+                  <div className="scale-[0.86] origin-center">{node.node}</div>
                 </div>
               ))}
             </div>
