@@ -21,6 +21,8 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { PowerFlowVisualization } from '@/components/dashboard/PowerFlowVisualization';
 import { WeatherCard } from '@/components/dashboard/WeatherCard';
 import { BatteryStatusCard } from '@/components/dashboard/BatteryStatusCard';
+import { BatteryHealthCard, type BatteryInsight } from '@/components/dashboard/BatteryHealthCard';
+import { BatteryPredictionCard, type BatteryPrediction } from '@/components/dashboard/BatteryPredictionCard';
 import { PanelStatusTable } from '@/components/dashboard/PanelStatusTable';
 import { EnergyReportModal } from '@/components/EnergyReportModal';
 import { AlertsList } from '@/components/dashboard/AlertsList';
@@ -755,6 +757,7 @@ type AiSystemData = {
       cycles?: number;
       confidence?: number;
     };
+    prediction?: BatteryPrediction;
   };
 };
 
@@ -842,6 +845,53 @@ const computeBatteryEfficiencyMetrics = (
     ),
     cycleEstimate,
   };
+};
+
+const computeBatteryHealthScore = ({
+  efficiencyDrop,
+  cycles,
+  confidence,
+}: {
+  efficiencyDrop: number;
+  cycles: number;
+  confidence: number;
+}) => {
+  let score = 100;
+  score -= efficiencyDrop * 50;
+  score -= cycles * 2;
+  score += confidence * 10;
+  return Math.max(0, Math.min(100, Math.round(score)));
+};
+
+const computeTrend = (scores: number[]) => {
+  if (scores.length < 2) return 0;
+  const recent = scores.slice(-3);
+  return recent[recent.length - 1] - recent[0];
+};
+
+const computeRisk = ({
+  trend,
+  drop,
+  cycles,
+  pattern,
+}: {
+  trend: number;
+  drop: number;
+  cycles: number;
+  pattern?: string;
+}) => {
+  let risk = 0;
+  if (trend < -5) risk += 0.4;
+  if (drop > 0.1) risk += 0.3;
+  if (cycles > 1) risk += 0.2;
+  if (pattern === 'evening-heavy') risk += 0.2;
+  return Math.min(risk, 1);
+};
+
+const classifyRisk = (risk: number): BatteryPrediction['level'] => {
+  if (risk > 0.7) return 'high';
+  if (risk > 0.4) return 'medium';
+  return 'low';
 };
 
 // Renders AI message text: converts **bold**, newlines, and bullet points
@@ -1006,10 +1056,11 @@ const SafariChargeAIAssistant = ({
     const efficiencyImpact = -(batteryMetrics.drop * 50);
     const cycleImpact = -(batteryCyclesToday * 2);
     const confidenceImpact = (causeConfidence ?? 0) * 10;
-    const batteryHealthScore = Math.max(
-      0,
-      Math.min(100, 100 + efficiencyImpact + cycleImpact + confidenceImpact)
-    );
+    const batteryHealthScore = computeBatteryHealthScore({
+      efficiencyDrop: batteryMetrics.drop,
+      cycles: batteryCyclesToday,
+      confidence: causeConfidence ?? 0,
+    });
 
     const simulatedTimestamp = new Date(
       currentDate.getTime() + timeOfDay * 60 * 60 * 1000
@@ -2903,24 +2954,103 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
     systemConfig,
   ]);
 
-  // Track recent battery health scores for a tiny sparkline
-  const healthHistoryRef = useRef<number[]>([]);
+  // Track last 7 unique daily battery health scores
+  const healthHistoryRef = useRef<Array<{ date: string; score: number }>>([]);
   const lastScoreRef = useRef<number | null>(null);
   const scoreDeltaRef = useRef<number>(0);
   useEffect(() => {
     const score = systemSnapshot.derived?.battery_health_score;
     if (typeof score === 'number') {
+      const dateKey = currentDate.toISOString().slice(0, 10);
       const arr = healthHistoryRef.current;
-      if (arr.length === 0 || arr[arr.length - 1] !== score) {
-        arr.push(score);
-        if (arr.length > 12) arr.shift();
+      const existingIndex = arr.findIndex((entry) => entry.date === dateKey);
+      if (existingIndex >= 0) {
+        arr[existingIndex] = { date: dateKey, score };
+      } else {
+        arr.push({ date: dateKey, score });
+      }
+      if (arr.length > 7) {
+        arr.shift();
       }
       if (lastScoreRef.current !== null) {
         scoreDeltaRef.current = score - lastScoreRef.current;
       }
       lastScoreRef.current = score;
     }
-  }, [systemSnapshot.derived?.battery_health_score]);
+  }, [currentDate, systemSnapshot.derived?.battery_health_score]);
+
+  const batteryInsight = useMemo<BatteryInsight>(() => {
+    const drop = systemSnapshot.derived?.battery_efficiency_drop ?? 0;
+    const score = systemSnapshot.derived?.battery_health_score ?? 0;
+    const severity: BatteryInsight['severity'] = drop > 0.2 ? 'critical' : drop > 0.1 ? 'warning' : 'normal';
+    const cause = systemSnapshot.derived?.likely_cause;
+    const confidence = systemSnapshot.derived?.cause_confidence;
+    const trendData = healthHistoryRef.current.map((entry) => entry.score);
+
+    const recommendation =
+      severity === 'critical'
+        ? 'Shift charging to 12:00–15:00 immediately and avoid deep evening discharge.'
+        : severity === 'warning'
+          ? 'Move most charging to peak solar hours (12:00–15:00).'
+          : 'Maintain current charging schedule and continue monitoring.';
+
+    const impact =
+      severity === 'normal'
+        ? 'Keep battery efficiency stable over the next cycle.'
+        : 'Potential +10–15% usable energy recovery.';
+
+    return {
+      score,
+      drop,
+      scoreDelta: scoreDeltaRef.current,
+      severity,
+      cause,
+      confidence,
+      recommendation,
+      impact,
+      trendData,
+    };
+  }, [systemSnapshot]);
+
+  const batteryPrediction = useMemo<BatteryPrediction>(() => {
+    const scoreHistory = healthHistoryRef.current.map((entry) => entry.score);
+    const trend = computeTrend(scoreHistory);
+    const drop = systemSnapshot.derived?.battery_efficiency_drop ?? 0;
+    const cycles = systemSnapshot.battery.charge_cycles_today ?? 0;
+    const pattern = systemSnapshot.battery.discharge_pattern;
+    const risk = computeRisk({ trend, drop, cycles, pattern });
+    const level = classifyRisk(risk);
+    const drivers: string[] = [];
+
+    if (trend < -5) drivers.push(`Declining health trend (${trend.toFixed(0)} over 3 days)`);
+    if (drop > 0.1) drivers.push(`Efficiency drop ${(drop * 100).toFixed(0)}% today`);
+    if (cycles > 1) drivers.push(`High daily cycling (${cycles.toFixed(2)} cycles/day)`);
+    if (pattern === 'evening-heavy') drivers.push('Evening-heavy discharge pattern continues');
+    if (drivers.length === 0) drivers.push('Battery metrics are currently stable');
+
+    const recommendation =
+      level === 'high'
+        ? 'Shift charging to 12:00–15:00 immediately and reduce overnight cycling.'
+        : level === 'medium'
+          ? 'Start pre-charging in peak solar hours and limit evening discharge depth.'
+          : 'Continue current strategy and keep monitoring daily trend.';
+    const expectedOutcome =
+      level === 'high'
+        ? 'May prevent additional 10–15% efficiency loss in the next 24–48h.'
+        : level === 'medium'
+          ? 'Can reduce short-term degradation risk and stabilize score trajectory.'
+          : 'Low near-term risk of degradation based on current patterns.';
+
+    return {
+      risk,
+      level,
+      trend,
+      horizon: 'next 24–48h',
+      drivers,
+      recommendation,
+      expectedOutcome,
+    };
+  }, [systemSnapshot]);
 
   const batteryAlerts = useMemo<DashboardAlert[]>(() => {
     const snapshot = systemSnapshot;
@@ -3741,146 +3871,10 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                   capacity={derivedSystemConfig.batteryKwh}
                   isCharging={data.batteryPower > 0}
                 />
-                <Card className="dashboard-card">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-                      <Battery className="h-5 w-5 text-[var(--battery)]" />
-                      Battery Health
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0 space-y-3">
-                    {(() => {
-                      const drop = systemSnapshot.derived?.battery_efficiency_drop ?? 0;
-                      const score = systemSnapshot.derived?.battery_health_score ?? 0;
-                      const severity =
-                        drop > 0.2 ? { label: 'Critical', color: 'var(--alert)' } :
-                        drop > 0.1 ? { label: 'Warning', color: 'var(--solar)' } :
-                        { label: 'Healthy', color: 'var(--battery)' };
-                      const bandColor =
-                        score >= 80 ? 'var(--battery)' :
-                        score >= 60 ? 'var(--solar)' :
-                        'var(--alert)';
-                      const confidence = systemSnapshot.derived?.cause_confidence;
-                      const confidenceDots =
-                        confidence === undefined
-                          ? ''
-                          : confidence >= 0.75
-                            ? '●●●●○'
-                            : confidence >= 0.5
-                              ? '●●●○○'
-                              : confidence >= 0.25
-                                ? '●●○○○'
-                                : '●○○○○';
-                      const confidenceLabel =
-                        confidence === undefined
-                          ? ''
-                          : confidence >= 0.75
-                            ? 'High'
-                            : confidence >= 0.5
-                            ? 'Medium'
-                            : 'Low';
-                      const biggestFactor = (() => {
-                        const breakdown = systemSnapshot.derived?.battery_health_breakdown;
-                        if (!breakdown) return null;
-                        const entries: Array<{ label: string; value: number }> = [
-                          { label: 'Efficiency', value: breakdown.efficiency ?? 0 },
-                          { label: 'Cycles', value: breakdown.cycles ?? 0 },
-                          { label: 'Confidence', value: breakdown.confidence ?? 0 },
-                        ];
-                        return entries.reduce((max, curr) =>
-                          Math.abs(curr.value) > Math.abs(max.value) ? curr : max,
-                          entries[0]
-                        );
-                      })();
-                      const sparkline = (() => {
-                        const history = healthHistoryRef.current;
-                        if (!history.length) return '';
-                        const chars = ['▁','▂','▃','▄','▅','▆','▇','█'];
-                        const min = Math.min(...history);
-                        const max = Math.max(...history);
-                        const range = Math.max(max - min, 1);
-                        return history
-                          .slice(-10)
-                          .map((v) => {
-                            const idx = Math.min(chars.length - 1, Math.floor(((v - min) / range) * (chars.length - 1)));
-                            return chars[idx];
-                          })
-                          .join('');
-                      })();
-                      const delta = scoreDeltaRef.current;
-                      const deltaLabel =
-                        delta === 0 ? '0' : delta > 0 ? `↑ +${delta.toFixed(1)}` : `↓ ${delta.toFixed(1)}`;
-                      const deltaColor =
-                        delta === 0 ? 'var(--text-secondary)' : delta > 0 ? 'var(--battery)' : 'var(--alert)';
-                      const sparklineLabel = healthHistoryRef.current.length ? '7-day trend' : '';
-
-                      return (
-                        <>
-                          <div className="flex items-baseline justify-between">
-                            <div className="text-3xl font-bold" style={{ color: bandColor }}>
-                              {score}/100
-                            </div>
-                            <div className="text-sm font-semibold" style={{ color: severity.color }}>
-                              {severity.label}
-                            </div>
-                          </div>
-                          <div className="text-sm font-medium" style={{ color: deltaColor }}>
-                            {deltaLabel}
-                          </div>
-                          {sparkline && (
-                            <div className="text-xs font-mono text-[var(--text-secondary)]">
-                              {sparklineLabel ? `${sparklineLabel}: ` : ''}{sparkline}
-                            </div>
-                          )}
-                          <div className="text-sm text-[var(--text-secondary)]">
-                            Efficiency drop: {(drop * 100).toFixed(0)}%
-                          </div>
-                          {biggestFactor && (
-                            <div className="text-sm text-[var(--text-primary)]">
-                              Main impact: {biggestFactor.label} ({biggestFactor.value})
-                            </div>
-                          )}
-                          <div className="space-y-2">
-                            {systemSnapshot.derived?.likely_cause && (
-                              <div className="text-sm text-[var(--text-primary)]">
-                                Cause: {systemSnapshot.derived.likely_cause}
-                              </div>
-                            )}
-                            {confidence !== undefined && (
-                              <div className="text-sm text-[var(--text-primary)] flex items-center gap-2">
-                                Confidence: {confidenceDots}
-                                <span className="text-[var(--text-secondary)]">
-                                  ({confidenceLabel})
-                                </span>
-                              </div>
-                            )}
-                            {systemSnapshot.derived?.confidence_factors?.length ? (
-                              <div className="text-sm text-[var(--text-secondary)] space-y-1">
-                                <div className="font-medium text-[var(--text-primary)]">Factors:</div>
-                                <ul className="list-disc list-inside space-y-0.5">
-                                  {systemSnapshot.derived.confidence_factors.map((f) => (
-                                    <li key={f}>{f}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            ) : null}
-                            {systemSnapshot.derived?.battery_health_breakdown && (
-                              <div className="text-sm text-[var(--text-secondary)] space-y-1">
-                                <div className="font-medium text-[var(--text-primary)]">Breakdown:</div>
-                                <div>- Efficiency: {systemSnapshot.derived.battery_health_breakdown.efficiency ?? 0}</div>
-                                <div>- Cycles: {systemSnapshot.derived.battery_health_breakdown.cycles ?? 0}</div>
-                                <div>+ Confidence: {systemSnapshot.derived.battery_health_breakdown.confidence ?? 0}</div>
-                              </div>
-                            )}
-                            <div className="text-sm text-[var(--text-primary)]">
-                              Action: Shift charging to 12–3 PM to recover 10–15% usable energy.
-                            </div>
-                          </div>
-                        </>
-                      );
-                    })()}
-                  </CardContent>
-                </Card>
+                <div className="space-y-4">
+                  <BatteryHealthCard insight={batteryInsight} />
+                  <BatteryPredictionCard prediction={batteryPrediction} />
+                </div>
                 <Card className="dashboard-card">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
