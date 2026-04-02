@@ -575,67 +575,79 @@ export async function POST(request: NextRequest) {
   });
   if (preflight) return preflight;
 
-  const sizeError = enforceBodySize(request, AI_MAX_BODY_BYTES, headers);
-  if (sizeError) return sizeError;
-
-  const authError = enforceServiceAuth(request, headers);
-  if (authError) return authError;
-
-  const rbacError = enforceRbac(request, headers, ['operator', 'analyst', 'admin', 'viewer']);
-  if (rbacError) return rbacError;
-
-  let parsed: { data: unknown; raw: Buffer };
   try {
-    parsed = await readJsonWithRaw<unknown>(request);
-  } catch {
-    return jsonResponse({ error: 'Invalid JSON payload.' }, { status: 400, headers });
-  }
+    const sizeError = enforceBodySize(request, AI_MAX_BODY_BYTES, headers);
+    if (sizeError) return sizeError;
 
-  const signatureError = verifyRequestSignature(request, parsed.raw, headers);
-  if (signatureError) return signatureError;
+    const authError = enforceServiceAuth(request, headers);
+    if (authError) return authError;
 
-  const validation = aiRequestSchema.safeParse(parsed.data);
-  if (!validation.success) {
+    const rbacError = enforceRbac(request, headers, ['operator', 'analyst', 'admin', 'viewer']);
+    if (rbacError) return rbacError;
+
+    let parsed: { data: unknown; raw: Buffer };
+    try {
+      parsed = await readJsonWithRaw<unknown>(request);
+    } catch {
+      return jsonResponse({ error: 'Invalid JSON payload.' }, { status: 400, headers });
+    }
+
+    const signatureError = verifyRequestSignature(request, parsed.raw, headers);
+    if (signatureError) return signatureError;
+
+    const validation = aiRequestSchema.safeParse(parsed.data);
+    if (!validation.success) {
+      return jsonResponse(
+        { error: 'Invalid payload.', details: validation.error.flatten() },
+        { status: 400, headers }
+      );
+    }
+
+    const payload = validation.data;
+    const promptMessages = buildEnergyPrompt({
+      userQuery: payload.userQuery,
+      systemData: payload.systemData,
+    });
+
+    // Check cache first
+    const cacheKey = getCacheKey(payload);
+    const cachedResponse = getCachedResponse(cacheKey);
+    if (cachedResponse) {
+      return jsonResponse({ response: cachedResponse, cached: true }, { status: 200, headers });
+    }
+
+    // Try Gemini first, then fallback to Z.AI
+    const geminiResult = await callAI('gemini', payload, promptMessages);
+    if (geminiResult.text) {
+      setCachedResponse(cacheKey, geminiResult.text);
+      return jsonResponse({ response: geminiResult.text }, { status: 200, headers });
+    }
+
+    console.log('[AI] Gemini unavailable, falling back to Z.AI');
+
+    const zaiResult = await callAI('zai', payload, promptMessages);
+    if (zaiResult.text) {
+      setCachedResponse(cacheKey, zaiResult.text);
+      return jsonResponse({ response: zaiResult.text }, { status: 200, headers });
+    }
+
+    const hint = !process.env.GEMINI_API_KEY
+      ? 'Add GEMINI_API_KEY to your environment to enable SafariCharge AI.'
+      : 'Gemini and Z.AI are unavailable. Check API keys and quotas.';
+
     return jsonResponse(
-      { error: 'Invalid payload.', details: validation.error.flatten() },
-      { status: 400, headers }
+      { error: 'AI service unavailable.', hint, details: [geminiResult.error, zaiResult.error] },
+      { status: 502, headers }
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown server error';
+    console.error('[AI] Unhandled error in /api/safaricharge-ai', err);
+    return jsonResponse(
+      {
+        error: 'Internal server error.',
+        details: [message],
+      },
+      { status: 500, headers }
     );
   }
-
-  const payload = validation.data;
-  const promptMessages = buildEnergyPrompt({
-    userQuery: payload.userQuery,
-    systemData: payload.systemData,
-  });
-
-  // Check cache first
-  const cacheKey = getCacheKey(payload);
-  const cachedResponse = getCachedResponse(cacheKey);
-  if (cachedResponse) {
-    return jsonResponse({ response: cachedResponse, cached: true }, { status: 200, headers });
-  }
-
-  // Try Gemini first, then fallback to Z.AI
-  const geminiResult = await callAI('gemini', payload, promptMessages);
-  if (geminiResult.text) {
-    setCachedResponse(cacheKey, geminiResult.text);
-    return jsonResponse({ response: geminiResult.text }, { status: 200, headers });
-  }
-
-  console.log('[AI] Gemini unavailable, falling back to Z.AI');
-
-  const zaiResult = await callAI('zai', payload, promptMessages);
-  if (zaiResult.text) {
-    setCachedResponse(cacheKey, zaiResult.text);
-    return jsonResponse({ response: zaiResult.text }, { status: 200, headers });
-  }
-
-  const hint = !process.env.GEMINI_API_KEY
-    ? 'Add GEMINI_API_KEY to your environment to enable SafariCharge AI.'
-    : 'Gemini and Z.AI are unavailable. Check API keys and quotas.';
-
-  return jsonResponse(
-    { error: 'AI service unavailable.', hint, details: [geminiResult.error, zaiResult.error] },
-    { status: 502, headers }
-  );
 }
