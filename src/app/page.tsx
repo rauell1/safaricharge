@@ -30,7 +30,7 @@ import { runSolarSimulation } from '@/simulation/runSimulation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TREE_CO2_KG_PER_YEAR, AVG_CAR_EMISSION_KG_PER_KM, GRID_EMISSION_FACTOR } from '@/lib/tariff';
 import type { HardwareRecommendation } from '@/lib/recommendation-engine';
-import type { SystemConfig, DerivedSystemConfig } from '@/types/simulation-core';
+import type { SystemConfig, DerivedSystemConfig, SimulationMinuteRecord } from '@/types/simulation-core';
 
 // --- CONFIGURATION - Kenya Power Commercial Tariff (E-Mobility) ---
 // Based on actual KPLC bill for ROAM ELECTRIC LIMITED - February 2026
@@ -709,6 +709,41 @@ const SUGGESTION_CHIPS = [
   "Tips for Nairobi rainy season?",
 ];
 
+type AssistantProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  data: any;
+  timeOfDay: number;
+  weather: string;
+  currentDate: Date;
+  isAutoMode: boolean;
+  minuteData: SimulationMinuteRecord[];
+  systemConfig: DerivedSystemConfig;
+};
+
+type AiSystemData = {
+  solar: {
+    production_kw: number;
+    peak_hours: string;
+    daily_kwh: number;
+  };
+  battery: {
+    capacity_kwh: number;
+    current_charge: number;
+    charge_cycles_today: number;
+    discharge_pattern: string;
+  };
+  grid: {
+    import_kwh: number;
+    export_kwh: number;
+  };
+  load: {
+    consumption_kwh: number;
+    peak_usage_hours: string;
+  };
+  timestamp: string;
+};
+
 // Renders AI message text: converts **bold**, newlines, and bullet points
 const AIMessageText = ({ text }: { text: string }) => {
   const lines = text.split('\n');
@@ -732,9 +767,17 @@ const AIMessageText = ({ text }: { text: string }) => {
   );
 };
 
-const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, currentDate, isAutoMode }: {
-  isOpen: boolean; onClose: () => void; data: any; timeOfDay: number; weather: string; currentDate: Date; isAutoMode: boolean;
-}) => {
+const SafariChargeAIAssistant = ({
+  isOpen,
+  onClose,
+  data,
+  timeOfDay,
+  weather,
+  currentDate,
+  isAutoMode,
+  minuteData,
+  systemConfig,
+}: AssistantProps) => {
   const [messages, setMessages] = useState<Array<{ role: string; text: string }>>([
     { role: 'assistant', text: "Hello! I'm **SafariCharge AI**, your intelligent solar energy advisor.\n\nI have live access to your system data and deep knowledge of solar, batteries, KPLC tariffs, and EV charging in Kenya. Ask me anything! ☀️🔋" }
   ]);
@@ -742,6 +785,144 @@ const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, cu
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const deriveStepHours = (record: SimulationMinuteRecord) => {
+    const candidates = [];
+    if (record.solarKW > 0) {
+      candidates.push((record.solarEnergyKWh ?? 0) / Math.max(record.solarKW, 0.0001));
+    }
+    if (record.gridImportKW > 0) {
+      candidates.push((record.gridImportKWh ?? 0) / Math.max(record.gridImportKW, 0.0001));
+    }
+    if (record.gridExportKW > 0) {
+      candidates.push((record.gridExportKWh ?? 0) / Math.max(record.gridExportKW, 0.0001));
+    }
+    const positive = candidates.filter((v) => v > 0);
+    return positive[0] ?? 0.05;
+  };
+
+  const findPeakHour = (totals: Record<number, number>): number | null => {
+    const entries = Object.entries(totals);
+    if (!entries.length) return null;
+    const [hour] = entries.reduce<[string, number]>(
+      (max, entry) => (entry[1] > max[1] ? entry : max),
+      entries[0]
+    );
+    return Number(hour);
+  };
+
+  const formatWindow = (hour: number | null, fallback: string) => {
+    if (hour === null || Number.isNaN(hour)) return fallback;
+    const start = Math.max(0, hour - 1);
+    const end = Math.min(23, hour + 2);
+    const startLabel = `${start.toString().padStart(2, '0')}:00`;
+    const endLabel = `${end.toString().padStart(2, '0')}:00`;
+    return `${startLabel}-${endLabel}`;
+  };
+
+  const sumHours = (hours: number[], totals: Record<number, number>) =>
+    hours.reduce((sum, hr) => sum + (totals[hr] ?? 0), 0);
+
+  const classifyDischargePattern = (hourlyDischarge: Record<number, number>) => {
+    const evening = sumHours([17, 18, 19, 20, 21, 22], hourlyDischarge);
+    const daytime = sumHours([9, 10, 11, 12, 13, 14, 15, 16], hourlyDischarge);
+    const overnight = sumHours([23, 0, 1, 2, 3, 4, 5, 6], hourlyDischarge);
+    const maxBand = Math.max(evening, daytime, overnight);
+    if (maxBand < 0.05) return 'minimal';
+    if (maxBand === evening) return 'evening-heavy';
+    if (maxBand === daytime) return 'daytime-heavy';
+    return 'overnight-heavy';
+  };
+
+  const buildSystemData = (): AiSystemData => {
+    const dayKey = currentDate.toISOString().split('T')[0];
+    const todayRecords = (minuteData ?? []).filter((record) => record.date === dayKey);
+
+    let totalConsumptionKwh = 0;
+    let totalGridImportKwh = 0;
+    let totalGridExportKwh = 0;
+    let totalSolarKwh = 0;
+    const hourlyLoad: Record<number, number> = {};
+    const hourlySolar: Record<number, number> = {};
+    const hourlyDischarge: Record<number, number> = {};
+    let dischargeEnergyKwh = 0;
+
+    todayRecords.forEach((record) => {
+      const stepHours = deriveStepHours(record);
+      const loadKwh =
+        (record.homeLoadKWh ?? 0) +
+        (record.ev1LoadKWh ?? 0) +
+        (record.ev2LoadKWh ?? 0);
+      totalConsumptionKwh += loadKwh;
+      hourlyLoad[record.hour] = (hourlyLoad[record.hour] ?? 0) + loadKwh;
+
+      const solarKwh = record.solarEnergyKWh ?? 0;
+      totalSolarKwh += solarKwh;
+      hourlySolar[record.hour] = (hourlySolar[record.hour] ?? 0) + solarKwh;
+
+      totalGridImportKwh += record.gridImportKWh ?? 0;
+      totalGridExportKwh += record.gridExportKWh ?? 0;
+
+      if (stepHours > 0 && typeof record.batteryPowerKW === 'number') {
+        const energy = record.batteryPowerKW * stepHours;
+        if (energy < 0) {
+          const discharged = Math.abs(energy);
+          dischargeEnergyKwh += discharged;
+          hourlyDischarge[record.hour] = (hourlyDischarge[record.hour] ?? 0) + discharged;
+        }
+      }
+    });
+
+    const liveLoadKw = Math.max(
+      0,
+      (data.homeLoad ?? 0) + (data.ev1Load ?? 0) + (data.ev2Load ?? 0)
+    );
+    const gridImport = totalGridImportKwh || data.totalGridImport || 0;
+    const gridExport =
+      totalGridExportKwh ||
+      (typeof data.feedInEarnings === 'number' ? data.feedInEarnings / FEED_IN_TARIFF_RATE : 0);
+
+    const consumptionKwh =
+      totalConsumptionKwh ||
+      Math.max(0, (data.totalSolar ?? 0) + gridImport - gridExport) ||
+      liveLoadKw * 0.25;
+
+    const peakSolarWindow = formatWindow(findPeakHour(hourlySolar), '12:00-15:00');
+    const peakLoadWindow = formatWindow(findPeakHour(hourlyLoad), '18:00-21:00');
+    const dischargePattern = classifyDischargePattern(hourlyDischarge);
+
+    const batteryCyclesToday =
+      dischargeEnergyKwh > 0 && systemConfig?.batteryKwh
+        ? Number((dischargeEnergyKwh / Math.max(systemConfig.batteryKwh, 1)).toFixed(2))
+        : 0;
+
+    const simulatedTimestamp = new Date(
+      currentDate.getTime() + timeOfDay * 60 * 60 * 1000
+    ).toISOString();
+
+    return {
+      solar: {
+        production_kw: Math.max(0, data.solarR ?? 0),
+        peak_hours: peakSolarWindow,
+        daily_kwh: totalSolarKwh || data.totalSolar || 0,
+      },
+      battery: {
+        capacity_kwh: systemConfig?.batteryKwh ?? 0,
+        current_charge: Math.max(0, Math.min(1, (data.batteryLevel ?? 0) / 100)),
+        charge_cycles_today: batteryCyclesToday,
+        discharge_pattern: dischargePattern,
+      },
+      grid: {
+        import_kwh: gridImport,
+        export_kwh: gridExport,
+      },
+      load: {
+        consumption_kwh: consumptionKwh,
+        peak_usage_hours: peakLoadWindow,
+      },
+      timestamp: simulatedTimestamp,
+    };
+  };
   
   useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [messages, isTyping]);
 
@@ -753,31 +934,7 @@ const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, cu
     setIsTyping(true);
     setError(null);
 
-    // Build rich live context for the API
-    const hh = Math.floor(timeOfDay).toString().padStart(2, '0');
-    const mm = Math.floor((timeOfDay % 1) * 60).toString().padStart(2, '0');
-    const systemContext = {
-      time: `${hh}:${mm}`,
-      date: currentDate.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
-      weather,
-      solar: `${data.solarR.toFixed(1)} kW`,
-      solarTotal: data.totalSolar?.toFixed(1) ?? '0',
-      battery: `${data.batteryLevel.toFixed(1)}% SoC, ${data.batteryPower > 0 ? '+' : ''}${data.batteryPower.toFixed(1)} kW (${data.batteryStatus})`,
-      batteryHealth: `${((data.batteryHealth ?? 1) * 100).toFixed(1)}%`,
-      batteryCycles: data.batteryCycles ?? 0,
-      grid: `${data.netGridPower > 0 ? 'Importing' : data.netGridPower < 0 ? 'Exporting' : 'Balanced'} ${Math.abs(data.netGridPower).toFixed(1)} kW`,
-      savings: data.displaySavings?.toFixed(0) ?? '0',
-      feedInEarnings: data.feedInEarnings?.toFixed(0) ?? '0',
-      carbonOffset: data.carbonOffset?.toFixed(1) ?? '0',
-      peakTime: data.isPeakTime,
-      tariffRate: data.currentTariffRate?.toFixed(2) ?? '0',
-      ev1: `SoC ${data.ev1Soc?.toFixed(0)}%, ${data.ev1Load?.toFixed(1)} kW (${data.ev1Status})${data.ev1V2g ? ' [V2G active]' : ''}`,
-      ev2: `SoC ${data.ev2Soc?.toFixed(0)}%, ${data.ev2Load?.toFixed(1)} kW (${data.ev2Status})${data.ev2V2g ? ' [V2G active]' : ''}`,
-      v2gActive: data.ev1V2g || data.ev2V2g,
-      monthlyPeakDemand: `${data.monthlyPeakDemandKW?.toFixed(1) ?? '0'} kW (est. KES ${data.estimatedDemandChargeKES?.toFixed(0) ?? '0'})`,
-      priorityMode: data.effectivePriority,
-      simRunning: isAutoMode,
-    };
+    const systemData = buildSystemData();
 
     // Conversation history for the API (exclude welcome message, convert to API format)
     const conversationHistory = messages
@@ -788,7 +945,7 @@ const SafariChargeAIAssistant = ({ isOpen, onClose, data, timeOfDay, weather, cu
       const res = await fetch('/api/safaricharge-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userPrompt: text, conversationHistory, systemContext }),
+        body: JSON.stringify({ userQuery: text, conversationHistory, systemData }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'API error');
@@ -3118,7 +3275,17 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
       contextualMetrics={sidebarMetrics}
     >
       {/* Keep all modals */}
-      <SafariChargeAIAssistant isOpen={isAssistantOpen} onClose={() => setIsAssistantOpen(false)} data={data} timeOfDay={timeOfDay} weather={weather} currentDate={currentDate} isAutoMode={isAutoMode} />
+      <SafariChargeAIAssistant
+        isOpen={isAssistantOpen}
+        onClose={() => setIsAssistantOpen(false)}
+        data={data}
+        timeOfDay={timeOfDay}
+        weather={weather}
+        currentDate={currentDate}
+        isAutoMode={isAutoMode}
+        minuteData={minuteDataRef.current}
+        systemConfig={derivedSystemConfig}
+      />
 
       {/* Location Selector Modal */}
       {isLocationSelectorOpen && (

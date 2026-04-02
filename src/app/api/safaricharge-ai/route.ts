@@ -21,32 +21,26 @@ import {
   withTimeout,
 } from '@/lib/security';
 
-const SOLAR_KNOWLEDGE = `
-=== SOLAR ENERGY FUNDAMENTALS ===
-• Photovoltaic (PV) effect: Photons knock electrons loose in silicon cells, creating DC current.
-• Monocrystalline panels: ~20-22% efficiency.
-• Polycrystalline panels: ~15-17% efficiency.
-• Thin-film panels: ~10-13% efficiency.
+const SYSTEM_PROMPT = `
+You are an advanced solar energy optimization assistant.
 
-=== NAIROBI SOLAR CONDITIONS ===
-• Peak Sun Hours: 5.5-6.5 hours/day
-• Global Horizontal Irradiance: ~2,000 kWh/m²/year
-• Dust can reduce output 2-8% if panels aren't cleaned.
+Your job is to analyze solar, battery, grid, and load data and provide:
 
-=== BATTERY STORAGE ===
-• LiFePO4 batteries: 3000-6000 cycles
-• Optimal SoC range: 20-90%
-• Round trip efficiency: ~95%
+1. Clear insights about system performance
+2. Specific inefficiencies or missed opportunities
+3. Actionable recommendations to improve energy usage
 
-=== GRID & TARIFFS ===
-• KPLC peak tariff ≈ KES 26/kWh
-• Off-peak ≈ KES 16/kWh
-• Solar + storage can reduce bills by 40-70% in Nairobi.
+Rules:
+- Be concise and practical
+- Use real numbers from the data
+- Focus on optimization (cost, efficiency, solar usage)
+- Do NOT give generic advice
+- Prioritize high-impact actions
 
-=== EV CHARGING ===
-• Level 2 AC charging ≈ 7-22 kW
-• DC fast charging ≈ 50-350 kW
-• EV charging efficiency ≈ 90-93%
+Output format:
+- Insight (what is happening)
+- Recommendation (what to do)
+- Expected benefit (why it matters)
 `;
 
 const messageSchema = z.object({
@@ -54,36 +48,48 @@ const messageSchema = z.object({
   content: z.string().min(1).max(AI_MAX_PROMPT_CHARS),
 });
 
-const systemContextSchema = z.object({
-  time: z.string(),
-  date: z.string(),
-  weather: z.string(),
-  solar: z.string(),
-  solarTotal: z.string(),
-  battery: z.string(),
-  batteryHealth: z.string(),
-  batteryCycles: z.number(),
-  grid: z.string(),
-  savings: z.string(),
-  feedInEarnings: z.string(),
-  carbonOffset: z.string(),
-  peakTime: z.boolean(),
-  tariffRate: z.string(),
-  ev1: z.string(),
-  ev2: z.string(),
-  v2gActive: z.boolean(),
-  monthlyPeakDemand: z.string(),
-  priorityMode: z.string(),
-  simRunning: z.boolean(),
+const systemDataSchema = z.object({
+  solar: z.object({
+    production_kw: z.number(),
+    peak_hours: z.string(),
+    daily_kwh: z.number(),
+  }),
+  battery: z.object({
+    capacity_kwh: z.number(),
+    current_charge: z.number(),
+    charge_cycles_today: z.number(),
+    discharge_pattern: z.string(),
+  }),
+  grid: z.object({
+    import_kwh: z.number(),
+    export_kwh: z.number(),
+  }),
+  load: z.object({
+    consumption_kwh: z.number(),
+    peak_usage_hours: z.string(),
+  }),
+  timestamp: z.string(),
 });
 
-const aiRequestSchema = z.object({
-  userPrompt: z.string().min(1).max(AI_MAX_PROMPT_CHARS),
-  conversationHistory: z.array(messageSchema).max(AI_MAX_HISTORY_TURNS * 2).default([]),
-  systemContext: systemContextSchema,
-});
+const aiRequestSchema = z
+  .object({
+    userQuery: z.string().min(1).max(AI_MAX_PROMPT_CHARS).optional(),
+    userPrompt: z.string().min(1).max(AI_MAX_PROMPT_CHARS).optional(),
+    conversationHistory: z.array(messageSchema).max(AI_MAX_HISTORY_TURNS * 2).default([]),
+    systemData: systemDataSchema,
+  })
+  .refine((value) => Boolean(value.userQuery || value.userPrompt), {
+    path: ['userQuery'],
+    message: 'userQuery is required',
+  })
+  .transform((value) => ({
+    userQuery: (value.userQuery ?? value.userPrompt) as string,
+    conversationHistory: value.conversationHistory ?? [],
+    systemData: value.systemData,
+  }));
 
 type AiRequest = z.infer<typeof aiRequestSchema>;
+type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string };
 
 type ProviderResult = {
   text: string | null;
@@ -114,8 +120,9 @@ const responseCache = new Map<string, CacheEntry>();
  */
 function getCacheKey(payload: AiRequest): string {
   return JSON.stringify({
-    prompt: payload.userPrompt,
+    prompt: payload.userQuery,
     history: payload.conversationHistory.slice(-3), // Only last 3 turns for key
+    systemData: payload.systemData,
   });
 }
 
@@ -234,52 +241,59 @@ function logProviderMetrics(metrics: {
   );
 }
 
-function buildSystemInstruction(context: AiRequest['systemContext']) {
-  return `
-You are SafariCharge AI, an intelligent solar and EV energy advisor for a charging facility in Nairobi.
+type DerivedMetrics = {
+  solar_utilization: number;
+  grid_dependency: number;
+};
 
-You specialise in:
-• Solar PV systems
-• Battery storage
-• EV charging
-• Energy optimisation
-• Kenya electricity tariffs
+function computeDerivedMetrics(systemData: AiRequest['systemData']): DerivedMetrics {
+  const consumption = systemData.load.consumption_kwh;
+  const safeConsumption = consumption > 0 ? consumption : 0;
+  const solarUtilization =
+    safeConsumption > 0 ? Number((systemData.solar.daily_kwh / safeConsumption).toFixed(2)) : 0;
+  const gridDependency =
+    safeConsumption > 0 ? Number((systemData.grid.import_kwh / safeConsumption).toFixed(2)) : 0;
 
-${SOLAR_KNOWLEDGE}
-
-CURRENT SYSTEM STATE
-Time: ${context.time}
-Date: ${context.date}
-Weather: ${context.weather}
-
-Solar Output: ${context.solar}
-Solar Generated Today: ${context.solarTotal}
-
-Battery: ${context.battery}
-Battery Health: ${context.batteryHealth}
-Battery Cycles: ${context.batteryCycles}
-
-Grid Status: ${context.grid}
-Tariff Rate: ${context.tariffRate} KES/kWh
-Peak Tariff: ${context.peakTime}
-
-EV1: ${context.ev1}
-EV2: ${context.ev2}
-
-V2G Active: ${context.v2gActive}
-
-Savings: ${context.savings} KES
-Feed-in Earnings: ${context.feedInEarnings} KES
-Carbon Offset: ${context.carbonOffset}
-
-Priority Mode: ${context.priorityMode}
-Monthly Peak Demand: ${context.monthlyPeakDemand}
-Simulation Running: ${context.simRunning}
-
-Respond clearly with actionable insights.`;
+  return {
+    solar_utilization: Number.isFinite(solarUtilization) ? solarUtilization : 0,
+    grid_dependency: Number.isFinite(gridDependency) ? gridDependency : 0,
+  };
 }
 
-function buildGeminiBody(payload: AiRequest, systemInstruction: string) {
+function buildEnergyPrompt({
+  userQuery,
+  systemData,
+}: {
+  userQuery: string;
+  systemData: AiRequest['systemData'];
+}): ChatMessage[] {
+  const derived = computeDerivedMetrics(systemData);
+  const derivedSection = `Derived metrics:
+- Solar utilization: ${derived.solar_utilization.toFixed(2)}
+- Grid dependency: ${derived.grid_dependency.toFixed(2)}`;
+
+  return [
+    { role: 'system', content: SYSTEM_PROMPT },
+    {
+      role: 'user',
+      content: `
+User request: ${userQuery}
+
+System data:
+${JSON.stringify(systemData, null, 2)}
+
+${derivedSection}
+
+Analyze this system and provide optimization insights.
+      `.trim(),
+    },
+  ];
+}
+
+function buildGeminiBody(payload: AiRequest, messages: ChatMessage[]) {
+  const systemMessage = messages.find((msg) => msg.role === 'system');
+  const userMessage = messages.find((msg) => msg.role === 'user');
+
   const history = payload.conversationHistory
     .slice(-AI_MAX_HISTORY_TURNS)
     .map((msg) => ({
@@ -288,12 +302,12 @@ function buildGeminiBody(payload: AiRequest, systemInstruction: string) {
     }));
 
   return {
-    system_instruction: { parts: [{ text: systemInstruction }] },
+    system_instruction: { parts: [{ text: systemMessage?.content ?? SYSTEM_PROMPT }] },
     contents: [
       ...history,
       {
         role: 'user',
-        parts: [{ text: payload.userPrompt }],
+        parts: [{ text: userMessage?.content ?? payload.userQuery }],
       },
     ],
     generationConfig: {
@@ -303,13 +317,13 @@ function buildGeminiBody(payload: AiRequest, systemInstruction: string) {
   };
 }
 
-async function callGemini(payload: AiRequest, systemInstruction: string): Promise<ProviderResult> {
+async function callGemini(payload: AiRequest, promptMessages: ChatMessage[]): Promise<ProviderResult> {
   const geminiKey = process.env.GEMINI_API_KEY;
   if (!geminiKey) {
     return { text: null, error: 'GEMINI_API_KEY missing', provider: 'gemini', success: false };
   }
 
-  const requestBody = buildGeminiBody(payload, systemInstruction);
+  const requestBody = buildGeminiBody(payload, promptMessages);
   let lastError = 'Gemini unavailable';
 
   for (const model of GEMINI_MODELS) {
@@ -374,7 +388,7 @@ async function callGemini(payload: AiRequest, systemInstruction: string): Promis
 
 async function callZaiFallback(
   payload: AiRequest,
-  systemInstruction: string
+  promptMessages: ChatMessage[]
 ): Promise<ProviderResult> {
   const startTime = Date.now();
 
@@ -395,13 +409,15 @@ async function callZaiFallback(
 
     try {
       const zaiHistory = payload.conversationHistory.slice(-AI_MAX_HISTORY_TURNS);
+      const systemMessage = promptMessages.find((msg) => msg.role === 'system');
+      const userMessage = promptMessages.find((msg) => msg.role === 'user');
       const completion = await withRetry(() =>
         client.chat.completions.create({
           model: 'glm-5-turbo',
           messages: [
-            { role: 'system', content: systemInstruction },
+            { role: 'system', content: systemMessage?.content ?? SYSTEM_PROMPT },
             ...zaiHistory,
-            { role: 'user', content: payload.userPrompt },
+            { role: 'user', content: userMessage?.content ?? payload.userQuery },
           ],
           temperature: 0.7,
           max_tokens: 1024,
@@ -446,13 +462,13 @@ async function callZaiFallback(
 async function callAI(
   provider: 'gemini' | 'zai',
   payload: AiRequest,
-  systemInstruction: string
+  promptMessages: ChatMessage[]
 ): Promise<ProviderResult> {
   switch (provider) {
     case 'gemini':
-      return callGemini(payload, systemInstruction);
+      return callGemini(payload, promptMessages);
     case 'zai':
-      return callZaiFallback(payload, systemInstruction);
+      return callZaiFallback(payload, promptMessages);
     default:
       return {
         text: null,
@@ -497,7 +513,10 @@ export async function POST(request: NextRequest) {
   }
 
   const payload = validation.data;
-  const systemInstruction = buildSystemInstruction(payload.systemContext);
+  const promptMessages = buildEnergyPrompt({
+    userQuery: payload.userQuery,
+    systemData: payload.systemData,
+  });
 
   // Check cache first
   const cacheKey = getCacheKey(payload);
@@ -507,7 +526,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Try Gemini first, then fallback to Z.AI
-  const geminiResult = await callAI('gemini', payload, systemInstruction);
+  const geminiResult = await callAI('gemini', payload, promptMessages);
   if (geminiResult.text) {
     setCachedResponse(cacheKey, geminiResult.text);
     return jsonResponse({ response: geminiResult.text }, { status: 200, headers });
@@ -515,7 +534,7 @@ export async function POST(request: NextRequest) {
 
   console.log('[AI] Gemini unavailable, falling back to Z.AI');
 
-  const zaiResult = await callAI('zai', payload, systemInstruction);
+  const zaiResult = await callAI('zai', payload, promptMessages);
   if (zaiResult.text) {
     setCachedResponse(cacheKey, zaiResult.text);
     return jsonResponse({ response: zaiResult.text }, { status: 200, headers });
