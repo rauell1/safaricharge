@@ -28,20 +28,16 @@ import {
   fetchSolarData,
   getSolarDataForLocation
 } from '@/lib/nasa-power-api';
-import { fetchSolarDataWithFallback } from '@/lib/meteonorm-api';
 import type { HardwareRecommendation, LoadProfile } from '@/lib/recommendation-engine';
 
 interface LocationSelectorProps {
   onLocationSelected: (
     location: LocationCoordinates,
     solarData: SolarIrradianceData,
-    source: 'nasa' | 'meteonorm',
     fetchedAt: number,
     fromCache: boolean
   ) => void;
   currentLocation: LocationCoordinates;
-  dataSource: 'nasa' | 'meteonorm';
-  onDataSourceChange: (source: 'nasa' | 'meteonorm') => void;
   onLoadingChange?: (loading: boolean) => void;
   cacheRef?: React.MutableRefObject<Record<string, { data: SolarIrradianceData; fetchedAt: number }>>;
   onInvalidateCache?: () => void;
@@ -52,8 +48,6 @@ interface LocationSelectorProps {
 export const LocationSelector: React.FC<LocationSelectorProps> = ({
   onLocationSelected,
   currentLocation,
-  dataSource,
-  onDataSourceChange,
   onLoadingChange,
   cacheRef,
   onInvalidateCache,
@@ -74,32 +68,24 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
     setDataSourceLabel('');
     onLoadingChange?.(true);
     try {
-      const cacheKey = `${dataSource}:${location.name}`;
+      const cacheKey = location.name;
       const cached = localCacheRef.current[cacheKey];
       if (cached) {
-        setDataSourceLabel(`Data from cache: ${dataSource === 'nasa' ? 'NASA POWER' : 'Meteonorm/Open-Meteo'}`);
-        onLocationSelected(location, cached.data, dataSource, cached.fetchedAt, true);
+        setDataSourceLabel('Data from cache: NASA POWER');
+        onLocationSelected(location, cached.data, cached.fetchedAt, true);
         setIsOpen(false);
         return;
       }
 
-      let result;
-      if (dataSource === 'meteonorm') {
-        const { fetchMeteonormData } = await import('@/lib/meteonorm-api');
-        const data = await fetchMeteonormData(location.latitude, location.longitude, location.name);
-        result = { data, source: 'meteonorm' as const };
-      } else {
-        const { fetchSolarData } = await import('@/lib/nasa-power-api');
-        const data = await fetchSolarData(location.latitude, location.longitude, location.name);
-        result = { data, source: 'nasa' as const };
-      }
+      const { fetchSolarData } = await import('@/lib/nasa-power-api');
+      const data = await fetchSolarData(location.latitude, location.longitude, location.name);
       const fetchedAt = Date.now();
-      localCacheRef.current[cacheKey] = { data: result.data, fetchedAt };
-      setDataSourceLabel(`Data from: ${result.source === 'nasa' ? 'NASA POWER' : 'Meteonorm/Open-Meteo'}`);
-      onLocationSelected(location, result.data, result.source, fetchedAt, false);
+      localCacheRef.current[cacheKey] = { data, fetchedAt };
+      setDataSourceLabel('Data from: NASA POWER');
+      onLocationSelected(location, data, fetchedAt, false);
       setIsOpen(false);
     } catch (err) {
-      setError('Failed to fetch solar data from all sources. Please try again.');
+      setError('Failed to fetch solar data. Please try again.');
     } finally {
       setIsLoading(false);
       onLoadingChange?.(false);
@@ -193,11 +179,6 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
   if (embedded) {
     return (
       <div>
-        {dataSource && (
-          <div className="mb-3 text-[10px] text-slate-500 bg-slate-100 px-2 py-1 rounded">
-            {dataSource}
-          </div>
-        )}
         {locationListContent}
         {error && (
           <div className="p-2 mt-2 bg-red-50 border border-red-200 rounded">
@@ -230,31 +211,19 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
 
       {isOpen && (
         <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-slate-200 z-50 overflow-hidden">
-          <div className="p-3 bg-slate-900 text-white text-sm font-bold">
-            <div className="flex items-center gap-2">
-              <MapPin size={16} className="text-sky-400" />
-              Select Location
-            </div>
-            <p className="text-xs text-slate-400 mt-1 font-normal">
-              Location affects solar irradiance calculations
-            </p>
-            <div className="mt-2 flex items-center gap-2 text-[11px]">
-              <span className="text-slate-300">Data Source:</span>
-              <div className="bg-white/10 rounded-full p-0.5 flex gap-1">
-                {(['nasa', 'meteonorm'] as const).map(source => (
-                  <button
-                    key={source}
-                    onClick={() => onDataSourceChange(source)}
-                    className={`px-2 py-1 rounded-full font-bold transition-colors ${
-                      dataSource === source ? 'bg-white text-sky-700' : 'text-white hover:bg-white/20'
-                    }`}
-                  >
-                    {source === 'nasa' ? 'NASA' : 'Meteonorm'}
-                  </button>
-                ))}
+            <div className="p-3 bg-slate-900 text-white text-sm font-bold">
+              <div className="flex items-center gap-2">
+                <MapPin size={16} className="text-sky-400" />
+                Select Location
+              </div>
+              <p className="text-xs text-slate-400 mt-1 font-normal">
+                Location affects solar irradiance calculations
+              </p>
+              <div className="mt-2 flex items-center gap-2 text-[11px] text-slate-300">
+                <span className="bg-white/10 rounded-full px-2 py-1 font-bold text-white">NASA POWER</span>
+                <span className="text-slate-400">Solar irradiance source</span>
               </div>
             </div>
-          </div>
 
           <div className="max-h-96 overflow-y-auto">
             {/* Predefined locations */}
@@ -361,7 +330,6 @@ interface RecommendationPanelProps {
   recommendation: HardwareRecommendation | null;
   onGenerate: () => void;
   isGenerating: boolean;
-  dataSource: 'nasa' | 'meteonorm';
   isSolarLoading: boolean;
   lastUpdated: number | null;
   fromCache: boolean;
@@ -376,7 +344,6 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
   recommendation,
   onGenerate,
   isGenerating,
-  dataSource,
   isSolarLoading,
   lastUpdated,
   fromCache
@@ -400,7 +367,7 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
   const toggleSection = (section: string) => {
     setExpanded(prev => ({ ...prev, [section]: !prev[section] }));
   };
-  const activeSourceLabel = dataSource === 'nasa' ? 'NASA POWER' : 'Meteonorm';
+  const activeSourceLabel = 'NASA POWER';
   const canGenerate = !isGenerating && !isSolarLoading && !!solarData && simulationData.length > 0;
   const updatedLabel = lastUpdated ? new Date(lastUpdated).toLocaleString() : 'Not yet loaded';
   const cacheBadge = fromCache ? 'Cached' : 'Fresh';
@@ -420,7 +387,7 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className={`px-2 py-1 rounded-full text-[10px] font-semibold ${dataSource === 'nasa' ? 'bg-sky-100 text-sky-700' : 'bg-purple-100 text-purple-700'}`}>
+              <span className="px-2 py-1 rounded-full text-[10px] font-semibold bg-sky-100 text-sky-700">
                 Source: {activeSourceLabel}
               </span>
               <span className="px-2 py-1 rounded-full bg-white/10 text-[10px] font-semibold border border-white/20">

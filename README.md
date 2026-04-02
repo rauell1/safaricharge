@@ -63,7 +63,7 @@ src/
 │   ├── recommendation-engine.ts  # Solar sizing & financials
 │   ├── physics-engine.ts         # PV simulation
 │   ├── security.ts               # Auth, CORS, RBAC
-│   └── meteonorm-api.ts          # Weather data APIs
+│   └── nasa-power-api.ts         # Weather data APIs
 ├── types/                      # TypeScript definitions
 └── middleware.ts               # Rate limiting
 ```

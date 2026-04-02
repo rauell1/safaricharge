@@ -29,7 +29,6 @@ SafariCharge is a Next.js 16 + React 19 energy management dashboard that simulat
 - **src/app/page.tsx** (2400+ lines) - Main simulation UI and physics engine
 - **src/lib/recommendation-engine.ts** - Hardware sizing and financial calculations
 - **src/lib/nasa-power-api.ts** - NASA POWER weather data integration
-- **src/lib/meteonorm-api.ts** - Open-Meteo API for fallback weather data
 - **src/lib/config.ts** - System constants and configuration
 - **src/components/RecommendationComponents.tsx** - Location selector and recommendation UI
 
@@ -310,24 +309,22 @@ NASA POWER API → Open-Meteo API → Fallback Estimates
 - Free, no API key required
 - URL: `https://archive-api.open-meteo.com/v1/archive`
 
-**Fallback** (Tertiary)
-- Latitude-based estimates
-- Uses Kenya seasonal patterns
-- Always available
+**Fallback**
+- Latitude-based estimates inside `fetchSolarData` when NASA API is unavailable
+- Uses Kenya seasonal patterns and peak sun hour approximations
+- Always available without network access
 
 **Implementation:**
 
 ```typescript
-// Automatic fallback with source tracking
-const result = await fetchSolarDataWithFallback(lat, lon, name);
-// result.source = 'nasa' | 'meteonorm' | 'fallback'
+// Fetch NASA POWER data with built-in fallback if the API fails
+const data = await fetchSolarData(lat, lon, name);
 ```
 
-**UI Indicator:** Data source is displayed below location name in header
+**UI Indicator:** Source is fixed to NASA POWER in the header and recommendation panels
 
 **Files:**
-- `src/lib/nasa-power-api.ts` - NASA integration
-- `src/lib/meteonorm-api.ts` - Open-Meteo integration + fallback logic
+- `src/lib/nasa-power-api.ts` - NASA integration and fallback logic
 - `src/components/RecommendationComponents.tsx` - UI integration
 
 ### Dynamic Location in Simulation ✅
