@@ -1104,7 +1104,7 @@ const SafariChargeAIAssistant = ({
   systemConfig,
 }: AssistantProps) => {
   const [messages, setMessages] = useState<Array<{ role: string; text: string }>>([
-    { role: 'assistant', text: "Hello! I'm **SafariCharge AI**, your intelligent solar energy advisor.\n\nI have live access to your system data and deep knowledge of solar, batteries, KPLC tariffs, and EV charging in Kenya. Ask me anything! ☀️🔋" }
+    { role: 'assistant', text: "Hello! I'm **SafariCharge AI**, your intelligent energy advisor.\n\nI can help with your live dashboard data *and* answer broader questions using verified research when needed (not just your current simulation). Ask me anything! ☀️🔋📚" }
   ]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -2195,7 +2195,7 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
           </div>
         </div>
 
-        {/* Mobile stacked layout */}
+        {/* Mobile compact flow layout */}
         <div className="flex md:hidden flex-col gap-4 w-full">
           <div className="flex flex-col items-center gap-2">
             <SolarPanelProduct power={pvNode?.outputKw ?? 0} capacity={pvNode?.capacityKw ?? 0} weather={weather} isNight={isNight} />
@@ -2208,50 +2208,65 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
               arrowColor="text-amber-100"
             />
           </div>
-          <div className="flex flex-col gap-3">
-            {layout.conversion.map((converter) => (
-              <div key={`m-inv-${converter.id}`} className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)]/70 p-3 shadow-sm">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 flex justify-center scale-[0.95] origin-center">
-                    <InverterProduct
-                      id={converter.id}
-                      power={converter.outputKw}
-                      ratedCapacityKw={converter.ratingKw}
-                    />
-                  </div>
-                  {showValues && (
-                    <span className="px-2 py-1 rounded-full bg-[var(--bg-card-muted)] border border-[var(--border)] text-[10px] font-semibold text-[var(--text-primary)]">
-                      {converter.outputKw.toFixed(1)} kW
-                    </span>
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)]/75 p-3 shadow-sm">
+            <div className="grid gap-2" style={columnTemplate}>
+              {paddedConverters.map((converter, idx) => (
+                <div key={`m-inv-${idx}`} className="flex flex-col items-center gap-1">
+                  {converter ? (
+                    <>
+                      <div className="scale-[0.82] origin-center">
+                        <InverterProduct
+                          id={converter.id}
+                          power={converter.outputKw}
+                          ratedCapacityKw={converter.ratingKw}
+                        />
+                      </div>
+                      <RigidCable
+                        height={22}
+                        active={converter.active}
+                        color={converter.active ? inverterFlowColor : 'bg-slate-300'}
+                        speed={mapFlowSpeed(converter.outputKw)}
+                        width={mapFlowThickness(converter.outputKw)}
+                        arrowColor={inverterArrowColor}
+                        powerKw={converter.outputKw}
+                        capacityKw={converter.ratingKw}
+                        glowColor={inverterGlowColor}
+                      />
+                    </>
+                  ) : (
+                    <div className="h-16" />
                   )}
                 </div>
-                <div className="mt-2 flex flex-col items-center gap-1">
-                  <RigidCable
-                    height={28}
-                    active={converter.active}
-                    color={converter.active ? inverterFlowColor : 'bg-slate-300'}
-                    speed={mapFlowSpeed(converter.outputKw)}
-                    width={mapFlowThickness(converter.outputKw)}
-                    arrowColor={inverterArrowColor}
-                    powerKw={converter.outputKw}
-                    capacityKw={converter.ratingKw}
-                    glowColor={inverterGlowColor}
-                  />
-                  <div className={`w-2 h-10 rounded-full ${backboneActive ? backboneColor : 'bg-slate-300'} ${backboneActive ? 'shadow-[0_0_12px_rgba(16,185,129,0.3)]' : ''}`} />
+              ))}
+            </div>
+            <div className="mt-2">
+              <HorizontalCable
+                width="100%"
+                height={8}
+                color={backboneActive ? backboneColor : 'bg-slate-300'}
+                active={backboneActive}
+                powerKw={layout.meta.inverterThroughputKw}
+                capacityKw={config.inverterKw}
+                glowColor={backboneGlowColor}
+                showLabel={showValues}
+              />
+            </div>
+          </div>
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)]/80 p-3">
+            <div className="grid gap-2" style={columnTemplate}>
+              {paddedLoads.map((node, idx) => (
+                <div key={`m-node-${idx}`} className="flex flex-col items-center gap-1">
+                  {node ? (
+                    <>
+                      {node.cable}
+                      <div className="scale-[0.86] origin-center">{node.node}</div>
+                    </>
+                  ) : (
+                    <div className="h-16" />
+                  )}
                 </div>
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-center">
-            <div className={`w-2 h-6 rounded-full ${backboneActive ? backboneColor : 'bg-slate-300'} ${backboneActive ? 'shadow-[0_0_12px_rgba(16,185,129,0.3)]' : ''}`} />
-          </div>
-          <div className="flex flex-col gap-3">
-            {busNodes.map((node) => (
-              <div key={`m-node-${node.key}`} className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)]/80 p-3 flex flex-col items-center gap-2">
-                {node.cable}
-                <div className="w-full flex justify-center scale-[0.96]">{node.node}</div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
 
@@ -4156,6 +4171,12 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                         Priority: {data.effectivePriority}
                       </button>
                     </div>
+                    <button
+                      onClick={() => setActiveSection('configuration')}
+                      className="w-full rounded-lg border px-3 py-2 text-xs font-medium border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                    >
+                      Advanced parameters → System Configuration
+                    </button>
                     <div className="grid grid-cols-3 gap-2">
                       {['Sunny', 'Cloudy', 'Rainy'].map((condition) => (
                         <button
