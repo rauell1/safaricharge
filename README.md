@@ -106,6 +106,8 @@ Open: `http://localhost:3000`
   - CSV export workflow
 - `POST /api/formal-report`
   - Formal report payload processing/render support
+- `POST /api/dvshave-harness`
+  - Runs DVShave validation scenarios (custom or default matrix) and returns pass/fail + KPI summary
 
 ## Production Notes
 
