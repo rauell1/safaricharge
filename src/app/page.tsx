@@ -1145,9 +1145,28 @@ const SafariChargeAIAssistant = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userQuery: text, conversationHistory, systemData }),
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'API error');
-      setMessages(prev => [...prev, { role: 'assistant', text: json.response }]);
+
+      const contentType = res.headers.get('content-type') || '';
+      const payloadText = await res.text();
+      let payload: { error?: string; response?: string } | null = null;
+      if (contentType.includes('application/json')) {
+        try {
+          payload = JSON.parse(payloadText) as { error?: string; response?: string };
+        } catch {
+          throw new Error('AI service returned invalid JSON. Please try again.');
+        }
+      }
+
+      if (!res.ok) {
+        const serverError = payload?.error || `AI request failed with status ${res.status}`;
+        throw new Error(serverError);
+      }
+
+      if (!payload?.response) {
+        throw new Error('AI returned an unexpected response format.');
+      }
+
+      setMessages(prev => [...prev, { role: 'assistant', text: payload.response }]);
     } catch (err: any) {
       setError(err.message || 'Failed to reach SafariCharge AI. Check your connection.');
       setMessages(prev => [...prev, { role: 'assistant', text: "⚠️ I couldn't connect to the AI service right now. Please try again in a moment." }]);
