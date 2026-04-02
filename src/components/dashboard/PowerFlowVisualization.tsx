@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Sun, Home, Battery, UtilityPole, Zap, Building2, Car } from 'lucide-react';
+import { Sun, Home, Battery, UtilityPole, Zap, Building2, Car, Factory } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNodeSelection } from '@/hooks/useEnergySystem';
@@ -15,6 +15,7 @@ interface PowerFlowVisualizationProps {
   homePower: number;
   residentialPower?: number;
   commercialPower?: number;
+  industrialPower?: number;
   evPower?: number;
   batteryLevel: number;
   flowDirection: {
@@ -50,7 +51,7 @@ function EnergyNode({ icon: Icon, label, valueLine, subLabel, accent, tint, badg
 
   return (
     <div
-      className="flex min-w-[96px] flex-col items-center gap-3 cursor-pointer group"
+      className="flex min-w-[108px] flex-col items-center gap-3 cursor-pointer group"
       onClick={handleClick}
       role="button"
       tabIndex={0}
@@ -71,7 +72,7 @@ function EnergyNode({ icon: Icon, label, valueLine, subLabel, accent, tint, badg
           style={{ background: accent }}
         />
         <div
-          className={`relative flex h-20 w-20 items-center justify-center rounded-full border-2 transition-all duration-300 hover:scale-110 ${isSelected ? 'scale-105 ring-2 ring-offset-2 ring-offset-[var(--bg-card)]' : ''}`}
+          className={`relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full border-2 transition-all duration-300 hover:scale-110 ${isSelected ? 'scale-105 ring-2 ring-offset-2 ring-offset-[var(--bg-card)]' : ''}`}
           style={{
             backgroundColor: tint,
             borderColor: accent,
@@ -79,7 +80,7 @@ function EnergyNode({ icon: Icon, label, valueLine, subLabel, accent, tint, badg
             borderWidth: isSelected ? '3px' : '2px'
           }}
         >
-          <Icon className="h-9 w-9" style={{ color: accent }} />
+          <Icon className="h-7 w-7 sm:h-9 sm:w-9" style={{ color: accent }} />
           {badgeContent && (
             <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border text-[10px] font-bold"
               style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--battery)' }}>
@@ -158,6 +159,7 @@ export function PowerFlowVisualization({
   homePower,
   residentialPower,
   commercialPower,
+  industrialPower,
   evPower,
   batteryLevel,
   flowDirection,
@@ -235,11 +237,12 @@ export function PowerFlowVisualization({
     );
   }
 
-  const hasBreakdown = residentialPower !== undefined || commercialPower !== undefined || evPower !== undefined;
+  const hasBreakdown = residentialPower !== undefined || commercialPower !== undefined || industrialPower !== undefined || evPower !== undefined;
   const residentialKw = residentialPower ?? homePower;
   const commercialKw = commercialPower ?? (hasBreakdown ? 0 : 0);
+  const industrialKw = industrialPower ?? (hasBreakdown ? 0 : 0);
   const evKw = evPower ?? (hasBreakdown ? 0 : 0);
-  const siteLoad = hasBreakdown ? residentialKw + commercialKw + evKw : homePower;
+  const siteLoad = hasBreakdown ? residentialKw + commercialKw + industrialKw + evKw : homePower;
 
   // Calculate system efficiency and flow distribution
   const usefulEnergy = Math.min(siteLoad, solarPower) + (batteryPower > 0 ? Math.min(batteryPower, Math.max(0, solarPower - siteLoad)) : 0);
@@ -337,7 +340,7 @@ export function PowerFlowVisualization({
                 tint="var(--solar-soft)"
                 powerKw={siteLoad}
               />
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 w-full max-w-md px-1">
+              <div className="flex w-full flex-wrap items-start justify-center gap-x-6 gap-y-5 px-1 sm:gap-x-8">
                 <EnergyNode
                   icon={Home}
                   label="Residential"
@@ -356,6 +359,17 @@ export function PowerFlowVisualization({
                   subLabel="Business"
                   accent="var(--grid)"
                   tint="var(--grid-soft)"
+                  nodeType="home"
+                  onClick={handleNodeClick}
+                  isSelected={false}
+                />
+                <EnergyNode
+                  icon={Factory}
+                  label="Industrial"
+                  valueLine={`${industrialKw.toFixed(2)} kW`}
+                  subLabel="Facility"
+                  accent="var(--alert)"
+                  tint="rgba(239,68,68,0.12)"
                   nodeType="home"
                   onClick={handleNodeClick}
                   isSelected={false}
@@ -406,7 +420,7 @@ export function PowerFlowVisualization({
             <div className="text-center border-l border-r" style={{ borderColor: 'var(--border)' }}>
               <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Site Load</div>
               <div className="text-base font-bold" style={{ color: 'var(--consumption)' }}>{siteLoad.toFixed(2)} kW</div>
-              <div className="text-[9px] text-[var(--text-tertiary)]">R {residentialKw.toFixed(1)} / C {commercialKw.toFixed(1)} / EV {evKw.toFixed(1)}</div>
+              <div className="text-[9px] text-[var(--text-tertiary)]">R {residentialKw.toFixed(1)} / C {commercialKw.toFixed(1)} / I {industrialKw.toFixed(1)} / EV {evKw.toFixed(1)}</div>
             </div>
             <div className="text-center">
               <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Net Grid</div>
