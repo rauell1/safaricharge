@@ -51,7 +51,7 @@ function EnergyNode({ icon: Icon, label, valueLine, subLabel, accent, tint, badg
 
   return (
     <div
-      className="flex min-w-[108px] flex-col items-center gap-3 cursor-pointer group"
+      className="flex min-w-[96px] sm:min-w-[108px] flex-col items-center gap-3 cursor-pointer group"
       onClick={handleClick}
       role="button"
       tabIndex={0}
@@ -226,12 +226,12 @@ export function PowerFlowVisualization({
             </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-3 gap-4 rounded-xl border p-4 bg-[var(--bg-secondary)] border-[var(--border)]">
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 rounded-xl border p-4 bg-[var(--bg-secondary)] border-[var(--border)]">
             <div className="text-center space-y-2">
               <Skeleton className="h-3 w-16 mx-auto" />
               <Skeleton className="h-5 w-20 mx-auto" />
             </div>
-            <div className="text-center border-l border-r space-y-2" style={{ borderColor: 'var(--border)' }}>
+            <div className="text-center space-y-2 sm:border-l sm:border-r" style={{ borderColor: 'var(--border)' }}>
               <Skeleton className="h-3 w-20 mx-auto" />
               <Skeleton className="h-5 w-20 mx-auto" />
             </div>
@@ -295,7 +295,7 @@ export function PowerFlowVisualization({
             />
           </div>
 
-          <div className="flex items-center justify-center w-full max-w-xl gap-6">
+          <div className="flex items-center justify-center w-full max-w-xl gap-4 sm:gap-6 px-1 sm:px-0">
             <div className="flex-1 flex justify-end">
               <FlowPath
                 active={flowDirection.solarToBattery}
@@ -318,7 +318,7 @@ export function PowerFlowVisualization({
           </div>
 
           {/* Desktop: Horizontal layout, Mobile: Vertical layout */}
-          <div className="flex flex-col md:flex-row items-center md:items-start justify-center w-full max-w-4xl gap-4 md:gap-8 lg:gap-10 mt-1">
+          <div className="flex flex-col md:flex-row items-center md:items-start justify-center w-full max-w-4xl gap-3 sm:gap-4 md:gap-8 lg:gap-10 mt-1">
             {/* Battery Section */}
             <div className="flex md:flex-1 min-w-0 flex-col items-center gap-2">
               <FlowPath
@@ -424,12 +424,12 @@ export function PowerFlowVisualization({
 
         <div className="mt-6 space-y-4">
           {/* Power Summary */}
-          <div className="grid grid-cols-3 gap-4 rounded-xl border p-4 bg-[var(--bg-secondary)] border-[var(--border)]">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 rounded-xl border p-4 bg-[var(--bg-secondary)] border-[var(--border)]">
             <div className="text-center">
               <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Solar</div>
               <div className="text-base font-bold" style={{ color: 'var(--solar)' }}>{solarPower.toFixed(2)} kW</div>
             </div>
-            <div className="text-center border-l border-r" style={{ borderColor: 'var(--border)' }}>
+            <div className="text-center space-y-1 sm:space-y-2 sm:border-l sm:border-r" style={{ borderColor: 'var(--border)' }}>
               <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Site Load</div>
               <div className="text-base font-bold" style={{ color: 'var(--consumption)' }}>{siteLoad.toFixed(2)} kW</div>
               <div className="text-[9px] text-[var(--text-tertiary)]">R {residentialKw.toFixed(1)} / C {commercialKw.toFixed(1)} / I {industrialKw.toFixed(1)} / EV {evKw.toFixed(1)}</div>
@@ -446,7 +446,7 @@ export function PowerFlowVisualization({
           </div>
 
           {/* Efficiency & Flow Distribution */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             <div className="rounded-xl border p-4 bg-[var(--bg-secondary)] border-[var(--border)]">
               <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-2">System Efficiency</div>
               <div className="flex items-baseline gap-2 mb-2">
