@@ -50,7 +50,7 @@ function EnergyNode({ icon: Icon, label, valueLine, subLabel, accent, tint, badg
 
   return (
     <div
-      className="flex flex-col items-center gap-3 cursor-pointer group"
+      className="flex min-w-[96px] flex-col items-center gap-3 cursor-pointer group"
       onClick={handleClick}
       role="button"
       tabIndex={0}
@@ -293,7 +293,7 @@ export function PowerFlowVisualization({
                 powerKw={Math.max(0, batteryPower)}
               />
             </div>
-            <div className="h-4 w-4 rounded-full border-2 shadow-[0_0_0_6px_rgba(245,158,11,0.1)]"
+            <div className="h-4 w-4 shrink-0 rounded-full border-2 shadow-[0_0_0_6px_rgba(245,158,11,0.1)]"
               style={{ backgroundColor: 'var(--solar)', borderColor: 'var(--solar)' }} />
             <div className="flex-1 flex justify-start">
               <FlowPath
@@ -306,8 +306,8 @@ export function PowerFlowVisualization({
             </div>
           </div>
 
-          <div className="flex items-start justify-center w-full max-w-3xl gap-6 mt-1">
-            <div className="flex-1 flex flex-col items-center gap-2">
+          <div className="flex items-start justify-center w-full max-w-4xl gap-8 lg:gap-10 mt-1">
+            <div className="flex-1 min-w-0 flex flex-col items-center gap-2">
               <FlowPath
                 active={flowDirection.solarToBattery || flowDirection.batteryToHome}
                 vertical
@@ -337,7 +337,7 @@ export function PowerFlowVisualization({
                 tint="var(--solar-soft)"
                 powerKw={siteLoad}
               />
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full max-w-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 w-full max-w-md px-1">
                 <EnergyNode
                   icon={Home}
                   label="Residential"
