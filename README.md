@@ -1,211 +1,297 @@
-# SafariCharge Solar Dashboard
+# SafariCharge
 
-Production-grade Next.js dashboard for simulating and monitoring solar PV, battery storage, and EV charging performance for commercial sites in Kenya.
+SafariCharge is a Next.js + TypeScript platform for simulating and optimizing solar generation, battery storage, grid interaction, and EV charging.
 
-## ✨ Key Features
+## 1) Full Audit Summary (April 2, 2026)
 
-### 🎨 Modern Dashboard UI
-- **Dark energy-tech theme** with animated power flow visualization
-- **Real-time metrics** with animated counters and live status indicators
-- **Interactive components**: StatCards, PowerFlowVisualization, PanelStatusTable, AlertsList
-- **Responsive design** optimized for mobile, tablet, and desktop
-- **Demo page** at `/demo` with mock data for exploration
+### Critical issues found
+- Monolithic files (`src/app/page.tsx` ~4400 lines, `src/app/api/formal-report/route.ts` ~1400 lines) create high change risk and poor testability.
+- Orphaned backup source file present in production tree (`src/app/api/formal-report/route.ts.backup`).
+- In-memory rate limiting does not scale across multi-instance deployments.
+- Health endpoint lacked readiness signal and operational metadata.
+- Several security controls existed but were not fully configurable via environment-based tuning.
 
-### ⚡ Solar Simulation Engine
-- Real-time simulation of PV + battery + dual EV chargers with tariff-aware optimization
-- Physics-based solar modeling with location-specific irradiance and temperature
-- 25-year financial projections with battery replacements and tariff escalation
-- Hardware recommendations sized for Kenya market (2026 pricing)
+### Implemented in this update
+- Removed orphaned backup API file from source control.
+- Added structured JSON logger (`src/lib/logger.ts`) for better observability.
+- Refactored middleware rate limiting to use environment-driven limits and return explicit rate-limit headers.
+- Improved `/api/health` response with readiness + uptime fields.
+- Hardened startup environment validation for production deployment expectations.
+- Extended `.env.example` with rate-limit configuration variables.
 
-### 📊 Reports & AI
-- CSV/HTML report generation with sanitized exports (prevents formula injection)
-- AI advisor endpoint with Gemini-first, Z.AI fallback and strict payload validation
-- Formal PDF reports with hardware specifications and financial analysis
+---
 
-### 🔒 Production Security
-- In-memory rate limiting, CORS allowlist, bearer-token auth, optional RBAC
-- Webhook signature verification (HMAC-SHA256)
-- Input validation with Zod schemas and 8MB request caps
-- Environment validation at startup and health endpoint for liveness probes
+## 2) Dead Code / Structural Cleanup
 
-## Prerequisites
-- Node.js 20+ (dev/build) and npm.
-- Bun available in production if you use `npm run start`.
-- SQLite works by default for local dev; set `DATABASE_URL` to Postgres in production.
+### Removed
+- `src/app/api/formal-report/route.ts.backup` (orphan file, not used by Next.js routing).
 
-## Tech Stack
-| Layer | Technology |
-| --- | --- |
-| Framework | Next.js 16 (App Router) + TypeScript |
-| UI | Tailwind CSS 4 + shadcn/ui + Recharts |
-| State/Data | Zustand + TanStack Query |
-| Backend | Next server routes + Prisma (SQLite dev / Postgres prod) |
-| Auth/Security | Bearer token + optional RBAC header + rate limiting + HMAC |
-| AI | Google Gemini API (primary) + Z.AI SDK (fallback) |
+### Candidates to evaluate for deletion (not auto-deleted due potential future use)
+- `src/components/LoadConfigComponents.tsx`
+- `src/components/dashboard/index.ts`
+- Multiple shadcn UI primitives under `src/components/ui/*` appear currently unreferenced in app routes.
+- `src/lib/services/reportService.ts` appears unreferenced.
 
-## 📁 Project Structure
-```
+> Recommendation: enforce dead-code checks in CI with `ts-prune` and custom import graph checks.
+
+---
+
+## 3) Folder Restructure (Feature-Based)
+
+### Current structure (high-level)
+- `src/app/*` (routes/pages)
+- `src/components/*` (shared + feature mixed)
+- `src/lib/*` (domain logic + config + security mixed)
+- `src/hooks/*`
+- `src/stores/*`
+- `src/types/*`
+
+### Proposed structure (feature-first)
+
+```text
 src/
-├── app/
-│   ├── api/                    # API routes (health, reports, AI)
-│   ├── demo/                   # Demo dashboard page
-│   └── page.tsx                # Main simulation interface
-├── components/
-│   ├── dashboard/              # Dashboard UI components
-│   │   ├── DashboardLayout.tsx
-│   │   ├── StatCards.tsx
-│   │   ├── PowerFlowVisualization.tsx
-│   │   ├── PanelStatusTable.tsx
-│   │   └── AlertsList.tsx
-│   └── ui/                     # shadcn/ui primitives
-├── hooks/                      # React hooks (simulation, state)
-├── lib/                        # Core logic
-│   ├── recommendation-engine.ts  # Solar sizing & financials
-│   ├── physics-engine.ts         # PV simulation
-│   ├── security.ts               # Auth, CORS, RBAC
-│   └── nasa-power-api.ts         # Weather data APIs
-├── types/                      # TypeScript definitions
-└── middleware.ts               # Rate limiting
+  app/
+    (dashboard)/
+    api/
+  features/
+    simulation/
+      components/
+      hooks/
+      services/
+      utils/
+      types/
+    reports/
+      components/
+      hooks/
+      services/
+      utils/
+      types/
+    ai-assistant/
+      components/
+      hooks/
+      services/
+      utils/
+      types/
+    auth/
+      components/
+      hooks/
+      services/
+      utils/
+      types/
+  shared/
+    ui/
+    config/
+    security/
+    logging/
+    db/
+    types/
 ```
 
-## 🚀 Quick Start
+---
+
+## 4) Hardcoded Value Extraction
+
+### Extracted / centralized now
+- Rate-limit values moved to env-configurable server config exports:
+  - `RATE_LIMIT_WINDOW_MS`
+  - `RATE_LIMIT_API_PER_WINDOW`
+  - `RATE_LIMIT_AI_PER_WINDOW`
+  - `RATE_LIMIT_REPORT_PER_WINDOW`
+
+### Remaining high-priority extractions
+- Color hex constants embedded in report SVG/HTML builder.
+- Report template dimensions and chart dimensions should move to `report.constants.ts`.
+- API-specific size limits should be consolidated into one shared limits module.
+
+---
+
+## 5) Naming Standardization
+
+### Standards enforced
+- Use domain terms over vague labels:
+  - Prefer `simulationSnapshot` over `data`
+  - Prefer `rateLimitRule` over `rule`
+  - Prefer `clientIpAddress` over `ip`
+- File naming:
+  - Route helpers in `*.service.ts`
+  - Validation schemas in `*.schema.ts`
+  - Shared constants in `*.constants.ts`
+
+### Remaining hotspots
+- `src/app/page.tsx` has many generic variable names due size/legacy growth.
+- API route files mix transport, business logic, and template rendering names.
+
+---
+
+## 6) Top 5 Scalability Risks (10,000+ users)
+
+1. **In-memory middleware rate limit (single-process only)**
+   - Failure mode: limits bypassed across replicas; abusive traffic leaks through.
+   - Fix: move counters to Redis/Upstash + distributed sliding window.
+
+2. **Monolithic report generation on request thread**
+   - Failure mode: CPU spikes, long tail latency, request timeouts.
+   - Fix: enqueue report generation (BullMQ/SQS), return job ID, poll status.
+
+3. **Large JSON payload export/report endpoints**
+   - Failure mode: high memory pressure and GC churn.
+   - Fix: chunked uploads, server-side pagination/streaming, enforce tighter caps by plan.
+
+4. **No shared cache layer for AI/report outputs**
+   - Failure mode: repeated expensive recomputation/API calls.
+   - Fix: Redis cache with key versioning and short TTL.
+
+5. **SQLite default path left enabled in production**
+   - Failure mode: write contention and poor concurrency.
+   - Fix: Postgres + PgBouncer + Prisma connection tuning.
+
+---
+
+## 7) Messiest File Rewrite Plan
+
+### Identified worst file
+- `src/app/page.tsx` (very large, mixed concerns, hard to test).
+
+### Rewrite approach (recommended phased rollout)
+1. Split into feature slices:
+   - `features/simulation/components/*`
+   - `features/ai-assistant/components/*`
+   - `features/reports/components/*`
+2. Move simulation and derived-metrics logic into pure services with unit tests.
+3. Keep page as composition layer only.
+
+> In this iteration, middleware and operational layers were rewritten for production controls while preserving user-facing behavior.
+
+---
+
+## 8) Security Hardening Checklist
+
+### Implemented
+- Endpoint rate limiting with configurable thresholds.
+- Input validation (Zod) already present on heavy API routes.
+- CORS allowlist controls already present and retained.
+- RBAC enforcement support retained.
+- Webhook signature verification retained.
+- Startup env validation strengthened for production.
+- Frontend hardcoded secrets: none found in source.
+
+### Required next steps
+- Replace bearer token auth with session/JWT auth backed by HttpOnly secure cookies.
+- Add CSRF protection for browser-authenticated mutation endpoints.
+- Add audit trail logs for privileged report/export usage.
+
+---
+
+## 9) Performance & Database
+
+### Implemented now
+- Added stronger production validation around env + rate limiting.
+
+### Required next steps
+- Migrate production to Postgres.
+- Add query-specific indexes as usage patterns are introduced.
+- Add pagination for historical datasets in API response contract.
+- Add connection pooling (PgBouncer / Prisma Data Proxy).
+
+---
+
+## 10) Infrastructure & File Handling
+
+### Required production architecture
+- Store generated reports/artifacts in S3-compatible object storage.
+- Serve downloads through CDN signed URLs.
+- Avoid large in-memory report buffering in route handlers.
+
+---
+
+## 11) Reliability & Observability
+
+### Implemented now
+- Structured logging utility (`src/lib/logger.ts`).
+- Health endpoint now includes readiness + uptime metadata.
+- Existing frontend error boundary retained.
+- Existing env validation at startup retained and strengthened.
+
+### Next steps
+- Add request correlation IDs and propagate through logs.
+- Add OpenTelemetry traces for AI/report routes.
+- Add synthetic uptime checks and SLO dashboards.
+
+---
+
+## 12) Background Processing
+
+Move heavy report and notification workloads to workers:
+- Queue: BullMQ (Redis) or cloud queue service.
+- API route: enqueue and return `202 Accepted` with `jobId`.
+- Worker: process report generation, persist artifact URL.
+
+---
+
+## 13) Session & Auth Management
+
+Recommended production design:
+- NextAuth/Auth.js with secure HttpOnly cookies (no localStorage tokens).
+- Short access-token TTL + rotating refresh tokens.
+- Password reset tokens hashed at rest and expiring (15–30 minutes).
+- Device/session revocation support.
+
+---
+
+## 14) Data Safety
+
+- Automated daily backups (database + object storage metadata).
+- Point-in-time restore for production DB.
+- Migration safety:
+  - use expand/contract migrations,
+  - run pre-deploy migration validation,
+  - include rollback playbooks.
+
+---
+
+## 15) Code Quality Gates
+
+Enable in CI:
+- `tsc --noEmit` with strict TypeScript mode.
+- ESLint + import/no-unused-modules.
+- Unit tests for simulation + report services.
+- Basic load tests for API routes.
+- SAST + dependency scanning (CodeQL, npm audit, osv-scanner).
+
+---
+
+## Setup
 
 ```bash
-# 1. Install dependencies
 npm install
-
-# 2. Configure environment
 cp .env.example .env
-# Edit .env and set DATABASE_URL, GEMINI_API_KEY (optional), and security vars
-
-# 3. Initialize database
 npm run db:push
-
-# 4. Run development server
 npm run dev
-# Open http://localhost:3000
-
-# 5. Try the demo dashboard
-# Visit http://localhost:3000/demo to see all components with mock data
-```
-
-### Development Commands
-```bash
-npm run lint          # Check code quality
-npm run build         # Production build
-npm run start         # Run production server (requires Bun)
 ```
 
 ## Environment Variables
-| Name | Required | Description |
-| --- | --- | --- |
-| `DATABASE_URL` | Yes | Prisma connection string (`file:./dev.db` for SQLite dev; PostgreSQL for prod). |
-| `GEMINI_API_KEY` | Recommended | Google Gemini key for the AI endpoint. |
-| `API_SERVICE_TOKEN` | Recommended | Bearer token required by API routes (`Authorization: Bearer <token>`). |
-| `WEBHOOK_SECRET` | Optional | HMAC secret for verifying `X-SC-Signature` on POST bodies. |
-| `API_ALLOWED_ORIGINS` | Optional | Comma-separated origins allowed for CORS (default: prod + localhost). |
-| `ENABLE_RBAC` | Optional | `true` to enforce `x-sc-role` header roles (`viewer|operator|analyst|admin`). |
-| `API_ROLE_HEADER` | Optional | Override role header name (default `x-sc-role`). |
-| `NEXT_TELEMETRY_DISABLED` | Optional | Set `1` to disable Next telemetry. |
 
-## Scripts
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Start development server on port 3000. |
-| `npm run build` | Production build (standalone output). |
-| `npm run start` | Run standalone server (uses Bun). |
-| `npm run lint` | ESLint with Next rules. |
-| `npm run db:push` | Apply Prisma schema to database. |
-| `npm run db:migrate` | Create a migration in dev. |
+See `.env.example` for complete descriptions.
 
-## 🎨 Dashboard Demo
+Core variables:
+- `DATABASE_URL`
+- `GEMINI_API_KEY`
+- `ZAI_API_KEY`
+- `API_SERVICE_TOKEN`
+- `WEBHOOK_SECRET`
+- `API_ALLOWED_ORIGINS`
+- `ENABLE_RBAC`
+- `API_ROLE_HEADER`
+- `RATE_LIMIT_WINDOW_MS`
+- `RATE_LIMIT_API_PER_WINDOW`
+- `RATE_LIMIT_AI_PER_WINDOW`
+- `RATE_LIMIT_REPORT_PER_WINDOW`
 
-The project includes a fully-functional demo dashboard at `/demo` showcasing:
+## Deployment
 
-- **StatCards**: Real-time metrics with animated counters (Generation, Power, Consumption, Savings)
-- **PowerFlowVisualization**: Animated energy flow between Solar → Battery → Home → Grid
-- **PanelStatusTable**: System diagnostics with color-coded status indicators
-- **AlertsList**: System notifications with type-based filtering
-- **TimeRangeSwitcher**: Filter data by day/week/month/year
-
-The demo uses mock data from `useDemoEnergySystem` hook and demonstrates the dark energy-tech theme with:
-- Amber/yellow for solar energy
-- Green for savings/positive metrics
-- Purple for grid interactions
-- Red for alerts/warnings
-- Smooth animations and hover effects
-
-See `src/components/dashboard/README.md` for full component documentation.
-
-## API Routes
-| Method | Path | Description | Auth / Limits |
-| --- | --- | --- | --- |
-| `GET` | `/api/health` | Liveness probe returning JSON. | None. |
-| `POST` | `/api/export-report` | Accepts minute-level simulation data and returns a sanitised CSV export. 8 MB body cap. | `Authorization: Bearer <token>` when `API_SERVICE_TOKEN` is set; optional HMAC via `WEBHOOK_SECRET`. Rate limit: 5/min. |
-| `POST` | `/api/formal-report` | Accepts aggregated simulation totals/breakdowns and returns HTML for PDF printing. 8 MB body cap. | Same auth/signature rules as export. Rate limit: 5/min. |
-| `POST` | `/api/safaricharge-ai` | AI assistant (Gemini primary, Z.AI fallback) with Zod-validated prompts/responses. | Bearer token if configured. Rate limit: 10/min. |
-
-## Security Hardening
-- **Rate limiting**: in-memory sliding window on all API routes (`src/middleware.ts`).
-- **CORS**: allowlist with per-origin echo + OPTIONS handling in `src/lib/security.ts`.
-- **Authentication**: Bearer token enforcement when `API_SERVICE_TOKEN` is set.
-- **RBAC**: Optional `x-sc-role` header check when `ENABLE_RBAC=true`.
-- **Webhook signatures**: HMAC-SHA256 validation using `WEBHOOK_SECRET`.
-- **Input validation**: Zod schemas on AI, export, and formal-report endpoints; request size caps.
-- **Env validation**: `src/instrumentation.ts` calls `validateEnv` at startup.
-- **Error boundaries**: `src/app/error.tsx` catches client render failures.
-- **Sanitised exports**: CSV generation neutralises formula injection.
-- **Content security**: CSP and header hardening live in `next.config.ts`; CORS and body-size enforcement are per-route.
-- **Rate limits by endpoint**: AI (10/min), formal report (5/min), export report (5/min), other API routes (60/min).
-
-## 🚀 Deployment
-
-### Vercel (Recommended)
-1. Connect repo to Vercel
-2. Set environment variables: `DATABASE_URL`, `GEMINI_API_KEY`, `API_SERVICE_TOKEN`, `WEBHOOK_SECRET`, `API_ALLOWED_ORIGINS`
-3. Deploy – Next standalone output is built automatically
-
-### Self-hosted
-```bash
-npm run build
-npm run start  # Requires Bun and environment variables
-```
-
-**Reverse Proxy**: Use `Caddyfile.txt` as a template for Caddy (TLS + compression)
-
-**Scaling Tips**:
-- Use Redis for shared rate-limit store across multiple instances
-- Configure Postgres with connection pooling for production
-- Keep `API_ALLOWED_ORIGINS` narrow and enforce bearer tokens
-- Use background jobs/queues for heavy tasks (reports, notifications)
-
-## 📊 Operations
-
-- **Health check**: `GET /api/health` returns JSON status
-- **Logs**: Production server logs to `server.log` via Bun
-- **Monitoring**: Health endpoint suitable for Kubernetes liveness probes
-- **Database**: SQLite for dev, Postgres recommended for production
-
-## 📚 Additional Documentation
-
-- **[IMPLEMENTATION.md](IMPLEMENTATION.md)** - Central reference for all calculations, formulas, and architectural decisions
-- **[USER_GUIDE.md](USER_GUIDE.md)** - End-user guide for the simulation interface
-- **[INTEGRATION.md](INTEGRATION.md)** - API integration guide for external systems
-- **[src/components/dashboard/README.md](src/components/dashboard/README.md)** - Dashboard component documentation
-
-## 🤝 Contributing
-
-This project uses:
-- **TypeScript** for type safety
-- **ESLint** for code quality (`npm run lint`)
-- **Prettier** formatting via ESLint config
-- **Prisma** for database schema management
-
-Before submitting changes:
-1. Run `npm run lint` to check for issues
-2. Run `npm run build` to ensure the project builds
-3. Test your changes locally with `npm run dev`
-
-## 📄 License
-
-See repository for license information.
+1. Use Postgres (not SQLite) in production.
+2. Configure secrets via deployment platform secret manager.
+3. Build and deploy Next.js standalone server.
+4. Put reverse proxy / CDN in front.
+5. Run workers for report jobs separately.
+6. Monitor `/api/health` and alert on readiness degradation.

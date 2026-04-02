@@ -13,6 +13,12 @@ const parseList = (value: string | undefined, fallback: string[]): string[] => {
     .filter(Boolean);
 };
 
+const parseNumber = (value: string | undefined, fallback: number): number => {
+  if (!value) return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
 /** Comma-separated list of origins allowed to call our APIs. */
 export const API_ALLOWED_ORIGINS = parseList(process.env.API_ALLOWED_ORIGINS, [
   'https://sc-solar-dashboard.vercel.app',
@@ -42,3 +48,17 @@ export const ALLOWED_ROLES = parseList(process.env.API_ALLOWED_ROLES, [
 /** Header name used for RBAC role propagation. */
 export const ROLE_HEADER = process.env.API_ROLE_HEADER ?? 'x-sc-role';
 
+/** Sliding window size for middleware rate limiting (ms). */
+export const RATE_LIMIT_WINDOW_MS = parseNumber(process.env.RATE_LIMIT_WINDOW_MS, 60_000);
+
+/** Generic API limit per window for non-expensive routes. */
+export const RATE_LIMIT_API_PER_WINDOW = parseNumber(process.env.RATE_LIMIT_API_PER_WINDOW, 60);
+
+/** AI route request limit per window. */
+export const RATE_LIMIT_AI_PER_WINDOW = parseNumber(process.env.RATE_LIMIT_AI_PER_WINDOW, 10);
+
+/** Export/formal report route limit per window. */
+export const RATE_LIMIT_REPORT_PER_WINDOW = parseNumber(
+  process.env.RATE_LIMIT_REPORT_PER_WINDOW,
+  5
+);
