@@ -746,6 +746,7 @@ type AiSystemData = {
     battery_efficiency?: number;
     previous_battery_efficiency?: number;
     battery_efficiency_drop?: number;
+    likely_cause?: string;
   };
 };
 
@@ -939,6 +940,10 @@ const SafariChargeAIAssistant = ({
     const peakSolarWindow = formatWindow(findPeakHour(hourlySolar), '12:00-15:00');
     const peakLoadWindow = formatWindow(findPeakHour(hourlyLoad), '18:00-21:00');
     const dischargePattern = classifyDischargePattern(hourlyDischarge);
+    const likelyCause =
+      batteryMetrics.drop > 0.1 && dischargePattern === 'evening-heavy'
+        ? 'evening-heavy discharge'
+        : undefined;
 
     const batteryCyclesToday =
       batteryMetrics.dischargeKwh > 0 && systemConfig?.batteryKwh
@@ -974,6 +979,7 @@ const SafariChargeAIAssistant = ({
         battery_efficiency: Number(batteryMetrics.efficiency.toFixed(2)),
         previous_battery_efficiency: Number(batteryMetrics.previousEfficiency.toFixed(2)),
         battery_efficiency_drop: Number(batteryMetrics.drop.toFixed(2)),
+        likely_cause: likelyCause,
       },
     };
   };
@@ -2819,23 +2825,28 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
   const isNight = timeOfDay < 6 || timeOfDay > 19;
 
   const batteryAlerts = useMemo<DashboardAlert[]>(() => {
-    const metrics = computeBatteryEfficiencyMetrics(minuteDataRef.current, currentDate);
-    if (metrics.drop > 0.1) {
-      const currentPct = Math.round(metrics.efficiency * 100);
-      const prevPct = Math.round(metrics.previousEfficiency * 100);
-      const dropPct = Math.round(metrics.drop * 100);
-      return [
-        {
-          id: 'battery-efficiency-drop',
-          type: 'warning',
-          title: 'Battery efficiency dropped',
-          message: `Efficiency fell from ${prevPct || 0}% to ${currentPct}% (~${dropPct}% loss). Charge earlier in peak solar and reduce deep evening discharge.`,
-          timestamp: new Date(),
-        },
-      ];
-    }
-    return [];
-  }, [currentDate, data.batteryPower, data.batteryLevel]);
+    const snapshot = buildSystemData();
+    const drop = snapshot.derived?.battery_efficiency_drop ?? 0;
+    if (drop <= 0.1) return [];
+
+    const currentPct = Math.round((snapshot.derived?.battery_efficiency ?? 0) * 100);
+    const prevPct = Math.round((snapshot.derived?.previous_battery_efficiency ?? 0) * 100);
+    const dropPct = Math.round(drop * 100);
+    const cause = snapshot.derived?.likely_cause;
+    const severityType = drop > 0.2 ? 'error' : 'warning';
+    const title = drop > 0.2 ? 'Critical battery efficiency drop' : 'Battery efficiency dropping';
+    const causeText = cause ? ` Likely cause: ${cause}.` : '';
+
+    return [
+      {
+        id: 'battery-efficiency-drop',
+        type: severityType,
+        title,
+        message: `Efficiency fell from ${prevPct || 0}% to ${currentPct}% (~${dropPct}% loss).${causeText} Shift charging to peak solar and reduce deep evening discharge.`,
+        timestamp: new Date(),
+      },
+    ];
+  }, [data, timeOfDay, currentDate, isAutoMode, minuteData, systemConfig]);
 
   // Handle location change
   const handleLocationChange = useCallback((location: LocationCoordinates, newSolarData: SolarIrradianceData, source: 'nasa' | 'meteonorm', fetchedAt: number, fromCache: boolean) => {
