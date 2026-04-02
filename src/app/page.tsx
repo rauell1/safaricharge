@@ -784,9 +784,23 @@ const estimateStepHours = (record: SimulationMinuteRecord) => {
   return positive[0] ?? 0.05;
 };
 
+const classifyDischargePattern = (hourlyDischarge: Record<number, number>) => {
+  const sumHours = (hours: number[]) =>
+    hours.reduce((sum, hr) => sum + (hourlyDischarge[hr] ?? 0), 0);
+  const evening = sumHours([17, 18, 19, 20, 21, 22]);
+  const daytime = sumHours([9, 10, 11, 12, 13, 14, 15, 16]);
+  const overnight = sumHours([23, 0, 1, 2, 3, 4, 5, 6]);
+  const maxBand = Math.max(evening, daytime, overnight);
+  if (maxBand < 0.05) return 'minimal';
+  if (maxBand === evening) return 'evening-heavy';
+  if (maxBand === daytime) return 'daytime-heavy';
+  return 'overnight-heavy';
+};
+
 const computeBatteryEfficiencyMetrics = (
   records: SimulationMinuteRecord[],
-  date: Date
+  date: Date,
+  batteryCapacityKwh: number
 ): {
   chargeKwh: number;
   dischargeKwh: number;
@@ -819,8 +833,8 @@ const computeBatteryEfficiencyMetrics = (
   const previous = aggregateForDay(prevKey);
   const drop = previous.efficiency > 0 ? previous.efficiency - current.efficiency : 0;
   const cycleEstimate =
-    current.charge > 0 && systemConfig?.batteryKwh
-      ? current.discharge / Math.max(systemConfig.batteryKwh, 1)
+    current.charge > 0 && batteryCapacityKwh
+      ? current.discharge / Math.max(batteryCapacityKwh, 1)
       : 0;
 
   return {
@@ -894,6 +908,167 @@ const classifyRisk = (risk: number): BatteryPrediction['level'] => {
   return 'low';
 };
 
+const buildAiSystemData = ({
+  data,
+  minuteData,
+  timeOfDay,
+  currentDate,
+  systemConfig,
+}: {
+  data: any;
+  minuteData: SimulationMinuteRecord[];
+  timeOfDay: number;
+  currentDate: Date;
+  systemConfig: DerivedSystemConfig;
+}): AiSystemData => {
+  const safeMinuteData = minuteData ?? [];
+  const batteryMetrics = computeBatteryEfficiencyMetrics(
+    safeMinuteData,
+    currentDate,
+    systemConfig?.batteryKwh ?? 0
+  );
+
+  const dayKey = currentDate.toISOString().split('T')[0];
+  const todayRecords = safeMinuteData.filter((record) => record.date === dayKey);
+
+  const findPeakHour = (totals: Record<number, number>): number | null => {
+    const entries = Object.entries(totals);
+    if (!entries.length) return null;
+    const [hour] = entries.reduce<[string, number]>(
+      (max, entry) => (entry[1] > max[1] ? entry : max),
+      entries[0]
+    );
+    return Number(hour);
+  };
+
+  const formatWindow = (hour: number | null, fallback: string) => {
+    if (hour === null || Number.isNaN(hour)) return fallback;
+    const start = Math.max(0, hour - 1);
+    const end = Math.min(23, hour + 2);
+    const startLabel = `${start.toString().padStart(2, '0')}:00`;
+    const endLabel = `${end.toString().padStart(2, '0')}:00`;
+    return `${startLabel}-${endLabel}`;
+  };
+
+  let totalConsumptionKwh = 0;
+  let totalGridImportKwh = 0;
+  let totalGridExportKwh = 0;
+  let totalSolarKwh = 0;
+  const hourlyLoad: Record<number, number> = {};
+  const hourlySolar: Record<number, number> = {};
+  const hourlyDischarge: Record<number, number> = {};
+
+  todayRecords.forEach((record) => {
+    const stepHours = estimateStepHours(record);
+    const loadKwh = (record.homeLoadKWh ?? 0) + (record.ev1LoadKWh ?? 0) + (record.ev2LoadKWh ?? 0);
+    totalConsumptionKwh += loadKwh;
+    hourlyLoad[record.hour] = (hourlyLoad[record.hour] ?? 0) + loadKwh;
+
+    const solarKwh = record.solarEnergyKWh ?? 0;
+    totalSolarKwh += solarKwh;
+    hourlySolar[record.hour] = (hourlySolar[record.hour] ?? 0) + solarKwh;
+
+    totalGridImportKwh += record.gridImportKWh ?? 0;
+    totalGridExportKwh += record.gridExportKWh ?? 0;
+
+    if (stepHours > 0 && typeof record.batteryPowerKW === 'number') {
+      const energy = record.batteryPowerKW * stepHours;
+      if (energy < 0) {
+        const discharged = Math.abs(energy);
+        hourlyDischarge[record.hour] = (hourlyDischarge[record.hour] ?? 0) + discharged;
+      }
+    }
+  });
+
+  const liveLoadKw = Math.max(0, (data.homeLoad ?? 0) + (data.ev1Load ?? 0) + (data.ev2Load ?? 0));
+  const gridImport = totalGridImportKwh || data.totalGridImport || 0;
+  const gridExport =
+    totalGridExportKwh ||
+    (typeof data.feedInEarnings === 'number' ? data.feedInEarnings / FEED_IN_TARIFF_RATE : 0);
+
+  const consumptionKwh =
+    totalConsumptionKwh || Math.max(0, (data.totalSolar ?? 0) + gridImport - gridExport) || liveLoadKw * 0.25;
+
+  const peakSolarWindow = formatWindow(findPeakHour(hourlySolar), '12:00-15:00');
+  const peakLoadWindow = formatWindow(findPeakHour(hourlyLoad), '18:00-21:00');
+  const dischargePattern = batteryMetrics.dischargePattern;
+  const likelyCause =
+    batteryMetrics.drop > 0.1 && dischargePattern === 'evening-heavy'
+      ? 'evening-heavy discharge'
+      : batteryMetrics.drop > 0.1
+        ? dischargePattern
+        : undefined;
+  let causeConfidence = batteryMetrics.drop > 0.1 ? 0.5 : undefined;
+  const confidenceFactors: string[] = [];
+  if (causeConfidence !== undefined) {
+    if (batteryMetrics.drop > 0.15) {
+      causeConfidence += 0.2;
+      confidenceFactors.push('high efficiency drop');
+    }
+    if (dischargePattern === 'evening-heavy') {
+      causeConfidence += 0.2;
+      confidenceFactors.push('evening-heavy discharge');
+    }
+    if (batteryMetrics.chargeKwh > 0 && batteryMetrics.dischargeKwh / batteryMetrics.chargeKwh > 1.0) {
+      causeConfidence += 0.1;
+      confidenceFactors.push('high discharge ratio');
+    }
+    causeConfidence = Math.min(causeConfidence, 0.95);
+  }
+  const batteryCyclesToday =
+    batteryMetrics.dischargeKwh > 0 && systemConfig?.batteryKwh
+      ? Number((batteryMetrics.dischargeKwh / Math.max(systemConfig.batteryKwh, 1)).toFixed(2))
+      : 0;
+
+  const efficiencyImpact = -(batteryMetrics.drop * 50);
+  const cycleImpact = -(batteryCyclesToday * 2);
+  const confidenceImpact = (causeConfidence ?? 0) * 10;
+  const batteryHealthScore = computeBatteryHealthScore({
+    efficiencyDrop: batteryMetrics.drop,
+    cycles: batteryCyclesToday,
+    confidence: causeConfidence ?? 0,
+  });
+
+  const simulatedTimestamp = new Date(currentDate.getTime() + timeOfDay * 60 * 60 * 1000).toISOString();
+
+  return {
+    solar: {
+      production_kw: Math.max(0, data.solarR ?? 0),
+      peak_hours: peakSolarWindow,
+      daily_kwh: totalSolarKwh || data.totalSolar || 0,
+    },
+    battery: {
+      capacity_kwh: systemConfig?.batteryKwh ?? 0,
+      current_charge: Math.max(0, Math.min(1, (data.batteryLevel ?? 0) / 100)),
+      charge_cycles_today: batteryCyclesToday,
+      discharge_pattern: dischargePattern,
+    },
+    grid: {
+      import_kwh: gridImport,
+      export_kwh: gridExport,
+    },
+    load: {
+      consumption_kwh: consumptionKwh,
+      peak_usage_hours: peakLoadWindow,
+    },
+    timestamp: simulatedTimestamp,
+    derived: {
+      battery_efficiency: Number(batteryMetrics.efficiency.toFixed(2)),
+      previous_battery_efficiency: Number(batteryMetrics.previousEfficiency.toFixed(2)),
+      battery_efficiency_drop: Number(batteryMetrics.drop.toFixed(2)),
+      likely_cause: likelyCause,
+      cause_confidence: causeConfidence,
+      confidence_factors: confidenceFactors,
+      battery_health_score: Number(batteryHealthScore.toFixed(0)),
+      battery_health_breakdown: {
+        efficiency: Number(efficiencyImpact.toFixed(1)),
+        cycles: Number(cycleImpact.toFixed(1)),
+        confidence: Number(confidenceImpact.toFixed(1)),
+      },
+    },
+  };
+};
+
 // Renders AI message text: converts **bold**, newlines, and bullet points
 const AIMessageText = ({ text }: { text: string }) => {
   const lines = text.split('\n');
@@ -936,173 +1111,17 @@ const SafariChargeAIAssistant = ({
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const findPeakHour = (totals: Record<number, number>): number | null => {
-    const entries = Object.entries(totals);
-    if (!entries.length) return null;
-    const [hour] = entries.reduce<[string, number]>(
-      (max, entry) => (entry[1] > max[1] ? entry : max),
-      entries[0]
-    );
-    return Number(hour);
-  };
-
-  const formatWindow = (hour: number | null, fallback: string) => {
-    if (hour === null || Number.isNaN(hour)) return fallback;
-    const start = Math.max(0, hour - 1);
-    const end = Math.min(23, hour + 2);
-    const startLabel = `${start.toString().padStart(2, '0')}:00`;
-    const endLabel = `${end.toString().padStart(2, '0')}:00`;
-    return `${startLabel}-${endLabel}`;
-  };
-
-  const sumHours = (hours: number[], totals: Record<number, number>) =>
-    hours.reduce((sum, hr) => sum + (totals[hr] ?? 0), 0);
-
-  const classifyDischargePattern = (hourlyDischarge: Record<number, number>) => {
-    const evening = sumHours([17, 18, 19, 20, 21, 22], hourlyDischarge);
-    const daytime = sumHours([9, 10, 11, 12, 13, 14, 15, 16], hourlyDischarge);
-    const overnight = sumHours([23, 0, 1, 2, 3, 4, 5, 6], hourlyDischarge);
-    const maxBand = Math.max(evening, daytime, overnight);
-    if (maxBand < 0.05) return 'minimal';
-    if (maxBand === evening) return 'evening-heavy';
-    if (maxBand === daytime) return 'daytime-heavy';
-    return 'overnight-heavy';
-  };
-
-  const buildSystemData = (): AiSystemData => {
-    const batteryMetrics = computeBatteryEfficiencyMetrics(minuteData ?? [], currentDate);
-
-    const dayKey = currentDate.toISOString().split('T')[0];
-    const todayRecords = (minuteData ?? []).filter((record) => record.date === dayKey);
-
-    let totalConsumptionKwh = 0;
-    let totalGridImportKwh = 0;
-    let totalGridExportKwh = 0;
-    let totalSolarKwh = 0;
-    const hourlyLoad: Record<number, number> = {};
-    const hourlySolar: Record<number, number> = {};
-    const hourlyDischarge: Record<number, number> = {};
-
-    todayRecords.forEach((record) => {
-      const stepHours = estimateStepHours(record);
-      const loadKwh =
-        (record.homeLoadKWh ?? 0) +
-        (record.ev1LoadKWh ?? 0) +
-        (record.ev2LoadKWh ?? 0);
-      totalConsumptionKwh += loadKwh;
-      hourlyLoad[record.hour] = (hourlyLoad[record.hour] ?? 0) + loadKwh;
-
-      const solarKwh = record.solarEnergyKWh ?? 0;
-      totalSolarKwh += solarKwh;
-      hourlySolar[record.hour] = (hourlySolar[record.hour] ?? 0) + solarKwh;
-
-      totalGridImportKwh += record.gridImportKWh ?? 0;
-      totalGridExportKwh += record.gridExportKWh ?? 0;
-
-      if (stepHours > 0 && typeof record.batteryPowerKW === 'number') {
-        const energy = record.batteryPowerKW * stepHours;
-        if (energy < 0) {
-          const discharged = Math.abs(energy);
-          hourlyDischarge[record.hour] = (hourlyDischarge[record.hour] ?? 0) + discharged;
-        }
-      }
-    });
-
-    const liveLoadKw = Math.max(
-      0,
-      (data.homeLoad ?? 0) + (data.ev1Load ?? 0) + (data.ev2Load ?? 0)
-    );
-    const gridImport = totalGridImportKwh || data.totalGridImport || 0;
-    const gridExport =
-      totalGridExportKwh ||
-      (typeof data.feedInEarnings === 'number' ? data.feedInEarnings / FEED_IN_TARIFF_RATE : 0);
-
-    const consumptionKwh =
-      totalConsumptionKwh ||
-      Math.max(0, (data.totalSolar ?? 0) + gridImport - gridExport) ||
-      liveLoadKw * 0.25;
-
-    const peakSolarWindow = formatWindow(findPeakHour(hourlySolar), '12:00-15:00');
-    const peakLoadWindow = formatWindow(findPeakHour(hourlyLoad), '18:00-21:00');
-    const dischargePattern = batteryMetrics.dischargePattern;
-    const likelyCause =
-      batteryMetrics.drop > 0.1 && dischargePattern === 'evening-heavy'
-        ? 'evening-heavy discharge'
-        : batteryMetrics.drop > 0.1
-          ? dischargePattern
-          : undefined;
-    let causeConfidence = batteryMetrics.drop > 0.1 ? 0.5 : undefined;
-    const confidenceFactors: string[] = [];
-    if (causeConfidence !== undefined) {
-      if (batteryMetrics.drop > 0.15) {
-        causeConfidence += 0.2;
-        confidenceFactors.push('high efficiency drop');
-      }
-      if (dischargePattern === 'evening-heavy') {
-        causeConfidence += 0.2;
-        confidenceFactors.push('evening-heavy discharge');
-      }
-      if (batteryMetrics.chargeKwh > 0 && batteryMetrics.dischargeKwh / batteryMetrics.chargeKwh > 1.0) {
-        causeConfidence += 0.1;
-        confidenceFactors.push('high discharge ratio');
-      }
-      causeConfidence = Math.min(causeConfidence, 0.95);
-    }
-    const batteryCyclesToday =
-      batteryMetrics.dischargeKwh > 0 && systemConfig?.batteryKwh
-        ? Number((batteryMetrics.dischargeKwh / Math.max(systemConfig.batteryKwh, 1)).toFixed(2))
-        : 0;
-
-    const efficiencyImpact = -(batteryMetrics.drop * 50);
-    const cycleImpact = -(batteryCyclesToday * 2);
-    const confidenceImpact = (causeConfidence ?? 0) * 10;
-    const batteryHealthScore = computeBatteryHealthScore({
-      efficiencyDrop: batteryMetrics.drop,
-      cycles: batteryCyclesToday,
-      confidence: causeConfidence ?? 0,
-    });
-
-    const simulatedTimestamp = new Date(
-      currentDate.getTime() + timeOfDay * 60 * 60 * 1000
-    ).toISOString();
-
-    return {
-      solar: {
-        production_kw: Math.max(0, data.solarR ?? 0),
-        peak_hours: peakSolarWindow,
-        daily_kwh: totalSolarKwh || data.totalSolar || 0,
-      },
-      battery: {
-        capacity_kwh: systemConfig?.batteryKwh ?? 0,
-        current_charge: Math.max(0, Math.min(1, (data.batteryLevel ?? 0) / 100)),
-        charge_cycles_today: batteryCyclesToday,
-        discharge_pattern: dischargePattern,
-      },
-      grid: {
-        import_kwh: gridImport,
-        export_kwh: gridExport,
-      },
-      load: {
-        consumption_kwh: consumptionKwh,
-        peak_usage_hours: peakLoadWindow,
-      },
-      timestamp: simulatedTimestamp,
-      derived: {
-        battery_efficiency: Number(batteryMetrics.efficiency.toFixed(2)),
-        previous_battery_efficiency: Number(batteryMetrics.previousEfficiency.toFixed(2)),
-        battery_efficiency_drop: Number(batteryMetrics.drop.toFixed(2)),
-        likely_cause: likelyCause,
-        cause_confidence: causeConfidence,
-        confidence_factors: confidenceFactors,
-        battery_health_score: Number(batteryHealthScore.toFixed(0)),
-        battery_health_breakdown: {
-          efficiency: Number(efficiencyImpact.toFixed(1)),
-          cycles: Number(cycleImpact.toFixed(1)),
-          confidence: Number(confidenceImpact.toFixed(1)),
-        },
-      },
-    };
-  };
+  const systemSnapshot = useMemo(
+    () =>
+      buildAiSystemData({
+        data,
+        minuteData,
+        timeOfDay,
+        currentDate,
+        systemConfig,
+      }),
+    [data, minuteData, timeOfDay, currentDate, systemConfig]
+  );
   
   useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [messages, isTyping]);
 
@@ -1114,7 +1133,7 @@ const SafariChargeAIAssistant = ({
     setIsTyping(true);
     setError(null);
 
-    const systemData = buildSystemData();
+    const systemData = systemSnapshot;
 
     // Conversation history for the API (exclude welcome message, convert to API format)
     const conversationHistory = messages
@@ -2944,15 +2963,17 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
 
   const isNight = timeOfDay < 6 || timeOfDay > 19;
 
-  const systemSnapshot = useMemo(() => buildSystemData(), [
-    data,
-    timeOfDay,
-    weather,
-    currentDate,
-    isAutoMode,
-    minuteData,
-    systemConfig,
-  ]);
+  const systemSnapshot = useMemo(
+    () =>
+      buildAiSystemData({
+        data,
+        minuteData: minuteDataRef.current,
+        timeOfDay,
+        currentDate,
+        systemConfig: derivedSystemConfig,
+      }),
+    [data, timeOfDay, currentDate, derivedSystemConfig, minuteDataRef.current.length]
+  );
 
   // Track last 7 unique daily battery health scores
   const healthHistoryRef = useRef<Array<{ date: string; score: number }>>([]);
