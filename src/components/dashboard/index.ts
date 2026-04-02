@@ -12,3 +12,5 @@ export { EnergyDetailShell } from './EnergyDetailShell';
 export { SystemVisualization } from './SystemVisualization';
 export { InsightsBanner } from './InsightsBanner';
 export { Sparkline } from './Sparkline';
+export { BatteryHealthCard } from './BatteryHealthCard';
+export { BatteryPredictionCard } from './BatteryPredictionCard';
