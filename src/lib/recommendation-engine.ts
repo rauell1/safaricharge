@@ -548,23 +548,29 @@ export function createLoadProfileFromSimulation(simulationData: Array<{
 
   // Find peak power (convert kWh to kW based on timestep)
   // CRITICAL FIX: timeStepHours should be per-timestep (24/420), NOT based on total simulation length
+  // NOTE: avoid Math.max(...largeArray) because large simulations (100k+ points)
+  // can exceed V8's argument limit and throw "Maximum call stack size exceeded".
   const timeStepHours = 24 / TIMESTEPS_PER_DAY; // ~0.0571 hours per timestep (~3.43 minutes)
-  const peakPower = Math.max(
-    ...simulationData.map(d => (d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh) / timeStepHours)
-  );
+  let peakPower = 0;
+  for (const d of simulationData) {
+    const pointPowerKw = (d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh) / timeStepHours;
+    if (pointPowerKw > peakPower) peakPower = pointPowerKw;
+  }
 
   // Calculate day vs night averages (6 AM to 6 PM is day)
   const dayData = simulationData.filter(d => d.hour >= 6 && d.hour < 18);
   const nightData = simulationData.filter(d => d.hour < 6 || d.hour >= 18);
 
-  const avgDayPower =
-    dayData.reduce((sum, d) => sum + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh, 0) /
-    dayData.length /
-    timeStepHours;
-  const avgNightPower =
-    nightData.reduce((sum, d) => sum + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh, 0) /
-    nightData.length /
-    timeStepHours;
+  const avgDayPower = dayData.length > 0
+    ? dayData.reduce((sum, d) => sum + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh, 0) /
+      dayData.length /
+      timeStepHours
+    : 0;
+  const avgNightPower = nightData.length > 0
+    ? nightData.reduce((sum, d) => sum + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh, 0) /
+      nightData.length /
+      timeStepHours
+    : 0;
 
   // Peak hours load percentage
   const peakLoad = simulationData
