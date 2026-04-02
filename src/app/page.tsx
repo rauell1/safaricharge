@@ -7,7 +7,7 @@ import {
   Sparkles, Loader2, Sliders, Play, Pause, ChevronDown,
   ChevronUp, MapPin, Table, FileText, PieChart, Settings, Calendar,
   Moon, Download, RotateCcw, AlertTriangle, DollarSign,
-  Car, Car as CarIcon, FileSpreadsheet, Target, TrendingUp, Leaf, Trees
+  Car, Car as CarIcon, FileSpreadsheet, Target, TrendingUp, Leaf, Trees, Factory
 } from 'lucide-react';
 import DailyEnergyGraph, { type GraphDataPoint, buildGraphSVG, triggerJPGDownload, buildJPGBlob } from '@/components/DailyEnergyGraph';
 import { LocationSelector, RecommendationPanel } from '@/components/RecommendationComponents';
@@ -137,7 +137,7 @@ type LoadNode =
       maxKw?: number;
     }
   | {
-      type: 'home' | 'commercial';
+      type: 'home' | 'commercial' | 'industrial';
       name: string;
       powerKw: number;
       active: boolean;
@@ -187,6 +187,7 @@ type DerivedVisualizationLayout = {
     batteryDischargeKw: number;
     residentialLoadKw: number;
     commercialLoadKw: number;
+    industrialLoadKw: number;
     evLoadKw: number;
     totalLoadKw: number;
   };
@@ -210,6 +211,8 @@ const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
   homeLoadKw: 5,
   commercialLoadEnabled: false,
   commercialLoadKw: 20,
+  industrialLoadEnabled: false,
+  industrialLoadKw: 50,
 };
 
 const derivePvCapacity = (config: SystemConfig): number => {
@@ -284,7 +287,8 @@ const buildVisualizationLayout = (
 
   const residentialLoad = config.homeLoadEnabled ? Math.max(0, data?.residentialLoad ?? data?.homeLoad ?? 0) : 0;
   const commercialLoad = config.commercialLoadEnabled ? Math.max(0, data?.commercialLoad ?? 0) : 0;
-  const baseLoadKw = residentialLoad + commercialLoad;
+  const industrialLoad = config.industrialLoadEnabled ? Math.max(0, data?.industrialLoad ?? 0) : 0;
+  const baseLoadKw = residentialLoad + commercialLoad + industrialLoad;
   const ev1LoadKw = Math.max(0, data?.ev1Load ?? 0);
   const ev2LoadKw = Math.max(0, data?.ev2Load ?? 0);
   const totalLoadKw = baseLoadKw + ev1LoadKw + ev2LoadKw;
@@ -361,6 +365,16 @@ const buildVisualizationLayout = (
     });
   }
 
+  // Industrial load - show if enabled
+  if (config.industrialLoadEnabled) {
+    loads.push({
+      type: 'industrial',
+      name: 'Industrial',
+      powerKw: industrialLoad,
+      active: industrialLoad > 0,
+    });
+  }
+
   const canShowEv = config.evChargerKw > 0;
   const ev1LoadRaw = Math.max(0, data?.ev1Load ?? 0);
   const ev2LoadRaw = Math.max(0, data?.ev2Load ?? 0);
@@ -410,6 +424,7 @@ const buildVisualizationLayout = (
       batteryDischargeKw,
       residentialLoadKw: residentialLoad,
       commercialLoadKw: commercialLoad,
+      industrialLoadKw: industrialLoad,
       evLoadKw: ev1LoadKw + ev2LoadKw,
       totalLoadKw,
     },
@@ -1525,7 +1540,7 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
   );
 };
 
-const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showFlowDebug, flowDebug, showValues }: {
+const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showFlowDebug, flowDebug, showValues, config }: {
   simSpeed: number; weather: string; isNight: boolean; layout: DerivedVisualizationLayout; showFlowDebug: boolean; flowDebug: {
     inverterThroughputKw: number;
     gridImportKw: number;
@@ -1536,7 +1551,7 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
     balanceOk: boolean;
     sourcesKw: number;
     sinksKw: number;
-  }; showValues: boolean;
+  }; showValues: boolean; config: DerivedSystemConfig;
 }) => {
   const pvNode = layout.generation[0];
   const isSolarActive = (pvNode?.outputKw ?? 0) > 0.1;
@@ -1587,9 +1602,9 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
       return;
     }
 
-    if (load.type === 'home' || load.type === 'commercial') {
-      const icon = load.type === 'commercial' ? Building2 : Home;
-      const label = load.name || (load.type === 'commercial' ? 'Commercial Load' : 'Home Load');
+    if (load.type === 'home' || load.type === 'commercial' || load.type === 'industrial') {
+      const icon = load.type === 'commercial' ? Building2 : load.type === 'industrial' ? Factory : Home;
+      const label = load.name || (load.type === 'commercial' ? 'Commercial Load' : load.type === 'industrial' ? 'Industrial Load' : 'Home Load');
       const speedVal = mapFlowSpeed(load.powerKw);
       busNodes.push({
         key: load.type,
@@ -1734,8 +1749,27 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
           ))}
         </div>
         <div className="flex flex-col items-center w-full max-w-[900px]">
+          {/* Individual cables from each inverter to the horizontal AC bus */}
+          <div className="grid w-full max-w-[720px] gap-2" style={{ gridTemplateColumns: `repeat(${inverterUnits}, minmax(0, 1fr))` }}>
+            {layout.conversion.map((converter) => (
+              <div key={`inv-to-bus-${converter.id}`} className="flex justify-center">
+                <RigidCable
+                  height={25}
+                  active={converter.active}
+                  color={converter.active ? inverterFlowColor : 'bg-slate-300'}
+                  speed={mapFlowSpeed(converter.outputKw)}
+                  width={mapFlowThickness(converter.outputKw)}
+                  arrowColor="text-white"
+                  powerKw={converter.outputKw}
+                  capacityKw={converter.ratingKw}
+                  glowColor={hasBatteryDischarge ? 'var(--consumption)' : 'var(--solar)'}
+                  showLabel={showValues}
+                />
+              </div>
+            ))}
+          </div>
           <div className="flex justify-between w-full max-w-[720px]">
-            <HorizontalCable width="100%" color={inverterFlowActive ? inverterFlowColor : 'bg-slate-300'} />
+            <HorizontalCable width="100%" color={inverterFlowActive ? inverterFlowColor : 'bg-slate-300'} active={inverterFlowActive} powerKw={layout.meta.inverterThroughputKw} capacityKw={config.inverterKw} />
           </div>
           <div className="relative w-full mt-1 sm:mt-2">
             <div className="absolute inset-x-0 top-0 h-4 bg-slate-800 rounded-full shadow-md z-0 flex items-center justify-center">
@@ -1744,18 +1778,7 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
             <div className="grid gap-1 sm:gap-2 pt-6 place-items-center" style={busTemplate}>
               {busNodes.map((node) => (
                 <div key={`cable-${node.key}`} className="flex justify-center">
-                  <RigidCable
-                    height={40}
-                    active={node.active}
-                    flowDirection={node.flowDirection}
-                    color={node.color}
-                    speed={simSpeed}
-                    arrowColor={node.arrowColor}
-                    powerKw={node.powerKw}
-                    capacityKw={node.capacityKw}
-                    glowColor={node.glowColor}
-                    showLabel={showValues}
-                  />
+                  {node.cable}
                 </div>
               ))}
             </div>
@@ -1852,7 +1875,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
   }), []);
 
   const [data, setData] = useState({
-    solarR: 0, homeLoad: 5, residentialLoad: 5, commercialLoad: 0, ev1Load: 0, ev2Load: 0, 
+    solarR: 0, homeLoad: 5, residentialLoad: 5, commercialLoad: 0, industrialLoad: 0, ev1Load: 0, ev2Load: 0, 
     ev1Status: 'Idle', ev2Status: 'Idle',
     ev1Soc: 60, ev2Soc: 50,
     batteryPower: 0, batteryLevel: 50, batteryStatus: 'Idle',
@@ -3462,6 +3485,31 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                             </div>
                           )}
                         </div>
+                        <div className="flex items-center justify-between">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={systemConfig.industrialLoadEnabled}
+                              onChange={(e) => setSystemConfig(prev => ({ ...prev, industrialLoadEnabled: e.target.checked, mode: 'advanced' }))}
+                              className="w-4 h-4 rounded border-[var(--border)] text-[var(--battery)] focus:ring-2 focus:ring-[var(--battery)]"
+                            />
+                            <span className="text-xs text-[var(--text-primary)]">Industrial Load</span>
+                          </label>
+                          {systemConfig.industrialLoadEnabled && (
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="range"
+                                min={50}
+                                max={1000}
+                                step={10}
+                                value={systemConfig.industrialLoadKw}
+                                onChange={(e) => setSystemConfig(prev => ({ ...prev, industrialLoadKw: Number(e.target.value), mode: 'advanced' }))}
+                                className="w-20"
+                              />
+                              <span className="text-xs text-[var(--text-secondary)] min-w-[40px]">{systemConfig.industrialLoadKw.toFixed(0)} kW</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -3521,6 +3569,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                     showFlowDebug={showFlowDebug}
                     flowDebug={flowDebug}
                     showValues={showFlowValues}
+                    config={derivedSystemConfig}
                   />
                 </CardContent>
               </Card>
