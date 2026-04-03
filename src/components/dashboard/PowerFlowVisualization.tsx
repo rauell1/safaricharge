@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
-import { Sun, Home, Battery, UtilityPole, Zap, Building2, Car, Factory } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Sun, Home, Battery, UtilityPole, Zap, Building2, Car, Factory, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNodeSelection } from '@/hooks/useEnergySystem';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { NodeType } from '@/stores/energySystemStore';
 import { useRouter } from 'next/navigation';
 
@@ -168,6 +169,8 @@ export function PowerFlowVisualization({
 }: PowerFlowVisualizationProps) {
   const { selectNode, isSelected } = useNodeSelection();
   const router = useRouter();
+  const isMobile = useIsMobile();
+  const [mobileStep, setMobileStep] = useState(0);
 
   const handleNodeClick = (nodeType: NodeType) => {
     selectNode(nodeType);
@@ -261,6 +264,66 @@ export function PowerFlowVisualization({
   const solarToHomePercent = totalSolarUse > 0 ? (Math.min(siteLoad, solarPower) / totalSolarUse) * 100 : 0;
   const solarToBatteryPercent = totalSolarUse > 0 && batteryPower > 0 ? (batteryPower / totalSolarUse) * 100 : 0;
   const solarToGridPercent = totalSolarUse > 0 && gridPower < 0 ? (Math.abs(gridPower) / totalSolarUse) * 100 : 0;
+  const netPower = solarPower + (batteryPower < 0 ? Math.abs(batteryPower) : 0) - siteLoad;
+  const systemStatus = gridPower > 4 ? 'Critical' : gridPower > 1.5 ? 'Warning' : 'Healthy';
+
+  const mobileSlides = useMemo(
+    () => [
+      {
+        key: 'grid',
+        title: 'Grid',
+        icon: UtilityPole,
+        accent: 'var(--grid)',
+        tint: 'var(--grid-soft)',
+        metric: `${Math.abs(gridPower).toFixed(2)} kW`,
+        status: gridPower > 0 ? 'Importing' : gridPower < 0 ? 'Exporting' : 'Standby',
+        insight:
+          gridPower > 0
+            ? 'Grid is supporting current demand.'
+            : gridPower < 0
+              ? 'Excess generation is being exported.'
+              : 'Grid is balanced and idle.',
+        nodeType: 'grid' as NodeType,
+      },
+      {
+        key: 'solar',
+        title: 'Solar',
+        icon: Sun,
+        accent: 'var(--solar)',
+        tint: 'var(--solar-soft)',
+        metric: `${solarPower.toFixed(2)} kW`,
+        status: 'Generation',
+        insight: `Serving ${Math.min(100, solarToHomePercent).toFixed(0)}% of active load right now.`,
+        nodeType: 'solar' as NodeType,
+      },
+      {
+        key: 'battery',
+        title: 'Battery',
+        icon: Battery,
+        accent: 'var(--battery)',
+        tint: 'var(--battery-soft)',
+        metric: `${Math.abs(batteryPower).toFixed(2)} kW`,
+        status: batteryPower >= 0 ? 'Charging' : 'Discharging',
+        insight: `${Math.round(batteryLevel)}% SOC, ${batteryPower >= 0 ? 'absorbing surplus energy' : 'supporting site load'}.`,
+        nodeType: 'battery' as NodeType,
+      },
+      {
+        key: 'load',
+        title: 'Load',
+        icon: Home,
+        accent: 'var(--consumption)',
+        tint: 'var(--consumption-soft)',
+        metric: `${siteLoad.toFixed(2)} kW`,
+        status: 'Consumption',
+        insight: `R ${residentialKw.toFixed(1)} / C ${commercialKw.toFixed(1)} / I ${industrialKw.toFixed(1)} / EV ${evKw.toFixed(1)} kW`,
+        nodeType: 'home' as NodeType,
+      },
+    ],
+    [batteryLevel, batteryPower, commercialKw, evKw, gridPower, industrialKw, residentialKw, siteLoad, solarPower, solarToHomePercent]
+  );
+
+  const currentSlide = mobileSlides[Math.max(0, Math.min(mobileStep, mobileSlides.length - 1))];
+  const MobileSlideIcon = currentSlide.icon;
 
   return (
     <Card className="dashboard-card">
@@ -272,6 +335,94 @@ export function PowerFlowVisualization({
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {isMobile ? (
+          <div className="space-y-4 py-1">
+            <div className="grid grid-cols-3 gap-2">
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-3 text-center">
+                <div className="text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">Status</div>
+                <div className="mt-1 text-sm font-bold" style={{ color: systemStatus === 'Healthy' ? 'var(--battery)' : systemStatus === 'Warning' ? 'var(--solar)' : 'var(--alert)' }}>
+                  {systemStatus}
+                </div>
+              </div>
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-3 text-center">
+                <div className="text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">Net Power</div>
+                <div className="mt-1 text-sm font-bold" style={{ color: netPower >= 0 ? 'var(--battery)' : 'var(--alert)' }}>
+                  {netPower >= 0 ? '+' : ''}{netPower.toFixed(2)} kW
+                </div>
+              </div>
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-3 text-center">
+                <div className="text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">Battery SOC</div>
+                <div className="mt-1 text-sm font-bold text-[var(--battery)]">{Math.round(batteryLevel)}%</div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)] p-4">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  className="rounded-lg border border-[var(--border)] p-2 text-[var(--text-secondary)]"
+                  onClick={() => setMobileStep((prev) => (prev === 0 ? mobileSlides.length - 1 : prev - 1))}
+                  aria-label="Previous flow step"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <div className="text-center">
+                  <div className="text-[10px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
+                    Step {mobileStep + 1} of {mobileSlides.length}
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+                    {currentSlide.title}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="rounded-lg border border-[var(--border)] p-2 text-[var(--text-secondary)]"
+                  onClick={() => setMobileStep((prev) => (prev + 1) % mobileSlides.length)}
+                  aria-label="Next flow step"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleNodeClick(currentSlide.nodeType)}
+                className="mt-4 flex w-full items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3 text-left"
+              >
+                <div
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2"
+                  style={{ borderColor: currentSlide.accent, backgroundColor: currentSlide.tint }}
+                >
+                  <MobileSlideIcon className="h-6 w-6" style={{ color: currentSlide.accent }} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs text-[var(--text-tertiary)]">{currentSlide.status}</div>
+                  <div className="text-lg font-bold leading-none" style={{ color: currentSlide.accent }}>{currentSlide.metric}</div>
+                </div>
+              </button>
+
+              <div className="mt-3 rounded-lg border border-[var(--border)] bg-[var(--bg-card)] p-3 text-xs text-[var(--text-secondary)]">
+                {currentSlide.insight}
+              </div>
+
+              <div className="mt-3 flex items-center justify-center gap-2">
+                {mobileSlides.map((slide, idx) => (
+                  <button
+                    key={slide.key}
+                    type="button"
+                    onClick={() => setMobileStep(idx)}
+                    className="h-2 rounded-full transition-all"
+                    style={{
+                      width: idx === mobileStep ? '20px' : '8px',
+                      backgroundColor: idx === mobileStep ? slide.accent : 'var(--border)',
+                    }}
+                    aria-label={`Go to ${slide.title} step`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
         <div className="flex flex-col items-center gap-4 py-4">
           <EnergyNode
             icon={Sun}
@@ -421,6 +572,7 @@ export function PowerFlowVisualization({
             </div>
           </div>
         </div>
+        )}
 
         <div className="mt-6 space-y-4">
           {/* Power Summary */}
