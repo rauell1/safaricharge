@@ -73,7 +73,7 @@ export function SolarComponentLibrary() {
   }, []);
 
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card-muted)] p-4 space-y-3">
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4 space-y-3">
       <div className="flex items-center gap-2">
         <BookOpen className="h-4 w-4 text-[var(--battery)]" />
         <p className="text-sm font-semibold text-[var(--text-primary)]">Component Knowledge Base</p>
@@ -142,7 +142,7 @@ export function SolarComponentLibrary() {
             <button
               key={entry.id}
               onClick={() => setSelectedId(entry.id)}
-              className={`w-full text-left px-3 py-2 transition-colors ${selected?.id === entry.id ? 'bg-[var(--battery-soft)]/60' : 'hover:bg-[var(--bg-card-muted)]'}`}
+              className={`w-full text-left px-3 py-2 transition-colors ${selected?.id === entry.id ? 'bg-[var(--battery-soft)]' : 'hover:bg-[var(--bg-card-muted)]'}`}
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
