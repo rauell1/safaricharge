@@ -1796,35 +1796,41 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
             </button>
           </div>
 
-          <div className="mt-2 flex flex-wrap justify-center gap-1.5">
+          <div className="mt-2 flex flex-nowrap justify-start sm:justify-center gap-1.5 overflow-x-auto pb-1 px-0.5">
             {stateBadges.map((badge) => (
               <span
                 key={badge.label}
-                className={`px-2 py-1 rounded-full text-[9px] font-bold border ${toneClass[badge.tone] ?? toneClass.slate}`}
+                className={`px-2 py-1 rounded-full text-[9px] font-bold border whitespace-nowrap ${toneClass[badge.tone] ?? toneClass.slate}`}
               >
                 {badge.label}
               </span>
             ))}
           </div>
 
-          <div className="mt-3 min-h-[60px]">
-            {systemWarnings.length > 0 && (
-              <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-2 space-y-1">
-                {systemWarnings.slice(0, 3).map((warning, idx) => {
+          <div className="mt-3 h-[92px]">
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-2 h-full">
+              <div className="space-y-1">
+                {Array.from({ length: 3 }).map((_, idx) => {
+                  const warning = systemWarnings[idx];
+                  if (!warning) {
+                    return (
+                      <div key={`placeholder-${idx}`} className="h-4 rounded bg-[var(--bg-card-muted)]/50" />
+                    );
+                  }
                   const palette = warning.level === 'critical'
                     ? 'text-red-500'
                     : warning.level === 'warning'
                       ? 'text-amber-400'
                       : 'text-sky-400';
                   return (
-                    <div key={idx} className={`flex items-center gap-1 text-[9px] font-semibold ${palette}`}>
-                      <AlertTriangle size={10} />
-                      <span>{warning.message}</span>
+                    <div key={idx} className={`flex items-center gap-1 text-[9px] font-semibold leading-tight ${palette}`}>
+                      <AlertTriangle size={10} className="shrink-0" />
+                      <span className="truncate">{warning.message}</span>
                     </div>
                   );
                 })}
               </div>
-            )}
+            </div>
           </div>
         </div>
 
@@ -1900,18 +1906,14 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
                  <span className="text-slate-300">3. Grid Backup</span>
                  <span className={`${data.netGridPower < 0 ? 'text-red-400' : 'text-green-400'} font-bold`}>{data.netGridPower < 0 ? `${Math.abs(data.netGridPower).toFixed(1)} kW (In)` : `${Math.abs(data.netGridPower).toFixed(1)} kW (Out)`}</span>
                </div>
-               {data.estimatedDemandChargeKES > 0 && (
-               <div className="flex justify-between items-center text-[10px] sm:text-xs border-t border-slate-600 pt-1 mt-1">
+               <div className={`flex justify-between items-center text-[10px] sm:text-xs border-t border-slate-600 pt-1 mt-1 ${data.estimatedDemandChargeKES > 0 ? '' : 'opacity-0'}`}>
                  <span className="text-amber-400">⚡ Peak Demand</span>
                  <span className="text-amber-300 font-bold">{data.monthlyPeakDemandKW?.toFixed(1)} kW → KES {data.estimatedDemandChargeKES?.toFixed(0)}/mo</span>
                </div>
-               )}
-               {data.feedInEarnings > 0 && (
-               <div className="flex justify-between items-center text-[10px] sm:text-xs">
+               <div className={`flex justify-between items-center text-[10px] sm:text-xs ${data.feedInEarnings > 0 ? '' : 'opacity-0'}`}>
                  <span className="text-green-400">↑ Feed-in Earned</span>
                  <span className="text-green-300 font-bold">KES {data.feedInEarnings?.toFixed(1)}</span>
                </div>
-               )}
             </div>
          </div>
       </div>
