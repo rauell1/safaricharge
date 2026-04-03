@@ -16,6 +16,7 @@ export interface SolarSimulationResult {
   residentialLoad: number;
   commercialLoad: number;
   industrialLoad: number;
+  accessoryLoad: number;
   ev1Kw: number;
   ev2Kw: number;
   ev1IsHome: boolean;
@@ -107,7 +108,8 @@ export const runSolarSimulation = (
         (scenario.isWeekend ? 0.8 : 1)
     : 0;
 
-  const houseLoad = residentialLoad + commercialLoad + industrialLoad;
+  const accessoryLoad = Math.max(0, (systemConfig.accessoryLoadKw ?? 0) * (systemConfig.accessoryScale ?? 1));
+  const houseLoad = residentialLoad + commercialLoad + industrialLoad + accessoryLoad;
 
   const effectiveCapacity = systemConfig.batteryKwh * batteryHealth;
   const effectiveReserve = Math.max(systemConfig.batteryKwh * 0.15, 8) * batteryHealth;
@@ -247,6 +249,7 @@ export const runSolarSimulation = (
     residentialLoad,
     commercialLoad,
     industrialLoad,
+    accessoryLoad,
     ev1Kw: ev1Load,
     ev2Kw: ev2Load,
     ev1IsHome,

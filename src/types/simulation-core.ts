@@ -18,6 +18,8 @@ export type SystemConfig = {
   commercialLoadKw: number;
   industrialLoadEnabled: boolean;
   industrialLoadKw: number;
+  accessoryLoadKw: number;
+  accessoryScale: number;
 };
 
 export type DerivedSystemConfig = SystemConfig & { pvCapacityKw: number };

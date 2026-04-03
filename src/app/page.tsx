@@ -141,7 +141,7 @@ type LoadNode =
       maxKw?: number;
     }
   | {
-      type: 'home' | 'commercial' | 'industrial';
+      type: 'home' | 'commercial' | 'industrial' | 'accessory';
       name: string;
       powerKw: number;
       active: boolean;
@@ -217,6 +217,8 @@ const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
   commercialLoadKw: 20,
   industrialLoadEnabled: false,
   industrialLoadKw: 50,
+  accessoryLoadKw: 3,
+  accessoryScale: 1,
 };
 
 const derivePvCapacity = (config: SystemConfig): number => {
@@ -237,6 +239,8 @@ const SYSTEM_PRESETS: Record<'conservative' | 'expected' | 'aggressive', Partial
     loadProfile: 'residential',
     evCommuterScale: 0.9,
     evFleetScale: 0.9,
+    accessoryLoadKw: 2.5,
+    accessoryScale: 0.9,
   },
   expected: {
     panelCount: 120,
@@ -250,6 +254,8 @@ const SYSTEM_PRESETS: Record<'conservative' | 'expected' | 'aggressive', Partial
     loadProfile: 'residential',
     evCommuterScale: 1,
     evFleetScale: 1,
+    accessoryLoadKw: 3,
+    accessoryScale: 1,
   },
   aggressive: {
     panelCount: 140,
@@ -263,6 +269,8 @@ const SYSTEM_PRESETS: Record<'conservative' | 'expected' | 'aggressive', Partial
     loadProfile: 'residential',
     evCommuterScale: 1.1,
     evFleetScale: 1.1,
+    accessoryLoadKw: 4,
+    accessoryScale: 1.1,
   },
 };
 
@@ -292,7 +300,8 @@ const buildVisualizationLayout = (
   const residentialLoad = config.homeLoadEnabled ? Math.max(0, data?.residentialLoad ?? data?.homeLoad ?? 0) : 0;
   const commercialLoad = config.commercialLoadEnabled ? Math.max(0, data?.commercialLoad ?? 0) : 0;
   const industrialLoad = config.industrialLoadEnabled ? Math.max(0, data?.industrialLoad ?? 0) : 0;
-  const baseLoadKw = residentialLoad + commercialLoad + industrialLoad;
+  const accessoryLoad = Math.max(0, data?.accessoryLoad ?? 0);
+  const baseLoadKw = residentialLoad + commercialLoad + industrialLoad + accessoryLoad;
   const ev1LoadKw = Math.max(0, data?.ev1Load ?? 0);
   const ev2LoadKw = Math.max(0, data?.ev2Load ?? 0);
   const totalLoadKw = baseLoadKw + ev1LoadKw + ev2LoadKw;
@@ -376,6 +385,14 @@ const buildVisualizationLayout = (
       name: 'Industrial',
       powerKw: industrialLoad,
       active: industrialLoad > 0,
+    });
+  }
+  if (accessoryLoad > 0) {
+    loads.push({
+      type: 'accessory',
+      name: 'Accessories',
+      powerKw: accessoryLoad,
+      active: accessoryLoad > 0,
     });
   }
 
@@ -1438,6 +1455,62 @@ const StatPill = ({ label, value, sub }: { label: string; value: string; sub?: s
   </div>
 );
 
+const SmoothNumberInput = ({
+  value,
+  onCommit,
+  disabled,
+  min,
+  max,
+  step,
+  className,
+}: {
+  value: number;
+  onCommit: (next: number) => void;
+  disabled?: boolean;
+  min?: number;
+  max?: number;
+  step?: number | string;
+  className?: string;
+}) => {
+  const [draft, setDraft] = useState(String(value));
+  useEffect(() => {
+    setDraft(String(value));
+  }, [value]);
+
+  const commitValue = () => {
+    if (draft.trim() === '') {
+      onCommit(0);
+      return;
+    }
+    const parsed = Number(draft);
+    if (Number.isFinite(parsed)) {
+      onCommit(parsed);
+    } else {
+      setDraft(String(value));
+    }
+  };
+
+  return (
+    <input
+      type="number"
+      value={draft}
+      min={min}
+      max={max}
+      step={step}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commitValue}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          commitValue();
+          (e.target as HTMLInputElement).blur();
+        }
+      }}
+      className={className}
+      disabled={disabled}
+    />
+  );
+};
+
 const SystemConfigPanel = ({
   config,
   onChange,
@@ -1506,102 +1579,114 @@ const SystemConfigPanel = ({
       <div className="mt-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">Panel Count</label>
-          <input
-            type="number"
+          <SmoothNumberInput
             min={0}
             value={config.panelCount}
-            onChange={(e) => updateField('panelCount', parseFloat(e.target.value))}
+            onCommit={(next) => updateField('panelCount', next)}
             className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
             disabled={!isAdvanced}
           />
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">Panel Wattage (W)</label>
-          <input
-            type="number"
+          <SmoothNumberInput
             min={0}
             value={config.panelWatt}
-            onChange={(e) => updateField('panelWatt', parseFloat(e.target.value))}
+            onCommit={(next) => updateField('panelWatt', next)}
             className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
             disabled={!isAdvanced}
           />
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">Inverter Bank (kW)</label>
-          <input
-            type="number"
+          <SmoothNumberInput
             min={0}
             value={config.inverterKw}
-            onChange={(e) => updateField('inverterKw', parseFloat(e.target.value))}
+            onCommit={(next) => updateField('inverterKw', next)}
             className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
             disabled={!isAdvanced}
           />
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">Inverter Units</label>
-          <input
-            type="number"
+          <SmoothNumberInput
             min={1}
             max={8}
             step={1}
             value={config.inverterUnits}
-            onChange={(e) => updateField('inverterUnits', parseFloat(e.target.value))}
+            onCommit={(next) => updateField('inverterUnits', next)}
             className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
             disabled={!isAdvanced}
           />
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">Battery Size (kWh)</label>
-          <input
-            type="number"
+          <SmoothNumberInput
             min={0}
             value={config.batteryKwh}
-            onChange={(e) => updateField('batteryKwh', parseFloat(e.target.value))}
+            onCommit={(next) => updateField('batteryKwh', next)}
             className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
             disabled={!isAdvanced}
           />
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">Max Charge (kW)</label>
-          <input
-            type="number"
+          <SmoothNumberInput
             min={0}
             value={config.maxChargeKw}
-            onChange={(e) => updateField('maxChargeKw', parseFloat(e.target.value))}
+            onCommit={(next) => updateField('maxChargeKw', next)}
             className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
             disabled={!isAdvanced}
           />
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">Max Discharge (kW)</label>
-          <input
-            type="number"
+          <SmoothNumberInput
             min={0}
             value={config.maxDischargeKw}
-            onChange={(e) => updateField('maxDischargeKw', parseFloat(e.target.value))}
+            onCommit={(next) => updateField('maxDischargeKw', next)}
             className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
             disabled={!isAdvanced}
           />
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">EV Charger Rate (kW)</label>
-          <input
-            type="number"
+          <SmoothNumberInput
             min={0}
             value={config.evChargerKw}
-            onChange={(e) => updateField('evChargerKw', parseFloat(e.target.value))}
+            onCommit={(next) => updateField('evChargerKw', next)}
             className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
             disabled={!isAdvanced}
           />
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">Base Load Scale</label>
-          <input
-            type="number"
+          <SmoothNumberInput
             min={0}
             step="0.05"
             value={config.loadScale}
-            onChange={(e) => updateField('loadScale', parseFloat(e.target.value))}
+            onCommit={(next) => updateField('loadScale', next)}
+            className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
+            disabled={!isAdvanced}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">Accessory Load (kW)</label>
+          <SmoothNumberInput
+            min={0}
+            value={config.accessoryLoadKw}
+            onCommit={(next) => updateField('accessoryLoadKw', next)}
+            className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
+            disabled={!isAdvanced}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">Accessory Scale</label>
+          <SmoothNumberInput
+            min={0}
+            step="0.05"
+            value={config.accessoryScale}
+            onCommit={(next) => updateField('accessoryScale', next)}
             className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
             disabled={!isAdvanced}
           />
@@ -1627,24 +1712,22 @@ const SystemConfigPanel = ({
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">EV #1 (Commuter) Scale</label>
-          <input
-            type="number"
+          <SmoothNumberInput
             min={0}
             step="0.05"
             value={config.evCommuterScale}
-            onChange={(e) => updateField('evCommuterScale', parseFloat(e.target.value))}
+            onCommit={(next) => updateField('evCommuterScale', next)}
             className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
             disabled={!isAdvanced}
           />
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">EV #2 (Fleet) Scale</label>
-          <input
-            type="number"
+          <SmoothNumberInput
             min={0}
             step="0.05"
             value={config.evFleetScale}
-            onChange={(e) => updateField('evFleetScale', parseFloat(e.target.value))}
+            onCommit={(next) => updateField('evFleetScale', next)}
             className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-50"
             disabled={!isAdvanced}
           />
@@ -1685,7 +1768,11 @@ const SystemConfigPanel = ({
         <StatPill label="PV Array" value={`${pvCapacityKw.toFixed(1)} kW`} sub={`${config.panelCount}x ${config.panelWatt}W`} />
         <StatPill label="Inverter" value={`${config.inverterKw.toFixed(1)} kW`} sub={`${config.inverterUnits} unit${config.inverterUnits !== 1 ? 's' : ''} • ${perInverterKw.toFixed(1)} kW each`} />
         <StatPill label="Battery" value={`${config.batteryKwh.toFixed(1)} kWh`} sub={`${config.maxChargeKw.toFixed(0)} kW charge / ${config.maxDischargeKw.toFixed(0)} kW discharge`} />
-        <StatPill label="Loads" value={`${(config.loadScale * 100).toFixed(0)}%`} sub={`${config.loadProfile.charAt(0).toUpperCase()}${config.loadProfile.slice(1)} profile`} />
+        <StatPill
+          label="Loads"
+          value={`${(config.loadScale * 100).toFixed(0)}%`}
+          sub={`${config.loadProfile.charAt(0).toUpperCase()}${config.loadProfile.slice(1)} • Accessory ${(config.accessoryLoadKw * config.accessoryScale).toFixed(1)} kW`}
+        />
       </div>
         {isAdvanced && (
           <div className="flex flex-wrap items-center gap-2">
@@ -1988,9 +2075,9 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
       return;
     }
 
-    if (load.type === 'home' || load.type === 'commercial' || load.type === 'industrial') {
-      const icon = load.type === 'commercial' ? Building2 : load.type === 'industrial' ? Factory : Home;
-      const label = load.name || (load.type === 'commercial' ? 'Commercial Load' : load.type === 'industrial' ? 'Industrial Load' : 'Home Load');
+    if (load.type === 'home' || load.type === 'commercial' || load.type === 'industrial' || load.type === 'accessory') {
+      const icon = load.type === 'commercial' ? Building2 : load.type === 'industrial' ? Factory : load.type === 'accessory' ? Zap : Home;
+      const label = load.name || (load.type === 'commercial' ? 'Commercial Load' : load.type === 'industrial' ? 'Industrial Load' : load.type === 'accessory' ? 'Accessories' : 'Home Load');
       const speedVal = mapFlowSpeed(load.powerKw);
       busNodes.push({
         key: load.type,
@@ -2367,7 +2454,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
   }), []);
 
   const [data, setData] = useState({
-    solarR: 0, homeLoad: 5, residentialLoad: 5, commercialLoad: 0, industrialLoad: 0, ev1Load: 0, ev2Load: 0, 
+    solarR: 0, homeLoad: 5, residentialLoad: 5, commercialLoad: 0, industrialLoad: 0, accessoryLoad: 0, ev1Load: 0, ev2Load: 0, 
     ev1Status: 'Idle', ev2Status: 'Idle',
     ev1Soc: 60, ev2Soc: 50,
     batteryPower: 0, batteryLevel: 50, batteryStatus: 'Idle',
@@ -2837,6 +2924,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
               residentialLoad: finalState.residentialLoad,
               commercialLoad: finalState.commercialLoad,
               industrialLoad: finalState.industrialLoad,
+              accessoryLoad: finalState.accessoryLoad ?? 0,
               ev1Load: finalState.ev1Kw,
               ev1Status: finalState.ev1Kw > 0 ? 'Charging' : (finalState.ev1IsHome ? 'Idle' : 'Away'),
               ev1Soc: finalState.ev1Soc,
@@ -2967,6 +3055,8 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
          homeLoad: state.houseLoad,
          residentialLoad: state.residentialLoad,
          commercialLoad: state.commercialLoad,
+         industrialLoad: state.industrialLoad,
+         accessoryLoad: state.accessoryLoad ?? 0,
          ev1Load: state.ev1Kw, ev1Status: state.ev1Kw > 0 ? 'Charging' : (state.ev1IsHome ? 'Idle' : 'Away'), ev1Soc: state.ev1Soc,
          ev2Load: state.ev2Kw, ev2Status: state.ev2Kw > 0 ? 'Charging' : (state.ev2IsHome ? 'Idle' : 'Away'), ev2Soc: state.ev2Soc,
          ev1V2g: state.ev1V2g ?? false,
@@ -3626,6 +3716,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
         { label: 'Battery Size', value: `${derivedSystemConfig.batteryKwh.toFixed(1)} kWh`, tone: 'battery' },
         { label: 'EV Charger', value: `${derivedSystemConfig.evChargerKw.toFixed(1)} kW`, tone: 'ev' },
         { label: 'Load Scale', value: `${derivedSystemConfig.loadScale.toFixed(2)}x`, tone: 'neutral' },
+        { label: 'Accessories', value: `${(derivedSystemConfig.accessoryLoadKw * derivedSystemConfig.accessoryScale).toFixed(1)} kW`, tone: 'consumption' },
       ];
     }
 
@@ -3870,7 +3961,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                 batteryPower={data.batteryPower}
                 gridPower={data.netGridPower}
                 homePower={data.homeLoad + data.ev1Load + data.ev2Load}
-                residentialPower={data.residentialLoad ?? data.homeLoad}
+                residentialPower={(data.residentialLoad ?? data.homeLoad) + (data.accessoryLoad ?? 0)}
                 commercialPower={data.commercialLoad ?? 0}
                 industrialPower={data.industrialLoad ?? 0}
                 evPower={data.ev1Load + data.ev2Load}
@@ -4296,7 +4387,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                 batteryPower={data.batteryPower}
                 gridPower={data.netGridPower}
                 homePower={data.homeLoad + data.ev1Load + data.ev2Load}
-                residentialPower={data.residentialLoad ?? data.homeLoad}
+                residentialPower={(data.residentialLoad ?? data.homeLoad) + (data.accessoryLoad ?? 0)}
                 commercialPower={data.commercialLoad ?? 0}
                 industrialPower={data.industrialLoad ?? 0}
                 evPower={data.ev1Load + data.ev2Load}
