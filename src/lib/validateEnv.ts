@@ -33,7 +33,7 @@ const ENV_SPECS: EnvSpec[] = [
   },
   {
     name: 'API_SERVICE_TOKEN',
-    required: isProduction,
+    required: false,
     description: 'Shared bearer token for protected API routes (recommended for server-to-server calls)',
   },
   {
@@ -43,7 +43,7 @@ const ENV_SPECS: EnvSpec[] = [
   },
   {
     name: 'API_ALLOWED_ORIGINS',
-    required: isProduction,
+    required: false,
     description: 'Comma-separated list of origins permitted to call API routes',
   },
   {
@@ -108,8 +108,10 @@ export function validateEnv(): void {
     console.error(
       '[SafariCharge] Copy .env.example to .env and provide the missing values, then restart.'
     );
-    // Exit immediately so the problem is obvious rather than causing confusing
-    // runtime errors deep inside request handlers.
-    process.exit(1);
+    // In serverless runtimes (e.g. Vercel), hard exits cause opaque 500 errors
+    // for API routes. Keep the process alive and surface errors in route logs.
+    if (!process.env.VERCEL) {
+      process.exit(1);
+    }
   }
 }

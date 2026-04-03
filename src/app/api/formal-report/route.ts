@@ -1384,7 +1384,7 @@ export async function POST(req: NextRequest) {
 
     if (error instanceof z.ZodError) {
       return jsonResponse(
-        { error: 'Invalid request data', details: error.errors.map(e => e.message).join(', ') },
+        { error: 'Invalid request data', details: error.issues.map(e => e.message).join(', ') },
         { status: 400, headers }
       );
     }
