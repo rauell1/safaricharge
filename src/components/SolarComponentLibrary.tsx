@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Slider } from '@/components/ui/slider';
 import {
   Select,
   SelectContent,
@@ -46,6 +47,21 @@ const CATEGORY_OPTIONS: Array<SolarComponentCategory | 'All'> = [
 ];
 
 const cleanText = (text: string) => text.replace(/[–—]/g, '-');
+const getHostnameLabel = (url: string) => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return 'manufacturer website';
+  }
+};
+
+const getOriginUrl = (url: string) => {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return url;
+  }
+};
 
 export function SolarComponentLibrary({ standalone = false }: SolarComponentLibraryProps) {
   const [catalog, setCatalog] = useState<SolarComponentEntry[]>(SOLAR_COMPONENT_CATALOG);
@@ -103,6 +119,10 @@ export function SolarComponentLibrary({ standalone = false }: SolarComponentLibr
       count: catalog.filter((entry) => entry.category === option).length,
     }));
   }, [catalog]);
+  const largestCategoryCount = useMemo(
+    () => Math.max(...categoryCounts.map((item) => item.count), 1),
+    [categoryCounts],
+  );
 
   const submitUploads = async () => {
     setStatus('Uploading...');
@@ -157,9 +177,19 @@ export function SolarComponentLibrary({ standalone = false }: SolarComponentLibr
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
         {categoryCounts.map((item) => (
-          <div key={item.category} className="rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-2 py-1.5">
-            <p className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">{item.category}</p>
-            <p className="text-sm font-semibold text-[var(--text-primary)]">{item.count}</p>
+          <div key={item.category} className="rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-2 py-1.5 space-y-1">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">{item.category}</p>
+              <p className="text-sm font-semibold text-[var(--text-primary)]">{item.count}</p>
+            </div>
+            <Slider
+              value={[item.count]}
+              max={largestCategoryCount}
+              step={1}
+              disabled
+              className="pointer-events-none"
+              aria-label={`${item.category} item count`}
+            />
           </div>
         ))}
       </div>
@@ -208,9 +238,21 @@ export function SolarComponentLibrary({ standalone = false }: SolarComponentLibr
       <div className="flex flex-wrap items-center gap-2">
         <Button asChild size="sm" variant="outline" className="bg-[var(--bg-card)] text-[var(--text-primary)]">
           <a href="/api/component-library?categories=Inverter,Battery%20Storage,Solar%20Module&format=csv">
-            <Download className="h-3.5 w-3.5 mr-1" /> Download inverter/battery/panel list
+            <Download className="h-3.5 w-3.5 mr-1" /> Download CSV (inverters, batteries, panels)
           </a>
         </Button>
+        <span className="text-xs text-[var(--text-secondary)]">
+          CSV contains model metadata and documentation links for procurement/review workflows.
+        </span>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {selected && (
+          <Button asChild size="sm" variant="outline" className="bg-[var(--bg-card)] text-[var(--text-primary)]">
+            <a href={getOriginUrl(selected.datasheetUrl)} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-3.5 w-3.5 mr-1" /> Open {selected.brand} homepage
+            </a>
+          </Button>
+        )}
         <span className="text-xs text-[var(--text-secondary)]">
           Showing {filtered.length} item{filtered.length === 1 ? '' : 's'} across {new Set(filtered.map((entry) => entry.brand)).size} brand(s).
         </span>
@@ -228,6 +270,15 @@ export function SolarComponentLibrary({ standalone = false }: SolarComponentLibr
                 <div>
                   <p className="text-sm font-semibold text-[var(--text-primary)]">{entry.brand} - {cleanText(entry.model)}</p>
                   <p className="text-xs text-[var(--text-secondary)] mt-0.5">{entry.category} • {cleanText(entry.summary)}</p>
+                  <a
+                    href={getOriginUrl(entry.datasheetUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(event) => event.stopPropagation()}
+                    className="mt-1 inline-flex items-center gap-1 text-[11px] text-[var(--battery)] hover:underline"
+                  >
+                    {getHostnameLabel(entry.datasheetUrl)} <ExternalLink className="h-3 w-3" />
+                  </a>
                 </div>
                 <span className="text-[10px] uppercase rounded-full border border-[var(--border)] px-2 py-0.5 text-[var(--text-secondary)] bg-[var(--bg-card)]">
                   {cleanText(entry.specs[0]?.value ?? 'N/A')}
