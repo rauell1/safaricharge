@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useEnergyFlows, useEnergyNodes, useNodeSelection } from '@/hooks/useEnergySystem';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Battery, ChevronLeft, ChevronRight, Home, Sun, TowerControl, Zap, CarFront } from 'lucide-react';
 import type { NodeType } from '@/stores/energySystemStore';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
+import { Slider } from '@/components/ui/slider';
 
 const nodeConfig: Array<{
   key: NodeType;
@@ -31,6 +33,7 @@ export function SystemVisualization() {
   const router = useRouter();
   const isMobile = useIsMobile();
   const [mobileStep, setMobileStep] = useState(0);
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
 
   const activeFlows = flows.filter((f) => f.active);
   const mobileNodes = useMemo(
@@ -44,7 +47,27 @@ export function SystemVisualization() {
     [nodes]
   );
   const currentMobileNode = mobileNodes[Math.max(0, Math.min(mobileStep, mobileNodes.length - 1))];
-  const MobileIcon = currentMobileNode.icon;
+
+  const syncSlideToStep = useCallback(() => {
+    if (!carouselApi) return;
+    setMobileStep(carouselApi.selectedScrollSnap());
+  }, [carouselApi]);
+
+  useEffect(() => {
+    if (!carouselApi) return;
+    syncSlideToStep();
+    carouselApi.on('select', syncSlideToStep);
+    return () => {
+      carouselApi.off('select', syncSlideToStep);
+    };
+  }, [carouselApi, syncSlideToStep]);
+
+  useEffect(() => {
+    if (!carouselApi) return;
+    if (carouselApi.selectedScrollSnap() !== mobileStep) {
+      carouselApi.scrollTo(mobileStep);
+    }
+  }, [carouselApi, mobileStep]);
 
   const handleNodeClick = (node: (typeof nodeConfig)[number]) => {
     selectNode(node.key);
@@ -80,10 +103,7 @@ export function SystemVisualization() {
                 </div>
                 <div className="mt-1 flex items-center justify-center gap-2">
                   <div className="text-sm font-semibold text-[var(--text-primary)]">{currentMobileNode.label}</div>
-                  <div
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: currentMobileNode.accent }}
-                  />
+                  <div className="h-2 w-2 rounded-full" style={{ backgroundColor: currentMobileNode.accent }} />
                 </div>
               </div>
               <button
@@ -96,45 +116,61 @@ export function SystemVisualization() {
               </button>
             </div>
 
-            <button
-              type="button"
-              onClick={() => handleNodeClick(currentMobileNode)}
-              className="mt-4 flex w-full items-center gap-4 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4 text-left transition-all duration-300 hover:scale-[1.02] hover:border-[var(--border-strong)] active:scale-[0.98]"
-            >
-              <div
-                className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 shadow-lg transition-all duration-300"
-                style={{
-                  borderColor: currentMobileNode.accent,
-                  backgroundColor: currentMobileNode.tint,
-                  boxShadow: `0 4px 20px ${currentMobileNode.accent}40, 0 0 0 3px ${currentMobileNode.tint}`
-                }}
-              >
-                <MobileIcon
-                  className="h-8 w-8 transition-transform duration-300 group-hover:scale-110"
-                  style={{ color: currentMobileNode.accent }}
-                  strokeWidth={2.5}
-                />
-                {currentMobileNode.status === 'active' && (
-                  <div
-                    className="absolute -right-1 -top-1 h-4 w-4 rounded-full border-2 border-[var(--bg-card)] animate-pulse-glow"
-                    style={{ backgroundColor: currentMobileNode.accent }}
-                  />
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <div className="text-xs font-medium uppercase tracking-wider text-[var(--text-tertiary)]">
-                    {currentMobileNode.status}
-                  </div>
-                  {currentMobileNode.status === 'active' && (
-                    <span className="h-1.5 w-1.5 rounded-full animate-pulse-glow" style={{ backgroundColor: currentMobileNode.accent }} />
-                  )}
-                </div>
-                <div className="mt-1 text-2xl font-bold leading-none tracking-tight" style={{ color: currentMobileNode.accent }}>
-                  {currentMobileNode.power.toFixed(1)} <span className="text-sm font-medium text-[var(--text-secondary)]">kW</span>
-                </div>
-              </div>
-            </button>
+            <Carousel setApi={setCarouselApi} opts={{ align: 'start', loop: true }} className="mt-4">
+              <CarouselContent className="ml-0">
+                {mobileNodes.map((node) => {
+                  const NodeIcon = node.icon;
+                  return (
+                    <CarouselItem key={node.key} className="pl-0">
+                      <button
+                        type="button"
+                        onClick={() => handleNodeClick(node)}
+                        className="flex w-full items-center gap-4 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4 text-left transition-all duration-300 hover:scale-[1.02] hover:border-[var(--border-strong)] active:scale-[0.98]"
+                      >
+                        <div
+                          className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 shadow-lg transition-all duration-300"
+                          style={{
+                            borderColor: node.accent,
+                            backgroundColor: node.tint,
+                            boxShadow: `0 4px 20px ${node.accent}40, 0 0 0 3px ${node.tint}`,
+                          }}
+                        >
+                          <NodeIcon className="h-8 w-8 transition-transform duration-300" style={{ color: node.accent }} strokeWidth={2.5} />
+                          {node.status === 'active' && (
+                            <div
+                              className="absolute -right-1 -top-1 h-4 w-4 rounded-full border-2 border-[var(--bg-card)] animate-pulse-glow"
+                              style={{ backgroundColor: node.accent }}
+                            />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <div className="text-xs font-medium uppercase tracking-wider text-[var(--text-tertiary)]">{node.status}</div>
+                            {node.status === 'active' && (
+                              <span className="h-1.5 w-1.5 rounded-full animate-pulse-glow" style={{ backgroundColor: node.accent }} />
+                            )}
+                          </div>
+                          <div className="mt-1 text-2xl font-bold leading-none tracking-tight" style={{ color: node.accent }}>
+                            {node.power.toFixed(1)} <span className="text-sm font-medium text-[var(--text-secondary)]">kW</span>
+                          </div>
+                        </div>
+                      </button>
+                    </CarouselItem>
+                  );
+                })}
+              </CarouselContent>
+            </Carousel>
+
+            <div className="mt-4 px-1">
+              <Slider
+                min={0}
+                max={mobileNodes.length - 1}
+                step={1}
+                value={[mobileStep]}
+                onValueChange={(value) => setMobileStep(value[0] ?? 0)}
+                aria-label="System node slider"
+              />
+            </div>
 
             {currentMobileNode.soc !== undefined && (
               <div className="mt-3 rounded-lg border border-[var(--border)] bg-[var(--bg-card)] p-3 text-xs text-[var(--text-secondary)]">
