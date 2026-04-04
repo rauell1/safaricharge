@@ -5,7 +5,7 @@ import {
   Sun, Home, Building2, Battery, UtilityPole,
   Clock, Zap, ArrowDown, ArrowUp, MessageSquare, X, Send,
   Sparkles, Loader2, Sliders, Play, Pause, ChevronDown,
-  ChevronUp, MapPin, Table, FileText, PieChart, Settings, Calendar,
+  ChevronUp, ChevronLeft, ChevronRight, MapPin, Table, FileText, PieChart, Settings, Calendar,
   Moon, Download, RotateCcw, AlertTriangle, DollarSign,
   Car, Car as CarIcon, FileSpreadsheet, Target, TrendingUp, Leaf, Trees, Factory
 } from 'lucide-react';
@@ -32,6 +32,8 @@ import { runSolarSimulation } from '@/simulation/runSimulation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
+import { Slider } from '@/components/ui/slider';
 import { TREE_CO2_KG_PER_YEAR, AVG_CAR_EMISSION_KG_PER_KM, GRID_EMISSION_FACTOR } from '@/lib/tariff';
 import type { HardwareRecommendation } from '@/lib/recommendation-engine';
 import type { SystemConfig, DerivedSystemConfig, SimulationMinuteRecord } from '@/types/simulation-core';
@@ -2021,6 +2023,30 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
     sinksKw: number;
   }; showValues: boolean; config: DerivedSystemConfig;
 }) => {
+  const [mobileLoadStep, setMobileLoadStep] = useState(0);
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+
+  const syncSlideToStep = useCallback(() => {
+    if (!carouselApi) return;
+    setMobileLoadStep(carouselApi.selectedScrollSnap());
+  }, [carouselApi]);
+
+  useEffect(() => {
+    if (!carouselApi) return;
+    syncSlideToStep();
+    carouselApi.on('select', syncSlideToStep);
+    return () => {
+      carouselApi.off('select', syncSlideToStep);
+    };
+  }, [carouselApi, syncSlideToStep]);
+
+  useEffect(() => {
+    if (!carouselApi) return;
+    if (carouselApi.selectedScrollSnap() !== mobileLoadStep) {
+      carouselApi.scrollTo(mobileLoadStep);
+    }
+  }, [carouselApi, mobileLoadStep]);
+
   const pvNode = layout.generation[0];
   const isSolarActive = (pvNode?.outputKw ?? 0) > 0.1;
   const inverterUnits = Math.max(1, layout.conversion.length || 1);
@@ -2388,13 +2414,68 @@ const ResidentialPanel = React.memo(({ simSpeed, weather, isNight, layout, showF
               />
             </div>
           </div>
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)]/80 p-3">
-            <div className="grid gap-2" style={mobileColumnTemplate}>
-              {busNodes.map((node) => (
-                <div key={`m-node-${node.key}`} className="flex flex-col items-center gap-1">
-                  {node.cable}
-                  <div className="scale-[0.86] origin-center">{node.node}</div>
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)]/80 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <button
+                type="button"
+                className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] p-2 text-[var(--text-secondary)] transition-all duration-200 hover:border-[var(--border-strong)] hover:bg-[var(--bg-secondary)] active:scale-95"
+                onClick={() => setMobileLoadStep((prev) => (prev === 0 ? busNodes.length - 1 : prev - 1))}
+                aria-label="Previous load"
+              >
+                <ChevronLeft className="h-5 w-5" strokeWidth={2} />
+              </button>
+              <div className="text-center">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-[var(--text-tertiary)] font-medium">
+                  Load {mobileLoadStep + 1} of {busNodes.length}
                 </div>
+              </div>
+              <button
+                type="button"
+                className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] p-2 text-[var(--text-secondary)] transition-all duration-200 hover:border-[var(--border-strong)] hover:bg-[var(--bg-secondary)] active:scale-95"
+                onClick={() => setMobileLoadStep((prev) => (prev + 1) % busNodes.length)}
+                aria-label="Next load"
+              >
+                <ChevronRight className="h-5 w-5" strokeWidth={2} />
+              </button>
+            </div>
+
+            <Carousel setApi={setCarouselApi} opts={{ align: 'start', loop: true }} className="w-full">
+              <CarouselContent className="ml-0">
+                {busNodes.map((node) => (
+                  <CarouselItem key={`carousel-${node.key}`} className="pl-0">
+                    <div className="flex flex-col items-center gap-1">
+                      {node.cable}
+                      <div className="scale-[0.86] origin-center">{node.node}</div>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
+
+            <div className="mt-4 px-1">
+              <Slider
+                min={0}
+                max={Math.max(0, busNodes.length - 1)}
+                step={1}
+                value={[mobileLoadStep]}
+                onValueChange={(value) => setMobileLoadStep(value[0] ?? 0)}
+                aria-label="Load slider"
+              />
+            </div>
+
+            <div className="mt-4 flex items-center justify-center gap-1.5">
+              {busNodes.map((_, idx) => (
+                <button
+                  key={`dot-${idx}`}
+                  type="button"
+                  onClick={() => setMobileLoadStep(idx)}
+                  className="h-2 w-2 rounded-full transition-all duration-300"
+                  style={{
+                    backgroundColor: idx === mobileLoadStep ? 'var(--battery)' : 'var(--border)',
+                    transform: idx === mobileLoadStep ? 'scale(1.3)' : 'scale(1)',
+                  }}
+                  aria-label={`Go to load ${idx + 1}`}
+                />
               ))}
             </div>
           </div>
