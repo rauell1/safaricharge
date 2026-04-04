@@ -68,43 +68,70 @@ export function SystemVisualization() {
             <div className="flex items-center justify-between">
               <button
                 type="button"
-                className="rounded-lg border border-[var(--border)] p-2 text-[var(--text-secondary)]"
+                className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] p-2.5 text-[var(--text-secondary)] transition-all duration-200 hover:border-[var(--border-strong)] hover:bg-[var(--bg-secondary)] active:scale-95"
                 onClick={() => setMobileStep((prev) => (prev === 0 ? mobileNodes.length - 1 : prev - 1))}
                 aria-label="Previous system node"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-5 w-5" strokeWidth={2} />
               </button>
               <div className="text-center">
-                <div className="text-[10px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-[var(--text-tertiary)] font-medium">
                   Node {mobileStep + 1} of {mobileNodes.length}
                 </div>
-                <div className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{currentMobileNode.label}</div>
+                <div className="mt-1 flex items-center justify-center gap-2">
+                  <div className="text-sm font-semibold text-[var(--text-primary)]">{currentMobileNode.label}</div>
+                  <div
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: currentMobileNode.accent }}
+                  />
+                </div>
               </div>
               <button
                 type="button"
-                className="rounded-lg border border-[var(--border)] p-2 text-[var(--text-secondary)]"
+                className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] p-2.5 text-[var(--text-secondary)] transition-all duration-200 hover:border-[var(--border-strong)] hover:bg-[var(--bg-secondary)] active:scale-95"
                 onClick={() => setMobileStep((prev) => (prev + 1) % mobileNodes.length)}
                 aria-label="Next system node"
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-5 w-5" strokeWidth={2} />
               </button>
             </div>
 
             <button
               type="button"
               onClick={() => handleNodeClick(currentMobileNode)}
-              className="mt-4 flex w-full items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3 text-left"
+              className="mt-4 flex w-full items-center gap-4 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4 text-left transition-all duration-300 hover:scale-[1.02] hover:border-[var(--border-strong)] active:scale-[0.98]"
             >
               <div
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2"
-                style={{ borderColor: currentMobileNode.accent, backgroundColor: currentMobileNode.tint }}
+                className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 shadow-lg transition-all duration-300"
+                style={{
+                  borderColor: currentMobileNode.accent,
+                  backgroundColor: currentMobileNode.tint,
+                  boxShadow: `0 4px 20px ${currentMobileNode.accent}40, 0 0 0 3px ${currentMobileNode.tint}`
+                }}
               >
-                <MobileIcon className="h-6 w-6" style={{ color: currentMobileNode.accent }} />
+                <MobileIcon
+                  className="h-8 w-8 transition-transform duration-300 group-hover:scale-110"
+                  style={{ color: currentMobileNode.accent }}
+                  strokeWidth={2.5}
+                />
+                {currentMobileNode.status === 'active' && (
+                  <div
+                    className="absolute -right-1 -top-1 h-4 w-4 rounded-full border-2 border-[var(--bg-card)] animate-pulse-glow"
+                    style={{ backgroundColor: currentMobileNode.accent }}
+                  />
+                )}
               </div>
-              <div className="min-w-0">
-                <div className="text-xs text-[var(--text-tertiary)]">{currentMobileNode.status}</div>
-                <div className="text-lg font-bold leading-none" style={{ color: currentMobileNode.accent }}>
-                  {currentMobileNode.power.toFixed(1)} kW
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <div className="text-xs font-medium uppercase tracking-wider text-[var(--text-tertiary)]">
+                    {currentMobileNode.status}
+                  </div>
+                  {currentMobileNode.status === 'active' && (
+                    <span className="h-1.5 w-1.5 rounded-full animate-pulse-glow" style={{ backgroundColor: currentMobileNode.accent }} />
+                  )}
+                </div>
+                <div className="mt-1 text-2xl font-bold leading-none tracking-tight" style={{ color: currentMobileNode.accent }}>
+                  {currentMobileNode.power.toFixed(1)} <span className="text-sm font-medium text-[var(--text-secondary)]">kW</span>
                 </div>
               </div>
             </button>
@@ -115,39 +142,65 @@ export function SystemVisualization() {
               </div>
             )}
 
-            <div className="mt-3 flex items-center justify-center gap-2">
-              {mobileNodes.map((node, idx) => (
-                <button
-                  key={node.key}
-                  type="button"
-                  onClick={() => setMobileStep(idx)}
-                  className="h-2 rounded-full transition-all"
-                  style={{
-                    width: idx === mobileStep ? '20px' : '8px',
-                    backgroundColor: idx === mobileStep ? node.accent : 'var(--border)',
-                  }}
-                  aria-label={`Go to ${node.label} node`}
-                />
-              ))}
+            <div className="mt-4 flex items-center justify-center gap-2">
+              {mobileNodes.map((node, idx) => {
+                const NodeIcon = node.icon;
+                const isActive = idx === mobileStep;
+                return (
+                  <button
+                    key={node.key}
+                    type="button"
+                    onClick={() => setMobileStep(idx)}
+                    className="relative flex items-center justify-center rounded-full border transition-all duration-300"
+                    style={{
+                      width: isActive ? '40px' : '32px',
+                      height: isActive ? '40px' : '32px',
+                      borderColor: isActive ? node.accent : 'var(--border)',
+                      backgroundColor: isActive ? node.tint : 'transparent',
+                      boxShadow: isActive ? `0 2px 12px ${node.accent}30` : 'none',
+                    }}
+                    aria-label={`Go to ${node.label} node`}
+                  >
+                    <NodeIcon
+                      className="transition-all duration-300"
+                      style={{
+                        width: isActive ? '20px' : '16px',
+                        height: isActive ? '20px' : '16px',
+                        color: isActive ? node.accent : 'var(--text-tertiary)',
+                      }}
+                      strokeWidth={isActive ? 2.5 : 2}
+                    />
+                  </button>
+                );
+              })}
             </div>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {nodeConfig.map((node) => {
               const data = nodes[node.key];
+              const NodeIcon = node.icon;
               return (
                 <button
                   key={node.key}
-                  className="group rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--border-strong)]"
+                  className="group rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--border-strong)] hover:shadow-lg"
                   onClick={() => handleNodeClick(node)}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm font-semibold text-[var(--text-primary)]">{node.label}</div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200 group-hover:scale-110"
+                        style={{ backgroundColor: node.tint }}
+                      >
+                        <NodeIcon className="h-4 w-4" style={{ color: node.accent }} strokeWidth={2.5} />
+                      </div>
+                      <div className="text-sm font-semibold text-[var(--text-primary)]">{node.label}</div>
+                    </div>
                     <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: node.tint, color: node.accent }}>
                       {data.status}
                     </span>
                   </div>
-                  <div className="mt-2 flex items-center justify-between">
+                  <div className="flex items-center justify-between">
                     <div className="text-xl font-bold" style={{ color: node.accent }}>
                       {data.powerKW.toFixed(1)} kW
                     </div>
