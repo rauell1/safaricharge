@@ -366,12 +366,20 @@ export const PRESET_AGGRESSIVE = createPresetConfig(
 // ---------------------------------------------------------------------------
 
 /**
- * Validates a system configuration
+ * Validates a system configuration with enhanced intelligence
+ *
+ * Now includes:
+ * - DC:AC ratio analysis
+ * - Load capacity validation
+ * - Battery C-rate checks
+ * - Economic feasibility warnings
  */
 export function validateSystemConfig(config: SystemConfiguration): {
   valid: boolean;
   errors: string[];
   warnings: string[];
+  dcAcRatio?: number;
+  dcAcStatus?: 'optimal' | 'acceptable' | 'too_low' | 'too_high';
 } {
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -391,8 +399,59 @@ export function validateSystemConfig(config: SystemConfiguration): {
   if (config.inverter.capacityKw <= 0) {
     errors.push('Inverter capacity must be positive');
   }
+
+  // ========================================================================
+  // NEW: DC:AC Ratio Analysis
+  // ========================================================================
+  const dcAcRatio = config.solar.totalCapacityKw / config.inverter.capacityKw;
+  let dcAcStatus: 'optimal' | 'acceptable' | 'too_low' | 'too_high';
+
+  if (dcAcRatio >= 1.20 && dcAcRatio <= 1.30) {
+    dcAcStatus = 'optimal';
+    // No warning - optimal configuration
+  } else if (dcAcRatio >= 1.10 && dcAcRatio < 1.20) {
+    dcAcStatus = 'acceptable';
+    warnings.push(
+      `DC:AC ratio (${dcAcRatio.toFixed(2)}:1) is conservative. Consider downsizing inverter to ${(config.solar.totalCapacityKw / 1.25).toFixed(1)} kW for better economics.`
+    );
+  } else if (dcAcRatio > 1.30 && dcAcRatio <= 1.40) {
+    dcAcStatus = 'acceptable';
+    warnings.push(
+      `DC:AC ratio (${dcAcRatio.toFixed(2)}:1) will experience ~${((dcAcRatio - 1.25) * 100).toFixed(0)}% clipping losses. Consider ${(config.solar.totalCapacityKw / 1.25).toFixed(1)} kW inverter.`
+    );
+  } else if (dcAcRatio < 1.10) {
+    dcAcStatus = 'too_low';
+    warnings.push(
+      `⚠️ DC:AC ratio (${dcAcRatio.toFixed(2)}:1) is too low. Inverter oversized - wasting ~${((1.25 - dcAcRatio) * 20).toFixed(0)}% energy capture potential.`
+    );
+  } else {
+    dcAcStatus = 'too_high';
+    warnings.push(
+      `⚠️ DC:AC ratio (${dcAcRatio.toFixed(2)}:1) is too high. Excessive clipping will waste ~${((dcAcRatio - 1.25) * 100).toFixed(0)}% of solar production.`
+    );
+  }
+
+  // Legacy warning (kept for backward compatibility)
   if (config.inverter.capacityKw < config.solar.totalCapacityKw * 0.7) {
-    warnings.push('Inverter undersized relative to PV array');
+    warnings.push('Inverter severely undersized relative to PV array (< 0.7:1 ratio)');
+  }
+
+  // ========================================================================
+  // NEW: Battery C-Rate Validation
+  // ========================================================================
+  const chargeRate_C = config.battery.maxChargeKw / config.battery.capacityKwh;
+  const dischargeRate_C = config.battery.maxDischargeKw / config.battery.capacityKwh;
+
+  if (chargeRate_C > 1.0) {
+    warnings.push(
+      `Battery charge rate (${chargeRate_C.toFixed(2)}C) exceeds recommended 1C. May reduce lifespan by 20-30%.`
+    );
+  }
+
+  if (dischargeRate_C > 2.0) {
+    warnings.push(
+      `Battery discharge rate (${dischargeRate_C.toFixed(2)}C) exceeds recommended 2C. May reduce lifespan.`
+    );
   }
 
   // Battery validation
@@ -451,6 +510,8 @@ export function validateSystemConfig(config: SystemConfiguration): {
     valid: errors.length === 0,
     errors,
     warnings,
+    dcAcRatio,
+    dcAcStatus,
   };
 }
 
