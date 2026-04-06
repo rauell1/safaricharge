@@ -55,7 +55,6 @@ src/
 
 ```bash
 npm install
-npm install -g gitnexus
 ```
 
 ### 2) Configure environment
@@ -81,8 +80,6 @@ npm run db:push
 ### 4) Start gitnexus server
 
 ```bash
-gitnexus serve
-# or use npm script:
 npm run gitnexus
 ```
 
