@@ -60,12 +60,12 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
           </div>
           <div>
             <h2 className="text-lg md:text-xl font-bold text-[var(--text-primary)]">Investor Dashboard</h2>
-            <p className="text-xs md:text-sm text-[var(--text-secondary)]">Live financial layer wired to your SafariCharge simulation</p>
+            <p className="text-xs md:text-sm text-justify text-[var(--text-secondary)] [text-align-last:left]">Live financial layer wired to your SafariCharge simulation</p>
           </div>
         </div>
 
         {!hasSimulationData ? (
-          <div className="grid min-h-[380px] gap-6 rounded-[32px] border border-dashed border-[var(--border)] bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.12),transparent_34%),linear-gradient(180deg,rgba(17,24,39,0.96),rgba(15,23,42,0.9))] p-6 items-stretch lg:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)] lg:p-8">
+          <div className="grid min-h-[380px] gap-6 rounded-[32px] border border-dashed border-[var(--border)] bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.12),transparent_34%),linear-gradient(180deg,rgba(17,24,39,0.96),rgba(15,23,42,0.9))] p-6 items-stretch xl:grid-cols-[minmax(420px,1.25fr)_minmax(320px,0.75fr)] lg:p-8">
             <div className="flex w-full min-w-0 flex-col justify-between gap-6 text-left">
               <div className="space-y-4 w-full min-w-0">
                 <div className="h-16 w-16 rounded-2xl border border-[var(--battery)]/20 bg-[var(--battery-soft)] flex items-center justify-center text-[var(--battery)] shadow-[0_0_0_8px_rgba(16,185,129,0.08)]">
@@ -73,7 +73,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
                 </div>
                 <div className="space-y-2 w-full max-w-none">
                   <h3 className="max-w-xl text-2xl font-bold leading-tight text-[var(--text-primary)] sm:text-[2rem]">No Simulation Data Available</h3>
-                  <p className="max-w-xl text-sm leading-relaxed text-[var(--text-secondary)]">
+                  <p className="max-w-xl text-sm leading-relaxed text-justify text-[var(--text-secondary)] [text-align-last:left]">
                     Run the simulation to generate live financial insights, including revenue projections, payback period, IRR, NPV, and sensitivity scenarios.
                   </p>
                 </div>
@@ -121,7 +121,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
                 ].map((item) => (
                   <div key={item} className="flex items-start gap-3 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] px-3 py-3">
                     <div className="mt-0.5 h-2.5 w-2.5 rounded-full bg-[var(--battery)]" />
-                    <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{item}</p>
+                    <p className="text-sm text-justify text-[var(--text-secondary)] leading-relaxed [text-align-last:left]">{item}</p>
                   </div>
                 ))}
               </div>
