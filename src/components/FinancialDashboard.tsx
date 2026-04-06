@@ -52,8 +52,8 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
   const portfolioNet = snapshot.netMonthly * snapshot.stations;
 
   return (
-    <section className="w-full max-w-7xl">
-      <div className="space-y-5">
+    <section className="w-full">
+      <div className="space-y-4">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-full bg-[var(--bg-card-muted)] flex items-center justify-center text-[var(--battery)]">
             <Sparkles size={18} />
