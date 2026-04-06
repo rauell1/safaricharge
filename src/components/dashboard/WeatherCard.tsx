@@ -69,14 +69,14 @@ export function WeatherCard({
 
   return (
     <Card className="dashboard-card">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-[var(--text-primary)] text-sm">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2.5 text-[var(--text-primary)] text-base font-semibold">
           {isSunny ? (
-            <Sun className="h-4 w-4" style={{ color: 'var(--solar)' }} />
+            <Sun className="h-4.5 w-4.5" style={{ color: 'var(--solar)' }} aria-hidden="true" />
           ) : (
-            <Cloud className="h-4 w-4" style={{ color: 'var(--text-secondary)' }} />
+            <Cloud className="h-4.5 w-4.5" style={{ color: 'var(--text-secondary)' }} aria-hidden="true" />
           )}
-          Weather &amp; Irradiance
+          <span>Weather &amp; Irradiance</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
