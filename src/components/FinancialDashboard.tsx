@@ -65,15 +65,15 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
         </div>
 
         {!hasSimulationData ? (
-          <div className="grid min-h-[380px] gap-6 rounded-[32px] border border-dashed border-[var(--border)] bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.12),transparent_34%),linear-gradient(180deg,rgba(17,24,39,0.96),rgba(15,23,42,0.9))] p-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)] lg:p-8">
-            <div className="flex flex-col justify-between gap-6">
-              <div className="space-y-4">
+          <div className="grid min-h-[380px] gap-6 rounded-[32px] border border-dashed border-[var(--border)] bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.12),transparent_34%),linear-gradient(180deg,rgba(17,24,39,0.96),rgba(15,23,42,0.9))] p-6 items-stretch lg:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)] lg:p-8">
+            <div className="flex w-full min-w-0 flex-col justify-between gap-6 text-left">
+              <div className="space-y-4 w-full min-w-0">
                 <div className="h-16 w-16 rounded-2xl border border-[var(--battery)]/20 bg-[var(--battery-soft)] flex items-center justify-center text-[var(--battery)] shadow-[0_0_0_8px_rgba(16,185,129,0.08)]">
                   <TrendingUp size={30} />
                 </div>
-                <div className="space-y-2 max-w-2xl">
-                  <h3 className="text-2xl font-bold text-[var(--text-primary)]">No Simulation Data Available</h3>
-                  <p className="text-sm text-[var(--text-secondary)] max-w-2xl leading-relaxed">
+                <div className="space-y-2 w-full max-w-none">
+                  <h3 className="max-w-xl text-2xl font-bold leading-tight text-[var(--text-primary)] sm:text-[2rem]">No Simulation Data Available</h3>
+                  <p className="max-w-xl text-sm leading-relaxed text-[var(--text-secondary)]">
                     Run the simulation to generate live financial insights, including revenue projections, payback period, IRR, NPV, and sensitivity scenarios.
                   </p>
                 </div>
@@ -88,7 +88,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
                 )}
               </div>
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 w-full">
                 {[
                   { label: 'Revenue', value: 'Monthly projection' },
                   { label: 'Payback', value: 'Break-even estimate' },
@@ -102,7 +102,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-[var(--border)] bg-[var(--bg-card-muted)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+            <div className="min-h-full rounded-[28px] border border-[var(--border)] bg-[var(--bg-card-muted)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs uppercase tracking-[0.22em] text-[var(--text-tertiary)]">What you’ll unlock</p>

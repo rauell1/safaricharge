@@ -263,16 +263,36 @@ export function PowerFlowVisualization({
   const solarToGridPercent = totalSolarUse > 0 && gridPower < 0 ? (Math.abs(gridPower) / totalSolarUse) * 100 : 0;
 
   return (
-    <Card className="dashboard-card">
-      <CardHeader>
+      <Card className="dashboard-card overflow-hidden rounded-[28px]">
+      <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
           <Zap className="h-5 w-5 text-[var(--battery)]" />
           Energy Flow
           <span className="text-xs text-[var(--text-tertiary)] font-normal ml-2">(Click nodes for details)</span>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="flex flex-col items-center gap-4 py-4">
+      <CardContent className="pt-0 space-y-6">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] px-4 py-3">
+            <p className="text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">Solar</p>
+            <p className="mt-1 text-lg font-semibold text-[var(--solar)]">{solarPower.toFixed(2)} kW</p>
+          </div>
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] px-4 py-3">
+            <p className="text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">Site Load</p>
+            <p className="mt-1 text-lg font-semibold text-[var(--consumption)]">{siteLoad.toFixed(2)} kW</p>
+          </div>
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] px-4 py-3">
+            <p className="text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">Battery</p>
+            <p className="mt-1 text-lg font-semibold text-[var(--battery)]">{Math.abs(batteryPower).toFixed(2)} kW</p>
+          </div>
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] px-4 py-3">
+            <p className="text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">Efficiency</p>
+            <p className="mt-1 text-lg font-semibold text-[var(--text-primary)]">{systemEfficiency.toFixed(0)}%</p>
+          </div>
+        </div>
+
+        <div className="rounded-[24px] border border-[var(--border)] bg-[var(--bg-secondary)]/60 p-4 sm:p-6">
+        <div className="flex flex-col items-center gap-5 py-2">
           <EnergyNode
             icon={Sun}
             label="Solar"
@@ -295,7 +315,7 @@ export function PowerFlowVisualization({
             />
           </div>
 
-          <div className="flex items-center justify-center w-full max-w-xl gap-4 sm:gap-6 px-1 sm:px-0">
+          <div className="flex items-center justify-center w-full max-w-2xl gap-4 sm:gap-6 px-1 sm:px-0">
             <div className="flex-1 flex justify-end">
               <FlowPath
                 active={flowDirection.solarToBattery}
@@ -318,7 +338,7 @@ export function PowerFlowVisualization({
           </div>
 
           {/* Desktop: Horizontal layout, Mobile: Vertical layout */}
-          <div className="flex flex-col md:flex-row items-center md:items-start justify-center w-full max-w-4xl gap-3 sm:gap-4 md:gap-8 lg:gap-10 mt-1">
+          <div className="flex flex-col md:flex-row items-center md:items-start justify-center w-full max-w-5xl gap-3 sm:gap-4 md:gap-8 lg:gap-10 mt-1">
             {/* Battery Section */}
             <div className="flex md:flex-1 min-w-0 flex-col items-center gap-2">
               <FlowPath
@@ -421,10 +441,11 @@ export function PowerFlowVisualization({
             </div>
           </div>
         </div>
+        </div>
 
-        <div className="mt-6 space-y-4">
+        <div className="space-y-4">
           {/* Power Summary */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 rounded-xl border p-4 bg-[var(--bg-secondary)] border-[var(--border)]">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 rounded-2xl border p-4 bg-[var(--bg-secondary)] border-[var(--border)]">
             <div className="text-center">
               <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Solar</div>
               <div className="text-base font-bold" style={{ color: 'var(--solar)' }}>{solarPower.toFixed(2)} kW</div>
@@ -447,7 +468,7 @@ export function PowerFlowVisualization({
 
           {/* Efficiency & Flow Distribution */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-            <div className="rounded-xl border p-4 bg-[var(--bg-secondary)] border-[var(--border)]">
+            <div className="rounded-2xl border p-4 bg-[var(--bg-secondary)] border-[var(--border)]">
               <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-2">System Efficiency</div>
               <div className="flex items-baseline gap-2 mb-2">
                 <div className="text-2xl font-bold" style={{ color: systemEfficiency >= 80 ? 'var(--battery)' : systemEfficiency >= 60 ? 'var(--solar)' : 'var(--alert)' }}>
@@ -466,7 +487,7 @@ export function PowerFlowVisualization({
               </div>
             </div>
 
-            <div className="rounded-xl border p-4 bg-[var(--bg-secondary)] border-[var(--border)]">
+            <div className="rounded-2xl border p-4 bg-[var(--bg-secondary)] border-[var(--border)]">
               <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-2">Flow Distribution</div>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
