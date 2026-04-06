@@ -1813,11 +1813,11 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
     slate: 'bg-slate-200 text-slate-700 border-slate-300',
   };
   return (
-    <div className="relative flex flex-col items-center w-full p-3 sm:p-6">
+    <div className="relative flex flex-col items-stretch w-full p-3 sm:p-6">
       <div className="text-center mb-4 sm:mb-6 w-full">
         <h2 className="text-lg sm:text-2xl font-black text-[var(--text-primary)] leading-tight">SIMULATION <span className="text-[var(--consumption)]">CONTROLS</span></h2>
 
-        <div className="mt-3 sm:mt-4 bg-[var(--bg-secondary)] p-3 sm:p-4 rounded-xl border border-[var(--border-strong)] w-full max-w-sm mx-auto relative overflow-hidden">
+        <div className="mt-3 sm:mt-4 bg-[var(--bg-secondary)] p-3 sm:p-4 rounded-2xl border border-[var(--border-strong)] w-full relative overflow-hidden">
           <div className="flex justify-end mb-2">
             <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)] font-bold flex items-center gap-1.5 bg-[var(--bg-card)] px-2 py-1 rounded transition-colors duration-500 whitespace-nowrap">
               {isNight ? (
@@ -1923,7 +1923,7 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
           </div>
         </div>
 
-        <div className="mt-3 sm:mt-4 flex flex-col gap-2 w-full max-w-sm mx-auto">
+        <div className="mt-3 sm:mt-4 flex flex-col gap-2 w-full">
            <div className="flex justify-center gap-2">
              <div className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border text-[9px] sm:text-[10px] font-bold flex items-center gap-1 flex-1 sm:w-32 justify-center transition-all ${ev1Status === 'Charging' ? 'bg-[var(--consumption-soft,rgba(16,185,129,0.1))] border-[var(--battery)] text-[var(--battery)]' : ev1Status === 'Away' ? 'bg-[var(--bg-card-muted)] border-[var(--border)] text-[var(--alert)]' : 'bg-[var(--bg-card-muted)] border-[var(--border)] text-[var(--battery)]'}`}>
                <span className="hidden xs:inline">EV #1: </span><span className="xs:hidden">EV1: </span>{ev1Status}
@@ -1946,7 +1946,7 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
       </div>
       
       {/* Financial/Flow Widget */}
-      <div className="bg-slate-900 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-700 relative">
+      <div className="w-full overflow-hidden rounded-[28px] border border-[var(--border-strong)] bg-[linear-gradient(180deg,rgba(15,23,42,0.96),rgba(10,15,30,0.98))] shadow-[0_24px_80px_rgba(0,0,0,0.35)] relative">
          <div className="p-3 sm:p-6 relative z-10">
             {/* Current Tariff Rate Display */}
             <div className="mb-3 sm:mb-4 pb-2 sm:pb-3 border-b border-slate-700">
