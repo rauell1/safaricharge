@@ -131,8 +131,3 @@ Open: `http://localhost:3000`
 - `SECURITY_PERFORMANCE_RELIABILITY_AUDIT_2026-04-02.md` — audit report details
 - `ROLLBACK.md` — rollback guidance
 
----
-
-If you want, I can also split this README into:
-- a short public-facing README, and
-- a deeper `docs/OPERATIONS.md` for deployment/security/runbooks.
