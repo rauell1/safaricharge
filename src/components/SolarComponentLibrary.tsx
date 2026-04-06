@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { BookOpen, Download, ExternalLink, Search, Upload } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -14,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { SOLAR_COMPONENT_CATALOG, type SolarComponentCategory, type SolarComponentEntry } from '@/lib/solar-component-catalog';
 
 type SolarComponentLibraryProps = {
@@ -55,12 +57,14 @@ const getOriginUrl = (url: string) => {
 };
 
 export function SolarComponentLibrary({ standalone = false }: SolarComponentLibraryProps) {
+  const isMobile = useIsMobile();
   const [catalog, setCatalog] = useState<SolarComponentEntry[]>(SOLAR_COMPONENT_CATALOG);
   const [assets, setAssets] = useState<UploadedAsset[]>([]);
   const [category, setCategory] = useState<SolarComponentCategory | 'All'>('All');
   const [brand, setBrand] = useState<string>('All');
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState(SOLAR_COMPONENT_CATALOG[0]?.id ?? '');
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [importJson, setImportJson] = useState('');
   const [files, setFiles] = useState<FileList | null>(null);
   const [status, setStatus] = useState('');
@@ -112,6 +116,12 @@ export function SolarComponentLibrary({ standalone = false }: SolarComponentLibr
   }, [catalog]);
 
   const selectedHost = selected ? getHostnameLabel(selected.datasheetUrl) : 'manufacturer website';
+
+  useEffect(() => {
+    if (isMobile && selected) {
+      setIsDetailsOpen(true);
+    }
+  }, [isMobile, selected?.id]);
 
   const submitUploads = async () => {
     setStatus('Uploading...');
@@ -300,7 +310,28 @@ export function SolarComponentLibrary({ standalone = false }: SolarComponentLibr
 
           <div className="space-y-4">
             <div className="rounded-[24px] border border-[var(--border)] bg-[var(--bg-card)] p-4 sm:p-5">
-              {selected ? (
+              {isMobile ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.22em] text-[var(--text-tertiary)]">Selected component</p>
+                      <h3 className="mt-1 text-lg font-bold text-[var(--text-primary)]">{selected ? `${selected.brand} ${cleanText(selected.model)}` : 'No component selected'}</h3>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-full border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-primary)]"
+                      onClick={() => setIsDetailsOpen(true)}
+                      disabled={!selected}
+                    >
+                      View details
+                    </Button>
+                  </div>
+                  <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                    Tap a row in the catalog to open the selected component in a focused bottom drawer.
+                  </p>
+                </div>
+              ) : selected ? (
                 <div className="space-y-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -390,6 +421,49 @@ export function SolarComponentLibrary({ standalone = false }: SolarComponentLibr
           </div>
         </div>
       </div>
+
+      <Drawer open={isMobile && isDetailsOpen && !!selected} onOpenChange={setIsDetailsOpen}>
+        <DrawerContent className="rounded-t-[28px] border-t border-[var(--border)] bg-[var(--bg-card)] px-4 pb-6 pt-3">
+          <DrawerHeader className="px-1 pb-4 text-left">
+            <DrawerTitle className="text-[var(--text-primary)]">{selected ? `${selected.brand} ${cleanText(selected.model)}` : 'Selected component'}</DrawerTitle>
+            <DrawerDescription className="text-[var(--text-secondary)]">
+              {selected ? `${selected.category} • ${cleanText(selected.summary)}` : 'Select a component from the catalog.'}
+            </DrawerDescription>
+          </DrawerHeader>
+          {selected && (
+            <ScrollArea className="max-h-[70vh] pr-1">
+              <div className="space-y-4 pb-2">
+                <p className="text-sm leading-relaxed text-[var(--text-secondary)]">{cleanText(selected.typicalUse)}</p>
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] p-4">
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">Key specifications</p>
+                    <span className="text-[10px] text-[var(--text-tertiary)]">{selected.specs.length} items</span>
+                  </div>
+                  <div className="space-y-2">
+                    {selected.specs.map((spec) => (
+                      <div key={spec.label} className="flex items-start justify-between gap-4 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2.5">
+                        <span className="text-sm text-[var(--text-secondary)]">{cleanText(spec.label)}</span>
+                        <span className="max-w-[60%] text-right text-sm font-semibold text-[var(--text-primary)]">{cleanText(spec.value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <a href={selected.datasheetUrl} target="_blank" rel="noopener noreferrer" className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] px-4 py-3 transition-colors hover:border-[var(--battery)]/40 hover:bg-[var(--battery-soft)]">
+                    <span className="text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]">Datasheet</span>
+                    <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">Open source <ExternalLink className="h-3.5 w-3.5" /></div>
+                  </a>
+                  <a href={selected.manualUrl} target="_blank" rel="noopener noreferrer" className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] px-4 py-3 transition-colors hover:border-[var(--grid)]/40 hover:bg-[var(--grid-soft)]">
+                    <span className="text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]">Installation manual</span>
+                    <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">Open source <ExternalLink className="h-3.5 w-3.5" /></div>
+                  </a>
+                </div>
+              </div>
+            </ScrollArea>
+          )}
+        </DrawerContent>
+      </Drawer>
     </section>
   );
 }

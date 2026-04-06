@@ -48,15 +48,15 @@ export function BatteryHealthCard({ insight }: BatteryHealthCardProps) {
   const hasTrend = Boolean(insight.trendData && insight.trendData.length >= 2);
 
   return (
-    <Card className="dashboard-card">
-      <CardHeader className="pb-3">
+    <Card className="dashboard-card rounded-[24px]">
+      <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
           <Battery className="h-5 w-5 text-[var(--battery)]" />
           Battery Health
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0 space-y-3">
-        <div className="flex items-end justify-between">
+      <CardContent className="pt-0 space-y-4">
+        <div className="flex items-end justify-between gap-3 flex-wrap">
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-bold" style={{ color: scoreColor }}>
               {insight.score}
@@ -77,21 +77,19 @@ export function BatteryHealthCard({ insight }: BatteryHealthCardProps) {
           </div>
         </div>
 
-        {insight.drop > 0 && (
-          <div className="text-sm text-[var(--text-secondary)]">↓ {(insight.drop * 100).toFixed(0)}% efficiency drop today</div>
-        )}
+        {insight.drop > 0 && <div className="text-sm text-[var(--text-secondary)] leading-relaxed">↓ {(insight.drop * 100).toFixed(0)}% efficiency drop today</div>}
 
         <div className={`font-semibold text-sm ${severityStyle[insight.severity]}`}>
           {severityLabel[insight.severity]}
         </div>
 
         {insight.cause && (
-          <div className="text-sm text-[var(--text-primary)]">
+          <div className="text-sm text-[var(--text-primary)] leading-relaxed">
             <strong>Cause:</strong> {insight.cause}
           </div>
         )}
 
-        <div className="text-sm flex items-center gap-2 text-[var(--text-primary)]">
+        <div className="text-sm flex flex-wrap items-center gap-2 text-[var(--text-primary)]">
           <strong>Confidence:</strong>
           <span>
             {'●'.repeat(dots)}
@@ -101,13 +99,13 @@ export function BatteryHealthCard({ insight }: BatteryHealthCardProps) {
         </div>
 
         {insight.recommendation && (
-          <div className="text-sm text-[var(--text-primary)]">
+          <div className="text-sm text-[var(--text-primary)] leading-relaxed">
             <strong>Action:</strong> {insight.recommendation}
           </div>
         )}
 
         {insight.impact && (
-          <div className="text-sm text-[var(--battery)]">
+          <div className="text-sm text-[var(--battery)] leading-relaxed">
             <strong>Impact:</strong> {insight.impact}
           </div>
         )}

@@ -29,32 +29,32 @@ export function BatteryPredictionCard({ prediction }: BatteryPredictionCardProps
         : 'text-[var(--battery)]';
 
   return (
-    <Card className="dashboard-card">
-      <CardHeader className="pb-3">
+    <Card className="dashboard-card rounded-[24px]">
+      <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
           <BrainCircuit className="h-5 w-5 text-[var(--consumption)]" />
           Predictive Warning
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0 space-y-3">
+      <CardContent className="pt-0 space-y-4">
         <div className={`text-sm font-semibold ${colorClass}`}>
           {prediction.level.toUpperCase()} risk ({prediction.horizon})
         </div>
-        <div className="text-sm text-[var(--text-secondary)]">
+        <div className="text-sm text-[var(--text-secondary)] leading-relaxed">
           Probability: {(prediction.risk * 100).toFixed(0)}% • Trend: {prediction.trend >= 0 ? '+' : ''}
           {prediction.trend.toFixed(0)} pts (3-day)
         </div>
         {prediction.drivers.length > 0 && (
-          <ul className="text-sm text-[var(--text-primary)] list-disc ml-5 space-y-1">
+          <ul className="text-sm text-[var(--text-primary)] list-disc ml-5 space-y-1 leading-relaxed">
             {prediction.drivers.map((driver) => (
               <li key={driver}>{driver}</li>
             ))}
           </ul>
         )}
-        <div className="text-sm text-[var(--text-primary)]">
+        <div className="text-sm text-[var(--text-primary)] leading-relaxed">
           <strong>Recommended action:</strong> {prediction.recommendation}
         </div>
-        <div className="text-sm text-[var(--battery)]">
+        <div className="text-sm text-[var(--battery)] leading-relaxed">
           <strong>Expected outcome:</strong> {prediction.expectedOutcome}
         </div>
       </CardContent>

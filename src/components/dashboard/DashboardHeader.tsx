@@ -40,35 +40,37 @@ export function DashboardHeader({
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-[var(--border)] bg-[var(--bg-secondary)]/95 backdrop-blur-lg supports-[backdrop-filter]:bg-[var(--bg-secondary)]/85 shadow-sm">
-      <div className="flex h-auto md:h-20 items-center justify-between px-4 md:px-6 py-3 md:py-0 gap-3 flex-wrap md:flex-nowrap">
-        <div className="flex items-center gap-3 md:gap-4">
-          <SidebarTrigger className="h-9 w-9 md:h-10 md:w-10 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] rounded-lg transition-all duration-200" />
-          <div className="space-y-1">
+    <header className="sticky top-0 z-40 w-full border-b border-[var(--border)] bg-[linear-gradient(180deg,rgba(15,23,42,0.96),rgba(15,23,42,0.88))] backdrop-blur-lg supports-[backdrop-filter]:bg-[rgba(15,23,42,0.9)] shadow-sm">
+      <div className="flex h-auto items-start justify-between gap-4 px-4 py-3 md:h-[84px] md:px-6 md:py-0 flex-wrap md:flex-nowrap">
+        <div className="flex items-center gap-3 md:gap-4 min-w-0">
+          <SidebarTrigger className="h-9 w-9 md:h-10 md:w-10 shrink-0 rounded-xl border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-secondary)] transition-all duration-200 hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]" />
+          <div className="space-y-1 min-w-0">
             <div className="flex items-center gap-2 text-sm md:text-base font-semibold text-[var(--text-primary)]">
-              <Calendar className="h-4 w-4 md:h-4.5 md:w-4.5 text-[var(--text-secondary)]" />
+              <Calendar className="h-4 w-4 md:h-4.5 md:w-4.5 text-[var(--text-tertiary)]" />
               <span className="hidden sm:inline">{formatDate(currentDate)}</span>
               <span className="sm:hidden">{currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5 text-[var(--solar)]" />
-              <button
-                onClick={onLocationClick}
-                className="text-sm font-medium text-[var(--solar)] hover:text-[var(--solar-bright)] transition-colors duration-200 hover:underline underline-offset-2"
-                aria-label={`Change location from ${locationName}`}
-              >
-                {locationName}
-              </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--solar)]/20 bg-[var(--solar-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--solar)]">
+                <MapPin className="h-3.5 w-3.5" />
+                <button
+                  onClick={onLocationClick}
+                  className="hover:text-[var(--solar-bright)] transition-colors duration-200 hover:underline underline-offset-2"
+                  aria-label={`Change location from ${locationName}`}
+                >
+                  {locationName}
+                </button>
+              </span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
           {/* Get Recommendations Button */}
           {onRecommendationClick && (
             <Button
               onClick={onRecommendationClick}
-              className="h-9 md:h-10 px-3 md:px-5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold shadow-lg hover:shadow-glow-energy transition-all duration-200 text-sm rounded-lg"
+              className="h-9 md:h-10 px-3 md:px-5 rounded-full bg-gradient-to-r from-emerald-600 to-green-600 text-white font-semibold shadow-lg transition-all duration-200 hover:from-emerald-700 hover:to-green-700 hover:shadow-glow-energy"
               aria-label="Get system recommendations"
             >
               <Target className="h-4 w-4 md:mr-2" />
@@ -83,7 +85,7 @@ export function DashboardHeader({
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative h-9 w-9 md:h-10 md:w-10 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] hidden sm:flex rounded-lg transition-all duration-200"
+                className="relative hidden h-9 w-9 rounded-xl border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-secondary)] transition-all duration-200 hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)] sm:flex md:h-10 md:w-10"
                 aria-label="Open filters"
               >
                 <Filter className="h-4.5 w-4.5" />
@@ -105,7 +107,7 @@ export function DashboardHeader({
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative h-9 w-9 md:h-10 md:w-10 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] rounded-lg transition-all duration-200"
+                className="relative h-9 w-9 rounded-xl border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-secondary)] transition-all duration-200 hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)] md:h-10 md:w-10"
                 aria-label={`Notifications (${notificationCount} unread)`}
               >
                 <Bell className="h-4.5 w-4.5" />
@@ -129,7 +131,7 @@ export function DashboardHeader({
           {/* Download - Make more prominent */}
           <Button
             onClick={onDownload}
-            className="h-9 md:h-10 px-3 md:px-5 bg-[var(--battery)] hover:bg-[var(--battery-bright)] text-white font-semibold shadow-md hover:shadow-glow-energy transition-all duration-200 text-sm rounded-lg"
+            className="h-9 md:h-10 px-3 md:px-5 rounded-full bg-[var(--battery)] text-white font-semibold shadow-md transition-all duration-200 hover:bg-[var(--battery-bright)] hover:shadow-glow-energy"
             aria-label="Export data"
           >
             <Download className="h-4 w-4 md:mr-2" />
@@ -141,7 +143,7 @@ export function DashboardHeader({
             variant="ghost"
             size="icon"
             onClick={onReset}
-            className="h-9 w-9 md:h-10 md:w-10 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] rounded-lg transition-all duration-200"
+            className="h-9 w-9 rounded-xl border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-secondary)] transition-all duration-200 hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)] md:h-10 md:w-10"
             aria-label="Reset dashboard"
           >
             <RotateCcw className="h-4.5 w-4.5" />
