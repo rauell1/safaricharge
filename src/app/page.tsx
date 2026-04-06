@@ -1813,11 +1813,11 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
     slate: 'bg-slate-200 text-slate-700 border-slate-300',
   };
   return (
-    <div className="relative flex flex-col items-center justify-center w-full h-full p-3 sm:p-6">
+    <div className="relative flex flex-col items-center w-full p-3 sm:p-6">
       <div className="text-center mb-4 sm:mb-6 w-full">
         <h2 className="text-lg sm:text-2xl font-black text-[var(--text-primary)] leading-tight">SIMULATION <span className="text-[var(--consumption)]">CONTROLS</span></h2>
 
-        <div className="mt-3 sm:mt-4 bg-[var(--bg-card-muted)] p-3 sm:p-4 rounded-xl border border-[var(--border)] w-full max-w-sm mx-auto relative overflow-hidden">
+        <div className="mt-3 sm:mt-4 bg-[var(--bg-secondary)] p-3 sm:p-4 rounded-xl border border-[var(--border-strong)] w-full max-w-sm mx-auto relative overflow-hidden">
           <div className="flex justify-end mb-2">
             <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)] font-bold flex items-center gap-1.5 bg-[var(--bg-card)] px-2 py-1 rounded transition-colors duration-500 whitespace-nowrap">
               {isNight ? (
@@ -4213,7 +4213,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
           {activeSection === 'simulation' && (
             <>
               {/* Simulation Engine + Scenario Controls - Two Columns */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                 <Card className="dashboard-card">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
@@ -4603,13 +4603,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
           {activeSection === 'financial' && (
             <>
               <Card className="dashboard-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-                    <DollarSign className="h-5 w-5 text-[var(--battery)]" />
-                    Savings, ROI, and Payback
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
+                <CardContent className="py-6">
                   <FinancialDashboard
                     snapshot={financialSnapshot}
                     inputs={financialInputs}
