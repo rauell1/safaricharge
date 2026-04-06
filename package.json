@@ -7,6 +7,7 @@
     "build": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
     "start": "NODE_ENV=production node .next/standalone/server.js 2>&1 | tee server.log",
     "lint": "eslint .",
+    "gitnexus": "gitnexus serve",
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
@@ -89,6 +90,7 @@
     "bun-types": "^1.3.4",
     "eslint": "^9",
     "eslint-config-next": "^16.1.1",
+    "gitnexus": "^1.0.0",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.5",
     "typescript": "5.9.3"

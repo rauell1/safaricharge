@@ -77,7 +77,13 @@ npm run db:generate
 npm run db:push
 ```
 
-### 4) Start development server
+### 4) Start gitnexus server
+
+```bash
+npm run gitnexus
+```
+
+### 5) Start development server
 
 ```bash
 npm run dev
@@ -91,6 +97,7 @@ Open: `http://localhost:3000`
 - `npm run build` — build production output (including standalone artifact copy steps)
 - `npm run start` — run production standalone server
 - `npm run lint` — run ESLint
+- `npm run gitnexus` — run gitnexus server
 - `npm run db:generate` — generate Prisma client
 - `npm run db:push` — push Prisma schema to DB
 - `npm run db:migrate` — create/run Prisma migrations (dev)
