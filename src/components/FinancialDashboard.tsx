@@ -89,7 +89,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
         <>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-hover)] p-4 relative overflow-hidden">
-            <div className="absolute inset-x-0 top-0 h-0.5 bg-[var(--battery)]" />
+            <div className="absolute inset-x-0 top-0 h-1 bg-[var(--battery)]" />
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-[var(--battery)]">Revenue / Month</span>
               <DollarSign className="text-[var(--battery)]" size={18} />
@@ -101,7 +101,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
           </div>
 
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-hover)] p-4 relative overflow-hidden">
-            <div className="absolute inset-x-0 top-0 h-0.5 bg-[var(--grid)]" />
+            <div className="absolute inset-x-0 top-0 h-1 bg-[var(--grid)]" />
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-[var(--grid)]">Net Profit / Month</span>
               <TrendingUp className="text-[var(--grid)]" size={18} />
@@ -111,7 +111,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
           </div>
 
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-hover)] p-4 relative overflow-hidden">
-            <div className="absolute inset-x-0 top-0 h-0.5 bg-[var(--solar)]" />
+            <div className="absolute inset-x-0 top-0 h-1 bg-[var(--solar)]" />
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-[var(--solar)]">Payback Progress</span>
               <Gauge className="text-[var(--solar)]" size={18} />
@@ -124,7 +124,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
           </div>
 
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-hover)] p-4 relative overflow-hidden">
-            <div className="absolute inset-x-0 top-0 h-0.5 bg-[var(--consumption)]" />
+            <div className="absolute inset-x-0 top-0 h-1 bg-[var(--consumption)]" />
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-[var(--consumption)]">LCOE</span>
               <LineChart className="text-[var(--consumption)]" size={18} />
