@@ -791,7 +791,7 @@ type DashboardAlert = {
 };
 
 const estimateStepHours = (record: SimulationMinuteRecord) => {
-  const candidates = [];
+  const candidates: number[] = [];
   if (record.solarKW > 0) {
     candidates.push((record.solarEnergyKWh ?? 0) / Math.max(record.solarKW, 0.0001));
   }
@@ -1188,7 +1188,7 @@ const SafariChargeAIAssistant = ({
         throw new Error('AI returned an unexpected response format.');
       }
 
-      setMessages(prev => [...prev, { role: 'assistant', text: payload.response }]);
+      setMessages(prev => [...prev, { role: 'assistant', text: payload.response ?? '' }]);
     } catch (err: any) {
       setError(err.message || 'Failed to reach SafariCharge AI. Check your connection.');
       setMessages(prev => [...prev, { role: 'assistant', text: "⚠️ I couldn't connect to the AI service right now. Please try again in a moment." }]);
@@ -2582,6 +2582,8 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
     feedInEarnings: 0,
     ev1V2g: false,
     ev2V2g: false,
+    solarAvailable: 0,
+    solarLoss: 0,
     _graphPoint: null as GraphDataPoint | null,
   });
   const systemFlow = useMemo<SystemFlow>(() => {
@@ -3826,7 +3828,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
         { label: 'Battery Size', value: `${derivedSystemConfig.batteryKwh.toFixed(1)} kWh`, tone: 'battery' },
         { label: 'EV Charger', value: `${derivedSystemConfig.evChargerKw.toFixed(1)} kW`, tone: 'ev' },
         { label: 'Load Scale', value: `${derivedSystemConfig.loadScale.toFixed(2)}x`, tone: 'neutral' },
-        { label: 'Accessories', value: `${(derivedSystemConfig.accessoryLoadKw * derivedSystemConfig.accessoryScale).toFixed(1)} kW`, tone: 'consumption' },
+        { label: 'Accessories', value: `${(derivedSystemConfig.accessoryLoadKw * derivedSystemConfig.accessoryScale).toFixed(1)} kW`, tone: 'neutral' },
       ];
     }
 

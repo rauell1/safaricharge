@@ -358,7 +358,7 @@ function calculateNPV(
 
   for (let year = 1; year <= totalYears; year++) {
     // Annual savings (discounted)
-    const savingsPresent Value = annualSavings / Math.pow(1 + discountRate, year);
+    const savingsPresentValue = annualSavings / Math.pow(1 + discountRate, year);
     npv += savingsPresentValue;
 
     // Annual maintenance (discounted, negative)
