@@ -53,8 +53,8 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
 
   return (
     <section className="w-full">
-      <div className="space-y-4">
-        <div className="flex items-center gap-3">
+      <div className="space-y-5">
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="h-10 w-10 rounded-full bg-[var(--battery-soft)] border border-[var(--battery)]/30 flex items-center justify-center text-[var(--battery)]">
             <Sparkles size={18} />
           </div>
@@ -65,20 +65,20 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
         </div>
 
         {!hasSimulationData ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-6 text-center">
+          <div className="flex min-h-[320px] flex-col items-center justify-center gap-6 rounded-[28px] border border-dashed border-[var(--border)] bg-[var(--bg-card-muted)] px-6 py-16 text-center">
             <div className="h-20 w-20 rounded-full bg-[var(--battery-soft)] border border-[var(--battery)]/20 flex items-center justify-center text-[var(--battery)]">
               <TrendingUp size={36} />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 max-w-2xl">
               <h3 className="text-xl font-bold text-[var(--text-primary)]">No Simulation Data Available</h3>
-              <p className="text-sm text-[var(--text-secondary)] max-w-sm">
+              <p className="text-sm text-[var(--text-secondary)] max-w-xl mx-auto leading-relaxed">
                 Run the simulation to generate live financial insights — revenue projections, payback period, IRR, NPV, and more.
               </p>
             </div>
             {onRunSimulation && (
               <button
                 onClick={onRunSimulation}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--battery)] hover:opacity-90 text-white font-semibold rounded-xl transition-colors"
+                className="inline-flex items-center gap-2 rounded-full bg-[var(--battery)] px-6 py-3 font-semibold text-white transition-colors hover:opacity-90"
               >
                 <Play size={18} />
                 Run Simulation

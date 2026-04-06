@@ -5,17 +5,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { BookOpen, Download, ExternalLink, Search, Upload } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Slider } from '@/components/ui/slider';
 import {
   Select,
   SelectContent,
@@ -119,10 +110,8 @@ export function SolarComponentLibrary({ standalone = false }: SolarComponentLibr
       count: catalog.filter((entry) => entry.category === option).length,
     }));
   }, [catalog]);
-  const largestCategoryCount = useMemo(
-    () => Math.max(...categoryCounts.map((item) => item.count), 1),
-    [categoryCounts],
-  );
+
+  const selectedHost = selected ? getHostnameLabel(selected.datasheetUrl) : 'manufacturer website';
 
   const submitUploads = async () => {
     setStatus('Uploading...');
@@ -156,213 +145,251 @@ export function SolarComponentLibrary({ standalone = false }: SolarComponentLibr
   };
 
   return (
-    <div className={`rounded-xl border border-[var(--border)] bg-[var(--bg-card)] ${standalone ? 'p-6 space-y-5' : 'p-4 space-y-3'}`}>
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4 text-[var(--battery)]" />
-            <p className="text-sm font-semibold text-[var(--text-primary)]">Component Knowledge Base</p>
+    <section className={`rounded-[28px] border border-[var(--border)] bg-[linear-gradient(180deg,rgba(17,24,39,0.98),rgba(15,23,42,0.96))] shadow-[0_24px_80px_rgba(0,0,0,0.28)] ${standalone ? 'p-5 sm:p-6 lg:p-8' : 'p-4 sm:p-5'}`}>
+      <div className="space-y-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-2xl space-y-2">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--battery)]/30 bg-[var(--battery-soft)] text-[var(--battery)]">
+                <BookOpen className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-[var(--text-tertiary)]">Component Knowledge Base</p>
+                <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">Browse solar hardware with clearer hierarchy</h2>
+              </div>
+            </div>
+            <p className="text-sm text-[var(--text-secondary)] max-w-xl leading-relaxed">
+              Filter modules, inverters, battery storage, EV chargers, and monitoring tools without losing the selected spec sheet or the download links.
+            </p>
           </div>
-          <p className="text-xs text-[var(--text-secondary)]">
-            Clean and readable component directory with visible specs, no long-hyphen typography, and stronger contrast.
-          </p>
+
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:min-w-[420px]">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">Entries</p>
+              <p className="mt-1 text-lg font-semibold text-[var(--text-primary)]">{catalog.length}</p>
+            </div>
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">Visible</p>
+              <p className="mt-1 text-lg font-semibold text-[var(--text-primary)]">{filtered.length}</p>
+            </div>
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">Brands</p>
+              <p className="mt-1 text-lg font-semibold text-[var(--text-primary)]">{new Set(filtered.map((entry) => entry.brand)).size}</p>
+            </div>
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">Uploads</p>
+              <p className="mt-1 text-lg font-semibold text-[var(--text-primary)]">{assets.length}</p>
+            </div>
+          </div>
         </div>
 
-        {!standalone && (
-          <Button asChild size="sm" variant="outline" className="bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border)]">
-            <Link href="/component-knowledge-base">Open full page</Link>
-          </Button>
-        )}
-      </div>
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,1.2fr)]">
+          <Select
+            value={category}
+            onValueChange={(value) => {
+              const next = value as SolarComponentCategory | 'All';
+              setCategory(next);
+              setBrand('All');
+            }}
+          >
+            <SelectTrigger className="w-full rounded-2xl border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-primary)]">
+              <SelectValue placeholder="Choose category" />
+            </SelectTrigger>
+            <SelectContent className="border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-primary)]">
+              {CATEGORY_OPTIONS.map((option) => (
+                <SelectItem key={option} value={option}>{option}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-        {categoryCounts.map((item) => (
-          <div key={item.category} className="rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-2 py-1.5 space-y-1">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">{item.category}</p>
-              <p className="text-sm font-semibold text-[var(--text-primary)]">{item.count}</p>
-            </div>
-            <Slider
-              value={[item.count]}
-              max={largestCategoryCount}
-              step={1}
-              disabled
-              className="pointer-events-none"
-              aria-label={`${item.category} item count`}
+          <Select value={brand} onValueChange={setBrand}>
+            <SelectTrigger className="w-full rounded-2xl border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-primary)]">
+              <SelectValue placeholder="Choose brand" />
+            </SelectTrigger>
+            <SelectContent className="border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-primary)]">
+              {brands.map((option) => (
+                <SelectItem key={option} value={option}>{option}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
+            <Input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search model, feature, or spec"
+              className="h-11 rounded-2xl border-[var(--border)] bg-[var(--bg-card)] pl-10 text-[var(--text-primary)]"
             />
           </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-        <Select
-          value={category}
-          onValueChange={(value) => {
-            const next = value as SolarComponentCategory | 'All';
-            setCategory(next);
-            setBrand('All');
-          }}
-        >
-          <SelectTrigger className="w-full bg-[var(--bg-card)] text-[var(--text-primary)]">
-            <SelectValue placeholder="Choose category" />
-          </SelectTrigger>
-          <SelectContent className="bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border)]">
-            {CATEGORY_OPTIONS.map((option) => (
-              <SelectItem key={option} value={option}>{option}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={brand} onValueChange={setBrand}>
-          <SelectTrigger className="w-full bg-[var(--bg-card)] text-[var(--text-primary)]">
-            <SelectValue placeholder="Choose brand" />
-          </SelectTrigger>
-          <SelectContent className="bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border)]">
-            {brands.map((option) => (
-              <SelectItem key={option} value={option}>{option}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <div className="relative lg:col-span-2">
-          <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" />
-          <Input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search model, feature, or spec"
-            className="pl-8 bg-[var(--bg-card)] text-[var(--text-primary)]"
-          />
         </div>
-      </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button asChild size="sm" variant="outline" className="bg-[var(--bg-card)] text-[var(--text-primary)]">
-          <a href="/api/component-library?categories=Inverter,Battery%20Storage,Solar%20Module&format=csv">
-            <Download className="h-3.5 w-3.5 mr-1" /> Download CSV (inverters, batteries, panels)
-          </a>
-        </Button>
-        <span className="text-xs text-[var(--text-secondary)]">
-          CSV contains model metadata and documentation links for procurement/review workflows.
-        </span>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        {selected && (
-          <Button asChild size="sm" variant="outline" className="bg-[var(--bg-card)] text-[var(--text-primary)]">
-            <a href={getOriginUrl(selected.datasheetUrl)} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-3.5 w-3.5 mr-1" /> Open {selected.brand} homepage
-            </a>
-          </Button>
-        )}
-        <span className="text-xs text-[var(--text-secondary)]">
-          Showing {filtered.length} item{filtered.length === 1 ? '' : 's'} across {new Set(filtered.map((entry) => entry.brand)).size} brand(s).
-        </span>
-      </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] px-4 py-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button asChild size="sm" variant="outline" className="border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-primary)]">
+              <a href="/api/component-library?categories=Inverter,Battery%20Storage,Solar%20Module&format=csv">
+                <Download className="mr-1 h-3.5 w-3.5" /> Download CSV
+              </a>
+            </Button>
+            {!standalone && (
+              <Button asChild size="sm" variant="outline" className="border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-primary)]">
+                <Link href="/component-knowledge-base">Open full page</Link>
+              </Button>
+            )}
+          </div>
+          <span className="text-xs text-[var(--text-secondary)]">
+            Showing {filtered.length} item{filtered.length === 1 ? '' : 's'} across {new Set(filtered.map((entry) => entry.brand)).size} brand(s).
+          </span>
+        </div>
 
-      <ScrollArea className="max-h-[320px] rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)]">
-        <div className="divide-y divide-[var(--border)]">
-          {filtered.map((entry) => (
-            <button
-              key={entry.id}
-              onClick={() => setSelectedId(entry.id)}
-              className={`w-full text-left px-3 py-2 transition-colors ${selected?.id === entry.id ? 'bg-[var(--battery-soft)]' : 'hover:bg-[var(--bg-card)]'}`}
-            >
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">{entry.brand} - {cleanText(entry.model)}</p>
-                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">{entry.category} • {cleanText(entry.summary)}</p>
-                  <a
-                    href={getOriginUrl(entry.datasheetUrl)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(event) => event.stopPropagation()}
-                    className="mt-1 inline-flex items-center gap-1 text-[11px] text-[var(--battery)] hover:underline"
-                  >
-                    {getHostnameLabel(entry.datasheetUrl)} <ExternalLink className="h-3 w-3" />
-                  </a>
-                </div>
-                <span className="text-[10px] uppercase rounded-full border border-[var(--border)] px-2 py-0.5 text-[var(--text-secondary)] bg-[var(--bg-card)]">
-                  {cleanText(entry.specs[0]?.value ?? 'N/A')}
-                </span>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.85fr)]">
+          <div className="rounded-[24px] border border-[var(--border)] bg-[var(--bg-card-muted)]">
+            <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-[var(--text-tertiary)]">Catalog</p>
+                <p className="text-sm font-semibold text-[var(--text-primary)]">{filtered.length} filtered entries</p>
               </div>
-            </button>
-          ))}
-        </div>
-      </ScrollArea>
-
-      {selected && (
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button className="w-full bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border)]" variant="outline">Open Detailed Specs</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl bg-[var(--bg-card)] border-[var(--border)]">
-            <DialogHeader>
-              <DialogTitle>{selected.brand} {cleanText(selected.model)}</DialogTitle>
-              <DialogDescription>{selected.category} • {cleanText(selected.summary)}</DialogDescription>
-            </DialogHeader>
-            <ScrollArea className="max-h-[65vh] pr-4">
-              <div className="space-y-4 text-sm">
-                <p className="text-[var(--text-secondary)]">{cleanText(selected.typicalUse)}</p>
-                <div className="rounded-lg border border-[var(--border)] p-3 space-y-2 bg-[var(--bg-card-muted)]">
-                  <p className="text-xs font-semibold uppercase text-[var(--text-secondary)]">Key specifications</p>
-                  {selected.specs.map((spec) => (
-                    <div key={spec.label} className="flex items-center justify-between gap-3">
-                      <span className="text-[var(--text-secondary)]">{cleanText(spec.label)}</span>
-                      <span className="font-semibold text-[var(--text-primary)] text-right">{cleanText(spec.value)}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <a href={selected.datasheetUrl} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-[var(--border)] px-3 py-2 hover:bg-[var(--bg-card-muted)] transition-colors">
-                    <span className="text-xs uppercase text-[var(--text-secondary)]">Datasheet</span>
-                    <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">Open source <ExternalLink className="h-3.5 w-3.5" /></div>
-                  </a>
-                  <a href={selected.manualUrl} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-[var(--border)] px-3 py-2 hover:bg-[var(--bg-card-muted)] transition-colors">
-                    <span className="text-xs uppercase text-[var(--text-secondary)]">Installation Manual</span>
-                    <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">Open source <ExternalLink className="h-3.5 w-3.5" /></div>
-                  </a>
-                </div>
+              <span className="rounded-full border border-[var(--border)] bg-[var(--bg-card)] px-2.5 py-1 text-[11px] text-[var(--text-secondary)]">{category === 'All' ? 'All categories' : category}</span>
+            </div>
+            <ScrollArea className="h-[560px]">
+              <div className="space-y-2 p-3">
+                {filtered.length === 0 ? (
+                  <div className="flex h-40 items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--bg-card)] text-sm text-[var(--text-secondary)]">
+                    No components match the current filters.
+                  </div>
+                ) : (
+                  filtered.map((entry) => (
+                    <button
+                      key={entry.id}
+                      onClick={() => setSelectedId(entry.id)}
+                      className={`w-full rounded-2xl border px-4 py-3 text-left transition-all ${selected?.id === entry.id ? 'border-[var(--battery)] bg-[var(--battery-soft)] shadow-[0_12px_30px_rgba(16,185,129,0.12)]' : 'border-[var(--border)] bg-[var(--bg-card)] hover:border-[var(--border-hover)] hover:bg-[var(--bg-card-hover)]'}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm font-semibold text-[var(--text-primary)]">{entry.brand} - {cleanText(entry.model)}</p>
+                            <span className="rounded-full border border-[var(--border)] bg-[var(--bg-card-muted)] px-2 py-0.5 text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">
+                              {entry.category}
+                            </span>
+                          </div>
+                          <p className="text-xs leading-relaxed text-[var(--text-secondary)]">{cleanText(entry.summary)}</p>
+                          <p className="text-[11px] text-[var(--text-tertiary)]">{cleanText(entry.typicalUse)}</p>
+                          <a
+                            href={getOriginUrl(entry.datasheetUrl)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(event) => event.stopPropagation()}
+                            className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[var(--battery)] hover:underline"
+                          >
+                            {getHostnameLabel(entry.datasheetUrl)} <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+                        <div className="flex shrink-0 flex-col items-end gap-2">
+                          <span className="rounded-full border border-[var(--border)] bg-[var(--bg-card-muted)] px-2.5 py-1 text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">
+                            {cleanText(entry.specs[0]?.value ?? 'N/A')}
+                          </span>
+                          <span className="text-[10px] text-[var(--text-tertiary)]">{selected?.id === entry.id ? 'Selected' : 'Tap to inspect'}</span>
+                        </div>
+                      </div>
+                    </button>
+                  ))
+                )}
               </div>
             </ScrollArea>
-          </DialogContent>
-        </Dialog>
-      )}
+          </div>
 
-      {standalone && (
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] p-3 space-y-3">
-          <p className="text-sm font-semibold text-[var(--text-primary)]">Upload and maintain knowledge base data</p>
-          <p className="text-xs text-[var(--text-secondary)]">Upload JSON catalog entries and spec-sheet files (PDF, XLSX, DOCX, ZIP). Files are available in this page after upload.</p>
-          <textarea
-            value={importJson}
-            onChange={(event) => setImportJson(event.target.value)}
-            className="w-full min-h-[120px] rounded-md border border-[var(--border)] bg-[var(--bg-card)] p-2 text-xs text-[var(--text-primary)]"
-            placeholder='Optional: paste JSON array of catalog entries with brand, model, category, specs, datasheetUrl, manualUrl and source.'
-          />
-          <input
-            type="file"
-            multiple
-            onChange={(event) => setFiles(event.target.files)}
-            className="block w-full text-xs text-[var(--text-secondary)]"
-          />
-          <Button onClick={submitUploads} className="w-full sm:w-auto">
-            <Upload className="h-3.5 w-3.5 mr-1" /> Save uploads
-          </Button>
-          {status && <p className="text-xs text-[var(--text-secondary)]">{status}</p>}
+          <div className="space-y-4">
+            <div className="rounded-[24px] border border-[var(--border)] bg-[var(--bg-card)] p-4 sm:p-5">
+              {selected ? (
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.22em] text-[var(--text-tertiary)]">Selected component</p>
+                      <h3 className="mt-1 text-xl font-bold text-[var(--text-primary)]">{selected.brand} {cleanText(selected.model)}</h3>
+                      <p className="mt-1 text-sm text-[var(--text-secondary)]">{selected.category} • {cleanText(selected.summary)}</p>
+                    </div>
+                    <span className="rounded-full border border-[var(--battery)]/20 bg-[var(--battery-soft)] px-3 py-1 text-[11px] font-semibold text-[var(--battery)]">{selectedHost}</span>
+                  </div>
 
-          <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Uploaded specs</p>
-            {assets.length === 0 ? (
-              <p className="text-xs text-[var(--text-secondary)]">No uploaded files yet.</p>
-            ) : (
-              assets.slice(0, 12).map((asset) => (
-                <a key={asset.id} href={asset.url} target="_blank" rel="noreferrer" className="block rounded-md border border-[var(--border)] px-2 py-1.5 text-xs hover:bg-[var(--bg-card)] text-[var(--text-primary)]">
-                  {asset.name} ({asset.category})
-                </a>
-              ))
+                  <p className="text-sm leading-relaxed text-[var(--text-secondary)]">{cleanText(selected.typicalUse)}</p>
+
+                  <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] p-4">
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">Key specifications</p>
+                      <span className="text-[10px] text-[var(--text-tertiary)]">{selected.specs.length} items</span>
+                    </div>
+                    <div className="space-y-2">
+                      {selected.specs.map((spec) => (
+                        <div key={spec.label} className="flex items-start justify-between gap-4 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2.5">
+                          <span className="text-sm text-[var(--text-secondary)]">{cleanText(spec.label)}</span>
+                          <span className="max-w-[60%] text-right text-sm font-semibold text-[var(--text-primary)]">{cleanText(spec.value)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <a href={selected.datasheetUrl} target="_blank" rel="noopener noreferrer" className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] px-4 py-3 transition-colors hover:border-[var(--battery)]/40 hover:bg-[var(--battery-soft)]">
+                      <span className="text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]">Datasheet</span>
+                      <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">Open source <ExternalLink className="h-3.5 w-3.5" /></div>
+                    </a>
+                    <a href={selected.manualUrl} target="_blank" rel="noopener noreferrer" className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] px-4 py-3 transition-colors hover:border-[var(--grid)]/40 hover:bg-[var(--grid-soft)]">
+                      <span className="text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]">Installation manual</span>
+                      <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">Open source <ExternalLink className="h-3.5 w-3.5" /></div>
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex min-h-[240px] items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--bg-card-muted)] text-sm text-[var(--text-secondary)]">
+                  Select a component to inspect its specs.
+                </div>
+              )}
+            </div>
+
+            {standalone && (
+              <div className="rounded-[24px] border border-[var(--border)] bg-[var(--bg-card)] p-4 sm:p-5 space-y-4">
+                <div>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">Upload and maintain knowledge base data</p>
+                  <p className="text-xs text-[var(--text-secondary)] mt-1">Upload JSON catalog entries and spec-sheet files. New uploads appear in the list below.</p>
+                </div>
+
+                <textarea
+                  value={importJson}
+                  onChange={(event) => setImportJson(event.target.value)}
+                  className="w-full min-h-[140px] rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] p-3 text-xs text-[var(--text-primary)] outline-none"
+                  placeholder='Optional: paste JSON array of catalog entries with brand, model, category, specs, datasheetUrl, manualUrl and source.'
+                />
+
+                <input
+                  type="file"
+                  multiple
+                  onChange={(event) => setFiles(event.target.files)}
+                  className="block w-full text-xs text-[var(--text-secondary)]"
+                />
+
+                <Button onClick={submitUploads} className="w-full sm:w-auto rounded-xl bg-[var(--battery)] text-white hover:opacity-90">
+                  <Upload className="mr-1 h-3.5 w-3.5" /> Save uploads
+                </Button>
+
+                {status && <p className="text-xs text-[var(--text-secondary)]">{status}</p>}
+
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">Uploaded specs</p>
+                  {assets.length === 0 ? (
+                    <p className="text-xs text-[var(--text-secondary)]">No uploaded files yet.</p>
+                  ) : (
+                    assets.slice(0, 12).map((asset) => (
+                      <a key={asset.id} href={asset.url} target="_blank" rel="noreferrer" className="block rounded-xl border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2 text-xs text-[var(--text-primary)] transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-card-hover)]">
+                        {asset.name} ({asset.category})
+                      </a>
+                    ))
+                  )}
+                </div>
+              </div>
             )}
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    </section>
   );
 }

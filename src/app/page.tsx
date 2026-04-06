@@ -4339,7 +4339,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                           Opens in a dedicated panel so filters and specs no longer overlap other scenario settings.
                         </p>
                       </div>
-                      <DialogContent className="max-w-5xl w-full max-h-[90vh] overflow-hidden p-0 bg-[var(--bg-card)] border-[var(--border)] shadow-2xl">
+                      <DialogContent className="max-w-6xl w-full max-h-[90vh] overflow-hidden p-0 bg-[var(--bg-card)] border-[var(--border)] shadow-2xl">
                         <div className="p-4 overflow-y-auto max-h-[90vh]">
                           <SolarComponentLibrary />
                         </div>
