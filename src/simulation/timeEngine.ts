@@ -134,6 +134,7 @@ export const generateDayScenario = (
       lunchStart: 12.5 + Math.random() * 0.5,
       lunchEnd: 14.0 + Math.random() * 0.5,
       return: 22.0 + gaussianRandom(0, 0.4),
+      emergency: null,
       drainRate: 0.8 * (systemConfig?.evFleetScale ?? 1),
       cap: 118,
       onboard: 22 * (systemConfig?.evFleetScale ?? 1)

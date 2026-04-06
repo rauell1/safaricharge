@@ -132,8 +132,8 @@ export const runSolarSimulation = (
     ev1Load = Math.min(taperedRate, needed / timeStep) * (systemConfig.evCommuterScale ?? 1);
   }
 
-  if ((t > scenario.ev2.depart && t < scenario.ev2.lunchStart) ||
-      (t > scenario.ev2.lunchEnd && t < scenario.ev2.return)) {
+  if ((t > scenario.ev2.depart && t < (scenario.ev2.lunchStart ?? Infinity)) ||
+      (t > (scenario.ev2.lunchEnd ?? 0) && t < scenario.ev2.return)) {
     ev2IsHome = false;
     prevEv2Soc = Math.max(5, prevEv2Soc - (evSpecs.ev2.drainRate * (systemConfig.evFleetScale ?? 1) * timeStep / evSpecs.ev2.cap * 100));
   } else if (prevEv2Soc < 100) {

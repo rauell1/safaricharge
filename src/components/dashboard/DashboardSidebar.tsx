@@ -59,7 +59,7 @@ export function DashboardSidebar({
     if (pathname.includes('financial')) return 'financial';
     return 'dashboard';
   })();
-  const mainMenuItems: Array<{ id: DashboardSection; label: string; icon: React.ElementType }> = [
+  const mainMenuItems: Array<{ id: DashboardSection; label: string; icon: React.ElementType; href?: string }> = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'simulation', label: 'Simulation', icon: FlaskConical },
     { id: 'configuration', label: 'System Config', icon: SlidersHorizontal },
