@@ -65,25 +65,67 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
         </div>
 
         {!hasSimulationData ? (
-          <div className="flex min-h-[320px] flex-col items-center justify-center gap-6 rounded-[28px] border border-dashed border-[var(--border)] bg-[var(--bg-card-muted)] px-6 py-16 text-center">
-            <div className="h-20 w-20 rounded-full bg-[var(--battery-soft)] border border-[var(--battery)]/20 flex items-center justify-center text-[var(--battery)]">
-              <TrendingUp size={36} />
+          <div className="grid min-h-[380px] gap-6 rounded-[32px] border border-dashed border-[var(--border)] bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.12),transparent_34%),linear-gradient(180deg,rgba(17,24,39,0.96),rgba(15,23,42,0.9))] p-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)] lg:p-8">
+            <div className="flex flex-col justify-between gap-6">
+              <div className="space-y-4">
+                <div className="h-16 w-16 rounded-2xl border border-[var(--battery)]/20 bg-[var(--battery-soft)] flex items-center justify-center text-[var(--battery)] shadow-[0_0_0_8px_rgba(16,185,129,0.08)]">
+                  <TrendingUp size={30} />
+                </div>
+                <div className="space-y-2 max-w-2xl">
+                  <h3 className="text-2xl font-bold text-[var(--text-primary)]">No Simulation Data Available</h3>
+                  <p className="text-sm text-[var(--text-secondary)] max-w-2xl leading-relaxed">
+                    Run the simulation to generate live financial insights, including revenue projections, payback period, IRR, NPV, and sensitivity scenarios.
+                  </p>
+                </div>
+                {onRunSimulation && (
+                  <button
+                    onClick={onRunSimulation}
+                    className="inline-flex items-center gap-2 rounded-full bg-[var(--battery)] px-6 py-3 font-semibold text-white shadow-lg shadow-[rgba(16,185,129,0.18)] transition-colors hover:opacity-90"
+                  >
+                    <Play size={18} />
+                    Run Simulation
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {[
+                  { label: 'Revenue', value: 'Monthly projection' },
+                  { label: 'Payback', value: 'Break-even estimate' },
+                  { label: 'IRR / NPV', value: 'Investment return view' },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] px-4 py-3">
+                    <p className="text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]">{item.label}</p>
+                    <p className="mt-1 text-sm font-semibold text-[var(--text-primary)]">{item.value}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="space-y-2 max-w-2xl">
-              <h3 className="text-xl font-bold text-[var(--text-primary)]">No Simulation Data Available</h3>
-              <p className="text-sm text-[var(--text-secondary)] max-w-xl mx-auto leading-relaxed">
-                Run the simulation to generate live financial insights — revenue projections, payback period, IRR, NPV, and more.
-              </p>
+
+            <div className="rounded-[28px] border border-[var(--border)] bg-[var(--bg-card-muted)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.22em] text-[var(--text-tertiary)]">What you’ll unlock</p>
+                  <h4 className="mt-1 text-base font-bold text-[var(--text-primary)]">Financial dashboard preview</h4>
+                </div>
+                <div className="rounded-full border border-[var(--battery)]/20 bg-[var(--battery-soft)] px-3 py-1 text-[11px] font-semibold text-[var(--battery)]">
+                  Live analysis
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-3">
+                {[
+                  'Monthly revenue and net profit',
+                  'Capex, opex, and cost structure',
+                  'Payback, IRR, NPV, and LCOE',
+                ].map((item) => (
+                  <div key={item} className="flex items-start gap-3 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] px-3 py-3">
+                    <div className="mt-0.5 h-2.5 w-2.5 rounded-full bg-[var(--battery)]" />
+                    <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{item}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-            {onRunSimulation && (
-              <button
-                onClick={onRunSimulation}
-                className="inline-flex items-center gap-2 rounded-full bg-[var(--battery)] px-6 py-3 font-semibold text-white transition-colors hover:opacity-90"
-              >
-                <Play size={18} />
-                Run Simulation
-              </button>
-            )}
           </div>
         ) : (
         <>
