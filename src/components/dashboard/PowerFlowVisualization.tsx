@@ -51,7 +51,7 @@ function EnergyNode({ icon: Icon, label, valueLine, subLabel, accent, tint, badg
 
   return (
     <div
-      className="flex min-w-[96px] sm:min-w-[108px] flex-col items-center gap-3 cursor-pointer group"
+      className="flex min-w-[80px] sm:min-w-[96px] md:min-w-[108px] flex-col items-center gap-3 cursor-pointer group"
       onClick={handleClick}
       role="button"
       tabIndex={0}

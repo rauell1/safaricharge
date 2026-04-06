@@ -87,7 +87,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
           </div>
         ) : (
         <>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-hover)] p-4 relative overflow-hidden">
             <div className="absolute inset-x-0 top-0 h-1 bg-[var(--battery)]" />
             <div className="flex items-center justify-between">
@@ -170,7 +170,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
                 <span>Total Capex</span>
                 <span>{formatCurrency(snapshot.capex.total)}</span>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] p-3">
                   <p className="text-[11px] text-[var(--text-tertiary)]">Opex / Month</p>
                   <div className="text-lg font-semibold text-[var(--text-primary)]">{formatCurrency(snapshot.opex.total)}</div>
@@ -199,7 +199,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
               </div>
               <TrendingUp className="text-[var(--battery)]" size={18} />
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] p-3">
                 <p className="text-[11px] text-[var(--text-tertiary)]">Net / Month</p>
                 <div className="text-lg font-semibold text-[var(--text-primary)]">{formatCurrency(snapshot.netMonthly)}</div>
@@ -213,7 +213,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
                 <ProgressBar value={snapshot.paybackProgressPct} />
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] p-3">
                 <p className="text-[11px] text-[var(--text-tertiary)]">IRR</p>
                 <div className="text-lg font-semibold text-[var(--text-primary)]">{formatNumber(snapshot.irrPct, 1)}%</div>
@@ -296,7 +296,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
                 />
               </label>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <label className="flex flex-col gap-1 text-sm">
                   <div className="flex justify-between text-[var(--text-secondary)]">
                     <span>Stations</span>
@@ -339,7 +339,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="rounded-xl bg-[var(--bg-card-hover)] border border-[var(--border)] p-3">
                 <p className="text-[11px] text-[var(--text-tertiary)]">Scenario revenue / month</p>
                 <div className="text-xl font-semibold text-[var(--text-primary)]">{formatCurrency(scenarioResult.revenueMonthly)}</div>
@@ -373,7 +373,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
             </div>
             <DollarSign className="text-[var(--battery)]" size={18} />
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
             <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] p-3">
               <p className="text-[11px] text-[var(--text-tertiary)]">Stations</p>
               <div className="text-lg font-semibold text-[var(--text-primary)]">{snapshot.stations}</div>

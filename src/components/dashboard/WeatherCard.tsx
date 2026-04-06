@@ -45,7 +45,7 @@ export function WeatherCard({
             <Skeleton className="h-16 w-16 rounded-full" />
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <div className="flex flex-col items-center rounded-lg p-2 border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
               <Skeleton className="h-3.5 w-3.5 mb-1" />
               <Skeleton className="h-4 w-10 mb-1" />
@@ -95,7 +95,7 @@ export function WeatherCard({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <div className="flex flex-col items-center rounded-lg p-2 border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
             <Droplets className="h-3.5 w-3.5 mb-1" style={{ color: 'var(--consumption)' }} />
             <div className="text-xs font-semibold text-[var(--text-primary)]">{humidity}%</div>

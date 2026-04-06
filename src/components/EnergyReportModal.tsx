@@ -118,17 +118,17 @@ export const EnergyReportModal = ({
           <button onClick={onClose} className="text-white hover:text-slate-300"><X size={20}/></button>
         </div>
 
-        <div className="flex bg-[var(--bg-card-muted)] p-1 border-b border-[var(--border)]">
+        <div className="grid grid-cols-2 sm:grid-cols-4 bg-[var(--bg-card-muted)] p-1 border-b border-[var(--border)] gap-1">
           <button onClick={() => setActiveTab('daily')} className={`flex-1 py-2 text-xs font-bold uppercase ${activeTab === 'daily' ? 'bg-[var(--bg-card)] text-[var(--battery)] shadow' : 'text-[var(--text-tertiary)]'}`}>Summary</button>
           <button onClick={() => setActiveTab('tariff')} className={`flex-1 py-2 text-xs font-bold uppercase ${activeTab === 'tariff' ? 'bg-[var(--bg-card)] text-[var(--battery)] shadow' : 'text-[var(--text-tertiary)]'}`}>Tariff Rates</button>
           <button onClick={() => setActiveTab('sustainability')} className={`flex-1 py-2 text-xs font-bold uppercase ${activeTab === 'sustainability' ? 'bg-[var(--bg-card)] text-[var(--battery)] shadow' : 'text-[var(--text-tertiary)]'}`}>Sustainability</button>
           <button onClick={() => setActiveTab('export')} className={`flex-1 py-2 text-xs font-bold uppercase ${activeTab === 'export' ? 'bg-[var(--bg-card)] text-[var(--battery)] shadow' : 'text-[var(--text-tertiary)]'}`}>Export Data</button>
         </div>
 
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-4 sm:p-6">
           {activeTab === 'daily' && (
           <div className="space-y-4">
-            <div className="bg-[var(--bg-card-muted)] p-3 rounded-lg border border-[var(--border)] flex items-center justify-between">
+            <div className="bg-[var(--bg-card-muted)] p-3 rounded-lg border border-[var(--border)] flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-xs text-[var(--text-secondary)]">
                 <span className="font-bold">System Start:</span> {systemStartDate} |
                 <span className="font-bold ml-2">Date Range:</span> {dateRange}
@@ -138,7 +138,7 @@ export const EnergyReportModal = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
               <div className="bg-[var(--bg-card-muted)] p-4 rounded-xl border border-[var(--border)] flex flex-col items-center">
                   <span className="text-xs font-bold text-[var(--battery)] uppercase">Total Savings</span>
                   <span className="text-2xl font-black text-[var(--battery)]">KES {totalSavings.toFixed(0)}</span>
@@ -157,7 +157,7 @@ export const EnergyReportModal = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
               <div className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border)] text-center">
                 <div className="text-2xl font-black text-[var(--text-primary)]">{uniqueYears}</div>
                 <div className="text-xs text-[var(--text-secondary)] font-bold uppercase">Years</div>
@@ -187,7 +187,7 @@ export const EnergyReportModal = ({
               </h3>
               <p className="text-xs text-[var(--text-secondary)] mb-4">Based on KPLC bill - February 2026 for ROAM ELECTRIC LIMITED</p>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-orange-600">PEAK HOURS</span>
@@ -209,7 +209,7 @@ export const EnergyReportModal = ({
 
               <div className="mt-4 pt-4 border-t border-[var(--border)]">
                 <h4 className="text-xs font-bold text-[var(--text-secondary)] mb-2">Additional Charges (per kWh)</h4>
-                <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
                   <div className="flex justify-between bg-[var(--bg-card)] px-2 py-1 rounded">
                     <span className="text-[var(--text-tertiary)]">Fuel Cost</span>
                     <span className="font-bold text-[var(--text-primary)]">KES {KPLC_TARIFF.FUEL_ENERGY_COST.toFixed(2)}</span>
@@ -250,7 +250,7 @@ export const EnergyReportModal = ({
                 Estimated CO₂ avoided by using solar instead of the Kenya national grid
                 (avg. emission factor: {GRID_EMISSION_FACTOR} kgCO₂/kWh, hydro+thermal mix).
               </p>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border)] flex flex-col items-center">
                   <span className="text-2xl font-black text-[var(--battery)]">{carbonOffset.toFixed(1)}</span>
                   <span className="text-xs font-bold text-[var(--battery)] uppercase mt-1">kg CO₂ Avoided</span>
@@ -270,7 +270,7 @@ export const EnergyReportModal = ({
 
             <div className="bg-[var(--bg-card-muted)] p-4 rounded-xl border border-[var(--border)]">
               <h3 className="font-bold text-[var(--text-primary)] mb-3">Self-Sufficiency Breakdown</h3>
-              <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border)]">
                   <div className="text-[var(--text-tertiary)] mb-1">Total Solar Generated</div>
                   <div className="text-xl font-black text-[var(--consumption)]">{totalSolarGenerated.toFixed(1)} kWh</div>
@@ -313,7 +313,7 @@ export const EnergyReportModal = ({
 
               <div className="bg-[var(--bg-card)] p-4 rounded-lg border border-[var(--border)] mb-4">
                 <h4 className="text-xs font-bold text-[var(--text-secondary)] mb-2 uppercase">Report Contents</h4>
-                <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                     <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                     Minute-by-minute data ({totalDataPoints.toLocaleString()} records)
@@ -343,7 +343,7 @@ export const EnergyReportModal = ({
 
               <div className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border)] mb-4 text-xs text-[var(--text-secondary)]">
                 <div className="font-bold mb-1">Data Includes:</div>
-                <div className="grid grid-cols-3 gap-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
                   <span>• Solar generation</span>
                   <span>• Home load</span>
                   <span>• EV charging</span>
@@ -400,7 +400,7 @@ export const EnergyReportModal = ({
 
               <div className="bg-slate-700/50 p-3 rounded-lg border border-slate-600 mb-4">
                 <h4 className="text-xs font-bold text-slate-300 mb-2 uppercase">Report Includes</h4>
-                <div className="grid grid-cols-2 gap-1.5 text-xs text-slate-400">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs text-slate-400">
                   <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-sky-400 rounded-full inline-block"></span> Executive Summary</span>
                   <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-green-400 rounded-full inline-block"></span> KPI Dashboard</span>
                   <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-yellow-400 rounded-full inline-block"></span> Solar Analytics &amp; Charts</span>

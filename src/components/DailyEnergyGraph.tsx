@@ -259,7 +259,7 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
             </button>
           </div>
         </div>
-        <div className="min-w-[700px]">
+        <div className="min-w-[560px] sm:min-w-[700px]">
           <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto font-mono text-[10px]">
             <defs>
               <linearGradient id="solarGradient" x1="0" x2="0" y1="0" y2="1">
@@ -319,7 +319,7 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
             )}
           </svg>
 
-          <div className="flex justify-center gap-8 mt-3 text-xs font-bold bg-[var(--bg-secondary)] p-2 rounded-lg mx-6 border border-[var(--border)]">
+          <div className="flex flex-wrap justify-center gap-3 sm:gap-8 mt-3 text-xs font-bold bg-[var(--bg-secondary)] p-2 rounded-lg mx-2 sm:mx-6 border border-[var(--border)]">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-sm" style={{ backgroundColor: palette.solar }} />
               <span className="text-[var(--text-secondary)]">Solar Gen (kW)</span>

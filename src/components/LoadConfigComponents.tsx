@@ -86,7 +86,7 @@ export function LoadList({ config, onConfigChange }: LoadListProps) {
       {isAddingLoad && (
         <div className="p-3 bg-gray-50 border border-gray-200 rounded space-y-2">
           <p className="text-xs font-medium text-gray-700">Select Load Type:</p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {(['home', 'ev', 'commercial', 'hvac', 'custom'] as const).map(type => (
               <button
                 key={type}
@@ -164,7 +164,7 @@ function LoadCard({
           : 'bg-gray-50 border-gray-200 opacity-60'
       }`}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2 flex-1">
           {getLoadIcon(load.type)}
           <div className="flex-1">
@@ -174,7 +174,7 @@ function LoadCard({
                   type="text"
                   value={load.name}
                   onChange={e => onUpdate({ ...load, name: e.target.value })}
-                  className="px-2 py-1 text-sm font-medium border border-gray-300 rounded"
+                  className="w-full sm:w-auto px-2 py-1 text-sm font-medium border border-gray-300 rounded"
                 />
               ) : (
                 <h4 className="text-sm font-medium text-gray-800">{load.name}</h4>
@@ -187,7 +187,7 @@ function LoadCard({
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center justify-end gap-1 flex-wrap">
           <button
             onClick={onToggleEnabled}
             className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
@@ -274,7 +274,7 @@ function LoadEditor({ load, onUpdate }: LoadEditorProps) {
 function EVLoadEditor({ load, onUpdate }: { load: EVLoadConfig; onUpdate: (load: LoadConfig) => void }) {
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">
             Battery Capacity (kWh)
@@ -386,7 +386,7 @@ function EVLoadEditor({ load, onUpdate }: { load: EVLoadConfig; onUpdate: (load:
 function HomeLoadEditor({ load, onUpdate }: { load: HomeLoadConfig; onUpdate: (load: LoadConfig) => void }) {
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">
             Weekend Multiplier
@@ -435,7 +435,7 @@ function HomeLoadEditor({ load, onUpdate }: { load: HomeLoadConfig; onUpdate: (l
         <label className="block text-xs font-medium text-gray-700 mb-1">
           24-Hour Load Profile (kW)
         </label>
-        <div className="grid grid-cols-6 gap-1">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-1">
           {load.hourlyProfile.map((value, hour) => (
             <div key={hour} className="flex flex-col">
               <span className="text-xs text-gray-500 mb-0.5">{hour}h</span>
@@ -498,7 +498,7 @@ function CommercialLoadEditor({ load, onUpdate }: { load: CommercialLoadConfig; 
           Operating Schedule
         </label>
         {load.schedule.map((sched, idx) => (
-          <div key={idx} className="grid grid-cols-3 gap-2 mb-2">
+          <div key={idx} className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
             <input
               type="number"
               placeholder="Start"
@@ -565,7 +565,7 @@ function HVACLoadEditor({ load, onUpdate }: { load: HVACLoadConfig; onUpdate: (l
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">
             Operating Start (hour)
@@ -605,7 +605,7 @@ function HVACLoadEditor({ load, onUpdate }: { load: HVACLoadConfig; onUpdate: (l
         <label className="block text-xs font-medium text-gray-700 mb-2">
           Weather Multipliers
         </label>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <div>
             <span className="text-xs text-gray-500">Sunny</span>
             <input
@@ -694,7 +694,7 @@ function CustomLoadEditor({ load, onUpdate }: { load: CustomLoadConfig; onUpdate
           <label className="block text-xs font-medium text-gray-700 mb-1">
             24-Hour Profile (kW)
           </label>
-          <div className="grid grid-cols-6 gap-1">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-1">
             {(load.hourlyProfile || Array(24).fill(0)).map((value, hour) => (
               <div key={hour} className="flex flex-col">
                 <span className="text-xs text-gray-500 mb-0.5">{hour}h</span>

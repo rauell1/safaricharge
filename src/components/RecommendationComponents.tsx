@@ -204,13 +204,13 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
         {isOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
       </button>
       {dataSourceLabel && (
-        <div className="absolute top-full right-0 mt-1 text-[10px] text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-200 whitespace-nowrap">
+        <div className="absolute top-full right-0 mt-1 max-w-[calc(100vw-1.5rem)] text-[10px] text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-200 whitespace-nowrap overflow-hidden text-ellipsis">
           {dataSourceLabel}
         </div>
       )}
 
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-slate-200 z-50 overflow-hidden">
+        <div className="absolute top-full right-0 mt-2 w-[min(20rem,calc(100vw-1.5rem))] bg-white rounded-lg shadow-xl border border-slate-200 z-50 overflow-hidden">
             <div className="p-3 bg-slate-900 text-white text-sm font-bold">
               <div className="flex items-center gap-2">
                 <MapPin size={16} className="text-sky-400" />
@@ -483,7 +483,7 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
                 </button>
                 {expanded.solar && (
                   <div className="p-4 bg-white space-y-3">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <p className="text-xs text-slate-500 mb-1">Total Capacity</p>
                         <p className="text-lg font-bold text-slate-900">{recommendation.solarPanels.totalCapacityKw} kW</p>
@@ -524,7 +524,7 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
                 </button>
                 {expanded.battery && (
                   <div className="p-4 bg-white space-y-3">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <p className="text-xs text-slate-500 mb-1">Capacity</p>
                         <p className="text-lg font-bold text-slate-900">{recommendation.battery.capacityKwh} kWh</p>
@@ -567,7 +567,7 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
                 </button>
                 {expanded.inverter && (
                   <div className="p-4 bg-white space-y-3">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <p className="text-xs text-slate-500 mb-1">Rated Capacity</p>
                         <p className="text-lg font-bold text-slate-900">{recommendation.inverter.ratedCapacityKw} kW</p>
@@ -604,8 +604,8 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
                 </button>
                 {expanded.financial && (
                   <div className="p-4 bg-white space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="col-span-2 p-3 bg-slate-50 rounded-lg">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="sm:col-span-2 p-3 bg-slate-50 rounded-lg">
                         <p className="text-xs text-slate-500 mb-1">Total Investment</p>
                         <p className="text-2xl font-bold text-slate-900">
                           KES {recommendation.financial.totalInvestmentKES.toLocaleString()}
@@ -639,7 +639,7 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
                           {recommendation.financial.roi25YearsPct}%
                         </p>
                       </div>
-                      <div className="col-span-2 p-3 bg-green-50 rounded-lg">
+                      <div className="sm:col-span-2 p-3 bg-green-50 rounded-lg">
                         <p className="text-xs text-slate-500 mb-1">Net Savings (25 Years)</p>
                         <p className="text-2xl font-bold text-green-600">
                           KES {recommendation.financial.netSavings25YearsKES.toLocaleString()}
@@ -656,7 +656,7 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
                   <Leaf size={24} className="text-green-600" />
                   <h3 className="font-bold text-slate-900">Environmental Impact</h3>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs text-slate-500 mb-1">Grid Dependency Reduction</p>
                     <p className="text-lg font-bold text-slate-900">

@@ -627,7 +627,7 @@ const BatteryProduct = React.memo(({ level, status, power, health = 1.0, cycles 
       </div>
       <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none"></div>
     </div>
-    <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] min-w-[90px] backdrop-blur-sm">
+    <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] min-w-[72px] sm:min-w-[90px] backdrop-blur-sm">
       <div className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase">Storage ({(capacityKwh * health).toFixed(0)}kWh)</div>
       <div className="text-sm font-black text-[var(--text-primary)]">{level.toFixed(1)}%</div>
       <div className={`text-[10px] font-semibold ${health < 0.85 ? 'text-orange-500' : 'text-[var(--text-primary)]'}`}>
@@ -657,7 +657,7 @@ const EVChargerProduct = React.memo(({ id, status, power, soc, carName, capacity
       <div className="w-12 h-8 border-4 border-slate-700 rounded-b-full border-t-0"></div>
       <div className={`absolute top-2 right-2 w-1.5 h-1.5 rounded-full ${status === 'Charging' ? 'bg-sky-200 shadow-[0_0_10px_#7dd3fc]' : status === 'Away' ? 'bg-red-500' : 'bg-slate-600'}`}></div>
     </div>
-    <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] backdrop-blur-sm min-w-[90px]">
+    <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] backdrop-blur-sm min-w-[72px] sm:min-w-[90px]">
       <div className="text-[8px] font-bold text-[var(--text-tertiary)] uppercase">{carName}</div>
       <div className="text-[9px] sm:text-[10px] text-[var(--text-secondary)] font-semibold">{capacity}kWh • {maxRate}kW</div>
       <div className="flex justify-between items-end px-1 mt-1 border-t border-[var(--border)] pt-0.5">
@@ -1384,7 +1384,7 @@ const PastDaysZipButton = ({ pastGraphs }: { pastGraphs: Array<{ date: string; d
     <button
       onClick={handleClick}
       disabled={generating}
-      className="flex items-center gap-1.5 text-[10px] font-bold text-sky-600 hover:text-sky-800 bg-sky-50 hover:bg-sky-100 border border-sky-200 px-2 py-1 rounded transition-colors disabled:opacity-70 disabled:cursor-not-allowed min-w-[110px] justify-center"
+      className="flex items-center gap-1.5 text-[10px] font-bold text-sky-600 hover:text-sky-800 bg-sky-50 hover:bg-sky-100 border border-sky-200 px-2 py-1 rounded transition-colors disabled:opacity-70 disabled:cursor-not-allowed min-w-[88px] sm:min-w-[110px] justify-center"
     >
       {generating ? (
         <>
@@ -1437,10 +1437,10 @@ const Header = ({ onToggleAssistant, currentDate, onReset, currentLocation, onLo
            </span>
            {isSolarLoading && <span className="text-sky-600">Loading…</span>}
          </div>
-         <button onClick={onOpenRecommendation} className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold hover:from-green-700 hover:to-emerald-700 transition-colors shadow-lg whitespace-nowrap">
+         <button onClick={onOpenRecommendation} className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold hover:from-green-700 hover:to-emerald-700 transition-colors shadow-lg sm:whitespace-nowrap">
            <Target size={12} /> <span className="hidden sm:inline">Get Recommendation</span><span className="sm:hidden">Recommend</span>
          </button>
-         <button onClick={onToggleAssistant} className="bg-slate-900 text-white px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold flex items-center gap-1.5 sm:gap-2 hover:bg-slate-800 transition-colors shadow-lg border border-slate-700 whitespace-nowrap">
+         <button onClick={onToggleAssistant} className="bg-slate-900 text-white px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold flex items-center gap-1.5 sm:gap-2 hover:bg-slate-800 transition-colors shadow-lg border border-slate-700 sm:whitespace-nowrap">
            <Sparkles size={12} className="text-green-400" /> <span className="hidden sm:inline">SafariCharge AI</span><span className="sm:hidden">AI</span>
          </button>
       </div>
@@ -1578,7 +1578,7 @@ const SystemConfigPanel = ({
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
+      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">Panel Count</label>
           <SmoothNumberInput
@@ -1695,7 +1695,7 @@ const SystemConfigPanel = ({
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase">Load Profile</label>
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
             {(['residential', 'commercial', 'industrial'] as const).map((profile) => (
               <button
                 key={profile}
@@ -1933,7 +1933,7 @@ const CentralDisplay = ({ data, timeOfDay, onTimeChange, isAutoMode, onToggleAut
              </div>
            </div>
 
-           <div className="grid grid-cols-2 gap-2">
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
              <button onClick={onTogglePriority} className="bg-[var(--bg-card-muted)] hover:opacity-80 border border-[var(--border)] rounded-lg p-1.5 sm:p-2 flex items-center justify-center text-[10px] sm:text-xs gap-1 sm:gap-2 transition-colors">
                <span className={`font-bold ${displayPriority === 'battery' ? 'text-green-600' : 'text-sky-600'}`}><span className="hidden sm:inline">{displayPriority === 'battery' ? 'Charge First' : 'Load First'}</span><span className="sm:hidden">{displayPriority === 'battery' ? 'Charge' : 'Load'}</span></span>
                {priorityMode === 'auto' && <span className="text-[7px] sm:text-[8px] bg-purple-100 text-purple-600 px-1 rounded font-bold">AUTO</span>}
@@ -4024,7 +4024,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
             {[
               { id: 'dashboard' as DashboardSection, label: 'Dashboard', icon: Table },
               { id: 'simulation' as DashboardSection, label: 'Simulation', icon: Play },
@@ -4213,7 +4213,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
           {activeSection === 'simulation' && (
             <>
               {/* Simulation Engine + Scenario Controls - Two Columns */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
                 <Card className="dashboard-card">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
@@ -4348,7 +4348,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                     <div className="border-t border-[var(--border)] pt-3">
                       <p className="text-xs font-semibold text-[var(--text-tertiary)] mb-2 uppercase">Load Configuration</p>
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                           <label className="flex items-center gap-2 cursor-pointer">
                             <input
                               type="checkbox"
@@ -4359,7 +4359,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                             <span className="text-xs text-[var(--text-primary)]">Home Load</span>
                           </label>
                           {systemConfig.homeLoadEnabled && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
                               <input
                                 type="range"
                                 min={1}
@@ -4367,13 +4367,13 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                                 step={0.5}
                                 value={systemConfig.homeLoadKw}
                                 onChange={(e) => setSystemConfig(prev => ({ ...prev, homeLoadKw: Number(e.target.value), mode: 'advanced' }))}
-                                className="w-20"
+                                className="w-full sm:w-20"
                               />
                               <span className="text-xs text-[var(--text-secondary)] min-w-[40px]">{systemConfig.homeLoadKw.toFixed(1)} kW</span>
                             </div>
                           )}
                         </div>
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                           <label className="flex items-center gap-2 cursor-pointer">
                             <input
                               type="checkbox"
@@ -4384,7 +4384,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                             <span className="text-xs text-[var(--text-primary)]">Commercial Load</span>
                           </label>
                           {systemConfig.commercialLoadEnabled && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
                               <input
                                 type="range"
                                 min={5}
@@ -4392,13 +4392,13 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                                 step={1}
                                 value={systemConfig.commercialLoadKw}
                                 onChange={(e) => setSystemConfig(prev => ({ ...prev, commercialLoadKw: Number(e.target.value), mode: 'advanced' }))}
-                                className="w-20"
+                                className="w-full sm:w-20"
                               />
                               <span className="text-xs text-[var(--text-secondary)] min-w-[40px]">{systemConfig.commercialLoadKw.toFixed(1)} kW</span>
                             </div>
                           )}
                         </div>
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                           <label className="flex items-center gap-2 cursor-pointer">
                             <input
                               type="checkbox"
@@ -4409,7 +4409,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                             <span className="text-xs text-[var(--text-primary)]">Industrial Load</span>
                           </label>
                           {systemConfig.industrialLoadEnabled && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
                               <input
                                 type="range"
                                 min={50}
@@ -4417,7 +4417,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                                 step={10}
                                 value={systemConfig.industrialLoadKw}
                                 onChange={(e) => setSystemConfig(prev => ({ ...prev, industrialLoadKw: Number(e.target.value), mode: 'advanced' }))}
-                                className="w-20"
+                                className="w-full sm:w-20"
                               />
                               <span className="text-xs text-[var(--text-secondary)] min-w-[40px]">{systemConfig.industrialLoadKw.toFixed(0)} kW</span>
                             </div>
@@ -4425,7 +4425,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                         </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <button
                         onClick={() => setGridStatus(prev => prev === 'Online' ? 'Offline' : 'Online')}
                         className="rounded-lg border px-3 py-2 text-xs font-medium border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -4445,7 +4445,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                     >
                       Advanced parameters → System Configuration
                     </button>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       {['Sunny', 'Cloudy', 'Rainy'].map((condition) => (
                         <button
                           key={condition}

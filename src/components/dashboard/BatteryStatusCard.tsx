@@ -54,7 +54,7 @@ export function BatteryStatusCard({
 
           <Skeleton className="h-3 w-full rounded-full mb-4" />
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <div className="rounded-lg p-2 text-center border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
               <Skeleton className="h-4 w-12 mx-auto mb-1" />
               <Skeleton className="h-3 w-8 mx-auto" />
@@ -113,7 +113,7 @@ export function BatteryStatusCard({
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <div className="rounded-lg p-2 text-center border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
             <div className="text-xs font-semibold text-[var(--text-primary)]">{batteryPower.toFixed(1)} kW</div>
             <div className="text-[9px] text-[var(--text-tertiary)] mt-0.5">Power</div>
