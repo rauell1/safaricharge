@@ -450,7 +450,7 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
                   </div>
                   <div className="flex-1">
                     <h3 className="font-bold text-slate-900 mb-1">Recommended System</h3>
-                    <p className="text-sm text-slate-700 leading-relaxed">{recommendation.summary}</p>
+                    <p className="text-sm text-slate-700 leading-relaxed text-justify [text-align-last:left]">{recommendation.summary}</p>
                     <div className="mt-2 flex items-center gap-2 text-xs">
                       <span className={`px-2 py-0.5 rounded-full font-bold ${
                         recommendation.confidence === 'high' ? 'bg-green-200 text-green-800' :
@@ -695,7 +695,7 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
                     {recommendation.notes.map((note, idx) => (
                       <li key={idx} className="text-sm text-slate-700 flex items-start gap-2">
                         <span className="text-blue-600 mt-0.5">•</span>
-                        <span>{note}</span>
+                        <span className="text-justify [text-align-last:left]">{note}</span>
                       </li>
                     ))}
                   </ul>
@@ -705,7 +705,7 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
           ) : (
             <div className="text-center py-12 text-slate-500 space-y-3">
               <AlertCircle size={48} className="mx-auto mb-4 text-slate-400" />
-              <p className="text-sm text-slate-700">
+              <p className="text-sm text-slate-700 text-justify [text-align-last:center]">
                 Select a location and click “Generate” to create a recommendation using {activeSourceLabel} data for {currentLocation.name}.
               </p>
               {error && <p className="text-xs text-red-600">{error}</p>}

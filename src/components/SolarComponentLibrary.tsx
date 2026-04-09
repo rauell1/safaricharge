@@ -168,7 +168,7 @@ export function SolarComponentLibrary({ standalone = false }: SolarComponentLibr
                 <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">Browse solar hardware with clearer hierarchy</h2>
               </div>
             </div>
-            <p className="text-sm text-[var(--text-secondary)] max-w-xl leading-relaxed">
+            <p className="text-sm text-[var(--text-secondary)] max-w-xl leading-relaxed text-justify [text-align-last:left]">
               Filter modules, inverters, battery storage, EV chargers, and monitoring tools without losing the selected spec sheet or the download links.
             </p>
           </div>
@@ -282,7 +282,7 @@ export function SolarComponentLibrary({ standalone = false }: SolarComponentLibr
                               {entry.category}
                             </span>
                           </div>
-                          <p className="text-xs leading-relaxed text-[var(--text-secondary)]">{cleanText(entry.summary)}</p>
+                          <p className="text-xs leading-relaxed text-justify text-[var(--text-secondary)] [text-align-last:left]">{cleanText(entry.summary)}</p>
                           <p className="text-[11px] text-[var(--text-tertiary)]">{cleanText(entry.typicalUse)}</p>
                           <a
                             href={getOriginUrl(entry.datasheetUrl)}
@@ -327,7 +327,7 @@ export function SolarComponentLibrary({ standalone = false }: SolarComponentLibr
                       View details
                     </Button>
                   </div>
-                  <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                  <p className="text-sm text-[var(--text-secondary)] leading-relaxed text-justify [text-align-last:left]">
                     Tap a row in the catalog to open the selected component in a focused bottom drawer.
                   </p>
                 </div>
@@ -342,7 +342,7 @@ export function SolarComponentLibrary({ standalone = false }: SolarComponentLibr
                     <span className="rounded-full border border-[var(--battery)]/20 bg-[var(--battery-soft)] px-3 py-1 text-[11px] font-semibold text-[var(--battery)]">{selectedHost}</span>
                   </div>
 
-                  <p className="text-sm leading-relaxed text-[var(--text-secondary)]">{cleanText(selected.typicalUse)}</p>
+                  <p className="text-sm leading-relaxed text-justify text-[var(--text-secondary)] [text-align-last:left]">{cleanText(selected.typicalUse)}</p>
 
                   <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] p-4">
                     <div className="mb-3 flex items-center justify-between gap-2">
@@ -433,7 +433,7 @@ export function SolarComponentLibrary({ standalone = false }: SolarComponentLibr
           {selected && (
             <ScrollArea className="max-h-[70vh] pr-1">
               <div className="space-y-4 pb-2">
-                <p className="text-sm leading-relaxed text-[var(--text-secondary)]">{cleanText(selected.typicalUse)}</p>
+                <p className="text-sm leading-relaxed text-justify text-[var(--text-secondary)] [text-align-last:left]">{cleanText(selected.typicalUse)}</p>
                 <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] p-4">
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">Key specifications</p>

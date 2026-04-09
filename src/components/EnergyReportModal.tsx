@@ -246,7 +246,7 @@ export const EnergyReportModal = ({
               <h3 className="font-bold text-[var(--battery)] mb-1 flex items-center gap-2">
                 🌿 Carbon Impact
               </h3>
-              <p className="text-xs text-[var(--text-secondary)] mb-4">
+              <p className="text-xs text-[var(--text-secondary)] mb-4 text-justify [text-align-last:left]">
                 Estimated CO₂ avoided by using solar instead of the Kenya national grid
                 (avg. emission factor: {GRID_EMISSION_FACTOR} kgCO₂/kWh, hydro+thermal mix).
               </p>
