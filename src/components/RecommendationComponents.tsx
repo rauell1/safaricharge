@@ -705,7 +705,7 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
           ) : (
             <div className="text-center py-12 text-slate-500 space-y-3">
               <AlertCircle size={48} className="mx-auto mb-4 text-slate-400" />
-              <p className="text-sm text-slate-700 text-justify [text-align-last:center]">
+              <p className="text-sm text-slate-700 text-justify [text-align-last:left]">
                 Select a location and click “Generate” to create a recommendation using {activeSourceLabel} data for {currentLocation.name}.
               </p>
               {error && <p className="text-xs text-red-600">{error}</p>}
