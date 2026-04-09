@@ -191,7 +191,7 @@ export const runSolarSimulation = (
     let excess = augmentedSolar - totalLoad;
 
     if (priorityMode === 'battery') {
-      // Battery-first: store surplus energy for later EV/load use, then export remainder.
+      // Battery-first (priorityMode === 'battery'): store surplus energy for later EV/load use, then export remainder.
       if (newBatKwh < effectiveCapacity) {
         const capRem = effectiveCapacity - newBatKwh;
         // Realistic battery charging physics:

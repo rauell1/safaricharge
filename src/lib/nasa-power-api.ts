@@ -95,7 +95,9 @@ export async function fetchSolarData(
 
     for (const [key, val] of Object.entries(irradianceData)) {
       if (key.length === 6) {
-        const monthIdx = parseInt(key.slice(4), 10) - 1; // YYYYMM → 0-indexed
+        // YYYYMM format: extract the MM portion and convert to a 0-based index
+        // (e.g. "201001" → month "01" → index 0; "202012" → month "12" → index 11)
+        const monthIdx = parseInt(key.slice(4), 10) - 1;
         if (monthIdx >= 0 && monthIdx < 12 && typeof val === 'number' && val > 0) {
           irradSums[monthIdx] += val;
           irradCounts[monthIdx]++;
