@@ -1,5 +1,6 @@
 import type { DerivedSystemConfig } from '@/types/simulation-core';
 import type { SolarIrradianceData } from '@/lib/nasa-power-api';
+import { gaussianRandom } from './mathUtils';
 
 export interface EVScenario {
   startSoc: number;
@@ -33,11 +34,6 @@ const WEATHER_TRANSITION: Record<string, { Sunny: number; Cloudy: number; Rainy:
   Sunny:  { Sunny: 0.70, Cloudy: 0.25, Rainy: 0.05 },
   Cloudy: { Sunny: 0.30, Cloudy: 0.50, Rainy: 0.20 },
   Rainy:  { Sunny: 0.10, Cloudy: 0.30, Rainy: 0.60 },
-};
-
-const gaussianRandom = (mean: number, std: number): number => {
-  const u1 = Math.max(1e-10, Math.random());
-  return mean + std * Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * Math.random());
 };
 
 export const getSeasonalPeakHour = (month: number, latitude: number = -1.2921): number => {

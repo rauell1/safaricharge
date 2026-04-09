@@ -1,6 +1,7 @@
 import type { DerivedSystemConfig } from '@/types/simulation-core';
 import type { DayScenario } from './timeEngine';
 import { simulateSolar } from './solarEngine';
+import { gaussianRandom } from './mathUtils';
 
 export interface EVSpecs {
   ev1: { drainRate: number; cap: number; onboard: number };
@@ -44,11 +45,6 @@ const getBatteryEfficiency = (rateFraction: number): number => {
   return Math.max(0.85, 0.95 - 0.10 * Math.min(1.0, rateFraction));
 };
 
-const gaussianRandom = (mean: number, std: number): number => {
-  const u1 = Math.max(1e-10, Math.random());
-  return mean + std * Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * Math.random());
-};
-
 const getEVTaperedRate = (soc: number, maxRate: number): number => {
   if (soc >= 100) return 0;
   if (soc >= 80) return maxRate * (100 - soc) / 20;
@@ -72,8 +68,6 @@ export const runSolarSimulation = (
   priorityMode: string,
   isPeakTime: boolean
 ): SolarSimulationResult => {
-  const timeStep = actualTimeStep;
-
   const rawSolar = simulateSolar(t, scenario, systemConfig, cloudNoise);
 
   // Constrain solar power to inverter capacity
@@ -122,27 +116,27 @@ export const runSolarSimulation = (
   if ((t > scenario.ev1.depart && t < scenario.ev1.return) ||
       (scenario.ev1.emergency && t > scenario.ev1.emergency.start && t < scenario.ev1.emergency.end)) {
     ev1IsHome = false;
-    prevEv1Soc = Math.max(5, prevEv1Soc - (evSpecs.ev1.drainRate * (systemConfig.evCommuterScale ?? 1) * timeStep / evSpecs.ev1.cap * 100));
+    prevEv1Soc = Math.max(5, prevEv1Soc - (evSpecs.ev1.drainRate * (systemConfig.evCommuterScale ?? 1) * actualTimeStep / evSpecs.ev1.cap * 100));
   } else if (prevEv1Soc < 100) {
     const taperedRate = getEVTaperedRate(
       prevEv1Soc,
       Math.min(systemConfig.evChargerKw, evSpecs.ev1.onboard) * (systemConfig.evCommuterScale ?? 1)
     );
     const needed = (100 - prevEv1Soc) / 100 * evSpecs.ev1.cap;
-    ev1Load = Math.min(taperedRate, needed / timeStep) * (systemConfig.evCommuterScale ?? 1);
+    ev1Load = Math.min(taperedRate, needed / actualTimeStep) * (systemConfig.evCommuterScale ?? 1);
   }
 
   if ((t > scenario.ev2.depart && t < (scenario.ev2.lunchStart ?? Infinity)) ||
       (t > (scenario.ev2.lunchEnd ?? 0) && t < scenario.ev2.return)) {
     ev2IsHome = false;
-    prevEv2Soc = Math.max(5, prevEv2Soc - (evSpecs.ev2.drainRate * (systemConfig.evFleetScale ?? 1) * timeStep / evSpecs.ev2.cap * 100));
+    prevEv2Soc = Math.max(5, prevEv2Soc - (evSpecs.ev2.drainRate * (systemConfig.evFleetScale ?? 1) * actualTimeStep / evSpecs.ev2.cap * 100));
   } else if (prevEv2Soc < 100) {
     const taperedRate = getEVTaperedRate(
       prevEv2Soc,
       Math.min(systemConfig.evChargerKw, evSpecs.ev2.onboard) * (systemConfig.evFleetScale ?? 1)
     );
     const needed = (100 - prevEv2Soc) / 100 * evSpecs.ev2.cap;
-    ev2Load = Math.min(taperedRate, needed / timeStep) * (systemConfig.evFleetScale ?? 1);
+    ev2Load = Math.min(taperedRate, needed / actualTimeStep) * (systemConfig.evFleetScale ?? 1);
   }
 
   let totalLoad = houseLoad + ev1Load + ev2Load;
@@ -164,8 +158,8 @@ export const runSolarSimulation = (
   const effectiveSolar = Math.max(0, solarAfterInverter - acLoss);
   const solarLossKw = Math.max(0, rawSolar - effectiveSolar);
 
-  if (ev1Load > 0) prevEv1Soc = Math.min(100, prevEv1Soc + (ev1Load * timeStep / evSpecs.ev1.cap * 100));
-  if (ev2Load > 0) prevEv2Soc = Math.min(100, prevEv2Soc + (ev2Load * timeStep / evSpecs.ev2.cap * 100));
+  if (ev1Load > 0) prevEv1Soc = Math.min(100, prevEv1Soc + (ev1Load * actualTimeStep / evSpecs.ev1.cap * 100));
+  if (ev2Load > 0) prevEv2Soc = Math.min(100, prevEv2Soc + (ev2Load * actualTimeStep / evSpecs.ev2.cap * 100));
 
   let batCharge = 0;
   let batDischarge = 0;
@@ -182,13 +176,13 @@ export const runSolarSimulation = (
       const rate = Math.min(5, evSpecs.ev1.onboard);
       v2gKw += rate;
       ev1V2g = true;
-      prevEv1Soc = Math.max(20, prevEv1Soc - (rate * timeStep / evSpecs.ev1.cap * 100));
+      prevEv1Soc = Math.max(20, prevEv1Soc - (rate * actualTimeStep / evSpecs.ev1.cap * 100));
     }
     if (ev2IsHome && prevEv2Soc > 50 && batSocPct < 30) {
       const rate = Math.min(5, evSpecs.ev2.onboard);
       v2gKw += rate;
       ev2V2g = true;
-      prevEv2Soc = Math.max(20, prevEv2Soc - (rate * timeStep / evSpecs.ev2.cap * 100));
+      prevEv2Soc = Math.max(20, prevEv2Soc - (rate * actualTimeStep / evSpecs.ev2.cap * 100));
     }
   }
   const augmentedSolar = effectiveSolar + v2gKw;
@@ -197,6 +191,7 @@ export const runSolarSimulation = (
     let excess = augmentedSolar - totalLoad;
 
     if (priorityMode === 'battery') {
+      // Battery-first (priorityMode === 'battery'): store surplus energy for later EV/load use, then export remainder.
       if (newBatKwh < effectiveCapacity) {
         const capRem = effectiveCapacity - newBatKwh;
         // Realistic battery charging physics:
@@ -207,20 +202,14 @@ export const runSolarSimulation = (
         //         More panels charge battery faster (more excess power)
         const chargeFraction = Math.min(excess, systemConfig.maxChargeKw) / systemConfig.maxChargeKw;
         const batEff = getBatteryEfficiency(chargeFraction);
-        batCharge = Math.min(excess, systemConfig.maxChargeKw, (capRem / batEff) / timeStep);
-        newBatKwh += batCharge * timeStep * batEff;
+        batCharge = Math.min(excess, systemConfig.maxChargeKw, (capRem / batEff) / actualTimeStep);
+        newBatKwh += batCharge * actualTimeStep * batEff;
         excess -= batCharge;
       }
       gridExport = excess;
     } else {
-      if (newBatKwh < effectiveCapacity) {
-        const capRem = effectiveCapacity - newBatKwh;
-        const chargeFraction = Math.min(excess, systemConfig.maxChargeKw) / systemConfig.maxChargeKw;
-        const batEff = getBatteryEfficiency(chargeFraction);
-        batCharge = Math.min(excess, systemConfig.maxChargeKw, (capRem / batEff) / timeStep);
-        newBatKwh += batCharge * timeStep * batEff;
-        excess -= batCharge;
-      }
+      // Export-first: sell surplus to the grid immediately (maximises feed-in tariff revenue).
+      // Battery is not charged from solar in this mode; it will still discharge to cover deficits.
       gridExport = excess;
     }
   } else {
@@ -233,8 +222,8 @@ export const runSolarSimulation = (
       // - Constrained by available battery energy (minus reserve)
       const dischargeFraction = Math.min(deficit, systemConfig.maxDischargeKw) / systemConfig.maxDischargeKw;
       const batEff = getBatteryEfficiency(dischargeFraction);
-      batDischarge = Math.min(deficit, systemConfig.maxDischargeKw, (enAvail * batEff) / timeStep);
-      newBatKwh -= (batDischarge * timeStep) / batEff;
+      batDischarge = Math.min(deficit, systemConfig.maxDischargeKw, (enAvail * batEff) / actualTimeStep);
+      newBatKwh -= (batDischarge * actualTimeStep) / batEff;
       deficit -= batDischarge;
     }
     gridImport = deficit;

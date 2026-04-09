@@ -83,23 +83,47 @@ export async function fetchSolarData(
 
     const data = await response.json();
 
-    // Extract monthly averages from the response
     const irradianceData = data.properties.parameter.ALLSKY_SFC_SW_DWN;
     const temperatureData = data.properties.parameter.T2M;
+
+    // The temporal/monthly endpoint keys entries as YYYYMM (e.g. "201001").
+    // Aggregate all entries for each calendar month and average across years.
+    const irradSums: number[] = Array(12).fill(0);
+    const irradCounts: number[] = Array(12).fill(0);
+    const tempSums: number[] = Array(12).fill(0);
+    const tempCounts: number[] = Array(12).fill(0);
+
+    for (const [key, val] of Object.entries(irradianceData)) {
+      if (key.length === 6) {
+        // YYYYMM format: extract the MM portion and convert to a 0-based index
+        // (e.g. "201001" → month "01" → index 0; "202012" → month "12" → index 11)
+        const monthIdx = parseInt(key.slice(4), 10) - 1;
+        if (monthIdx >= 0 && monthIdx < 12 && typeof val === 'number' && val > 0) {
+          irradSums[monthIdx] += val;
+          irradCounts[monthIdx]++;
+        }
+      }
+    }
+    for (const [key, val] of Object.entries(temperatureData)) {
+      if (key.length === 6) {
+        const monthIdx = parseInt(key.slice(4), 10) - 1;
+        if (monthIdx >= 0 && monthIdx < 12 && typeof val === 'number') {
+          tempSums[monthIdx] += val;
+          tempCounts[monthIdx]++;
+        }
+      }
+    }
 
     // Convert to arrays (months 1-12)
     const monthlyAverage: number[] = [];
     const monthlyTemperature: number[] = [];
     const peakSunHours: number[] = [];
 
-    for (let month = 1; month <= 12; month++) {
-      const monthKey = month.toString().padStart(2, '0');
-      const irradiance = irradianceData[monthKey] || 5.5; // fallback
-      const temp = temperatureData[monthKey] || 25.0; // fallback
-
+    for (let i = 0; i < 12; i++) {
+      const irradiance = irradCounts[i] > 0 ? irradSums[i] / irradCounts[i] : 5.5;
+      const temp = tempCounts[i] > 0 ? tempSums[i] / tempCounts[i] : 25.0;
       monthlyAverage.push(irradiance);
       monthlyTemperature.push(temp);
-      // Peak sun hours ≈ irradiance (kWh/m²/day) since 1 kW/m² is "peak sun"
       peakSunHours.push(irradiance);
     }
 
