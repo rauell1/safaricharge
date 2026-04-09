@@ -4325,7 +4325,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                           <div>
                             <p className="text-xs font-semibold text-[var(--text-primary)]">Component Knowledge Base</p>
-                            <p className="text-[11px] text-[var(--text-secondary)] mt-1">
+                            <p className="text-[11px] text-[var(--text-secondary)] mt-1 text-justify [text-align-last:left]">
                               Browse manufacturer modules, inverters, and batteries without crowding the controls.
                             </p>
                           </div>
@@ -4335,7 +4335,7 @@ export function SafariChargeDashboardApp({ initialSection = 'dashboard' }: { ini
                             </Button>
                           </DialogTrigger>
                         </div>
-                        <p className="text-[10px] text-[var(--text-tertiary)] mt-1">
+                        <p className="text-[10px] text-[var(--text-tertiary)] mt-1 text-justify [text-align-last:left]">
                           Opens in a dedicated panel so filters and specs no longer overlap other scenario settings.
                         </p>
                       </div>
