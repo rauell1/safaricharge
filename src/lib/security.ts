@@ -82,7 +82,14 @@ export function enforceServiceAuth(request: NextRequest, headers: Headers): Next
   }
 
   const token = authHeader.slice('Bearer '.length).trim();
-  if (token !== API_SERVICE_TOKEN) {
+  const expectedBuf = Buffer.from(API_SERVICE_TOKEN, 'utf-8');
+  const providedBuf = Buffer.from(token, 'utf-8');
+  // Use a constant-length comparison to prevent length-based timing leaks,
+  // then confirm equality with timingSafeEqual to prevent bit-by-bit leaks.
+  const lenMatch = expectedBuf.length === providedBuf.length;
+  const safeCompare = Buffer.alloc(expectedBuf.length);
+  providedBuf.copy(safeCompare, 0, 0, Math.min(providedBuf.length, safeCompare.length));
+  if (!lenMatch || !crypto.timingSafeEqual(expectedBuf, safeCompare)) {
     return NextResponse.json({ error: 'Invalid bearer token.' }, { status: 401, headers });
   }
   return null;

@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { z } from 'zod';
 import {
@@ -20,6 +20,7 @@ import {
   verifyRequestSignature,
   withTimeout,
 } from '@/lib/security';
+import { logger } from '@/lib/logger';
 
 const SYSTEM_PROMPT = `
 You are SafariCharge AI, an expert assistant for solar, battery, EV charging, and energy-cost optimization.
@@ -172,7 +173,7 @@ function getCachedResponse(key: string): string | null {
     return null;
   }
 
-  console.log(`[AI] Cache hit (age: ${Math.round(age / 1000)}s)`);
+  logger.info('[AI] Cache hit', { ageSeconds: Math.round(age / 1000) });
   return entry.response;
 }
 
@@ -216,7 +217,7 @@ async function withRetry<T>(
           err.message.includes('429')); // Rate limit
 
       if (isRetryable) {
-        console.log(`[AI] Retry attempt ${attempt} after transient error`);
+        logger.warn('[AI] Retry after transient error', { attempt });
         // Exponential backoff: 500ms, 1000ms, 2000ms...
         await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
         return withRetry(fn, retries - 1, attempt + 1);
@@ -265,13 +266,14 @@ function logProviderMetrics(metrics: {
   success: boolean;
   error?: string;
 }) {
-  const status = metrics.success ? '✓' : '✗';
-  const modelInfo = metrics.model ? ` [${metrics.model}]` : '';
-  console.log(
-    `[AI] ${status} ${metrics.provider}${modelInfo} - ${metrics.latency}ms${
-      metrics.error ? ` - ${metrics.error}` : ''
-    }`
-  );
+  const logFn = metrics.success ? logger.info.bind(logger) : logger.warn.bind(logger);
+  logFn('[AI] provider call', {
+    provider: metrics.provider,
+    model: metrics.model,
+    latencyMs: metrics.latency,
+    success: metrics.success,
+    ...(metrics.error ? { error: metrics.error } : {}),
+  });
 }
 
 type DerivedMetrics = {
@@ -583,6 +585,13 @@ async function callAI(
   }
 }
 
+export async function OPTIONS(request: NextRequest) {
+  const { preflight, headers } = buildCorsHeaders(request, {
+    methods: ['POST', 'OPTIONS'],
+  });
+  return preflight ?? new NextResponse(null, { status: 204, headers });
+}
+
 export async function POST(request: NextRequest) {
   const { preflight, headers } = buildCorsHeaders(request, {
     methods: ['POST', 'OPTIONS'],
@@ -637,7 +646,7 @@ export async function POST(request: NextRequest) {
       return jsonResponse({ response: geminiResult.text }, { status: 200, headers });
     }
 
-    console.log('[AI] Gemini unavailable, falling back to Z.AI');
+    logger.warn('[AI] Gemini unavailable, falling back to Z.AI');
 
     const zaiResult = await callAI('zai', payload, promptMessages);
     if (zaiResult.text) {
@@ -655,7 +664,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown server error';
-    console.error('[AI] Unhandled error in /api/safaricharge-ai', err);
+    logger.error('[AI] Unhandled error', { message });
     return jsonResponse(
       {
         error: 'Internal server error.',
