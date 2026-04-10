@@ -129,5 +129,7 @@ Open: `http://localhost:3000`
 - `INTEGRATION.md` — integration details
 - `IMPLEMENTATION.md` / `IMPLEMENTATION_SUMMARY.md` — architecture and implementation notes
 - `SECURITY_PERFORMANCE_RELIABILITY_AUDIT_2026-04-02.md` — audit report details
+- `SCIENTIFIC_TECHNICAL_AUDIT_2026-04-10.md` — scientific/technical model audit and roadmap
+- `ENGINEERING_ISSUES_V2_2026-04-10.md` — issue-ready implementation backlog (v2.0)
 - `ROLLBACK.md` — rollback guidance
 

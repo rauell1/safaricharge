@@ -55,6 +55,9 @@ export interface HardwareRecommendation {
     monthlyGridSavingsKES: number;
     annualGridSavingsKES: number;
     paybackPeriodYears: number;
+    npvKES: number;
+    irrPct: number;
+    lcoeKESPerKwh: number;
     roi25YearsPct: number;
     netSavings25YearsKES: number;
   };
@@ -204,26 +207,29 @@ export function generateRecommendation(
   let cumulativeSavings = 0;
   let cumulativeCosts = totalInvestment;
   let currentAnnualSavings = monthlyGridSavings * 12;
+  const yearlyNetCashflows: number[] = [];
+  const initialAnnualSolarKwh = dailySolarGeneration * 365;
+  const pvDegradationAnnual = 0.006; // 0.6%/year baseline
+  const batteryReplacementYear = useLiFePO4
+    ? PRICING.LIFEPO4_REPLACEMENT_YEARS
+    : PRICING.LEAD_ACID_REPLACEMENT_YEARS;
 
   for (let year = 1; year <= 25; year++) {
-    // Escalate tariff by 6% annually
-    currentAnnualSavings *= (1 + PRICING.TARIFF_ESCALATION_ANNUAL_PCT);
+    // Escalate tariff and include PV degradation on delivered kWh
+    currentAnnualSavings *= (1 + PRICING.TARIFF_ESCALATION_ANNUAL_PCT) * (1 - pvDegradationAnnual);
 
     // Add annual maintenance cost
     const maintenanceCost = totalInvestment * PRICING.MAINTENANCE_ANNUAL_PCT;
     cumulativeCosts += maintenanceCost;
 
     // Battery replacement costs
-    const batteryReplacementYear = useLiFePO4
-      ? PRICING.LIFEPO4_REPLACEMENT_YEARS
-      : PRICING.LEAD_ACID_REPLACEMENT_YEARS;
-
     if (year % batteryReplacementYear === 0 && year < 25) {
       cumulativeCosts += batteryCost; // Replace batteries
     }
 
     // Add net savings
     cumulativeSavings += currentAnnualSavings;
+    yearlyNetCashflows.push(currentAnnualSavings - maintenanceCost - (year % batteryReplacementYear === 0 && year < 25 ? batteryCost : 0));
   }
 
   const netSavings25Years = cumulativeSavings - cumulativeCosts;
@@ -233,6 +239,17 @@ export function generateRecommendation(
   const annualMaintenance = totalInvestment * PRICING.MAINTENANCE_ANNUAL_PCT;
   const netAnnualSavings = monthlyGridSavings * 12 - annualMaintenance;
   const paybackYears = netAnnualSavings > 0 ? totalInvestment / netAnnualSavings : 99;
+  const discountRate = 0.12;
+  const npv = computeNPV(totalInvestment, yearlyNetCashflows, discountRate);
+  const irr = computeIRR([-totalInvestment, ...yearlyNetCashflows]);
+  const discountedLifetimeKwh = Array.from({ length: 25 }, (_, year) =>
+    (initialAnnualSolarKwh * Math.pow(1 - pvDegradationAnnual, year)) / Math.pow(1 + discountRate, year + 1)
+  ).reduce((sum, v) => sum + v, 0);
+  const discountedOpexKes = Array.from({ length: 25 }, (_, year) =>
+    (annualMaintenance + ((year + 1) % batteryReplacementYear === 0 && year + 1 < 25 ? batteryCost : 0)) /
+    Math.pow(1 + discountRate, year + 1)
+  ).reduce((sum, v) => sum + v, 0);
+  const lcoeKesPerKwh = discountedLifetimeKwh > 0 ? (totalInvestment + discountedOpexKes) / discountedLifetimeKwh : 0;
 
   // Environmental impact
   const annualSolarKwh = dailySolarGeneration * 365;
@@ -328,6 +345,9 @@ export function generateRecommendation(
       monthlyGridSavingsKES: Math.round(monthlyGridSavings),
       annualGridSavingsKES: Math.round(monthlyGridSavings * 12),
       paybackPeriodYears: parseFloat(paybackYears.toFixed(1)),
+      npvKES: Math.round(npv),
+      irrPct: parseFloat((irr * 100).toFixed(1)),
+      lcoeKESPerKwh: parseFloat(lcoeKesPerKwh.toFixed(2)),
       roi25YearsPct: parseFloat(roi25Years.toFixed(1)),
       netSavings25YearsKES: Math.round(netSavings25Years),
     },
@@ -510,6 +530,36 @@ function assessConfidence(
   if (score >= 8) return 'high';
   if (score >= 5) return 'medium';
   return 'low';
+}
+
+function computeNPV(initialInvestment: number, cashflows: number[], discountRate: number): number {
+  return -initialInvestment + cashflows.reduce(
+    (acc, cf, idx) => acc + cf / Math.pow(1 + discountRate, idx + 1),
+    0
+  );
+}
+
+function computeIRR(cashflows: number[]): number {
+  let low = -0.9;
+  let high = 1.5;
+
+  const npvAt = (rate: number): number =>
+    cashflows.reduce((npv, cf, i) => npv + cf / Math.pow(1 + rate, i), 0);
+
+  for (let i = 0; i < 60; i++) {
+    const mid = (low + high) / 2;
+    const npvMid = npvAt(mid);
+    if (Math.abs(npvMid) < 1e-3) return mid;
+
+    const npvLow = npvAt(low);
+    if (Math.sign(npvLow) === Math.sign(npvMid)) {
+      low = mid;
+    } else {
+      high = mid;
+    }
+  }
+
+  return (low + high) / 2;
 }
 
 /**

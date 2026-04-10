@@ -639,6 +639,24 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
                           {recommendation.financial.roi25YearsPct}%
                         </p>
                       </div>
+                      <div>
+                        <p className="text-xs text-slate-500 mb-1">NPV (12% discount)</p>
+                        <p className="text-lg font-bold text-emerald-700">
+                          KES {recommendation.financial.npvKES.toLocaleString()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 mb-1">IRR</p>
+                        <p className="text-lg font-bold text-emerald-700">
+                          {recommendation.financial.irrPct}%
+                        </p>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <p className="text-xs text-slate-500 mb-1">LCOE</p>
+                        <p className="text-lg font-bold text-emerald-700">
+                          KES {recommendation.financial.lcoeKESPerKwh.toLocaleString()} / kWh
+                        </p>
+                      </div>
                       <div className="sm:col-span-2 p-3 bg-green-50 rounded-lg">
                         <p className="text-xs text-slate-500 mb-1">Net Savings (25 Years)</p>
                         <p className="text-2xl font-bold text-green-600">

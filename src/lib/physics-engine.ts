@@ -21,6 +21,7 @@ import {
   SOILING_LOSS_PER_DAY,
   SOILING_MIN_FACTOR,
 } from './config';
+import { buildHourlyIrradianceProfile } from './nasa-power-api';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -80,6 +81,7 @@ export interface DayScenario {
 export interface SolarData {
   latitude: number;
   monthlyTemperatures: number[]; // 12 monthly average temps in °C
+  monthlyAverage?: number[]; // 12 monthly climatological daily irradiance values (kWh/m²/day)
 }
 
 export interface InstantPhysicsResult {
@@ -112,12 +114,12 @@ function getSeasonalPeakHour(month: number, latitude: number): number {
 }
 
 function getPanelTempEffect(
-  irradianceFraction: number,
+  irradianceKwM2: number,
   month: number,
   monthlyTemps: number[]
 ): number {
   const ambientTemp = monthlyTemps[month - 1] || 25;
-  const panelTemp = ambientTemp + irradianceFraction * 25; // up to +25°C above ambient
+  const panelTemp = ambientTemp + ((45 - 20) / 800) * (irradianceKwM2 * 1000);
   const tempDelta = panelTemp - 25; // STC is 25°C
   return 1 + PANEL_TEMP_COEFFICIENT_PER_DEG_C * tempDelta; // typically 0.94-1.0
 }
@@ -324,24 +326,27 @@ export function calculateInstantPhysics(
   // -------------------------------------------------------------------------
   // 1. Calculate Solar Generation
   // -------------------------------------------------------------------------
-  const peakHour = getSeasonalPeakHour(scenario.month, solarData.latitude);
   const hourOfDay = hour % 24;
-  const distFromPeak = Math.abs(hourOfDay - peakHour);
-  const sunAngleFactor = Math.max(0, Math.cos((distFromPeak / 6) * Math.PI / 2));
-
-  const baseIrradiance = sunAngleFactor * scenario.weatherFactor;
+  const profile = solarData.monthlyAverage
+    ? buildHourlyIrradianceProfile(solarData.monthlyAverage, scenario.month, solarData.latitude, 1)
+    : null;
+  const hourIndex = Math.floor(hourOfDay) % 24;
+  const peakHour = getSeasonalPeakHour(scenario.month, solarData.latitude);
+  const fallbackDist = Math.abs(hourOfDay - peakHour);
+  const fallbackIrradiance = Math.max(0, Math.cos((fallbackDist / 6) * Math.PI / 2));
+  const baseIrradianceKwM2 = profile ? (profile[hourIndex] ?? 0) : fallbackIrradiance;
   const cloudNoise = 1 + (Math.random() * 2 - 1) * 0.05; // ±5% Brownian variation
-  const irradianceFraction = Math.max(0, Math.min(1, baseIrradiance * cloudNoise));
+  const effectiveIrradianceKwM2 = Math.max(0, baseIrradianceKwM2 * scenario.weatherFactor * cloudNoise);
 
   const tempFactor = getPanelTempEffect(
-    irradianceFraction,
+    effectiveIrradianceKwM2,
     scenario.month,
     solarData.monthlyTemperatures
   );
 
   const solarPowerKw =
     config.solar.totalCapacityKw *
-    irradianceFraction *
+    effectiveIrradianceKwM2 *
     state.soilingFactor *
     tempFactor;
 

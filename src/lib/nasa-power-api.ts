@@ -223,3 +223,62 @@ export function calculateSeasonalPeakHour(latitude: number, month: number): numb
 
   return 12.75 + adjustment; // Slightly after noon due to time zones
 }
+
+/**
+ * Build a physically-plausible hourly irradiance profile whose daily integral
+ * matches NASA POWER monthly daily climatology (kWh/m²/day).
+ *
+ * Output units are kW/m² for each timestep.
+ */
+export function buildHourlyIrradianceProfile(
+  monthlyAverage: number[],
+  month: number,
+  latitude: number,
+  stepsPerHour: number = 1
+): number[] {
+  const safeStepsPerHour = Math.max(1, Math.floor(stepsPerHour));
+  const totalSteps = 24 * safeStepsPerHour;
+  const dtHours = 1 / safeStepsPerHour;
+  const monthIndex = Math.min(11, Math.max(0, month - 1));
+  const dailyEnergyKwhM2 = Math.max(0, monthlyAverage[monthIndex] ?? 0);
+
+  if (dailyEnergyKwhM2 <= 0) {
+    return Array(totalSteps).fill(0);
+  }
+
+  // Approximate daylight duration from latitude + solar declination.
+  // Declination approximation (degrees): 23.45 * sin(2π(284+n)/365)
+  const dayOfYearMidMonth = [15, 45, 74, 105, 135, 166, 196, 227, 258, 288, 319, 349][monthIndex];
+  const declinationDeg = 23.45 * Math.sin((2 * Math.PI * (284 + dayOfYearMidMonth)) / 365);
+  const latRad = (latitude * Math.PI) / 180;
+  const decRad = (declinationDeg * Math.PI) / 180;
+  const cosWs = Math.max(-1, Math.min(1, -Math.tan(latRad) * Math.tan(decRad)));
+  const omegaSunset = Math.acos(cosWs);
+  const dayLengthHours = (2 * omegaSunset * 24) / (2 * Math.PI);
+
+  const sunrise = 12 - dayLengthHours / 2;
+  const sunset = 12 + dayLengthHours / 2;
+
+  const shape: number[] = [];
+  for (let step = 0; step < totalSteps; step++) {
+    const hour = step / safeStepsPerHour + dtHours / 2;
+    if (hour <= sunrise || hour >= sunset) {
+      shape.push(0);
+      continue;
+    }
+
+    const dayProgress = (hour - sunrise) / Math.max(0.1, dayLengthHours);
+    // Smooth clear-sky-like envelope (0..1) during daylight
+    const envelope = Math.max(0, Math.sin(Math.PI * dayProgress));
+    shape.push(envelope);
+  }
+
+  const shapeIntegral = shape.reduce((sum, value) => sum + value * dtHours, 0);
+  if (shapeIntegral <= 0) {
+    return Array(totalSteps).fill(0);
+  }
+
+  // Scale profile to match NASA daily energy (kWh/m²/day)
+  const scale = dailyEnergyKwhM2 / shapeIntegral;
+  return shape.map(value => value * scale);
+}
