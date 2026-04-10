@@ -68,7 +68,7 @@ export const runSolarSimulation = (
   priorityMode: string,
   isPeakTime: boolean
 ): SolarSimulationResult => {
-  const rawSolar = simulateSolar(t, scenario, systemConfig, cloudNoise);
+  const rawSolar = simulateSolar(t, scenario, systemConfig, cloudNoise, scenario.solarData);
 
   // Constrain solar power to inverter capacity
   // The inverter is the bottleneck - can't convert more DC power than its rating

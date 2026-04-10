@@ -2,7 +2,7 @@
 
 This document serves as a reference point for understanding the SafariCharge solar simulation system. It tracks key improvements, calculations, and architectural decisions.
 
-**Last Updated:** 2026-03-28
+**Last Updated:** 2026-04-10
 **Status:** Active Development
 **Branch:** `claude/average-energy-production-calculation`
 
@@ -398,6 +398,26 @@ GRID_EMISSION_FACTOR_KG_CO2_PER_KWH = 0.47
 ---
 
 ## Physics Engine
+
+### 2026-04 update: NASA-driven PV baseline + finance metrics
+
+- Added `buildHourlyIrradianceProfile()` in `src/lib/nasa-power-api.ts` to convert monthly NASA POWER daily climatology (kWh/m²/day) into an hourly irradiance profile whose daily integral is conserved.
+- Updated both `src/simulation/solarEngine.ts` and `src/lib/physics-engine.ts` to consume NASA-derived irradiance profiles when available, with weather/cloud modifiers applied multiplicatively.
+- Updated panel temperature treatment to a NOCT-style approximation:
+  - \(T_{cell} = T_{ambient} + \frac{NOCT - 20}{800} \cdot G\)
+  - with \(G\) as irradiance in W/m² and module performance derate via temperature coefficient.
+- Added finance metrics in recommendation outputs:
+  - NPV (default 12% discount),
+  - IRR (iterative solve),
+  - LCOE (discounted lifecycle cost / discounted lifecycle energy).
+- Externalized tariff profiles into `src/lib/tariff-config.ts` with metadata (`version`, `effectiveFrom`, `sourceUrl`) and refactored `src/lib/tariff.ts` to derive effective rates from profile data.
+
+### Reference model lineage
+
+- pvlib model chain inspiration (equations/methods mirrored in simplified TS form): solar geometry/transposition/temperature and DC→AC loss staging.
+- NREL SAM methodology inspiration for financial structure (year-0 CAPEX + annual OPEX/cashflow discounting).
+
+Note: current implementation remains "SAM-lite" and still requires benchmark calibration for investment-grade claims.
 
 ### Simulation Architecture
 

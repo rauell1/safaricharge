@@ -23,6 +23,7 @@ export interface DayScenario {
   soilingFactor: number;
   latitude: number;
   monthlyTemperature?: number[];
+  solarData?: SolarIrradianceData;
   ev1: EVScenario;
   ev2: EVScenario;
   weatherFactor: number;
@@ -115,6 +116,7 @@ export const generateDayScenario = (
     soilingFactor,
     latitude,
     monthlyTemperature: solarData?.monthlyTemperature,
+    solarData,
     ev1: {
       startSoc: 40 + Math.random() * 30,
       depart: 7.5 + gaussianRandom(0, 0.2),
