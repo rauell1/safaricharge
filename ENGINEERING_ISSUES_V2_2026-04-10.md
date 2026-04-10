@@ -11,23 +11,21 @@ The new generalized physics engine (`calculateInstantPhysics` in `src/lib/physic
 
 The legacy SafariCharge engine (`runSolarSimulation` in `src/simulation/runSimulation.ts`) explicitly threads previous `batKwh` through each timestep and returns updated `batKwh`, and that path historically shows a moving battery. This suggests the issue is in how the new engine’s state is wired into the store/timeline, not in the battery math itself.
 
-**Likely root causes (inference)**
+**Likely root causes (updated from latest debugging)**
 
-- `PhysicsEngineState` is reinitialized every timestep.
-- Store nodes are not updated from physics results.
-- `MinuteDataPoint` is not written with battery values from physics output.
+- The UI being observed is bound to a different data path than the loop currently being logged (e.g., `energySystemStore` + `calculateInstantPhysics` path vs local `data.batteryLevel` from `runSolarSimulation`).
+- `calculateInstantPhysics` runner may still be reinitializing `PhysicsEngineState` each tick or failing to persist the mutated state.
+- Store nodes and/or `MinuteDataPoint` may not be updated from physics results, causing a visually flat SOC despite internal state changes elsewhere.
 
 **Fix — required changes**
 
 1. Persist `PhysicsEngineState` across timesteps.
 2. After each physics step, wire battery/solar/grid values into `energySystemStore` via `updateNode`.
 3. Write `batteryPowerKW`, `batteryLevelPct`, `solarKW`, `homeLoadKW`, `gridImportKW`, `gridExportKW`, and `savingsKES` from `calculateInstantPhysics` results into `addMinuteData`.
-4. Validate edge-case config values:
-   - `config.battery.capacityKwh > 0`
-   - `minReservePct < 100`
-   - `maxChargeKw > 0`
-   - `maxDischargeKw > 0`
-   - `priorityMode` is `'battery'` or `'auto'` when expecting charging behavior.
+4. Verify runtime behavior before changing config assumptions:
+   - Log per-step `solar`, `load`, `batPower`, `gridImport`, and `batKwh` to confirm there is actionable surplus/deficit and battery response.
+   - Confirm the page/component under observation is reading the same state path being updated in the active simulation loop.
+   - Then validate config edge cases (`capacityKwh > 0`, `minReservePct < 100`, positive charge/discharge limits, expected priority mode).
 
 **Acceptance criteria**
 
@@ -169,11 +167,11 @@ Compute and display engineering KPIs per scenario and integrate them into recomm
 
 ## Immediate debugging note for the SOC-flat symptom
 
-Short diagnosis: if the simulation loop is already threading `batKwh` state each step, flat SOC is most likely caused by battery config constraints rather than the loop itself.
+Short diagnosis: with `batteryKwh=60`, `maxChargeKw=30`, `maxDischargeKw=40`, and `inverterKw=48`, the legacy `runSolarSimulation` path has sufficient limits to move SOC; if SOC appears flat, treat this first as a runtime wiring/observability issue before blaming battery limits.
 
 Top checks:
-1. `maxChargeKw` / `maxDischargeKw` are not zero.
-2. Reserve is not effectively equal to full capacity.
-3. Initial battery energy is not pinned at a non-actionable boundary.
+1. Log sub-step values (`solar`, `load`, `batPower`, `gridImport`, `batKwh`) to verify battery action is occurring.
+2. If `batKwh` changes in logs but UI is flat, verify the displayed component is bound to the same state path (`data.batteryLevel` vs `energySystemStore`/physics-engine path).
+3. If `batPower` remains zero, inspect whether the simulated conditions ever produce actionable surplus/deficit in that active loop.
 
-This should be verified with per-step logs of battery power, SOC, solar, load, and battery constraints.
+Use these checks to isolate whether the defect is in physics execution, data propagation, or UI binding.
