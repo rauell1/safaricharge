@@ -56,9 +56,7 @@ def run_pvlib(config: SystemConfig) -> PvlibRunResult:
       rapid benchmarking without needing a CEC module database entry.
     """
     logger.info(
-        "Running pvlib simulation: lat=%.4f lon=%.4f capacity=%.1f kW",
-        config.latitude,
-        config.longitude,
+        "Running pvlib simulation for %.1f kW system",
         config.solar_capacity_kw,
     )
 

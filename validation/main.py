@@ -25,6 +25,7 @@ from __future__ import annotations
 import logging
 import os
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 from fastapi import FastAPI, HTTPException
@@ -101,6 +102,28 @@ async def validate_pvlib(config: SystemConfig) -> ValidationResult:
     engine_hourly: list[float] = []
 
     engine_url = config.engine_output_url or os.environ.get("ENGINE_OUTPUT_URL", "")
+    if engine_url:
+        # SSRF guard: only allow URLs whose scheme and host are permitted.
+        # By default only localhost / 127.0.0.1 on arbitrary ports are allowed.
+        # Override via the ENGINE_ALLOWED_HOSTS env var (comma-separated list
+        # of "hostname" or "hostname:port" values).
+        _allowed_raw = os.environ.get("ENGINE_ALLOWED_HOSTS", "localhost,127.0.0.1")
+        _allowed_hosts = {h.strip() for h in _allowed_raw.split(",") if h.strip()}
+        try:
+            parsed = urlparse(engine_url)
+            if parsed.scheme not in ("http", "https"):
+                raise ValueError(f"Unsupported scheme: {parsed.scheme!r}")
+            netloc_host = parsed.hostname or ""
+            netloc_port = f":{parsed.port}" if parsed.port else ""
+            netloc = f"{netloc_host}{netloc_port}"
+            if netloc_host not in _allowed_hosts and netloc not in _allowed_hosts:
+                raise ValueError(
+                    f"Engine output URL host {netloc_host!r} is not in the "
+                    f"allowed list. Set ENGINE_ALLOWED_HOSTS to permit it."
+                )
+        except ValueError as exc:
+            logger.warning("Rejected engine_output_url – %s", exc)
+            engine_url = ""
     if engine_url:
         try:
             payload: dict[str, Any] = {
