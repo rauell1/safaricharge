@@ -9,6 +9,8 @@
  *                                and G_stc = 1.0 kW/m² (STC reference)
  * Capacity Factor (CF, %)      = E_solar / (P_dc * 8760)
  * Battery Cycles                = Total discharge energy / nominal battery capacity
+ * Self-Sufficiency (%)         = 1 − (grid import / total load)   × 100
+ * Grid Dependency (%)          = (grid import / total load)        × 100
  *
  * When irradiance is unavailable (common in simulation), PR is estimated from
  * local peak-sun-hours (PSH) for the selected location.
@@ -26,6 +28,16 @@ export interface EngineeringKpiInput {
   /** Nominal battery capacity (kWh). */
   batteryCapacityKWh: number;
   /**
+   * Total electrical load (home + EV) over the period (kWh).
+   * Used to compute self-sufficiency and grid dependency.
+   */
+  totalLoadKWh?: number;
+  /**
+   * Total energy imported from the grid over the period (kWh).
+   * Used to compute self-sufficiency and grid dependency.
+   */
+  gridImportKWh?: number;
+  /**
    * Optional: plane-of-array irradiance over the period (kWh/m²).
    * If omitted, PR is estimated using peakSunHours.
    */
@@ -42,6 +54,10 @@ export interface EngineeringKpiResult {
   performanceRatioPct: number;
   capacityFactorPct: number;
   batteryCycles: number;
+  /** Fraction of total load met without grid import (0–100 %). */
+  selfSufficiencyPct: number;
+  /** Fraction of total load that came from the grid (0–100 %). */
+  gridDependencyPct: number;
   /** True when PR was estimated from PSH rather than measured irradiance. */
   prIsEstimated: boolean;
 }
@@ -53,15 +69,17 @@ export function computeEngineeringKpis(input: EngineeringKpiInput): EngineeringK
     durationHours,
     totalBatDischargeKWh,
     batteryCapacityKWh,
+    totalLoadKWh,
+    gridImportKWh,
     planeIrradianceKWhPerM2,
     peakSunHoursPerDay = 5.5,
   } = input;
 
-  // Specific yield
+  // ── Specific yield ───────────────────────────────────────────────────────
   const specificYieldKWhPerKWp =
     dcCapacityKWp > 0 ? totalSolarKWh / dcCapacityKWp : 0;
 
-  // Performance Ratio
+  // ── Performance Ratio ────────────────────────────────────────────────────
   let performanceRatioPct = 0;
   let prIsEstimated = false;
 
@@ -81,21 +99,30 @@ export function computeEngineeringKpis(input: EngineeringKpiInput): EngineeringK
     prIsEstimated = true;
   }
 
-  // Capacity Factor
+  // ── Capacity Factor ──────────────────────────────────────────────────────
   const capacityFactorPct =
     dcCapacityKWp > 0 && durationHours > 0
       ? (totalSolarKWh / (dcCapacityKWp * durationHours)) * 100
       : 0;
 
-  // Battery Cycles
+  // ── Battery Cycles ───────────────────────────────────────────────────────
   const batteryCycles =
     batteryCapacityKWh > 0 ? totalBatDischargeKWh / batteryCapacityKWh : 0;
+
+  // ── Self-Sufficiency & Grid Dependency ───────────────────────────────────
+  const load = totalLoadKWh ?? 0;
+  const gridIn = gridImportKWh ?? 0;
+  const gridDependencyPct =
+    load > 0 ? Math.min((gridIn / load) * 100, 100) : 0;
+  const selfSufficiencyPct = Math.max(100 - gridDependencyPct, 0);
 
   return {
     specificYieldKWhPerKWp: parseFloat(specificYieldKWhPerKWp.toFixed(1)),
     performanceRatioPct: parseFloat(Math.min(performanceRatioPct, 100).toFixed(1)),
     capacityFactorPct: parseFloat(Math.min(capacityFactorPct, 100).toFixed(1)),
     batteryCycles: parseFloat(batteryCycles.toFixed(2)),
+    selfSufficiencyPct: parseFloat(selfSufficiencyPct.toFixed(1)),
+    gridDependencyPct: parseFloat(gridDependencyPct.toFixed(1)),
     prIsEstimated,
   };
 }
