@@ -103,6 +103,27 @@ const systemDataSchema = z.object({
         .optional(),
     })
     .optional(),
+  learningContext: z
+    .object({
+      peakLoadHour: z.number().optional(),
+      peakSolarHour: z.number().optional(),
+      avgDailySolarKwh: z.number().optional(),
+      avgDailyLoadKwh: z.number().optional(),
+      avgDailySavingsKes: z.number().optional(),
+      selfSufficiencyPct: z.number().optional(),
+      gridDependencyPct: z.number().optional(),
+      avgBatterySocAtMidnight: z.number().optional(),
+      avgBatterySocAtNoon: z.number().optional(),
+      batteryUsagePattern: z.string().optional(),
+      ev1AvgChargingHour: z.number().optional(),
+      ev2AvgChargingHour: z.number().optional(),
+      evTotalDailyKwh: z.number().optional(),
+      peakTimeGridImportPct: z.number().optional(),
+      offPeakSolarExportPct: z.number().optional(),
+      totalSimDays: z.number().optional(),
+      dataConfidence: z.string().optional(),
+    })
+    .optional(),
 });
 
 const aiRequestSchema = z
@@ -363,6 +384,29 @@ function buildEnergyPrompt({
       : ''
   }`;
 
+  const lc = systemData.learningContext;
+  const learningSection = lc
+    ? `
+Observed system patterns (derived from ${lc.totalSimDays ?? 0} simulation days — confidence: ${lc.dataConfidence ?? 'low'}):
+- Peak load hour: ${lc.peakLoadHour ?? 'unknown'}:00
+- Peak solar hour: ${lc.peakSolarHour ?? 'unknown'}:00
+- Avg daily solar generation: ${lc.avgDailySolarKwh ?? 0} kWh/day
+- Avg daily load: ${lc.avgDailyLoadKwh ?? 0} kWh/day
+- Avg daily savings: KES ${lc.avgDailySavingsKes ?? 0}/day
+- Self-sufficiency: ${lc.selfSufficiencyPct ?? 0}%
+- Grid dependency: ${lc.gridDependencyPct ?? 0}%
+- Battery SoC at midnight (avg): ${lc.avgBatterySocAtMidnight ?? 0}%
+- Battery SoC at noon (avg): ${lc.avgBatterySocAtNoon ?? 0}%
+- Battery usage pattern: ${lc.batteryUsagePattern ?? 'unknown'}
+- EV1 avg charging hour: ${lc.ev1AvgChargingHour ?? 'unknown'}:00
+- EV2 avg charging hour: ${lc.ev2AvgChargingHour ?? 'unknown'}:00
+- EV total daily energy: ${lc.evTotalDailyKwh ?? 0} kWh/day
+- Peak-time grid import share: ${lc.peakTimeGridImportPct ?? 0}%
+- Off-peak solar export share: ${lc.offPeakSolarExportPct ?? 0}%
+
+Use these PERSONALISED patterns to give specific, data-driven advice rather than generic Kenya solar guidance. Reference the actual peak hours, battery pattern, and EV charging times when making recommendations.`
+    : '';
+
   const batteryDropCue =
     derived.battery_efficiency_drop > 0.1
       ? `
@@ -380,6 +424,7 @@ System data:
 ${JSON.stringify(systemData, null, 2)}
 
 ${derivedSection}
+${learningSection}
 
 Analyze this system and provide optimization insights.
 Keep the structure: Insight, Recommendation, Expected benefit (with kWh/KES/% where possible).

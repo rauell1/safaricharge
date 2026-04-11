@@ -192,6 +192,18 @@ export default function ModularDashboardDemo({
     : homeNode.powerKW ?? 0;
   const batteryLevel = latestPoint?.batteryLevelPct ?? batteryNode.soc ?? 0;
 
+  // ── Financial snapshot — computed from live minuteData ────────────────────
+  const financialSnapshot = useMemo(() =>
+    buildFinancialSnapshot({
+      minuteData: minuteData as Parameters<typeof buildFinancialSnapshot>[0]['minuteData'],
+      solarData: NAIROBI_SOLAR_DATA,
+      inputs: financialInputs,
+      evCapacityKw: 22,
+    }),
+    [minuteData, financialInputs]
+  );
+  // ─────────────────────────────────────────────────────────────────────────
+
   // Export report as CSV
   const handleExportReport = useCallback(async () => {
     try {
@@ -423,6 +435,14 @@ export default function ModularDashboardDemo({
           uniqueDays,
           dailyAgg: dailyAggCharts,
           recommendation,
+          financial: {
+            capexTotal:       financialSnapshot.capex.total,
+            npvKes:           financialSnapshot.npvKes,
+            irrPct:           financialSnapshot.irrPct,
+            lcoeKesPerKwh:    financialSnapshot.lcoeKesPerKwh,
+            paybackYears:     financialSnapshot.paybackYears,
+            annualSavingsKes: financialSnapshot.revenueMonthly * 12,
+          },
         }),
       });
 
@@ -456,7 +476,7 @@ export default function ModularDashboardDemo({
       console.error('Formal report error:', error);
       alert(`Failed to generate report: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
     }
-  }, [minuteData]);
+  }, [minuteData, financialSnapshot]);
 
   const flowDirection = useMemo(() => ({
     solarToHome:    flows.some((f) => f.from === 'solar'   && f.to === 'home'    && f.active),
@@ -594,18 +614,6 @@ export default function ModularDashboardDemo({
 
   const isMonthlyFallback = monthlyOverviewData[0]?.isFallback ?? true;
 
-  // ── Financial snapshot — computed from live minuteData ────────────────────
-  const financialSnapshot = useMemo(() =>
-    buildFinancialSnapshot({
-      minuteData: minuteData as Parameters<typeof buildFinancialSnapshot>[0]['minuteData'],
-      solarData: NAIROBI_SOLAR_DATA,
-      inputs: financialInputs,
-      evCapacityKw: 22,
-    }),
-    [minuteData, financialInputs]
-  );
-  // ─────────────────────────────────────────────────────────────────────────
-
   // ─────────────────────────────────────────────────────────────────────────
 
   // ── Section renderer ──────────────────────────────────────────────────────
@@ -709,7 +717,7 @@ export default function ModularDashboardDemo({
                 <h2 className="text-2xl font-bold text-[var(--text-primary)]">Get Recommendation</h2>
                 <p className="text-sm text-[var(--text-tertiary)]">AI-powered system sizing and configuration recommendations</p>
               </div>
-              <RecommendationComponents solarData={NAIROBI_SOLAR_DATA} />
+              <RecommendationComponents solarData={NAIROBI_SOLAR_DATA} minuteData={minuteData as SimulationMinuteRecord[]} />
             </div>
           </main>
         );

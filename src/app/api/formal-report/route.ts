@@ -100,6 +100,16 @@ const reportRequestSchema = z.object({
     confidence: z.enum(['high', 'medium', 'low']),
     notes: z.array(z.string()),
   }).optional(),
+  financial: z
+    .object({
+      capexTotal: z.number(),
+      npvKes: z.number(),
+      irrPct: z.number(),
+      lcoeKesPerKwh: z.number(),
+      paybackYears: z.number(),
+      annualSavingsKes: z.number(),
+    })
+    .optional(),
 });
 
 type ReportRequest = z.infer<typeof reportRequestSchema>;
@@ -1304,10 +1314,86 @@ function generateReportHTML(data: ReportRequest): string {
     </div>
     ` : ''}
 
-    <!-- Daily Summary Table -->
+    ${data.financial ? `
+    <!-- Financial Snapshot (from Financial Dashboard) -->
     <div class="section">
       <div class="section-title">
         <span class="section-number">${data.recommendation ? '10' : '9'}</span>
+        <span>Financial Analysis — CAPEX, NPV, IRR &amp; LCOE</span>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+        <h3 style="margin: 0 0 6px 0; font-size: 18px;">Investment Snapshot</h3>
+        <p style="margin: 0; font-size: 13px; opacity: 0.85;">Derived from live simulation data and configured financial inputs</p>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Total CAPEX</div>
+          <div class="metric-value">KES ${fmtNum(data.financial.capexTotal)}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">10-Year NPV</div>
+          <div class="metric-value" style="${data.financial.npvKes >= 0 ? 'color:#16a34a;' : 'color:#dc2626;'}">KES ${fmtNum(Math.round(data.financial.npvKes))}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">IRR</div>
+          <div class="metric-value">${fmt(data.financial.irrPct, 1)} <span class="metric-unit">%</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Payback Period</div>
+          <div class="metric-value">${data.financial.paybackYears > 0 && data.financial.paybackYears < 100 ? `${fmt(data.financial.paybackYears, 1)} <span class="metric-unit">years</span>` : '<span class="metric-unit">N/A</span>'}</div>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Financial Metric</th>
+            <th class="num">Value</th>
+            <th>Unit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Total Capital Expenditure (CAPEX)</td>
+            <td class="num">${fmtNum(data.financial.capexTotal)}</td>
+            <td>KES</td>
+          </tr>
+          <tr>
+            <td>Annual Savings (Year 1)</td>
+            <td class="num">${fmtNum(Math.round(data.financial.annualSavingsKes))}</td>
+            <td>KES/year</td>
+          </tr>
+          <tr style="background:#e0f2fe;font-weight:600;">
+            <td>Payback Period</td>
+            <td class="num">${data.financial.paybackYears > 0 && data.financial.paybackYears < 100 ? fmt(data.financial.paybackYears, 1) : 'N/A'}</td>
+            <td>${data.financial.paybackYears > 0 && data.financial.paybackYears < 100 ? 'years' : ''}</td>
+          </tr>
+          <tr style="background:#ecfdf5;">
+            <td>Net Present Value (10 years)</td>
+            <td class="num">${fmtNum(Math.round(data.financial.npvKes))}</td>
+            <td>KES</td>
+          </tr>
+          <tr>
+            <td>Internal Rate of Return (IRR)</td>
+            <td class="num">${fmt(data.financial.irrPct, 1)}</td>
+            <td>%</td>
+          </tr>
+          <tr>
+            <td>LCOE (Levelised Cost of Energy)</td>
+            <td class="num">${fmt(data.financial.lcoeKesPerKwh, 2)}</td>
+            <td>KES/kWh</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    ` : ''}
+
+    <!-- Daily Summary Table -->
+    <div class="section">
+      <div class="section-title">
+        <span class="section-number">${data.recommendation && data.financial ? '11' : data.recommendation || data.financial ? '10' : '9'}</span>
         <span>Daily Summary</span>
       </div>
 
