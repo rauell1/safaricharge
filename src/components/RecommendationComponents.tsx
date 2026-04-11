@@ -29,7 +29,8 @@ import {
   getSolarDataForLocation
 } from '@/lib/nasa-power-api';
 import type { HardwareRecommendation, LoadProfile } from '@/lib/recommendation-engine';
-import { generateRecommendation } from '@/lib/recommendation-engine';
+import { generateRecommendation, createLoadProfileFromSimulation } from '@/lib/recommendation-engine';
+import type { SimulationMinuteRecord } from '@/types/simulation-core';
 
 interface LocationSelectorProps {
   onLocationSelected: (
@@ -760,7 +761,13 @@ const DEFAULT_LOAD_PROFILE: LoadProfile = {
   peakHoursLoadPct: 60,
 };
 
-export function RecommendationComponents({ solarData }: { solarData: SolarIrradianceData }) {
+export function RecommendationComponents({
+  solarData,
+  minuteData = [],
+}: {
+  solarData: SolarIrradianceData;
+  minuteData?: SimulationMinuteRecord[];
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<LocationCoordinates>(KENYA_LOCATIONS[0]);
   const [currentSolarData, setCurrentSolarData] = useState<SolarIrradianceData>(solarData);
@@ -773,7 +780,14 @@ export function RecommendationComponents({ solarData }: { solarData: SolarIrradi
   const handleGenerate = () => {
     setIsGenerating(true);
     try {
-      const rec = generateRecommendation(DEFAULT_LOAD_PROFILE, currentSolarData);
+      const loadProfile = minuteData.length > 0
+        ? createLoadProfileFromSimulation(minuteData)
+        : DEFAULT_LOAD_PROFILE;
+      const rec = generateRecommendation(loadProfile, currentSolarData, {
+        batteryPreference: 'auto',
+        gridBackupRequired: true,
+        autonomyDays: 1.5,
+      });
       setRecommendation(rec);
     } finally {
       setIsGenerating(false);
@@ -782,6 +796,14 @@ export function RecommendationComponents({ solarData }: { solarData: SolarIrradi
 
   return (
     <>
+      {minuteData.length === 0 && (
+        <div className="flex items-start gap-3 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-200">
+          <Info size={16} className="mt-0.5 flex-shrink-0" />
+          <span>
+            <strong>Tip:</strong> Run the simulation first for more accurate, data-driven recommendations. Without simulation data the engine uses default load assumptions.
+          </span>
+        </div>
+      )}
       <button
         onClick={() => setIsOpen(true)}
         className="flex items-center gap-2 px-6 py-3 bg-sky-600 text-white font-semibold rounded-xl shadow hover:bg-sky-700 transition-colors"
@@ -792,7 +814,7 @@ export function RecommendationComponents({ solarData }: { solarData: SolarIrradi
       <RecommendationPanel
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        simulationData={[]}
+        simulationData={minuteData}
         solarData={currentSolarData}
         currentLocation={currentLocation}
         recommendation={recommendation}

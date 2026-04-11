@@ -10,7 +10,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Sparkles, X, Send, Loader2 } from 'lucide-react';
-import { buildAiSystemData } from './helpers';
+import { buildAiSystemData, buildLearningContext } from './helpers';
 import type { AssistantProps } from '@/types/dashboard';
 
 // ---------------------------------------------------------------------------
@@ -116,7 +116,10 @@ export const SafariChargeAIAssistant = ({
         body: JSON.stringify({
           userQuery: text,
           conversationHistory,
-          systemData: systemSnapshot,
+          systemData: {
+            ...systemSnapshot,
+            learningContext: buildLearningContext(minuteData),
+          },
         }),
       });
 
@@ -160,6 +163,14 @@ export const SafariChargeAIAssistant = ({
 
   const showChips = messages.length <= 2;
 
+  // Derive live values — fall back to last minuteData record when data is null
+  const latest = minuteData?.[minuteData.length - 1];
+  const liveSolar   = data?.solarR        ?? latest?.solarKW        ?? 0;
+  const liveBattery = data?.batteryLevel  ?? latest?.batteryLevelPct ?? 0;
+  const liveNetGrid = data?.netGridPower  ?? ((latest?.gridImportKW ?? 0) - (latest?.gridExportKW ?? 0));
+  const liveEv1V2g  = data?.ev1V2g       ?? false;
+  const liveEv2V2g  = data?.ev2V2g       ?? false;
+
   return (
     <div className="fixed right-0 top-16 bottom-0 w-full md:w-96 bg-[var(--bg-secondary)] shadow-2xl border-l border-[var(--border)] z-[200] flex flex-col">
       {/* Header */}
@@ -184,21 +195,21 @@ export const SafariChargeAIAssistant = ({
 
       {/* Live status bar */}
       <div className="bg-slate-800 px-4 py-2 flex gap-4 text-[10px] font-mono text-slate-400 flex-shrink-0">
-        <span className="text-green-400">☀️ {data.solarR.toFixed(1)}kW</span>
-        <span className="text-purple-400">🔋 {data.batteryLevel.toFixed(0)}%</span>
+        <span className="text-green-400">☀️ {liveSolar.toFixed(1)}kW</span>
+        <span className="text-purple-400">🔋 {liveBattery.toFixed(0)}%</span>
         <span
           className={
-            data.netGridPower > 0.1 ? 'text-red-400' : 'text-sky-400'
+            liveNetGrid > 0.1 ? 'text-red-400' : 'text-sky-400'
           }
         >
           ⚡{' '}
-          {data.netGridPower > 0.1
-            ? `Import ${data.netGridPower.toFixed(1)}kW`
-            : data.netGridPower < -0.1
-              ? `Export ${Math.abs(data.netGridPower).toFixed(1)}kW`
+          {liveNetGrid > 0.1
+            ? `Import ${liveNetGrid.toFixed(1)}kW`
+            : liveNetGrid < -0.1
+              ? `Export ${Math.abs(liveNetGrid).toFixed(1)}kW`
               : 'Grid balanced'}
         </span>
-        {(data.ev1V2g || data.ev2V2g) && (
+        {(liveEv1V2g || liveEv2V2g) && (
           <span className="text-orange-400">V2G↑</span>
         )}
       </div>

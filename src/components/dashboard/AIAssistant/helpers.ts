@@ -258,15 +258,15 @@ export const buildAiSystemData = ({
 
   const liveLoadKw = Math.max(
     0,
-    (data.homeLoad ?? 0) + (data.ev1Load ?? 0) + (data.ev2Load ?? 0)
+    (data?.homeLoad ?? 0) + (data?.ev1Load ?? 0) + (data?.ev2Load ?? 0)
   );
-  const gridImport = totalGridImportKwh || data.totalGridImport || 0;
+  const gridImport = totalGridImportKwh || data?.totalGridImport || 0;
   const gridExport =
     totalGridExportKwh ||
-    (typeof data.feedInEarnings === 'number' ? data.feedInEarnings / FEED_IN_TARIFF_RATE : 0);
+    (typeof data?.feedInEarnings === 'number' ? data.feedInEarnings / FEED_IN_TARIFF_RATE : 0);
   const consumptionKwh =
     totalConsumptionKwh ||
-    Math.max(0, (data.totalSolar ?? 0) + gridImport - gridExport) ||
+    Math.max(0, (data?.totalSolar ?? 0) + gridImport - gridExport) ||
     liveLoadKw * 0.25;
 
   const peakSolarWindow = formatWindow(findPeakHour(hourlySolar), '12:00-15:00');
@@ -322,13 +322,13 @@ export const buildAiSystemData = ({
 
   return {
     solar: {
-      production_kw: Math.max(0, data.solarR ?? 0),
+      production_kw: Math.max(0, data?.solarR ?? 0),
       peak_hours: peakSolarWindow,
-      daily_kwh: totalSolarKwh || data.totalSolar || 0,
+      daily_kwh: totalSolarKwh || data?.totalSolar || 0,
     },
     battery: {
       capacity_kwh: systemConfig?.batteryKwh ?? 0,
-      current_charge: Math.max(0, Math.min(1, (data.batteryLevel ?? 0) / 100)),
+      current_charge: Math.max(0, Math.min(1, (data?.batteryLevel ?? 0) / 100)),
       charge_cycles_today: batteryCyclesToday,
       discharge_pattern: dischargePattern,
     },
@@ -355,5 +355,216 @@ export const buildAiSystemData = ({
         confidence: Number(confidenceImpact.toFixed(1)),
       },
     },
+  };
+};
+
+// ---------------------------------------------------------------------------
+// Learning context builder — derives behavioural patterns from full minuteData
+// ---------------------------------------------------------------------------
+
+export type LearningContext = {
+  peakLoadHour: number;
+  peakSolarHour: number;
+  avgDailySolarKwh: number;
+  avgDailyLoadKwh: number;
+  avgDailySavingsKes: number;
+  selfSufficiencyPct: number;
+  gridDependencyPct: number;
+  avgBatterySocAtMidnight: number;
+  avgBatterySocAtNoon: number;
+  batteryUsagePattern: 'peak-shaving' | 'overnight-backup' | 'balanced';
+  ev1AvgChargingHour: number;
+  ev2AvgChargingHour: number;
+  evTotalDailyKwh: number;
+  peakTimeGridImportPct: number;
+  offPeakSolarExportPct: number;
+  totalSimDays: number;
+  dataConfidence: 'low' | 'medium' | 'high';
+};
+
+export const buildLearningContext = (minuteData: SimulationMinuteRecord[]): LearningContext => {
+  if (!minuteData || minuteData.length === 0) {
+    return {
+      peakLoadHour: 19,
+      peakSolarHour: 12,
+      avgDailySolarKwh: 0,
+      avgDailyLoadKwh: 0,
+      avgDailySavingsKes: 0,
+      selfSufficiencyPct: 0,
+      gridDependencyPct: 100,
+      avgBatterySocAtMidnight: 0,
+      avgBatterySocAtNoon: 50,
+      batteryUsagePattern: 'balanced',
+      ev1AvgChargingHour: 8,
+      ev2AvgChargingHour: 8,
+      evTotalDailyKwh: 0,
+      peakTimeGridImportPct: 0,
+      offPeakSolarExportPct: 0,
+      totalSimDays: 0,
+      dataConfidence: 'low',
+    };
+  }
+
+  // Unique dates
+  const uniqueDates = [...new Set(minuteData.map((d) => d.date))];
+  const totalSimDays = uniqueDates.length;
+  const dataConfidence: LearningContext['dataConfidence'] =
+    totalSimDays >= 14 ? 'high' : totalSimDays >= 3 ? 'medium' : 'low';
+
+  // Hourly averages for load and solar
+  const hourlyLoadSum: Record<number, number> = {};
+  const hourlyLoadCount: Record<number, number> = {};
+  const hourlySolarSum: Record<number, number> = {};
+  const hourlySolarCount: Record<number, number> = {};
+  const hourlyDischargeSum: Record<number, number> = {};
+
+  // Daily totals for averaging
+  const dailySolar: Record<string, number> = {};
+  const dailyLoad: Record<string, number> = {};
+  const dailySavings: Record<string, number> = {};
+  const dailyGridImport: Record<string, number> = {};
+
+  // Battery SoC at specific hours
+  const midnightSoc: number[] = [];
+  const noonSoc: number[] = [];
+
+  // EV charging weighted hours
+  let ev1WeightedHourSum = 0;
+  let ev1TotalLoad = 0;
+  let ev2WeightedHourSum = 0;
+  let ev2TotalLoad = 0;
+  let evTotalKwh = 0;
+
+  // Grid import breakdown (peak vs off-peak)
+  let peakGridImport = 0;
+  let totalGridImport = 0;
+  let offPeakSolarExport = 0;
+  let totalSolarExport = 0;
+
+  for (const d of minuteData) {
+    const stepHours = estimateStepHours(d);
+    const loadKwh = (d.homeLoadKWh ?? 0) + (d.ev1LoadKWh ?? 0) + (d.ev2LoadKWh ?? 0);
+    const solarKwh = d.solarEnergyKWh ?? 0;
+
+    hourlyLoadSum[d.hour] = (hourlyLoadSum[d.hour] ?? 0) + loadKwh;
+    hourlyLoadCount[d.hour] = (hourlyLoadCount[d.hour] ?? 0) + 1;
+    hourlySolarSum[d.hour] = (hourlySolarSum[d.hour] ?? 0) + solarKwh;
+    hourlySolarCount[d.hour] = (hourlySolarCount[d.hour] ?? 0) + 1;
+
+    // Battery discharge by hour
+    if (stepHours > 0 && typeof d.batteryPowerKW === 'number') {
+      const energy = d.batteryPowerKW * stepHours;
+      if (energy < 0) {
+        hourlyDischargeSum[d.hour] = (hourlyDischargeSum[d.hour] ?? 0) + Math.abs(energy);
+      }
+    }
+
+    // Daily aggregates
+    dailySolar[d.date] = (dailySolar[d.date] ?? 0) + solarKwh;
+    dailyLoad[d.date] = (dailyLoad[d.date] ?? 0) + loadKwh;
+    dailySavings[d.date] = (dailySavings[d.date] ?? 0) + (d.savingsKES ?? 0);
+    dailyGridImport[d.date] = (dailyGridImport[d.date] ?? 0) + (d.gridImportKWh ?? 0);
+
+    // Battery SoC snapshots
+    if (d.batteryLevelPct !== undefined) {
+      if (d.hour === 0) midnightSoc.push(d.batteryLevelPct);
+      if (d.hour === 12) noonSoc.push(d.batteryLevelPct);
+    }
+
+    // EV weighted hour
+    const ev1Kwh = d.ev1LoadKWh ?? 0;
+    if (ev1Kwh > 0) {
+      ev1WeightedHourSum += ev1Kwh * d.hour;
+      ev1TotalLoad += ev1Kwh;
+    }
+    const ev2Kwh = d.ev2LoadKWh ?? 0;
+    if (ev2Kwh > 0) {
+      ev2WeightedHourSum += ev2Kwh * d.hour;
+      ev2TotalLoad += ev2Kwh;
+    }
+    evTotalKwh += ev1Kwh + ev2Kwh;
+
+    // Grid import peak/off-peak
+    const gi = d.gridImportKWh ?? 0;
+    totalGridImport += gi;
+    if (d.isPeakTime) peakGridImport += gi;
+
+    // Solar export off-peak
+    const ge = d.gridExportKWh ?? 0;
+    totalSolarExport += ge;
+    if (!d.isPeakTime) offPeakSolarExport += ge;
+  }
+
+  // Peak load hour
+  let peakLoadHour = 19;
+  let maxLoadAvg = -Infinity;
+  for (let h = 0; h < 24; h++) {
+    const avg = hourlyLoadCount[h] ? (hourlyLoadSum[h] ?? 0) / hourlyLoadCount[h] : 0;
+    if (avg > maxLoadAvg) { maxLoadAvg = avg; peakLoadHour = h; }
+  }
+
+  // Peak solar hour
+  let peakSolarHour = 12;
+  let maxSolarAvg = -Infinity;
+  for (let h = 0; h < 24; h++) {
+    const avg = hourlySolarCount[h] ? (hourlySolarSum[h] ?? 0) / hourlySolarCount[h] : 0;
+    if (avg > maxSolarAvg) { maxSolarAvg = avg; peakSolarHour = h; }
+  }
+
+  // Daily averages
+  const daysArr = Object.values(dailySolar);
+  const avgDailySolarKwh = daysArr.length > 0 ? daysArr.reduce((s, v) => s + v, 0) / daysArr.length : 0;
+  const loadArr = Object.values(dailyLoad);
+  const avgDailyLoadKwh = loadArr.length > 0 ? loadArr.reduce((s, v) => s + v, 0) / loadArr.length : 0;
+  const savingsArr = Object.values(dailySavings);
+  const avgDailySavingsKes = savingsArr.length > 0 ? savingsArr.reduce((s, v) => s + v, 0) / savingsArr.length : 0;
+
+  // Self-sufficiency and grid dependency
+  const totalSolar = daysArr.reduce((s, v) => s + v, 0);
+  const totalLoad = loadArr.reduce((s, v) => s + v, 0);
+  const selfSufficiencyPct = totalLoad > 0 ? Math.min(100, (totalSolar / totalLoad) * 100) : 0;
+  const gridDependencyPct = totalLoad > 0 ? Math.min(100, (totalGridImport / totalLoad) * 100) : 0;
+
+  // Battery SoC averages
+  const avgBatterySocAtMidnight = midnightSoc.length > 0 ? midnightSoc.reduce((s, v) => s + v, 0) / midnightSoc.length : 0;
+  const avgBatterySocAtNoon = noonSoc.length > 0 ? noonSoc.reduce((s, v) => s + v, 0) / noonSoc.length : 50;
+
+  // Battery usage pattern — by discharge concentration
+  const peakHoursDischarge = [18, 19, 20, 21, 22].reduce((s, h) => s + (hourlyDischargeSum[h] ?? 0), 0);
+  const overnightDischarge = [22, 23, 0, 1, 2, 3, 4, 5, 6].reduce((s, h) => s + (hourlyDischargeSum[h] ?? 0), 0);
+  const totalDischarge = Object.values(hourlyDischargeSum).reduce((s, v) => s + v, 0);
+  let batteryUsagePattern: LearningContext['batteryUsagePattern'] = 'balanced';
+  if (totalDischarge > 0) {
+    if (peakHoursDischarge / totalDischarge > 0.5) batteryUsagePattern = 'peak-shaving';
+    else if (overnightDischarge / totalDischarge > 0.5) batteryUsagePattern = 'overnight-backup';
+  }
+
+  // EV charging hours
+  const ev1AvgChargingHour = ev1TotalLoad > 0 ? ev1WeightedHourSum / ev1TotalLoad : 8;
+  const ev2AvgChargingHour = ev2TotalLoad > 0 ? ev2WeightedHourSum / ev2TotalLoad : 8;
+  const evTotalDailyKwh = totalSimDays > 0 ? evTotalKwh / totalSimDays : 0;
+
+  // Tariff optimisation
+  const peakTimeGridImportPct = totalGridImport > 0 ? (peakGridImport / totalGridImport) * 100 : 0;
+  const offPeakSolarExportPct = totalSolarExport > 0 ? (offPeakSolarExport / totalSolarExport) * 100 : 0;
+
+  return {
+    peakLoadHour,
+    peakSolarHour,
+    avgDailySolarKwh: Number(avgDailySolarKwh.toFixed(2)),
+    avgDailyLoadKwh: Number(avgDailyLoadKwh.toFixed(2)),
+    avgDailySavingsKes: Number(avgDailySavingsKes.toFixed(2)),
+    selfSufficiencyPct: Number(selfSufficiencyPct.toFixed(1)),
+    gridDependencyPct: Number(gridDependencyPct.toFixed(1)),
+    avgBatterySocAtMidnight: Number(avgBatterySocAtMidnight.toFixed(1)),
+    avgBatterySocAtNoon: Number(avgBatterySocAtNoon.toFixed(1)),
+    batteryUsagePattern,
+    ev1AvgChargingHour: Number(ev1AvgChargingHour.toFixed(1)),
+    ev2AvgChargingHour: Number(ev2AvgChargingHour.toFixed(1)),
+    evTotalDailyKwh: Number(evTotalDailyKwh.toFixed(2)),
+    peakTimeGridImportPct: Number(peakTimeGridImportPct.toFixed(1)),
+    offPeakSolarExportPct: Number(offPeakSolarExportPct.toFixed(1)),
+    totalSimDays,
+    dataConfidence,
   };
 };
