@@ -8,6 +8,8 @@ import {
   DollarSign,
   Zap,
   BookMarked,
+  Lightbulb,
+  Bot,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -25,7 +27,14 @@ import {
 } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 
-export type DashboardSection = 'dashboard' | 'simulation' | 'configuration' | 'financial' | 'scenarios';
+export type DashboardSection =
+  | 'dashboard'
+  | 'simulation'
+  | 'configuration'
+  | 'financial'
+  | 'scenarios'
+  | 'recommendation'
+  | 'ai-assistant';
 
 export interface SidebarContextMetric {
   label: string;
@@ -55,18 +64,28 @@ export function DashboardSidebar({
   const pathname = usePathname();
   const resolvedActive = activeSection ?? (() => {
     if (!pathname) return 'dashboard';
-    if (pathname.includes('simulation')) return 'simulation';
-    if (pathname.includes('configuration')) return 'configuration';
-    if (pathname.includes('financial')) return 'financial';
-    if (pathname.includes('scenarios')) return 'scenarios';
+    if (pathname.includes('simulation'))     return 'simulation';
+    if (pathname.includes('configuration'))  return 'configuration';
+    if (pathname.includes('financial'))      return 'financial';
+    if (pathname.includes('scenarios'))      return 'scenarios';
+    if (pathname.includes('recommendation')) return 'recommendation';
+    if (pathname.includes('ai-assistant'))   return 'ai-assistant';
     return 'dashboard';
   })();
-  const mainMenuItems: Array<{ id: DashboardSection; label: string; icon: React.ElementType; href?: string }> = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'simulation', label: 'Simulation', icon: FlaskConical },
-    { id: 'configuration', label: 'System Config', icon: SlidersHorizontal },
-    { id: 'financial', label: 'Financial Analysis', icon: DollarSign },
-    { id: 'scenarios', label: 'Scenarios', icon: BookMarked, href: '/scenarios' },
+
+  const mainMenuItems: Array<{
+    id: DashboardSection;
+    label: string;
+    icon: React.ElementType;
+    href?: string;
+  }> = [
+    { id: 'dashboard',      label: 'Dashboard',         icon: LayoutDashboard },
+    { id: 'simulation',     label: 'Simulation',        icon: FlaskConical },
+    { id: 'configuration',  label: 'System Config',     icon: SlidersHorizontal },
+    { id: 'financial',      label: 'Financial Analysis',icon: DollarSign },
+    { id: 'scenarios',      label: 'Scenarios',         icon: BookMarked, href: '/scenarios' },
+    { id: 'recommendation', label: 'Get Recommendation',icon: Lightbulb },
+    { id: 'ai-assistant',   label: 'AI Assistant',      icon: Bot },
   ];
 
   return (
@@ -94,7 +113,10 @@ export function DashboardSidebar({
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     asChild={!!item.href}
-                    isActive={resolvedActive === item.id || (!!item.href && pathname?.startsWith(item.href))}
+                    isActive={
+                      resolvedActive === item.id ||
+                      (!!item.href && !!pathname?.startsWith(item.href))
+                    }
                     onClick={() => !item.href && onSectionChange?.(item.id)}
                     className="group relative rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] data-[active=true]:bg-[var(--bg-card)] data-[active=true]:shadow-[0_10px_30px_rgba(0,0,0,0.25)] data-[active=true]:text-[var(--text-primary)]"
                   >
