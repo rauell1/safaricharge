@@ -12,6 +12,7 @@
  * - timeRange: Time filter for data views
  * - accumulators: Running totals (energy, savings, carbon offset)
  * - minuteData: Complete simulation history for reports
+ * - evControls: User-controlled EV charging state (on/off, rate)
  */
 
 import { create } from 'zustand';
@@ -88,6 +89,22 @@ export interface Accumulators {
 // Time range filter options
 export type TimeRange = 'today' | 'week' | 'month' | 'year' | 'all';
 
+// ── EV Charging Controls ──────────────────────────────────────────────────────
+
+export interface EVControl {
+  /** Whether the user has enabled charging for this EV */
+  isCharging: boolean;
+  /** Current charge rate set by the user (kW) */
+  chargeRateKW: number;
+  /** Hardware maximum charge rate for this EV (kW) */
+  maxRateKW: number;
+}
+
+export interface EVControls {
+  ev1: EVControl;
+  ev2: EVControl;
+}
+
 // ── Scenario Snapshots ────────────────────────────────────────────────────────
 
 export interface SystemConfigSnapshot {
@@ -134,7 +151,6 @@ export interface SavedScenario {
 
 // ── Energy System State ───────────────────────────────────────────────────────
 
-// Energy System State
 interface EnergySystemState {
   // Core nodes
   nodes: Record<NodeType, EnergyNode>;
@@ -171,6 +187,9 @@ interface EnergySystemState {
     };
   };
 
+  // EV charging controls (user-controlled)
+  evControls: EVControls;
+
   // Actions
   updateNode: (nodeType: NodeType, updates: Partial<EnergyNode>) => void;
   updateFlows: (flows: EnergyFlow[]) => void;
@@ -186,6 +205,10 @@ interface EnergySystemState {
   }) => void;
   updateSystemConfig: (config: Partial<EnergySystemState['systemConfig']>) => void;
   resetSystem: () => void;
+
+  // EV control actions
+  setEVCharging: (ev: 'ev1' | 'ev2', charging: boolean) => void;
+  setEVChargeRate: (ev: 'ev1' | 'ev2', rateKW: number) => void;
 
   // Scenarios
   scenarios: SavedScenario[];
@@ -250,6 +273,11 @@ const initialAccumulators: Accumulators = {
   feedInEarnings: 0,
 };
 
+const initialEVControls: EVControls = {
+  ev1: { isCharging: false, chargeRateKW: 7,  maxRateKW: 11 },
+  ev2: { isCharging: false, chargeRateKW: 11, maxRateKW: 22 },
+};
+
 // Create the store
 export const useEnergySystemStore = create<EnergySystemState>((set) => ({
   nodes: initialNodes,
@@ -262,6 +290,7 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
   simSpeed: 1,
   accumulators: initialAccumulators,
   minuteData: [],
+  evControls: initialEVControls,
   systemConfig: {
     solarCapacityKW: 10,
     batteryCapacityKWh: 50,
@@ -327,7 +356,25 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
       simSpeed: 1,
       accumulators: initialAccumulators,
       minuteData: [],
+      evControls: initialEVControls,
     }),
+
+  // ── EV control actions ──────────────────────────────────────────────────
+  setEVCharging: (ev, charging) =>
+    set((state) => ({
+      evControls: {
+        ...state.evControls,
+        [ev]: { ...state.evControls[ev], isCharging: charging },
+      },
+    })),
+
+  setEVChargeRate: (ev, rateKW) =>
+    set((state) => ({
+      evControls: {
+        ...state.evControls,
+        [ev]: { ...state.evControls[ev], chargeRateKW: rateKW },
+      },
+    })),
 
   saveScenario: (name, finance, location) =>
     set((state) => {
