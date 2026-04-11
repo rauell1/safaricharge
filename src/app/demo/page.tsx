@@ -155,14 +155,20 @@ export default function ModularDashboardDemo({
   // ─────────────────────────────────────────────────────────────────────────
 
   const handleSaveScenario = useCallback((name: string) => {
+    const snap = buildFinancialSnapshot({
+      minuteData: minuteData as Parameters<typeof buildFinancialSnapshot>[0]['minuteData'],
+      solarData: NAIROBI_SOLAR_DATA,
+      inputs: financialInputs,
+      evCapacityKw: 22,
+    });
     saveScenario(
       name,
       {
-        capexTotal:     0,
-        npvKes:         0,
-        irrPct:         0,
-        lcoeKesPerKwh:  0,
-        paybackYears:   0,
+        capexTotal:    snap.capex.total,
+        npvKes:        snap.npvKes,
+        irrPct:        snap.irrPct,
+        lcoeKesPerKwh: snap.lcoeKesPerKwh,
+        paybackYears:  snap.paybackYears,
       },
       { name: activeLocation.name, latitude: activeLocation.latitude, longitude: activeLocation.longitude }
     );
@@ -170,7 +176,7 @@ export default function ModularDashboardDemo({
       title: 'Scenario saved',
       description: `"${name}" has been saved. View it on the Scenarios page.`,
     });
-  }, [saveScenario, toast, activeLocation]);
+  }, [saveScenario, toast, activeLocation, minuteData, financialInputs]);
 
   const latestPoint  = minuteData[minuteData.length - 1];
   const solarPower   = latestPoint?.solarKW          ?? solarNode.powerKW   ?? 0;

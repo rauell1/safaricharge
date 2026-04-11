@@ -16,8 +16,26 @@
  */
 
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { SystemConfiguration } from '@/lib/system-config';
 import { DEFAULT_SYSTEM_CONFIG } from '@/lib/system-config';
+
+// ── Safe localStorage storage (falls back to in-memory if blocked) ────────────
+function safeLocalStorage() {
+  try {
+    localStorage.setItem('__sc_test__', '1');
+    localStorage.removeItem('__sc_test__');
+    return createJSONStorage(() => localStorage);
+  } catch {
+    // localStorage blocked (e.g. sandboxed iframe) — use in-memory fallback
+    const mem: Record<string, string> = {};
+    return createJSONStorage(() => ({
+      getItem: (k: string) => mem[k] ?? null,
+      setItem: (k: string, v: string) => { mem[k] = v; },
+      removeItem: (k: string) => { delete mem[k]; },
+    }));
+  }
+}
 
 // Node types in the energy system
 export type NodeType = 'solar' | 'battery' | 'grid' | 'home' | 'ev1' | 'ev2';
@@ -203,6 +221,7 @@ interface EnergySystemState {
   ) => void;
   deleteScenario: (id: string) => void;
   loadScenario: (id: string) => void;
+  renameScenario: (id: string, newName: string) => void;
 }
 
 // Initial state
@@ -257,8 +276,10 @@ const initialAccumulators: Accumulators = {
   feedInEarnings: 0,
 };
 
-// Create the store
-export const useEnergySystemStore = create<EnergySystemState>((set) => ({
+// Create the store — scenarios slice is persisted to localStorage
+export const useEnergySystemStore = create<EnergySystemState>()(
+  persist(
+    (set) => ({
   nodes: initialNodes,
   flows: [],
   selectedNode: null,
@@ -364,7 +385,7 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
           : 0;
 
       const scenario: SavedScenario = {
-        id: `scenario-${Date.now()}`,
+        id: crypto.randomUUID(),
         name,
         createdAt: new Date().toISOString(),
         system: { ...state.systemConfig },
@@ -380,7 +401,9 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
         location,
       };
 
-      return { scenarios: [...state.scenarios, scenario] };
+      const updated = [...state.scenarios, scenario];
+      // Keep max 20 — drop oldest if exceeded
+      return { scenarios: updated.length > 20 ? updated.slice(updated.length - 20) : updated };
     }),
 
   deleteScenario: (id) =>
@@ -394,4 +417,18 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
       if (!scenario) return {};
       return { systemConfig: { ...scenario.system } };
     }),
-}));
+
+  renameScenario: (id, newName) =>
+    set((state) => ({
+      scenarios: state.scenarios.map((s) =>
+        s.id === id ? { ...s, name: newName } : s
+      ),
+    })),
+    }),
+    {
+      name: 'safaricharge-scenarios',
+      storage: safeLocalStorage(),
+      partialize: (state) => ({ scenarios: state.scenarios }),
+    }
+  )
+);

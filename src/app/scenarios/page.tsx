@@ -1,12 +1,19 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { Trash2, Upload, ArrowLeft, BookMarked, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import {
+  Trash2, Upload, ArrowLeft, BookMarked, TrendingUp, TrendingDown, Minus,
+  FileDown, Copy, BarChart2,
+} from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid,
+} from 'recharts';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -39,6 +46,10 @@ function formatDate(iso: string) {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+function formatDateFilename(d: Date) {
+  return d.toISOString().slice(0, 10);
 }
 
 // ── Delta indicator ────────────────────────────────────────────────────────────
@@ -85,15 +96,92 @@ function DeltaCell({ value, current, baseline, higherIsBetter = true }: DeltaCel
   );
 }
 
+// ── Inline rename cell ────────────────────────────────────────────────────────
+
+interface RenameCellProps {
+  id: string;
+  name: string;
+  isBaseline: boolean;
+  onRename: (id: string, newName: string) => void;
+}
+
+function RenameCell({ id, name, isBaseline, onRename }: RenameCellProps) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(name);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const startEdit = () => {
+    setDraft(name);
+    setEditing(true);
+    setTimeout(() => inputRef.current?.select(), 0);
+  };
+
+  const commit = () => {
+    const trimmed = draft.trim();
+    if (trimmed && trimmed !== name) onRename(id, trimmed);
+    setEditing(false);
+  };
+
+  const cancel = () => {
+    setDraft(name);
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <span className="flex items-center gap-1">
+        <input
+          ref={inputRef}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') commit();
+            if (e.key === 'Escape') cancel();
+          }}
+          onBlur={commit}
+          autoFocus
+          className="bg-[var(--bg-card-muted)] border border-[var(--border)] text-[var(--text-primary)] text-sm rounded px-2 py-0.5 w-40 focus:outline-none focus:ring-1 focus:ring-[var(--solar)]"
+        />
+      </span>
+    );
+  }
+
+  return (
+    <span
+      onDoubleClick={startEdit}
+      title="Double-click to rename"
+      className="cursor-text select-none flex items-center gap-1.5 font-semibold text-[var(--text-primary)]"
+    >
+      {name}
+      {isBaseline && (
+        <Badge className="ml-1 text-[10px] px-1.5 py-0 bg-[var(--solar-soft)] text-[var(--solar)] border-[var(--solar)]/20">
+          baseline
+        </Badge>
+      )}
+    </span>
+  );
+}
+
+// ── Scenario colours ──────────────────────────────────────────────────────────
+
+const SCENARIO_COLOURS = [
+  'var(--solar)',
+  'var(--battery)',
+  'var(--grid)',
+  '#a78bfa',
+];
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function ScenariosPage() {
   const scenarios = useEnergySystemStore((s) => s.scenarios);
   const deleteScenario = useEnergySystemStore((s) => s.deleteScenario);
   const loadScenario = useEnergySystemStore((s) => s.loadScenario);
+  const renameScenario = useEnergySystemStore((s) => s.renameScenario);
   const { toast } = useToast();
 
   const [baselineId, setBaselineId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const baseline: SavedScenario | undefined = scenarios.find(
     (s) => s.id === baselineId
@@ -102,6 +190,7 @@ export default function ScenariosPage() {
   const handleDelete = (id: string, name: string) => {
     deleteScenario(id);
     if (baselineId === id) setBaselineId(null);
+    setSelectedIds((prev) => prev.filter((x) => x !== id));
     toast({ title: 'Scenario deleted', description: `"${name}" was removed.` });
   };
 
@@ -112,6 +201,83 @@ export default function ScenariosPage() {
       description: `"${name}" configuration restored to dashboard.`,
     });
   };
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (prev.length >= 4) return prev; // max 4
+      return [...prev, id];
+    });
+  }, []);
+
+  // ── Export helpers ───────────────────────────────────────────────────────
+
+  const handleExportCsv = () => {
+    const headers = [
+      'Name', 'Saved', 'PV kW', 'Battery kWh', 'Solar kWh',
+      'Self-suff %', 'Avg SOC %', 'Savings KES', 'NPV KES', 'IRR %', 'Payback yr',
+    ];
+    const rows = scenarios.map((s) => [
+      s.name,
+      new Date(s.createdAt).toISOString(),
+      s.system.solarCapacityKW,
+      s.system.batteryCapacityKWh,
+      s.performance.totalSolarKWh.toFixed(2),
+      s.performance.selfSufficiencyPct.toFixed(2),
+      s.performance.avgBatterySOC.toFixed(2),
+      s.performance.totalSavingsKES.toFixed(0),
+      s.finance.npvKes.toFixed(0),
+      s.finance.irrPct.toFixed(2),
+      s.finance.paybackYears.toFixed(2),
+    ]);
+    const csv = [headers, ...rows]
+      .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `safaricharge-scenarios-${formatDateFilename(new Date())}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: 'CSV exported', description: `${scenarios.length} scenarios downloaded.` });
+  };
+
+  const handleCopyJson = async () => {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(scenarios, null, 2));
+      toast({ title: 'Copied to clipboard', description: 'Scenarios JSON copied.' });
+    } catch {
+      toast({ title: 'Copy failed', description: 'Could not access clipboard.', variant: 'destructive' });
+    }
+  };
+
+  // ── Chart data ───────────────────────────────────────────────────────────
+
+  const selectedScenarios = scenarios.filter((s) => selectedIds.includes(s.id));
+
+  const chartData = [
+    {
+      kpi: 'Solar (kWh)',
+      ...Object.fromEntries(selectedScenarios.map((s) => [s.name, Number(s.performance.totalSolarKWh.toFixed(1))])),
+    },
+    {
+      kpi: 'Self-suff (%)',
+      ...Object.fromEntries(selectedScenarios.map((s) => [s.name, Number(s.performance.selfSufficiencyPct.toFixed(1))])),
+    },
+    {
+      kpi: 'Savings (KES)',
+      ...Object.fromEntries(selectedScenarios.map((s) => [s.name, Number(s.performance.totalSavingsKES.toFixed(0))])),
+    },
+    {
+      kpi: 'NPV (KES)',
+      ...Object.fromEntries(selectedScenarios.map((s) => [s.name, Number(s.finance.npvKes.toFixed(0))])),
+    },
+    {
+      kpi: 'Payback (yr)',
+      ...Object.fromEntries(selectedScenarios.map((s) => [s.name, Number(s.finance.paybackYears.toFixed(2))])),
+    },
+  ];
 
   return (
     <DashboardLayout activeSection="scenarios">
@@ -142,11 +308,35 @@ export default function ScenariosPage() {
                 </p>
               </div>
             </div>
-            {scenarios.length > 0 && (
-              <Badge className="bg-[var(--solar-soft)] text-[var(--solar)] border-[var(--solar)]/20 px-3 py-1">
-                {scenarios.length} scenario{scenarios.length !== 1 ? 's' : ''} saved
-              </Badge>
-            )}
+            <div className="flex items-center gap-2 flex-wrap">
+              {scenarios.length > 0 && (
+                <Badge className="bg-[var(--solar-soft)] text-[var(--solar)] border-[var(--solar)]/20 px-3 py-1">
+                  {scenarios.length} scenario{scenarios.length !== 1 ? 's' : ''} saved
+                </Badge>
+              )}
+              {scenarios.length > 0 && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleExportCsv}
+                    className="border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  >
+                    <FileDown className="h-3.5 w-3.5 mr-1.5" />
+                    Export CSV
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleCopyJson}
+                    className="border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  >
+                    <Copy className="h-3.5 w-3.5 mr-1.5" />
+                    Copy JSON
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Empty state */}
@@ -222,6 +412,9 @@ export default function ScenariosPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="border-[var(--border)] hover:bg-transparent">
+                      <TableHead className="w-10 text-[var(--text-tertiary)] font-semibold">
+                        <span className="sr-only">Select for chart</span>
+                      </TableHead>
                       <TableHead className="text-[var(--text-tertiary)] font-semibold">Name</TableHead>
                       <TableHead className="text-[var(--text-tertiary)] font-semibold">Saved</TableHead>
                       <TableHead className="text-[var(--text-tertiary)] font-semibold">PV (kW)</TableHead>
@@ -240,6 +433,8 @@ export default function ScenariosPage() {
                     {scenarios.map((s) => {
                       const isBaseline = s.id === baselineId;
                       const b = baseline && !isBaseline ? baseline : null;
+                      const isChecked = selectedIds.includes(s.id);
+                      const colour = SCENARIO_COLOURS[selectedIds.indexOf(s.id) % SCENARIO_COLOURS.length];
                       return (
                         <TableRow
                           key={s.id}
@@ -249,13 +444,23 @@ export default function ScenariosPage() {
                               : 'hover:bg-[var(--bg-card-muted)]/50'
                           }`}
                         >
-                          <TableCell className="font-semibold text-[var(--text-primary)]">
-                            {s.name}
-                            {isBaseline && (
-                              <Badge className="ml-2 text-[10px] px-1.5 py-0 bg-[var(--solar-soft)] text-[var(--solar)] border-[var(--solar)]/20">
-                                baseline
-                              </Badge>
-                            )}
+                          {/* Checkbox for chart selection */}
+                          <TableCell className="pr-0">
+                            <Checkbox
+                              checked={isChecked}
+                              onCheckedChange={() => toggleSelect(s.id)}
+                              disabled={!isChecked && selectedIds.length >= 4}
+                              aria-label={`Select ${s.name} for chart comparison`}
+                              style={isChecked ? { accentColor: colour } : undefined}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <RenameCell
+                              id={s.id}
+                              name={s.name}
+                              isBaseline={isBaseline}
+                              onRename={renameScenario}
+                            />
                           </TableCell>
                           <TableCell className="text-[var(--text-secondary)] text-xs">
                             {formatDate(s.createdAt)}
@@ -424,6 +629,80 @@ export default function ScenariosPage() {
               </span>
             </div>
           )}
+
+          {/* Chart comparison — only shown when 2-4 scenarios are selected */}
+          {selectedScenarios.length >= 2 && (
+            <Card className="bg-[var(--bg-card)] border-[var(--border)] shadow-card">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide flex items-center gap-2">
+                  <BarChart2 className="h-4 w-4 text-[var(--solar)]" />
+                  Compare Charts ({selectedScenarios.length} selected)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-[var(--text-tertiary)] mb-4">
+                  Tip: double-click a scenario name in the table to rename it.
+                </p>
+                <ResponsiveContainer width="100%" height={340}>
+                  <BarChart
+                    data={chartData}
+                    margin={{ top: 8, right: 16, left: 16, bottom: 8 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis
+                      dataKey="kpi"
+                      tick={{ fill: 'var(--text-secondary)', fontSize: 11 }}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fill: 'var(--text-secondary)', fontSize: 11 }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v: number) =>
+                        Math.abs(v) >= 1000
+                          ? `${(v / 1000).toFixed(0)}k`
+                          : String(v)
+                      }
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'var(--bg-card)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 8,
+                        color: 'var(--text-primary)',
+                        fontSize: 12,
+                      }}
+                      formatter={(value: number, name: string) => {
+                        const formatted =
+                          typeof value === 'number' && Math.abs(value) >= 100
+                            ? `KES ${value.toLocaleString('en-KE', { maximumFractionDigits: 0 })}`
+                            : String(value);
+                        return [formatted, name];
+                      }}
+                    />
+                    <Legend
+                      wrapperStyle={{ fontSize: 12, color: 'var(--text-secondary)' }}
+                    />
+                    {selectedScenarios.map((s, i) => (
+                      <Bar
+                        key={s.id}
+                        dataKey={s.name}
+                        fill={SCENARIO_COLOURS[i % SCENARIO_COLOURS.length]}
+                        radius={[3, 3, 0, 0]}
+                      />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+
+          {scenarios.length >= 2 && selectedScenarios.length < 2 && (
+            <p className="text-xs text-[var(--text-tertiary)] text-center py-2">
+              Select 2–4 scenarios using the checkboxes to compare them in a chart.
+            </p>
+          )}
+
         </div>
       </main>
     </DashboardLayout>
