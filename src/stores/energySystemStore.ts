@@ -364,7 +364,6 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
           : 0;
 
       const scenario: SavedScenario = {
-        // crypto.randomUUID() for collision-resistant IDs
         id: crypto.randomUUID(),
         name,
         createdAt: new Date().toISOString(),
