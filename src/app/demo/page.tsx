@@ -12,6 +12,7 @@ import { TimeRangeSwitcher } from '@/components/dashboard/TimeRangeSwitcher';
 import { WeatherCard } from '@/components/dashboard/WeatherCard';
 import { BatteryStatusCard } from '@/components/dashboard/BatteryStatusCard';
 import { InsightsBanner } from '@/components/dashboard/InsightsBanner';
+import { EngineeringKpisCard } from '@/components/dashboard/EngineeringKpisCard';
 import DailyEnergyGraph from '@/components/DailyEnergyGraph';
 import { SystemVisualization } from '@/components/dashboard/SystemVisualization';
 import { useDemoEnergySystem } from '@/hooks/useDemoEnergySystem';
@@ -889,6 +890,9 @@ export default function ModularDashboardDemo({
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Engineering KPIs */}
+              <EngineeringKpisCard />
 
               {/* Alerts — live from store */}
               <AlertsList />

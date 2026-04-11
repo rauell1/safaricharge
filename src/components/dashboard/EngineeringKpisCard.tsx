@@ -15,6 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
 import { computeEngineeringKpis } from '@/lib/engineeringKpis';
 
@@ -65,19 +66,40 @@ export function EngineeringKpisCard() {
   const minuteData = useEnergySystemStore((s) => s.minuteData);
   const systemConfig = useEnergySystemStore((s) => s.systemConfig);
   const accumulators = useEnergySystemStore((s) => s.accumulators);
+  const solarData = useEnergySystemStore((s) => s.solarData);
+  const currentDate = useEnergySystemStore((s) => s.currentDate);
 
   const kpis = useMemo(() => {
     const durationHours = minuteData.length / 60; // each record = 1 minute
+    const effectiveDuration = Math.max(durationHours, 1);
+
+    // Derive irradiance from monthly PSH for the current month
+    const currentMonth = new Date(currentDate).getMonth(); // 0-indexed
+    const monthlyPSH = solarData.monthlyAvgKwhPerKwp[currentMonth]; // kWh/kWp ≈ PSH
+    const irradianceKWhPerM2 = monthlyPSH * (effectiveDuration / 24); // scale to elapsed period
 
     return computeEngineeringKpis({
       totalSolarKWh: accumulators.solar,
       dcCapacityKWp: systemConfig.solarCapacityKW,
-      durationHours: Math.max(durationHours, 1),
+      durationHours: effectiveDuration,
       totalBatDischargeKWh: accumulators.batDischargeKwh,
       batteryCapacityKWh: systemConfig.batteryCapacityKWh,
-      // irradiance not yet available — PR will be estimated from PSH
+      planeIrradianceKWhPerM2: irradianceKWhPerM2 > 0 ? irradianceKWhPerM2 : undefined,
     });
-  }, [minuteData.length, accumulators, systemConfig]);
+  }, [minuteData.length, accumulators, systemConfig, solarData, currentDate]);
+
+  // Battery cycles sparkline — sample every 60 points (≈ 1 simulated hour)
+  const sparkData = useMemo(() => {
+    const batteryCapacityKWh = systemConfig.batteryCapacityKWh;
+    return minuteData
+      .filter((_, i) => i % 60 === 0)
+      .map((_, i, arr) => {
+        const dischargeKwh = arr
+          .slice(0, i + 1)
+          .reduce((sum, p) => sum + Math.max(0, -p.batteryPowerKW) * (24 / 420), 0);
+        return { t: i, cycles: batteryCapacityKWh > 0 ? dischargeKwh / batteryCapacityKWh : 0 };
+      });
+  }, [minuteData, systemConfig.batteryCapacityKWh]);
 
   const noData = minuteData.length === 0;
 
@@ -133,6 +155,24 @@ export function EngineeringKpisCard() {
             tooltip="Equivalent full cycles = cumulative discharge ÷ nominal capacity. Lithium-ion typically rated for 3 000–6 000 cycles (80 % DoD)."
           />
         </div>
+        {sparkData.length >= 2 && (
+          <div className="mt-4">
+            <p className="text-xs text-[var(--text-tertiary)] mb-1">Cycle history</p>
+            <ResponsiveContainer width="100%" height={48}>
+              <AreaChart data={sparkData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                <Area
+                  type="monotone"
+                  dataKey="cycles"
+                  stroke="var(--battery)"
+                  fill="var(--battery-soft)"
+                  strokeWidth={1.5}
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -438,6 +438,10 @@ export default function ScenariosPage() {
                       <TableHead className="text-[var(--text-tertiary)] font-semibold">NPV</TableHead>
                       <TableHead className="text-[var(--text-tertiary)] font-semibold">IRR</TableHead>
                       <TableHead className="text-[var(--text-tertiary)] font-semibold">Payback</TableHead>
+                      <TableHead className="text-[var(--text-tertiary)] font-semibold">Spec. Yield</TableHead>
+                      <TableHead className="text-[var(--text-tertiary)] font-semibold">Perf. Ratio</TableHead>
+                      <TableHead className="text-[var(--text-tertiary)] font-semibold">Cap. Factor</TableHead>
+                      <TableHead className="text-[var(--text-tertiary)] font-semibold">Bat. Cycles</TableHead>
                       <TableHead className="text-[var(--text-tertiary)] font-semibold text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -591,6 +595,62 @@ export default function ScenariosPage() {
                             ) : (
                               <span className="text-[var(--text-primary)]">
                                 {s.finance.paybackYears ? `${fmt(s.finance.paybackYears)} yr` : '—'}
+                              </span>
+                            )}
+                          </TableCell>
+                          {/* Spec. Yield */}
+                          <TableCell>
+                            {b ? (
+                              <DeltaCell
+                                value={s.engineering ? `${fmt(s.engineering.specificYieldKWhPerKWp)} kWh/kWp` : '—'}
+                                current={s.engineering?.specificYieldKWhPerKWp ?? 0}
+                                baseline={b.engineering?.specificYieldKWhPerKWp ?? 0}
+                              />
+                            ) : (
+                              <span className="text-[var(--text-primary)]">
+                                {s.engineering ? `${fmt(s.engineering.specificYieldKWhPerKWp)} kWh/kWp` : '—'}
+                              </span>
+                            )}
+                          </TableCell>
+                          {/* Perf. Ratio */}
+                          <TableCell>
+                            {b ? (
+                              <DeltaCell
+                                value={s.engineering ? `${fmt(s.engineering.performanceRatioPct)}%` : '—'}
+                                current={s.engineering?.performanceRatioPct ?? 0}
+                                baseline={b.engineering?.performanceRatioPct ?? 0}
+                              />
+                            ) : (
+                              <span className="text-[var(--text-primary)]">
+                                {s.engineering ? `${fmt(s.engineering.performanceRatioPct)}%` : '—'}
+                              </span>
+                            )}
+                          </TableCell>
+                          {/* Cap. Factor */}
+                          <TableCell>
+                            {b ? (
+                              <DeltaCell
+                                value={s.engineering ? `${fmt(s.engineering.capacityFactorPct)}%` : '—'}
+                                current={s.engineering?.capacityFactorPct ?? 0}
+                                baseline={b.engineering?.capacityFactorPct ?? 0}
+                              />
+                            ) : (
+                              <span className="text-[var(--text-primary)]">
+                                {s.engineering ? `${fmt(s.engineering.capacityFactorPct)}%` : '—'}
+                              </span>
+                            )}
+                          </TableCell>
+                          {/* Bat. Cycles */}
+                          <TableCell>
+                            {b ? (
+                              <DeltaCell
+                                value={s.engineering ? fmt(s.engineering.batteryCycles, 2) : '—'}
+                                current={s.engineering?.batteryCycles ?? 0}
+                                baseline={b.engineering?.batteryCycles ?? 0}
+                              />
+                            ) : (
+                              <span className="text-[var(--text-primary)]">
+                                {s.engineering ? fmt(s.engineering.batteryCycles, 2) : '—'}
                               </span>
                             )}
                           </TableCell>

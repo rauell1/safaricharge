@@ -19,6 +19,17 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { SystemConfiguration } from '@/lib/system-config';
 import { DEFAULT_SYSTEM_CONFIG } from '@/lib/system-config';
+import type { SolarData } from '@/lib/physics-engine';
+import { computeEngineeringKpis } from '@/lib/engineeringKpis';
+
+// Static Nairobi solar data used for engineering KPI calculations
+const DEMO_SOLAR_DATA: SolarData = {
+  latitude: -1.2921,
+  longitude: 36.8219,
+  annualAvgKwhPerKwp: 5.4,
+  monthlyAvgKwhPerKwp: [5.5, 5.8, 5.6, 5.4, 5.2, 5.1, 5.0, 5.3, 5.7, 5.8, 5.4, 5.3],
+  monthlyAvgTemp: [22, 23, 24, 23, 22, 21, 20, 21, 22, 23, 22, 22],
+};
 
 // ── Safe localStorage storage (falls back to in-memory if blocked) ────────────
 function safeLocalStorage() {
@@ -143,6 +154,13 @@ export interface LocationCoordinatesSnapshot {
   longitude: number;
 }
 
+export interface EngineeringSnapshot {
+  specificYieldKWhPerKWp: number;
+  performanceRatioPct: number;
+  capacityFactorPct: number;
+  batteryCycles: number;
+}
+
 export interface SavedScenario {
   id: string;
   name: string;
@@ -151,6 +169,7 @@ export interface SavedScenario {
   finance: FinancialSnapshot;
   performance: PerformanceSnapshot;
   location: LocationCoordinatesSnapshot;
+  engineering?: EngineeringSnapshot;
 }
 
 // ── Energy System State ───────────────────────────────────────────────────────
@@ -194,6 +213,9 @@ interface EnergySystemState {
 
   // Full physics-engine configuration (drives the simulation tick loop)
   fullSystemConfig: SystemConfiguration;
+
+  // Static solar site data (used for engineering KPI calculations)
+  solarData: SolarData;
 
   // Actions
   updateNode: (nodeType: NodeType, updates: Partial<EnergyNode>) => void;
@@ -304,6 +326,7 @@ export const useEnergySystemStore = create<EnergySystemState>()(
     },
   },
   fullSystemConfig: DEFAULT_SYSTEM_CONFIG,
+  solarData: DEMO_SOLAR_DATA,
   scenarios: [],
 
   updateNode: (nodeType, updates) =>
@@ -401,6 +424,26 @@ export const useEnergySystemStore = create<EnergySystemState>()(
           totalSavingsKES,
         },
         location,
+        engineering: (() => {
+          const durationHours = Math.max(data.length / 60, 1);
+          const currentMonth = new Date(state.currentDate).getMonth();
+          const monthlyPSH = state.solarData.monthlyAvgKwhPerKwp[currentMonth];
+          const irradianceKWhPerM2 = monthlyPSH * (durationHours / 24);
+          const result = computeEngineeringKpis({
+            totalSolarKWh,
+            dcCapacityKWp: state.systemConfig.solarCapacityKW,
+            durationHours,
+            totalBatDischargeKWh: state.accumulators.batDischargeKwh,
+            batteryCapacityKWh: state.systemConfig.batteryCapacityKWh,
+            planeIrradianceKWhPerM2: irradianceKWhPerM2 > 0 ? irradianceKWhPerM2 : undefined,
+          });
+          return {
+            specificYieldKWhPerKWp: result.specificYieldKWhPerKWp,
+            performanceRatioPct: result.performanceRatioPct,
+            capacityFactorPct: result.capacityFactorPct,
+            batteryCycles: result.batteryCycles,
+          };
+        })(),
       };
 
       const updated = [...state.scenarios, scenario];
