@@ -30,6 +30,15 @@ import type { SolarIrradianceData } from '@/lib/nasa-power-api';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { MapPin } from 'lucide-react';
 
 // Force dynamic rendering - no static generation
 export const dynamic = 'force-dynamic';
@@ -45,6 +54,27 @@ const NAIROBI_SOLAR_DATA: SolarIrradianceData = {
   peakSunHours: [5.5, 5.8, 5.6, 5.4, 5.2, 5.1, 5.0, 5.3, 5.7, 5.8, 5.4, 5.3],
 };
 
+// ─── Location picker data ────────────────────────────────────────────────────
+interface LocationOption {
+  name: string;
+  displayName: string;
+  latitude: number;
+  longitude: number;
+  annualAvgSunHours: number;
+}
+
+const KENYA_LOCATIONS: LocationOption[] = [
+  { name: 'Nairobi',  displayName: 'Nairobi, Kenya',   latitude: -1.2921, longitude:  36.8219, annualAvgSunHours: 5.4 },
+  { name: 'Mombasa',  displayName: 'Mombasa, Kenya',   latitude: -4.0435, longitude:  39.6682, annualAvgSunHours: 5.8 },
+  { name: 'Kisumu',   displayName: 'Kisumu, Kenya',    latitude: -0.1022, longitude:  34.7617, annualAvgSunHours: 5.2 },
+  { name: 'Nakuru',   displayName: 'Nakuru, Kenya',    latitude: -0.3031, longitude:  36.0800, annualAvgSunHours: 5.6 },
+  { name: 'Eldoret',  displayName: 'Eldoret, Kenya',   latitude:  0.5143, longitude:  35.2698, annualAvgSunHours: 5.3 },
+  { name: 'Thika',    displayName: 'Thika, Kenya',     latitude: -1.0332, longitude:  37.0693, annualAvgSunHours: 5.5 },
+  { name: 'Malindi',  displayName: 'Malindi, Kenya',   latitude: -3.2175, longitude:  40.1169, annualAvgSunHours: 6.0 },
+  { name: 'Garissa',  displayName: 'Garissa, Kenya',   latitude: -0.4532, longitude:  39.6461, annualAvgSunHours: 6.4 },
+];
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function ModularDashboardDemo() {
   useDemoEnergySystem();
   const { timeRange, setTimeRange } = useTimeRange();
@@ -58,9 +88,40 @@ export default function ModularDashboardDemo() {
   const minuteData = useMinuteData(timeRange);
   const accumulators = useAccumulators();
   const saveScenario = useEnergySystemStore((s) => s.saveScenario);
+  const resetSystem  = useEnergySystemStore((s) => s.resetSystem);
   const { toast } = useToast();
 
   const [isReportOpen, setIsReportOpen] = useState(false);
+
+  // ─── Location state ─────────────────────────────────────────────────────
+  const [locationPickerOpen, setLocationPickerOpen] = useState(false);
+  const [activeLocation, setActiveLocation] = useState<LocationOption>(KENYA_LOCATIONS[0]);
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ─── Reset handler ───────────────────────────────────────────────────────
+  const handleReset = useCallback(() => {
+    const confirmed = window.confirm(
+      'Reset the simulation?\n\nThis will clear all accumulated energy data and restart the system from its initial state.'
+    );
+    if (!confirmed) return;
+    resetSystem();
+    toast({
+      title: 'Simulation reset',
+      description: 'All energy data has been cleared. The simulation is restarting.',
+    });
+  }, [resetSystem, toast]);
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ─── Location picker handler ─────────────────────────────────────────────
+  const handleSelectLocation = useCallback((loc: LocationOption) => {
+    setActiveLocation(loc);
+    setLocationPickerOpen(false);
+    toast({
+      title: 'Location updated',
+      description: `Solar data will now reflect conditions in ${loc.displayName} (avg ${loc.annualAvgSunHours} sun-hours/day).`,
+    });
+  }, [toast]);
+  // ─────────────────────────────────────────────────────────────────────────
 
   const handleSaveScenario = useCallback((name: string) => {
     saveScenario(
@@ -72,13 +133,13 @@ export default function ModularDashboardDemo() {
         lcoeKesPerKwh: 0,
         paybackYears: 0,
       },
-      { name: 'Nairobi', latitude: -1.2921, longitude: 36.8219 }
+      { name: activeLocation.name, latitude: activeLocation.latitude, longitude: activeLocation.longitude }
     );
     toast({
       title: 'Scenario saved',
       description: `"${name}" has been saved. View it on the Scenarios page.`,
     });
-  }, [saveScenario, toast]);
+  }, [saveScenario, toast, activeLocation]);
 
   const latestPoint = minuteData[minuteData.length - 1];
   const solarPower = latestPoint?.solarKW ?? solarNode.powerKW ?? 0;
@@ -387,7 +448,7 @@ export default function ModularDashboardDemo() {
   }, [stats]);
 
   const envImpact = useMemo(() => ([
-    { icon: Leaf, value: `${(accumulators.carbonOffset / 1000).toFixed(2)} tons`, label: 'CO₂ Offset (Year)', color: 'var(--battery)', tint: 'var(--battery-soft)' },
+    { icon: Leaf, value: `${(accumulators.carbonOffset / 1000).toFixed(2)} tons`, label: 'CO\u2082 Offset (Year)', color: 'var(--battery)', tint: 'var(--battery-soft)' },
     { icon: Trees, value: Math.round(accumulators.carbonOffset / 14).toString(), label: 'Trees Equivalent', color: 'var(--solar)', tint: 'var(--solar-soft)' },
     { icon: Car, value: `${Math.round(accumulators.carbonOffset * 1.6)} km`, label: 'Car Miles Offset', color: 'var(--consumption)', tint: 'var(--consumption-soft)' },
   ]), [accumulators]);
@@ -427,7 +488,6 @@ export default function ModularDashboardDemo() {
   const trendsData = useMemo(() => {
     const weekData = minuteData.slice(-7 * 420);
     const yesterdayData = minuteData.slice(-2 * 420, -420);
-    const todayData = minuteData.slice(-420);
 
     const weeklyAvgGen = weekData.length > 0
       ? weekData.reduce((sum, d) => sum + d.solarEnergyKWh, 0) / 7
@@ -467,6 +527,41 @@ export default function ModularDashboardDemo() {
   return (
     <DashboardLayout>
       <Toaster />
+
+      {/* ── Location Picker Dialog ─────────────────────────────────────── */}
+      <Dialog open={locationPickerOpen} onOpenChange={setLocationPickerOpen}>
+        <DialogContent className="bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)] max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-[var(--solar)]" />
+              Select Location
+            </DialogTitle>
+            <DialogDescription className="text-[var(--text-secondary)]">
+              Choose a Kenyan city to calibrate solar irradiance data for the simulation.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-2 flex flex-col gap-1.5">
+            {KENYA_LOCATIONS.map((loc) => (
+              <Button
+                key={loc.name}
+                variant="ghost"
+                onClick={() => handleSelectLocation(loc)}
+                className={[
+                  'justify-between rounded-lg px-3 py-2 text-sm transition-all duration-150',
+                  activeLocation.name === loc.name
+                    ? 'bg-[var(--solar-soft)] text-[var(--solar)] font-semibold'
+                    : 'text-[var(--text-primary)] hover:bg-[var(--bg-card-muted)]',
+                ].join(' ')}
+              >
+                <span>{loc.displayName}</span>
+                <span className="text-xs text-[var(--text-tertiary)]">{loc.annualAvgSunHours} sun-hrs/day</span>
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* ───────────────────────────────────────────────────────────────── */}
+
       <EnergyReportModal
         isOpen={isReportOpen}
         onClose={() => setIsReportOpen(false)}
@@ -481,11 +576,11 @@ export default function ModularDashboardDemo() {
       />
       <DashboardHeader
         currentDate={currentDate}
-        onReset={() => console.log('Reset clicked')}
-        onLocationClick={() => console.log('Location clicked')}
+        onReset={handleReset}
+        onLocationClick={() => setLocationPickerOpen(true)}
         onDownload={() => setIsReportOpen(true)}
         onSaveScenario={handleSaveScenario}
-        locationName="Nairobi, Kenya"
+        locationName={activeLocation.displayName}
         notificationCount={3}
       />
 
@@ -640,7 +735,7 @@ export default function ModularDashboardDemo() {
             <PanelStatusTable />
           </div>
           <div className="flex flex-col gap-6">
-            <WeatherCard locationName="Nairobi, Kenya" />
+            <WeatherCard locationName={activeLocation.displayName} />
             <BatteryStatusCard
               batteryLevel={batteryLevel}
               batteryPower={batteryPower}
