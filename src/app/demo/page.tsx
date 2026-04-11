@@ -45,7 +45,7 @@ import { MapPin } from 'lucide-react';
 import { resampleTo5MinBucketsProgressive, resampleTo5MinBuckets } from '@/lib/graphSampler';
 import type { SimulationMinuteRecord } from '@/types/simulation-core';
 
-// ── Restored page components ──────────────────────────────────────────────────
+// ── Restored page components ─────────────────────────────────────────────────────────────
 import FinancialDashboard from '@/components/FinancialDashboard';
 import { buildFinancialSnapshot, type FinancialInputs } from '@/lib/financial-dashboard';
 import { LoadConfigComponents } from '@/components/LoadConfigComponents';
@@ -75,7 +75,7 @@ const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct
 const FALLBACK_GEN  = [65, 70, 78, 85, 90, 95, 88, 92, 80, 75, 68, 62] as const;
 const FALLBACK_CONS = [55, 58, 60, 62, 65, 68, 70, 69, 65, 60, 57, 54] as const;
 
-// ─── Location picker data ────────────────────────────────────────────────────
+// ─── Location picker data ─────────────────────────────────────────────────────────────────────
 interface LocationOption {
   name: string;
   displayName: string;
@@ -95,6 +95,31 @@ const KENYA_LOCATIONS: LocationOption[] = [
   { name: 'Garissa',  displayName: 'Garissa, Kenya',  latitude: -0.4532, longitude:  39.6461, annualAvgSunHours: 6.4 },
 ];
 // ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Advance a YYYY-MM-DD date string by one calendar day.
+ */
+function addOneDay(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Return every YYYY-MM-DD string from startDate to endDate inclusive.
+ */
+function buildDateRange(startDate: string, endDate: string): string[] {
+  const dates: string[] = [];
+  let cursor = startDate;
+  // Guard: if dates are malformed or end < start, return just the start
+  let safety = 0;
+  while (cursor <= endDate && safety < 3660) {
+    dates.push(cursor);
+    cursor = addOneDay(cursor);
+    safety++;
+  }
+  return dates;
+}
 
 export default function ModularDashboardDemo({
   initialSection = 'dashboard',
@@ -118,7 +143,7 @@ export default function ModularDashboardDemo({
   const [activeSection, setActiveSection] = useState<DashboardSection>(initialSection);
   const [isReportOpen, setIsReportOpen] = useState(false);
 
-  // ─── Financial state ─────────────────────────────────────────────────────
+  // ─── Financial state ─────────────────────────────────────────────────────────────────────
   const [financialInputs, setFinancialInputs] = useState<FinancialInputs>({
     chargingTariffKes: 25,
     discountRatePct: 10,
@@ -126,14 +151,14 @@ export default function ModularDashboardDemo({
     targetUtilizationPct: 45,
     projectYears: 20,
   });
-  // ─────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
 
-  // ─── Location state ──────────────────────────────────────────────────────
+  // ─── Location state ────────────────────────────────────────────────────────────────────────
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [activeLocation, setActiveLocation]         = useState<LocationOption>(KENYA_LOCATIONS[0]);
-  // ─────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
 
-  // ─── Reset handler ───────────────────────────────────────────────────────
+  // ─── Reset handler ───────────────────────────────────────────────────────────────────────
   const handleReset = useCallback(() => {
     const confirmed = window.confirm(
       'Reset the simulation?\n\nThis will clear all accumulated energy data and restart the system from its initial state.'
@@ -145,9 +170,9 @@ export default function ModularDashboardDemo({
       description: 'All energy data has been cleared. The simulation is restarting.',
     });
   }, [resetSystem, toast]);
-  // ─────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
 
-  // ─── Location picker handler ─────────────────────────────────────────────
+  // ─── Location picker handler ──────────────────────────────────────────────────────────────
   const handleSelectLocation = useCallback((loc: LocationOption) => {
     setActiveLocation(loc);
     setLocationPickerOpen(false);
@@ -156,7 +181,7 @@ export default function ModularDashboardDemo({
       description: `Solar data will now reflect conditions in ${loc.displayName} (avg ${loc.annualAvgSunHours} sun-hours/day).`,
     });
   }, [toast]);
-  // ─────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
 
   const handleSaveScenario = useCallback((name: string) => {
     const snap = buildFinancialSnapshot({
@@ -193,7 +218,7 @@ export default function ModularDashboardDemo({
     : homeNode.powerKW ?? 0;
   const batteryLevel = latestPoint?.batteryLevelPct ?? batteryNode.soc ?? 0;
 
-  // ── Financial snapshot — computed from live minuteData ────────────────────
+  // ── Financial snapshot — computed from live minuteData ────────────────────────────────────
   const financialSnapshot = useMemo(() =>
     buildFinancialSnapshot({
       minuteData: minuteData as Parameters<typeof buildFinancialSnapshot>[0]['minuteData'],
@@ -203,7 +228,7 @@ export default function ModularDashboardDemo({
     }),
     [minuteData, financialInputs]
   );
-  // ─────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
 
   // Export report as CSV
   const handleExportReport = useCallback(async () => {
@@ -479,6 +504,15 @@ export default function ModularDashboardDemo({
     }
   }, [minuteData, financialSnapshot]);
 
+  // ── Download charts ZIP ─────────────────────────────────────────────────────────────────────────────
+  //
+  // Generates one chart image per calendar day starting from the very first
+  // day recorded in minuteData through the last, regardless of the current
+  // time-range filter or how far the simulation has progressed.
+  //
+  // Days that have no minuteData entries still receive a chart image (the
+  // graph will render with all-zero values so the file is present).
+  //
   const handleDownloadCharts = useCallback(async () => {
     if (!minuteData || minuteData.length === 0) {
       alert('No data to chart. Please wait for the simulation to generate data.');
@@ -486,21 +520,29 @@ export default function ModularDashboardDemo({
     }
 
     try {
-      // Group minuteData by date
+      // 1. Index all minuteData by date
       const byDate = new Map<string, typeof minuteData>();
       for (const d of minuteData) {
         if (!byDate.has(d.date)) byDate.set(d.date, []);
         byDate.get(d.date)!.push(d);
       }
 
+      // 2. Build the full calendar range: first day → last day (inclusive)
+      const allDates = Array.from(byDate.keys()).sort();
+      const firstDate = allDates[0];
+      const lastDate  = allDates[allDates.length - 1];
+      const dateRange = buildDateRange(firstDate, lastDate);
+
       const JSZip = (await import('jszip')).default;
       const zip = new JSZip();
       const chartsFolder = zip.folder('SafariCharge_Charts')!;
 
-      for (const [date, dayData] of Array.from(byDate.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
+      // 3. Render a chart for every date in the range, even missing ones
+      for (const date of dateRange) {
+        const dayData    = byDate.get(date) ?? [];   // [] for missing days
         const graphPoints = resampleTo5MinBuckets(dayData);
-        if (graphPoints.length === 0) continue;
-        const svgStr = buildGraphSVG(graphPoints, date);
+        // graphPoints is always 288 entries (all-zero when dayData is empty)
+        const svgStr  = buildGraphSVG(graphPoints, date);
         const jpgBlob = await buildJPGBlob(svgStr, 820, 340);
         chartsFolder.file(`SafariCharge_${date}.jpg`, jpgBlob);
       }
@@ -519,6 +561,7 @@ export default function ModularDashboardDemo({
       alert(`Failed to build charts ZIP: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   }, [minuteData]);
+  // ─────────────────────────────────────────────────────────────────────────────
 
   const flowDirection = useMemo(() => ({
     solarToHome:    flows.some((f) => f.from === 'solar'   && f.to === 'home'    && f.active),
@@ -652,9 +695,9 @@ export default function ModularDashboardDemo({
 
   const isMonthlyFallback = monthlyOverviewData[0]?.isFallback ?? true;
 
-  // ─────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
 
-  // ── Section renderer ──────────────────────────────────────────────────────
+  // ── Section renderer ────────────────────────────────────────────────────────────────────────
   const renderSection = () => {
     switch (activeSection) {
       case 'simulation':
@@ -976,13 +1019,13 @@ export default function ModularDashboardDemo({
         );
     }
   };
-  // ─────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
 
   return (
     <DashboardLayout activeSection={activeSection} onSectionChange={setActiveSection} contextualMetrics={sidebarMetrics}>
       <Toaster />
 
-      {/* ── Location Picker Dialog ─────────────────────────────────────── */}
+      {/* ── Location Picker Dialog ───────────────────────────────────────────────────── */}
       <Dialog open={locationPickerOpen} onOpenChange={setLocationPickerOpen}>
         <DialogContent className="bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)] max-w-sm">
           <DialogHeader>
@@ -1014,7 +1057,7 @@ export default function ModularDashboardDemo({
           </div>
         </DialogContent>
       </Dialog>
-      {/* ───────────────────────────────────────────────────────────────── */}
+      {/* ───────────────────────────────────────────────────────────────────────────── */}
 
       <EnergyReportModal
         isOpen={isReportOpen}
