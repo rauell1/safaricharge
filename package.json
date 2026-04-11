@@ -11,7 +11,9 @@
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:reset": "prisma migrate reset"
+    "db:reset": "prisma migrate reset",
+    "map": "node scripts/generate-codebase-map.js",
+    "map:full": "node scripts/generate-codebase-map.js --full"
   },
   "dependencies": {
     "@dnd-kit/sortable": "^10.0.0",
