@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useCallback } from 'react';
-import { Download } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown } from 'lucide-react';
+import { useForecastStore, type ForecastPoint } from '@/stores/forecastStore';
+import type { MinuteDataPoint } from '@/stores/energySystemStore';
 
 const getCssVar = (name: string, fallback?: string) => {
   if (typeof window !== 'undefined') {
@@ -191,18 +193,63 @@ export function buildJPGBlob(svgStr: string, width = 820, height = 340): Promise
 }
 
 
+/** Convert a forecast timestamp ISO string → fractional hour-of-day (0-24). */
+function forecastTsToTimeOfDay(ts: string): number {
+  const d = new Date(ts);
+  return d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
+}
+
+/**
+ * Build a closed SVG polygon path for a confidence band.
+ *
+ * The band runs from (timeOfDay, lowKw) to (timeOfDay, highKw) — a filled
+ * area between two lines sharing the same X coordinates.
+ */
+function buildConfidenceBandPath(
+  points: ForecastPoint[],
+  getX: (t: number) => number,
+  getY: (v: number) => number,
+  lowKey: 'solar_confidence_low' | 'load_confidence_low',
+  highKey: 'solar_confidence_high' | 'load_confidence_high',
+): string {
+  if (points.length === 0) return '';
+  const coords = points.map(p => ({ x: getX(forecastTsToTimeOfDay(p.timestamp)), low: getY(p[lowKey]), high: getY(p[highKey]) }));
+  // Top edge (high) left→right
+  const topPts = coords.map(c => ({ x: c.x, y: c.high }));
+  // Bottom edge (low) right→left
+  const botPts = [...coords].reverse().map(c => ({ x: c.x, y: c.low }));
+  return `${buildSmoothPath(topPts)} L ${botPts[0].x},${botPts[0].y} ${buildSmoothPath(botPts).replace(/^M [^ ]+ /, '')} Z`;
+}
+
 const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
   data,
   dateLabel,
+  minuteData,
+  solarCapacityKw,
 }: {
   data: GraphDataPoint[];
   dateLabel?: string;
+  minuteData?: MinuteDataPoint[];
+  solarCapacityKw?: number;
 }) {
+  const { forecastData, isLoading, showOverlay, toggleOverlay, fetchForecast } =
+    useForecastStore();
+
   const handleDownloadJPG = useCallback(() => {
     if (!data || data.length === 0) return;
     const svgStr = buildGraphSVG(data, dateLabel);
     triggerJPGDownload(svgStr, `SafariCharge_DailyGraph${dateLabel ? `_${dateLabel}` : ''}.jpg`);
   }, [data, dateLabel]);
+
+  const handleToggleForecast = useCallback(() => {
+    toggleOverlay();
+    // Fetch if not yet loaded and we have the data we need
+    if (!forecastData && minuteData && minuteData.length >= 24 && solarCapacityKw) {
+      // Use last 7 days of minuteData (7 * 24 * 60 = 10080 minutes)
+      const last7Days = minuteData.slice(-10080);
+      void fetchForecast(last7Days, solarCapacityKw);
+    }
+  }, [toggleOverlay, forecastData, minuteData, solarCapacityKw, fetchForecast]);
 
   if (!data || data.length === 0) {
     return (
@@ -241,6 +288,25 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
     text: getCssVar('--text-tertiary'),
   };
 
+  // Build forecast overlay paths
+  const hasForecast = showOverlay && forecastData && forecastData.length > 0;
+  let fSolarPath = '';
+  let fLoadPath = '';
+  let fSolarBandPath = '';
+  let fLoadBandPath = '';
+
+  if (hasForecast) {
+    const pts = forecastData!;
+    const fSolarCoords = pts.map(p => ({ x: getX(forecastTsToTimeOfDay(p.timestamp)), y: getY_Kw(p.solar_kw) }));
+    const fLoadCoords = pts.map(p => ({ x: getX(forecastTsToTimeOfDay(p.timestamp)), y: getY_Kw(p.load_kw) }));
+    fSolarPath = buildSmoothPath(fSolarCoords);
+    fLoadPath = buildSmoothPath(fLoadCoords);
+    fSolarBandPath = buildConfidenceBandPath(pts, getX, getY_Kw, 'solar_confidence_low', 'solar_confidence_high');
+    fLoadBandPath = buildConfidenceBandPath(pts, getX, getY_Kw, 'load_confidence_low', 'load_confidence_high');
+  }
+
+  const canShowForecastButton = !!(minuteData && minuteData.length >= 24 && solarCapacityKw);
+
   return (
     <div className="w-full">
       <div className="group/chart w-full rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4 overflow-x-auto">
@@ -250,6 +316,27 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
           </h3>
           <div className="flex items-center gap-3">
             <span className="text-[10px] text-[var(--text-tertiary)] font-mono">{data.length} data points</span>
+            {canShowForecastButton && (
+              <button
+                onClick={handleToggleForecast}
+                disabled={isLoading}
+                className={`flex items-center gap-1 text-[10px] font-semibold border px-2 py-1 rounded transition-colors ${
+                  showOverlay
+                    ? 'text-amber-700 bg-amber-50 border-amber-300 hover:border-amber-500 dark:text-amber-300 dark:bg-amber-900/30 dark:border-amber-700'
+                    : 'text-[var(--text-primary)] bg-[var(--bg-secondary)] border-[var(--border)] hover:border-[var(--border-strong)]'
+                } disabled:opacity-50`}
+                title={showOverlay ? 'Hide 24h forecast overlay' : 'Show 24h forecast overlay'}
+              >
+                {isLoading ? (
+                  <span className="animate-spin inline-block w-2.5 h-2.5 border border-current border-t-transparent rounded-full" />
+                ) : showOverlay ? (
+                  <TrendingDown size={11} />
+                ) : (
+                  <TrendingUp size={11} />
+                )}
+                {showOverlay ? 'Hide Forecast' : 'Show Forecast'}
+              </button>
+            )}
             <button
               onClick={handleDownloadJPG}
               className="flex items-center gap-1 text-[10px] font-semibold text-[var(--text-primary)] bg-[var(--bg-secondary)] border border-[var(--border)] px-2 py-1 rounded transition-colors hover:border-[var(--border-strong)]"
@@ -306,6 +393,18 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
             <path d={loadPath} fill="none" stroke={palette.load} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
             <path d={socPath} fill="none" stroke={palette.soc} strokeWidth="2" strokeDasharray="10 6" strokeLinecap="round" strokeLinejoin="round" />
 
+            {/* Forecast overlay — only rendered when showOverlay=true and data available */}
+            {hasForecast && (
+              <g opacity="0.85">
+                {/* Confidence bands */}
+                <path d={fSolarBandPath} fill={palette.solar} fillOpacity="0.1" stroke="none" />
+                <path d={fLoadBandPath} fill={palette.load} fillOpacity="0.1" stroke="none" />
+                {/* Forecast lines (dashed) */}
+                <path d={fSolarPath} fill="none" stroke={palette.solar} strokeWidth="1.8" strokeDasharray="6 4" strokeLinecap="round" strokeLinejoin="round" />
+                <path d={fLoadPath} fill="none" stroke={palette.load} strokeWidth="1.8" strokeDasharray="6 4" strokeLinecap="round" strokeLinejoin="round" />
+              </g>
+            )}
+
             {data.length > 1 && (
               <circle
                 cx={getX(last.timeOfDay)}
@@ -332,6 +431,18 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
               <div className="w-5 border-t-2 border-dashed" style={{ borderColor: palette.soc }} />
               <span className="text-[var(--text-secondary)]">Battery SOC (%)</span>
             </div>
+            {hasForecast && (
+              <>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 border-t-2 border-dashed opacity-70" style={{ borderColor: palette.solar }} />
+                  <span className="text-[var(--text-secondary)]">Solar Forecast</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 border-t-2 border-dashed opacity-70" style={{ borderColor: palette.load }} />
+                  <span className="text-[var(--text-secondary)]">Load Forecast</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
