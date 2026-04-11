@@ -13,19 +13,24 @@ const getCssVar = (name: string, fallback?: string) => {
   return fallback ?? `var(${name})`;
 };
 
-const buildSmoothPath = (points: { x: number; y: number }[]) => {
+const buildSmoothPath = (points: { x: number; y: number }[], tension = 0.4): string => {
   if (points.length === 0) return '';
-  if (points.length === 1) return `M ${points[0].x},${points[0].y}`;
-  const d = [`M ${points[0].x},${points[0].y}`];
-  for (let i = 0; i < points.length - 1; i++) {
-    const current = points[i];
-    const next = points[i + 1];
-    const midX = (current.x + next.x) / 2;
-    const midY = (current.y + next.y) / 2;
-    d.push(`Q ${current.x},${current.y} ${midX},${midY}`);
+  if (points.length === 1) return `M ${points[0].x.toFixed(2)},${points[0].y.toFixed(2)}`;
+  if (points.length === 2) {
+    return `M ${points[0].x.toFixed(2)},${points[0].y.toFixed(2)} L ${points[1].x.toFixed(2)},${points[1].y.toFixed(2)}`;
   }
-  const last = points[points.length - 1];
-  d.push(`T ${last.x},${last.y}`);
+  const d: string[] = [`M ${points[0].x.toFixed(2)},${points[0].y.toFixed(2)}`];
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[Math.max(0, i - 1)];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[Math.min(points.length - 1, i + 2)];
+    const cp1x = p1.x + (p2.x - p0.x) * tension / 3;
+    const cp1y = p1.y + (p2.y - p0.y) * tension / 3;
+    const cp2x = p2.x - (p3.x - p1.x) * tension / 3;
+    const cp2y = p2.y - (p3.y - p1.y) * tension / 3;
+    d.push(`C ${cp1x.toFixed(2)},${cp1y.toFixed(2)} ${cp2x.toFixed(2)},${cp2y.toFixed(2)} ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`);
+  }
   return d.join(' ');
 };
 
@@ -63,6 +68,8 @@ const formatKwLabel = (value: number) => {
 };
 
 // Exported so page.tsx can call it for past-day downloads too
+// Expects data pre-sampled to 5-min buckets via resampleTo5MinBucketsProgressive()
+// for clean uniform line spacing.
 export function buildGraphSVG(data: GraphDataPoint[], dateLabel?: string): string {
   const palette = {
     solar: getCssVar('--solar'),
@@ -280,6 +287,10 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
   const solarArea = `${solarPath} L ${solarCoords[solarCoords.length - 1].x},${padding.top + innerHeight} L ${solarCoords[0].x},${padding.top + innerHeight} Z`;
   const last = data[data.length - 1];
 
+  const latestHours = Math.floor(last.timeOfDay);
+  const latestMins = Math.round((last.timeOfDay % 1) * 60);
+  const latestTimeStr = `${String(latestHours).padStart(2, '0')}:${String(latestMins).padStart(2, '0')}`;
+
   const palette = {
     solar: getCssVar('--solar'),
     load: getCssVar('--consumption'),
@@ -315,7 +326,7 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
             Today&apos;s Energy Profile{dateLabel ? ` (${dateLabel})` : ''}
           </h3>
           <div className="flex items-center gap-3">
-            <span className="text-[10px] text-[var(--text-tertiary)] font-mono">{data.length} data points</span>
+            <span className="text-[10px] text-[var(--text-tertiary)] font-mono">Simulated to {latestTimeStr} &bull; {data.length} points</span>
             {canShowForecastButton && (
               <button
                 onClick={handleToggleForecast}
@@ -355,6 +366,10 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
               </linearGradient>
             </defs>
 
+            {/* Night zone shading: 00:00–06:00 and 18:00–24:00 */}
+            <rect x={getX(0)} y={padding.top} width={getX(6) - getX(0)} height={innerHeight} fill={palette.border} fillOpacity="0.18" />
+            <rect x={getX(18)} y={padding.top} width={getX(24) - getX(18)} height={innerHeight} fill={palette.border} fillOpacity="0.18" />
+
             {[0, 0.25, 0.5, 0.75, 1].map(ratio => {
               const y = padding.top + innerHeight * ratio;
               const kwVal = maxKw - ratio * maxKw;
@@ -388,10 +403,35 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
               );
             })}
 
+            {/* Minor 1-hour tick marks between major 3-hour gridlines */}
+            {Array.from({ length: 25 }, (_, hr) => hr)
+              .filter(hr => hr % 3 !== 0)
+              .map(hr => {
+                const x = getX(hr);
+                return (
+                  <line key={`minor-${hr}`} x1={x} y1={padding.top + innerHeight} x2={x} y2={padding.top + innerHeight + 4}
+                    stroke={palette.border} strokeWidth="0.8" />
+                );
+              })}
+
             <path d={solarArea} fill="url(#solarGradient)" />
             <path d={solarPath} fill="none" stroke={palette.solar} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
             <path d={loadPath} fill="none" stroke={palette.load} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
             <path d={socPath} fill="none" stroke={palette.soc} strokeWidth="2" strokeDasharray="10 6" strokeLinecap="round" strokeLinejoin="round" />
+
+            {/* Simulation progress vertical line */}
+            {data.length > 1 && (() => {
+              const progressX = getX(last.timeOfDay);
+              return (
+                <g>
+                  <line x1={progressX} y1={padding.top} x2={progressX} y2={padding.top + innerHeight}
+                    stroke={palette.solar} strokeWidth="1" strokeDasharray="3 4" opacity="0.5" />
+                  <text x={progressX} y={padding.top - 5} textAnchor="middle" fill={palette.solar} fontSize="8" fontWeight="bold">
+                    {latestTimeStr}
+                  </text>
+                </g>
+              );
+            })()}
 
             {/* Forecast overlay — only rendered when showOverlay=true and data available */}
             {hasForecast && (
@@ -405,17 +445,16 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
               </g>
             )}
 
-            {data.length > 1 && (
-              <circle
-                cx={getX(last.timeOfDay)}
-                cy={getY_Kw(last.solar)}
-                r="4.2"
-                fill={palette.solar}
-                stroke="var(--bg-card)"
-                strokeWidth="1.4"
-                className="opacity-0 group-hover/chart:opacity-100 transition-opacity"
-              />
-            )}
+            {/* Hover dots for all three series */}
+            {data.length > 1 && [
+              { cx: getX(last.timeOfDay), cy: getY_Kw(last.solar), fill: palette.solar },
+              { cx: getX(last.timeOfDay), cy: getY_Kw(last.load), fill: palette.load },
+              { cx: getX(last.timeOfDay), cy: getY_Soc(last.batSoc), fill: palette.soc },
+            ].map((dot, i) => (
+              <circle key={i} cx={dot.cx} cy={dot.cy} r="3.5"
+                fill={dot.fill} stroke="var(--bg-card)" strokeWidth="1.5"
+                className="opacity-0 group-hover/chart:opacity-100 transition-opacity" />
+            ))}
           </svg>
 
           <div className="flex flex-wrap justify-center gap-3 sm:gap-8 mt-3 text-xs font-bold bg-[var(--bg-secondary)] p-2 rounded-lg mx-2 sm:mx-6 border border-[var(--border)]">
