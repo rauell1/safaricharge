@@ -164,6 +164,8 @@ function RenameCell({ id, name, isBaseline, onRename }: RenameCellProps) {
 
 // ── Scenario colours ──────────────────────────────────────────────────────────
 
+const MAX_CHART_SCENARIOS = 4;
+
 const SCENARIO_COLOURS = [
   'var(--solar)',
   'var(--battery)',
@@ -205,7 +207,7 @@ export default function ScenariosPage() {
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id);
-      if (prev.length >= 4) return prev; // max 4
+      if (prev.length >= MAX_CHART_SCENARIOS) return prev; // max 4
       return [...prev, id];
     });
   }, []);
@@ -256,26 +258,36 @@ export default function ScenariosPage() {
 
   const selectedScenarios = scenarios.filter((s) => selectedIds.includes(s.id));
 
+  // Pre-compute a stable label for each selected scenario
+  // Use name as the dataKey but de-duplicate with index suffix to handle same names
+  const labelMap = new Map<string, string>();
+  const seenNames = new Map<string, number>();
+  for (const s of selectedScenarios) {
+    const count = seenNames.get(s.name) ?? 0;
+    seenNames.set(s.name, count + 1);
+    labelMap.set(s.id, count === 0 ? s.name : `${s.name} (${count + 1})`);
+  }
+
   const chartData = [
     {
       kpi: 'Solar (kWh)',
-      ...Object.fromEntries(selectedScenarios.map((s) => [s.name, Number(s.performance.totalSolarKWh.toFixed(1))])),
+      ...Object.fromEntries(selectedScenarios.map((s) => [labelMap.get(s.id)!, Number(s.performance.totalSolarKWh.toFixed(1))])),
     },
     {
       kpi: 'Self-suff (%)',
-      ...Object.fromEntries(selectedScenarios.map((s) => [s.name, Number(s.performance.selfSufficiencyPct.toFixed(1))])),
+      ...Object.fromEntries(selectedScenarios.map((s) => [labelMap.get(s.id)!, Number(s.performance.selfSufficiencyPct.toFixed(1))])),
     },
     {
       kpi: 'Savings (KES)',
-      ...Object.fromEntries(selectedScenarios.map((s) => [s.name, Number(s.performance.totalSavingsKES.toFixed(0))])),
+      ...Object.fromEntries(selectedScenarios.map((s) => [labelMap.get(s.id)!, Number(s.performance.totalSavingsKES.toFixed(0))])),
     },
     {
       kpi: 'NPV (KES)',
-      ...Object.fromEntries(selectedScenarios.map((s) => [s.name, Number(s.finance.npvKes.toFixed(0))])),
+      ...Object.fromEntries(selectedScenarios.map((s) => [labelMap.get(s.id)!, Number(s.finance.npvKes.toFixed(0))])),
     },
     {
       kpi: 'Payback (yr)',
-      ...Object.fromEntries(selectedScenarios.map((s) => [s.name, Number(s.finance.paybackYears.toFixed(2))])),
+      ...Object.fromEntries(selectedScenarios.map((s) => [labelMap.get(s.id)!, Number(s.finance.paybackYears.toFixed(2))])),
     },
   ];
 
@@ -430,41 +442,45 @@ export default function ScenariosPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {scenarios.map((s) => {
-                      const isBaseline = s.id === baselineId;
-                      const b = baseline && !isBaseline ? baseline : null;
-                      const isChecked = selectedIds.includes(s.id);
-                      const colour = SCENARIO_COLOURS[selectedIds.indexOf(s.id) % SCENARIO_COLOURS.length];
-                      return (
-                        <TableRow
-                          key={s.id}
-                          className={`border-[var(--border)] ${
-                            isBaseline
-                              ? 'bg-[var(--solar-soft)]/30'
-                              : 'hover:bg-[var(--bg-card-muted)]/50'
-                          }`}
-                        >
-                          {/* Checkbox for chart selection */}
-                          <TableCell className="pr-0">
-                            <Checkbox
-                              checked={isChecked}
-                              onCheckedChange={() => toggleSelect(s.id)}
-                              disabled={!isChecked && selectedIds.length >= 4}
-                              aria-label={`Select ${s.name} for chart comparison`}
-                              style={isChecked ? { accentColor: colour } : undefined}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <RenameCell
-                              id={s.id}
-                              name={s.name}
-                              isBaseline={isBaseline}
-                              onRename={renameScenario}
-                            />
-                          </TableCell>
-                          <TableCell className="text-[var(--text-secondary)] text-xs">
-                            {formatDate(s.createdAt)}
-                          </TableCell>
+                    {(() => {
+                      // Pre-compute a map of id → index within selectedIds for O(1) colour lookup
+                      const selectedIndexMap = new Map(selectedIds.map((id, idx) => [id, idx]));
+                      return scenarios.map((s) => {
+                        const isBaseline = s.id === baselineId;
+                        const b = baseline && !isBaseline ? baseline : null;
+                        const isChecked = selectedIds.includes(s.id);
+                        const selectedIndex = selectedIndexMap.get(s.id) ?? 0;
+                        const colour = SCENARIO_COLOURS[selectedIndex % SCENARIO_COLOURS.length];
+                        return (
+                          <TableRow
+                            key={s.id}
+                            className={`border-[var(--border)] ${
+                              isBaseline
+                                ? 'bg-[var(--solar-soft)]/30'
+                                : 'hover:bg-[var(--bg-card-muted)]/50'
+                            }`}
+                          >
+                            {/* Checkbox for chart selection */}
+                            <TableCell className="pr-0">
+                              <Checkbox
+                                checked={isChecked}
+                                onCheckedChange={() => toggleSelect(s.id)}
+                                disabled={!isChecked && selectedIds.length >= MAX_CHART_SCENARIOS}
+                                aria-label={`Select ${s.name} for chart comparison`}
+                                style={isChecked ? { accentColor: colour } : undefined}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <RenameCell
+                                id={s.id}
+                                name={s.name}
+                                isBaseline={isBaseline}
+                                onRename={renameScenario}
+                              />
+                            </TableCell>
+                            <TableCell className="text-[var(--text-secondary)] text-xs">
+                              {formatDate(s.createdAt)}
+                            </TableCell>
                           {/* PV capacity */}
                           <TableCell>
                             {b ? (
@@ -604,8 +620,9 @@ export default function ScenariosPage() {
                             </div>
                           </TableCell>
                         </TableRow>
-                      );
-                    })}
+                        );
+                      });
+                    })()}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -686,7 +703,7 @@ export default function ScenariosPage() {
                     {selectedScenarios.map((s, i) => (
                       <Bar
                         key={s.id}
-                        dataKey={s.name}
+                        dataKey={labelMap.get(s.id)!}
                         fill={SCENARIO_COLOURS[i % SCENARIO_COLOURS.length]}
                         radius={[3, 3, 0, 0]}
                       />

@@ -276,6 +276,8 @@ const initialAccumulators: Accumulators = {
   feedInEarnings: 0,
 };
 
+const MAX_SCENARIOS = 20;
+
 // Create the store — scenarios slice is persisted to localStorage
 export const useEnergySystemStore = create<EnergySystemState>()(
   persist(
@@ -402,8 +404,8 @@ export const useEnergySystemStore = create<EnergySystemState>()(
       };
 
       const updated = [...state.scenarios, scenario];
-      // Keep max 20 — drop oldest if exceeded
-      return { scenarios: updated.length > 20 ? updated.slice(updated.length - 20) : updated };
+      // Keep max MAX_SCENARIOS — drop oldest if exceeded
+      return { scenarios: updated.length > MAX_SCENARIOS ? updated.slice(updated.length - MAX_SCENARIOS) : updated };
     }),
 
   deleteScenario: (id) =>
