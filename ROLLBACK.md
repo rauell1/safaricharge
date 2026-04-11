@@ -1,67 +1,103 @@
-# Dashboard Rollback Point
+# SafariCharge — Rollback Strategy & Snapshot Log
 
-## Original Dashboard Restore Point
+This file tracks all rollback points (branches + tags) created in the repo.
+After every major change, a new snapshot is added here — **old snapshots are never deleted**.
 
-A git tag `original-dashboard-v1` has been created to preserve the state of the dashboard before the card-based UI refactor (commit #41).
+---
 
-### How to Rollback to the Original Dashboard
+## Rollback Protocol
 
-If you ever want to restore the original dashboard, you have several options:
+After every major change (bug fix, feature merge, refactor), a versioned rollback branch is created:
 
-#### Option 1: View the Original Code (Read-only)
-```bash
-git checkout original-dashboard-v1
 ```
-This puts you in a "detached HEAD" state where you can view and test the original dashboard without affecting your current work.
+rollback/<topic>-<YYYY-MM-DD>
+```
 
-To return to your current branch:
+Each branch is pinned to the exact commit SHA at the time of creation.
+Snapshots are cumulative — restore any prior state at any time.
+
+### How to Roll Back to Any Snapshot
+
+#### Option 1: View / Test (Non-destructive)
+```bash
+git fetch origin
+git checkout rollback/<name>
+```
+Return to main:
 ```bash
 git checkout main
 ```
 
-#### Option 2: Create a New Branch from the Original
+#### Option 2: Create a Working Branch from Snapshot
 ```bash
-git checkout -b restore-original-dashboard original-dashboard-v1
+git checkout -b restore/<name> rollback/<name>
 ```
-This creates a new branch starting from the original dashboard state. You can then work on this branch or merge it elsewhere.
 
-#### Option 3: Revert to Original on Current Branch (Destructive)
-⚠️ **Warning**: This will undo all changes after the tag. Make sure to backup first!
-
+#### Option 3: Restore main to a Snapshot (Destructive)
+⚠️ **Warning**: This rewrites `main`. Always confirm intent before running.
 ```bash
-# Create a backup branch first
-git branch backup-before-rollback
-
-# Reset to original dashboard
-git reset --hard original-dashboard-v1
-
-# Force push (if needed)
+git fetch origin
+git checkout main
+git reset --hard origin/rollback/<name>
 git push origin main --force
 ```
 
-#### Option 4: Cherry-pick Specific Files
-If you only want to restore specific dashboard files:
+#### Option 4: Restore Specific Files Only
 ```bash
-git checkout original-dashboard-v1 -- src/app/page.tsx
-git checkout original-dashboard-v1 -- src/components/dashboard/
+git checkout rollback/<name> -- src/path/to/file.ts
 ```
 
-### Tag Information
-- **Tag Name**: `original-dashboard-v1`
-- **Commit**: `8039cb4` (Merge pull request #41)
+---
+
+## Snapshot Log
+
+> Snapshots are listed newest-first. Never remove entries from this table.
+
+| # | Branch | Pinned Commit | Description | Date |
+|---|--------|--------------|-------------|------|
+| 3 | `rollback/pre-soc-fix-2026-04-11` | `1063f307` | State before Battery SOC clean fix — includes WIP SOC merge (PR #136) + scenario management (PR #137) | 2026-04-11 |
+| 2 | *(tag)* `original-dashboard-v1` | `8039cb4` | Original dashboard UI before card-based refactor (PR #41) | 2026-03-29 |
+| 1 | *(initial)* `main` baseline | — | Project genesis | — |
+
+---
+
+## Snapshot #3 — `rollback/pre-soc-fix-2026-04-11`
+
+- **Branch**: `rollback/pre-soc-fix-2026-04-11`
+- **Commit**: `1063f307bdb96688a05bedda475ff13d4008a871`
+- **Last merged PR**: #136 — [WIP] Fix battery SOC flat line in simulation
+- **Also includes**: PR #137 — Scenario management (save, list, compare)
+- **Why captured**: Before clean Battery SOC fix session starting 2026-04-11
+
+---
+
+## Snapshot #2 — `original-dashboard-v1` (tag)
+
+- **Tag**: `original-dashboard-v1`
+- **Commit**: `8039cb4`
 - **Description**: Original dashboard UI before card-based refactor
 - **Date**: 2026-03-29
 
-### Current vs Original Dashboard
+**Original Dashboard**: Single-page layout, traditional UI components
+**Post-refactor (PR #42)**: Card-based layout, sidebar navigation, modular components, enhanced animations
 
-**Original Dashboard (tagged)**:
-- Single-page layout
-- Traditional UI components
-- Preserved at commit #41
+---
 
-**Current Dashboard** (after PR #42):
-- Modern card-based layout
-- Sidebar navigation
-- Modular component architecture
-- Enhanced animations and styling
+## Adding a New Snapshot (After Each Major Change)
 
+1. Note the current `main` HEAD SHA:
+   ```bash
+   git rev-parse HEAD
+   ```
+2. Create the rollback branch:
+   ```bash
+   git checkout main
+   git branch rollback/<topic>-<YYYY-MM-DD>
+   git push origin rollback/<topic>-<YYYY-MM-DD>
+   ```
+3. Update this file — add a new row to the Snapshot Log table (newest first) and add a detail section below.
+4. Commit the updated `ROLLBACK.md` to `main`.
+
+---
+
+*This file is maintained manually after each major change session.*
