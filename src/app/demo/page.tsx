@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState, useCallback } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
+import type { DashboardSection } from '@/components/dashboard/DashboardSidebar';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { StatCards } from '@/components/dashboard/StatCards';
 import { PowerFlowVisualization } from '@/components/dashboard/PowerFlowVisualization';
@@ -82,7 +83,9 @@ const KENYA_LOCATIONS: LocationOption[] = [
 ];
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function ModularDashboardDemo() {
+export default function ModularDashboardDemo({
+  initialSection = 'dashboard',
+}: { initialSection?: DashboardSection } = {}) {
   useDemoEnergySystem();
   const { timeRange, setTimeRange } = useTimeRange();
   const { currentDate } = useSimulationState();
@@ -98,6 +101,7 @@ export default function ModularDashboardDemo() {
   const resetSystem  = useEnergySystemStore((s) => s.resetSystem);
   const { toast }    = useToast();
 
+  const [activeSection, setActiveSection] = useState<DashboardSection>(initialSection);
   const [isReportOpen, setIsReportOpen] = useState(false);
 
   // ─── Location state ──────────────────────────────────────────────────────
@@ -539,7 +543,7 @@ export default function ModularDashboardDemo() {
   const isMonthlyFallback = monthlyOverviewData[0]?.isFallback ?? true;
 
   return (
-    <DashboardLayout>
+    <DashboardLayout activeSection={activeSection} onSectionChange={setActiveSection}>
       <Toaster />
 
       {/* ── Location Picker Dialog ─────────────────────────────────────── */}
