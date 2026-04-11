@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - 'CODEBASE_MAP.md'   # prevent infinite loop
+      - 'CODEBASE_MAP.md'  # prevent infinite loop
 
 jobs:
   update-map:
@@ -19,34 +19,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Generate tree
-        id: tree
-        run: |
-          # Install tree if not present
-          sudo apt-get install -y tree > /dev/null 2>&1
+      - name: Install tree
+        run: sudo apt-get install -y tree > /dev/null 2>&1
 
-          # Generate annotated directory trees for key paths
-          SRC_TREE=$(tree src -I 'node_modules|*.tsbuildinfo' --dirsfirst -L 4 2>/dev/null || find src -type f | sort)
-          ROOT_TREE=$(tree -L 1 --dirsfirst -I 'node_modules|.next|bun.lock|package-lock.json|tsconfig.tsbuildinfo' 2>/dev/null || ls -1)
-
-          echo "Generated trees"
-
-      - name: Count files and collect metadata
+      - name: Collect metadata
         id: meta
         run: |
-          TOTAL_TS=$(find src -name '*.ts' -o -name '*.tsx' | wc -l | tr -d ' ')
-          TOTAL_PY=$(find . -name '*.py' ! -path '*/node_modules/*' | wc -l | tr -d ' ')
-          LAST_COMMIT=$(git log -1 --format='%H' main)
-          LAST_AUTHOR=$(git log -1 --format='%an' main)
-          LAST_DATE=$(git log -1 --format='%ci' main)
-          BRANCH=$(git rev-parse --abbrev-ref HEAD)
-
-          echo "total_ts=$TOTAL_TS" >> $GITHUB_OUTPUT
-          echo "total_py=$TOTAL_PY" >> $GITHUB_OUTPUT
-          echo "last_commit=$LAST_COMMIT" >> $GITHUB_OUTPUT
-          echo "last_author=$LAST_AUTHOR" >> $GITHUB_OUTPUT
-          echo "last_date=$LAST_DATE" >> $GITHUB_OUTPUT
-          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "total_ts=$(find src -name '*.ts' -o -name '*.tsx' | wc -l | tr -d ' ')" >> $GITHUB_OUTPUT
+          echo "total_py=$(find . -name '*.py' ! -path '*/node_modules/*' | wc -l | tr -d ' ')" >> $GITHUB_OUTPUT
+          echo "last_commit=$(git log -1 --format='%H' main)" >> $GITHUB_OUTPUT
+          echo "last_author=$(git log -1 --format='%an' main)" >> $GITHUB_OUTPUT
+          echo "last_date=$(git log -1 --format='%ci' main)" >> $GITHUB_OUTPUT
+          echo "branch=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_OUTPUT
 
       - name: Rebuild CODEBASE_MAP.md
         env:
@@ -56,253 +40,13 @@ jobs:
           LAST_AUTHOR: ${{ steps.meta.outputs.last_author }}
           LAST_DATE: ${{ steps.meta.outputs.last_date }}
           BRANCH: ${{ steps.meta.outputs.branch }}
-        run: |
-          python3 - <<'PYEOF'
-          import os, subprocess, datetime
-
-          total_ts  = os.environ['TOTAL_TS']
-          total_py  = os.environ['TOTAL_PY']
-          commit    = os.environ['LAST_COMMIT'][:8]
-          author    = os.environ['LAST_AUTHOR']
-          date      = os.environ['LAST_DATE']
-          branch    = os.environ['BRANCH']
-          now       = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
-
-          # ── helpers ──────────────────────────────────────────────────────────
-          def ls(path):
-              try:
-                  r = subprocess.run(['ls', '-1', path], capture_output=True, text=True)
-                  return sorted(r.stdout.strip().splitlines())
-              except Exception:
-                  return []
-
-          def tree_lines(path, depth=3):
-              try:
-                  r = subprocess.run(
-                      ['tree', path, '--dirsfirst', f'-L{depth}',
-                       '-I', 'node_modules|*.tsbuildinfo|*.lock|package-lock.json'],
-                      capture_output=True, text=True
-                  )
-                  return r.stdout.strip()
-              except Exception:
-                  return '(tree unavailable)'
-
-          def file_sizes(path):
-              rows = []
-              try:
-                  for f in sorted(os.listdir(path)):
-                      fp = os.path.join(path, f)
-                      if os.path.isfile(fp):
-                          size_kb = round(os.path.getsize(fp) / 1024, 1)
-                          rows.append((f, size_kb))
-              except Exception:
-                  pass
-              return rows
-
-          # ── dashboard components table ────────────────────────────────────
-          dashboard_descriptions = {
-              'AlertsList.tsx':               'Active alerts list with severity badges',
-              'BatteryHealthCard.tsx':        'Battery SoH, temperature, degradation timeline',
-              'BatteryPredictionCard.tsx':    'AI-powered remaining-life prediction',
-              'BatteryStatusCard.tsx':        'Real-time SoC gauge + power flow',
-              'DashboardHeader.tsx':          'Top nav bar — logo, time, dark-mode toggle, alerts bell',
-              'DashboardLayout.tsx':          'Sidebar + main-content shell',
-              'DashboardSidebar.tsx':         'Navigation tree',
-              'EnergyDetailShell.tsx':        'Shared card shell for energy detail views',
-              'EngineeringKpisCard.tsx':      'IEC 61724-1 KPIs — Specific Yield, PR, CF, Battery Cycles + sparkline',
-              'InsightsBanner.tsx':           'AI insights ribbon',
-              'PanelStatusTable.tsx':         'Per-string/panel telemetry table',
-              'PowerFlowVisualization.tsx':   'Animated Sankey-style power-flow diagram',
-              'Sparkline.tsx':               'Reusable 48px area sparkline (Recharts)',
-              'StatCards.tsx':               'Top KPI stat cards (solar, load, grid, battery)',
-              'SystemVisualization.tsx':      'Full system diagram SVG',
-              'TimeRangeSwitcher.tsx':        '1h / 6h / 24h / 7d time-range toggle',
-              'WeatherCard.tsx':             'Weather conditions + irradiance',
-          }
-
-          lib_descriptions = {
-              'auto-sizing-wizard.ts':        'System auto-sizing engine (PV + battery capacity)',
-              'battery-economics.ts':         'LCOE, payback, NPV, ROI calculations',
-              'config.ts':                    'App-wide feature flags and runtime config',
-              'db.ts':                        'Prisma client singleton',
-              'dc-ac-optimizer.ts':           'DC:AC ratio optimiser',
-              'demoEnergyState.ts':           'Deterministic demo data generator',
-              'dvshave-harness.ts':           'pvlib/SAM delta-validation harness',
-              'engineeringKpis.ts':           'IEC 61724-1 KPI calculations',
-              'financial-dashboard.ts':       'Financial metrics aggregation',
-              'intelligence.ts':             'AI insight generation orchestrator',
-              'load-validator.ts':            'Load profile validation and normalisation',
-              'logger.ts':                    'Structured logger (pino wrapper)',
-              'nasa-power-api.ts':            'NASA POWER API client — irradiance, weather',
-              'physics-engine-bridge.ts':     'TS <-> Python physics engine IPC bridge',
-              'physics-engine.ts':            'Core energy simulation physics',
-              'recommendation-engine.ts':     'System optimisation recommendations',
-              'security.ts':                  'Input sanitisation, rate-limit, CSRF',
-              'serverConfig.ts':              'Server-side validated env config',
-              'solar-component-catalog.ts':   'PV panel + inverter + battery catalog',
-              'system-config.ts':             'System configuration schema + defaults',
-              'tariff-config.ts':             'Kenya electricity tariff configuration',
-              'tariff.ts':                    'Tariff calculation utilities',
-              'utils.ts':                     'cn() and misc utilities',
-              'validateEnv.ts':               'Env-var validation (zod)',
-          }
-
-          # ── build dashboard component table ──────────────────────────────
-          comp_path = 'src/components/dashboard'
-          comp_rows = []
-          for f, kb in file_sizes(comp_path):
-              if f.endswith('.tsx') or f.endswith('.ts'):
-                  desc = dashboard_descriptions.get(f, '—')
-                  comp_rows.append(f'| `{f}` | {desc} | {kb} kB |')
-
-          # ── build lib table ───────────────────────────────────────────────
-          lib_path = 'src/lib'
-          lib_rows = []
-          for f, kb in file_sizes(lib_path):
-              if f.endswith('.ts'):
-                  desc = lib_descriptions.get(f, '—')
-                  lib_rows.append(f'| `{f}` | {desc} | {kb} kB |')
-
-          # ── build stores table ────────────────────────────────────────────
-          stores_rows = []
-          for f, kb in file_sizes('src/stores'):
-              if f.endswith('.ts'):
-                  stores_rows.append(f'| `{f}` | {kb} kB |')
-
-          # ── build api routes table ────────────────────────────────────────
-          api_rows = []
-          for entry in sorted(os.listdir('src/app/api')) if os.path.isdir('src/app/api') else []:
-              api_rows.append(f'| `/api/{entry}` | — |')
-
-          # ── full document ─────────────────────────────────────────────────
-          doc = f"""# SafariCharge — Codebase Map
-
-> **Auto-generated** · Updated: {now}  
-> Commit: `{commit}` by {author} on {date}  
-> Branch: `{branch}` · TypeScript files: **{total_ts}** · Python files: **{total_py}**  
-> _Do not edit manually — regenerated by `.github/workflows/update-codebase-map.yml` on every push to `main`_
-
----
-
-## Repository Root
-
-```
-{tree_lines('.', 1)}
-```
-
----
-
-## `src/` Source Tree
-
-```
-{tree_lines('src', 3)}
-```
-
----
-
-## `src/app/` — Next.js App Router
-
-| Path | Purpose |
-|---|---|
-| `layout.tsx` | Root layout — fonts, global providers |
-| `page.tsx` | Root redirect (→ `/demo`) |
-| `error.tsx` | Global error boundary |
-| `globals.css` | CSS custom properties, Tailwind base, dark-mode tokens |
-| `api/` | Next.js Route Handlers |
-| `demo/` | Demo page — full dashboard with simulated data |
-| `scenarios/` | Scenario management & comparison UI |
-| `simulation/` | Simulation runner page |
-| `component-knowledge-base/` | Internal component reference |
-
----
-
-## `src/components/dashboard/` — Dashboard Cards
-
-| File | Purpose | Size |
-|---|---|---|
-{chr(10).join(comp_rows)}
-
----
-
-## `src/lib/` — Business Logic
-
-| File | Purpose | Size |
-|---|---|---|
-{chr(10).join(lib_rows)}
-
----
-
-## `src/stores/` — Zustand Stores
-
-| File | Size |
-|---|---|
-{chr(10).join(stores_rows)}
-
----
-
-## `forecasting/` — Python Micro-service
-
-```
-forecasting/
-└── pv_load_service/
-    ├── main.py          FastAPI app — POST /forecast
-    ├── models.py        Pydantic schemas
-    ├── trainer.py       GBR model training
-    ├── predictor.py     Quantile-band inference (P10/P50/P90)
-    ├── seasonal.py      Seasonal fallback
-    └── requirements.txt
-```
-
----
-
-## Key Data-Flow
-
-```
-[NASA POWER API]
-      │ irradiance / weather
-      ▼
-[physics-engine.ts]  ←── systemConfig
-      │ minuteDataPoint per sim-tick
-      ▼
-[energySystemStore]  ──► [Dashboard Components]
-      │
-      ▼
-[forecasting/pv_load_service]  ◄── POST /api/forecast
-      │ P10 / P50 / P90
-      ▼
-[forecastStore]  ──────► [DailyEnergyGraph overlay]
-```
-
----
-
-## Dependency Overview
-
-| Category | Libraries |
-|---|---|
-| **Framework** | Next.js 15 (App Router), React 19 |
-| **State** | Zustand |
-| **UI** | shadcn/ui, Tailwind CSS v4, Lucide icons |
-| **Charts** | Recharts |
-| **DB** | Prisma + PostgreSQL |
-| **Validation** | Zod |
-| **Auth** | NextAuth.js |
-| **Forecasting** | FastAPI, scikit-learn (GBR), pandas |
-| **Observability** | OpenTelemetry, Pino |
-| **Tooling** | Bun, ESLint, TypeScript 5 |
-"""
-
-          with open('CODEBASE_MAP.md', 'w') as fh:
-              fh.write(doc)
-
-          print('CODEBASE_MAP.md written successfully')
-          PYEOF
+        run: python3 .github/scripts/gen_codebase_map.py
 
       - name: Commit updated map
         run: |
           git config user.name  'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git add CODEBASE_MAP.md
-          # Only commit if there are actual changes
           if git diff --cached --quiet; then
             echo 'No changes to CODEBASE_MAP.md — skipping commit'
           else
