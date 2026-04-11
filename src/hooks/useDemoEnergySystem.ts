@@ -8,6 +8,16 @@ import { DEFAULT_SYSTEM_CONFIG } from '@/lib/system-config';
 import type { SolarData } from '@/lib/physics-engine';
 
 // ---------------------------------------------------------------------------
+// Simulation constants — MUST be module-level so references are stable
+// across re-renders. Inline array/object literals in hook bodies create new
+// references each render, causing tick/runTick to be recreated and the
+// setInterval to restart (resetting the simulated clock and battery SOC).
+// ---------------------------------------------------------------------------
+
+/** Peak-tariff window: 17:00–21:00 Kenya KPLC evening peak. */
+const DEMO_PEAK_WINDOW: [number, number] = [17, 21];
+
+// ---------------------------------------------------------------------------
 // Nairobi solar data (matches NAIROBI_SOLAR_DATA in page.tsx)
 // ---------------------------------------------------------------------------
 const DEMO_SOLAR_DATA: SolarData = {
@@ -53,7 +63,7 @@ export function useDemoEnergySystem() {
     gridEnabled: true,
     peakRate: 24.31,
     offPeakRate: 14.93,
-    peakWindow: [17, 21],
+    peakWindow: DEMO_PEAK_WINDOW,
   });
 
   // Simulated clock state — persisted in refs so setInterval closure stays stable
