@@ -70,7 +70,7 @@ export const SafariChargeAIAssistant = ({
   minuteData,
   systemConfig,
 }: AssistantProps) => {
-  const [messages, setMessages] = useState<Array<{ role: string; text: string }}>([
+  const [messages, setMessages] = useState<Array<{ role: string; text: string }>>([ 
     {
       role: 'assistant',
       text: "Hello! I'm **SafariCharge AI**, your intelligent energy advisor.\n\nI can help with your live dashboard data *and* answer broader questions using verified research when needed (not just your current simulation). Ask me anything! \u2600\ufe0f\ud83d\udd0b\ud83d\udcda",

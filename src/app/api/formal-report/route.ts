@@ -1398,6 +1398,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function OPTIONS(req: NextRequest) {
-  const headers = buildCorsHeaders(req);
+  const { preflight, headers } = buildCorsHeaders(req);
+  if (preflight) return preflight;
   return new NextResponse(null, { status: 204, headers });
 }

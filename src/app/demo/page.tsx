@@ -40,12 +40,15 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { MapPin } from 'lucide-react';
+import type { SimulationMinuteRecord } from '@/types/simulation-core';
 
 // ── Restored page components ──────────────────────────────────────────────────
 import FinancialDashboard from '@/components/FinancialDashboard';
+import { buildFinancialSnapshot, type FinancialInputs } from '@/lib/financial-dashboard';
 import { LoadConfigComponents } from '@/components/LoadConfigComponents';
 import { RecommendationComponents } from '@/components/RecommendationComponents';
 import { SimulationNodes } from '@/components/simulation/SimulationNodes';
+import { SafariChargeAIAssistant } from '@/components/dashboard/AIAssistant';
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Force dynamic rendering - no static generation
@@ -110,6 +113,16 @@ export default function ModularDashboardDemo({
 
   const [activeSection, setActiveSection] = useState<DashboardSection>(initialSection);
   const [isReportOpen, setIsReportOpen] = useState(false);
+
+  // ─── Financial state ─────────────────────────────────────────────────────
+  const [financialInputs, setFinancialInputs] = useState<FinancialInputs>({
+    chargingTariffKes: 25,
+    discountRatePct: 10,
+    stationCount: 3,
+    targetUtilizationPct: 45,
+    projectYears: 20,
+  });
+  // ─────────────────────────────────────────────────────────────────────────
 
   // ─── Location state ──────────────────────────────────────────────────────
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
@@ -549,6 +562,20 @@ export default function ModularDashboardDemo({
 
   const isMonthlyFallback = monthlyOverviewData[0]?.isFallback ?? true;
 
+  // ── Financial snapshot — computed from live minuteData ────────────────────
+  const financialSnapshot = useMemo(() =>
+    buildFinancialSnapshot({
+      minuteData: minuteData as Parameters<typeof buildFinancialSnapshot>[0]['minuteData'],
+      solarData: NAIROBI_SOLAR_DATA,
+      inputs: financialInputs,
+      evCapacityKw: 22,
+    }),
+    [minuteData, financialInputs]
+  );
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ─────────────────────────────────────────────────────────────────────────
+
   // ── Section renderer ──────────────────────────────────────────────────────
   const renderSection = () => {
     switch (activeSection) {
@@ -586,7 +613,58 @@ export default function ModularDashboardDemo({
                 <h2 className="text-2xl font-bold text-[var(--text-primary)]">Financial Analysis</h2>
                 <p className="text-sm text-[var(--text-tertiary)]">CAPEX, LCOE, NPV, IRR and payback period analysis</p>
               </div>
-              <FinancialDashboard />
+              <FinancialDashboard
+                snapshot={financialSnapshot}
+                inputs={financialInputs}
+                onInputsChange={setFinancialInputs}
+                hasSimulationData={minuteData.length > 0}
+              />
+            </div>
+          </main>
+        );
+
+      case 'ai-assistant':
+        return (
+          <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
+            <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
+              <div>
+                <h2 className="text-2xl font-bold text-[var(--text-primary)]">AI Assistant</h2>
+                <p className="text-sm text-[var(--text-tertiary)]">Ask questions about your live energy system</p>
+              </div>
+              <SafariChargeAIAssistant
+                isOpen={true}
+                onClose={() => setActiveSection('dashboard')}
+                data={null}
+                timeOfDay={currentDate ? currentDate.getHours() + currentDate.getMinutes() / 60 : 12}
+                weather="clear"
+                currentDate={currentDate ?? new Date()}
+                isAutoMode={true}
+                minuteData={minuteData as SimulationMinuteRecord[]}
+                systemConfig={{
+                  mode: 'auto',
+                  panelCount: 20,
+                  panelWatt: 500,
+                  inverterKw: 10,
+                  inverterUnits: 1,
+                  batteryKwh: 50,
+                  maxChargeKw: 5,
+                  maxDischargeKw: 5,
+                  evChargerKw: 7.4,
+                  loadScale: 1,
+                  loadProfile: 'residential',
+                  evCommuterScale: 1,
+                  evFleetScale: 1,
+                  homeLoadEnabled: true,
+                  homeLoadKw: 3,
+                  commercialLoadEnabled: false,
+                  commercialLoadKw: 0,
+                  industrialLoadEnabled: false,
+                  industrialLoadKw: 0,
+                  accessoryLoadKw: 0,
+                  accessoryScale: 1,
+                  pvCapacityKw: 10,
+                }}
+              />
             </div>
           </main>
         );

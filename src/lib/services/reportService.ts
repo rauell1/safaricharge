@@ -7,27 +7,40 @@
  */
 
 import { useEnergySystemStore } from '@/stores/energySystemStore';
-import type { MinuteDataPoint } from '@/stores/energySystemStore';
+import type {
+  MinuteDataPoint,
+  EnergyNode,
+  EnergyFlow,
+  Accumulators,
+  NodeType,
+} from '@/stores/energySystemStore';
 
 export interface ReportData {
   // Node states
-  nodes: ReturnType<typeof useEnergySystemStore>['nodes'];
+  nodes: Record<NodeType, EnergyNode>;
 
   // Energy flows
-  flows: ReturnType<typeof useEnergySystemStore>['flows'];
+  flows: EnergyFlow[];
 
   // Time range
   timeRange: string;
   currentDate: Date;
 
   // Accumulators (totals)
-  accumulators: ReturnType<typeof useEnergySystemStore>['accumulators'];
+  accumulators: Accumulators;
 
   // Historical data
   minuteData: MinuteDataPoint[];
 
   // System configuration
-  systemConfig: ReturnType<typeof useEnergySystemStore>['systemConfig'];
+  systemConfig: {
+    solarCapacityKW: number;
+    batteryCapacityKWh: number;
+    inverterKW: number;
+    ev1CapacityKWh: number;
+    ev2CapacityKWh: number;
+    gridTariff: { peakRate: number; offPeakRate: number };
+  };
 
   // Statistics
   statistics: {

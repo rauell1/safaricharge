@@ -12,9 +12,12 @@
  * - timeRange: Time filter for data views
  * - accumulators: Running totals (energy, savings, carbon offset)
  * - minuteData: Complete simulation history for reports
+ * - fullSystemConfig: Complete SystemConfiguration used by the physics engine
  */
 
 import { create } from 'zustand';
+import type { SystemConfiguration } from '@/lib/system-config';
+import { DEFAULT_SYSTEM_CONFIG } from '@/lib/system-config';
 
 // Node types in the energy system
 export type NodeType = 'solar' | 'battery' | 'grid' | 'home' | 'ev1' | 'ev2';
@@ -171,6 +174,9 @@ interface EnergySystemState {
     };
   };
 
+  // Full physics-engine configuration (drives the simulation tick loop)
+  fullSystemConfig: SystemConfiguration;
+
   // Actions
   updateNode: (nodeType: NodeType, updates: Partial<EnergyNode>) => void;
   updateFlows: (flows: EnergyFlow[]) => void;
@@ -185,6 +191,7 @@ interface EnergySystemState {
     simSpeed?: number;
   }) => void;
   updateSystemConfig: (config: Partial<EnergySystemState['systemConfig']>) => void;
+  updateFullSystemConfig: (config: SystemConfiguration) => void;
   resetSystem: () => void;
 
   // Scenarios
@@ -273,6 +280,7 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
       offPeakRate: 14.93,
     },
   },
+  fullSystemConfig: DEFAULT_SYSTEM_CONFIG,
   scenarios: [],
 
   updateNode: (nodeType, updates) =>
@@ -315,6 +323,8 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
       },
     })),
 
+  updateFullSystemConfig: (config) => set({ fullSystemConfig: config }),
+
   resetSystem: () =>
     set({
       nodes: initialNodes,
@@ -327,6 +337,7 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
       simSpeed: 1,
       accumulators: initialAccumulators,
       minuteData: [],
+      fullSystemConfig: DEFAULT_SYSTEM_CONFIG,
     }),
 
   saveScenario: (name, finance, location) =>
