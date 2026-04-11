@@ -34,3 +34,9 @@ tsconfig.tsbuildinfo
 docs/.map-hashes.json
 docs/.map-hotspots.json
 
+# Python bytecode (validation harness)
+__pycache__/
+*.pyc
+*.pyo
+validation/.venv/
+
