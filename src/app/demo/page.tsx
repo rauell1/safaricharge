@@ -42,6 +42,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { MapPin } from 'lucide-react';
+import { resampleTo5MinBucketsProgressive } from '@/lib/graphSampler';
 import type { SimulationMinuteRecord } from '@/types/simulation-core';
 
 // ── Restored page components ──────────────────────────────────────────────────
@@ -486,14 +487,10 @@ export default function ModularDashboardDemo({
     gridToHome:     flows.some((f) => f.from === 'grid'    && f.to === 'home'    && f.active),
   }), [flows]);
 
-  const graphData = useMemo(() => minuteData.map((d) => ({
-    timeOfDay:  d.hour + d.minute / 60,
-    solar:      d.solarKW,
-    load:       d.homeLoadKW + d.ev1LoadKW + d.ev2LoadKW,
-    batSoc:     d.batteryLevelPct,
-    gridImport: d.gridImportKW,
-    gridExport: d.gridExportKW,
-  })), [minuteData]);
+  const graphData = useMemo(
+    () => resampleTo5MinBucketsProgressive(minuteData),
+    [minuteData]
+  );
 
   const energySplit = useMemo(() => {
     const totalEnergy = stats.totalSolarKWh + stats.totalConsumptionKWh + stats.totalGridExportKWh;
