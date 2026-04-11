@@ -1,191 +1,255 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { Car, Zap, Clock, BanknoteIcon } from 'lucide-react';
+import { Car, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
-import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
-import { useEnergyNode } from '@/hooks/useEnergySystem';
+import {
+  useEnergyNode,
+  useMinuteData,
+  useSimulationState,
+} from '@/hooks/useEnergySystem';
 
-// ─── helpers ──────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+// EV charger option catalogue
+// ---------------------------------------------------------------------------
 
-/** Format decimal hours as "Xh Ym" (e.g. 1.5 → "1h 30m") */
-function formatTimeToFull(hours: number): string {
-  if (!isFinite(hours) || hours <= 0) return '—';
-  if (hours > 99) return '>99h';
-  const h = Math.floor(hours);
-  const m = Math.round((hours - h) * 60);
-  if (h === 0) return `${m}m`;
-  if (m === 0) return `${h}h`;
-  return `${h}h ${m}m`;
-}
+export type PowerDelivery = 'AC' | 'DC';
 
-// ─── sub-component for a single EV ───────────────────────────────────────────
-
-interface EVRowProps {
-  evKey: 'ev1' | 'ev2';
+interface ChargerOption {
   label: string;
-  capacityKWh: number;
-  tariffRate: number;
+  rateKW: number;
+  delivery: PowerDelivery;
 }
 
-function EVRow({ evKey, label, capacityKWh, tariffRate }: EVRowProps) {
-  const evNode        = useEnergyNode(evKey);
-  const evControls    = useEnergySystemStore((s) => s.evControls[evKey]);
-  const setEVCharging = useEnergySystemStore((s) => s.setEVCharging);
-  const setEVChargeRate = useEnergySystemStore((s) => s.setEVChargeRate);
+const CHARGER_OPTIONS: ChargerOption[] = [
+  { label: 'AC 3.7 kW  (Level 1)', rateKW: 3.7,  delivery: 'AC' },
+  { label: 'AC 7.4 kW  (Level 2)', rateKW: 7.4,  delivery: 'AC' },
+  { label: 'AC 11 kW   (Level 2)', rateKW: 11,   delivery: 'AC' },
+  { label: 'AC 22 kW   (Level 2)', rateKW: 22,   delivery: 'AC' },
+  { label: 'DC 50 kW   (Fast)',    rateKW: 50,   delivery: 'DC' },
+  { label: 'DC 100 kW  (Rapid)',   rateKW: 100,  delivery: 'DC' },
+  { label: 'DC 150 kW  (Ultra)',   rateKW: 150,  delivery: 'DC' },
+];
 
-  const soc          = evNode.soc ?? 0;
-  const isFull       = soc >= 98;
-  const { isCharging, chargeRateKW, maxRateKW } = evControls;
+// Battery capacity assumed for the demo EV (matches store initialNodes.ev1.capacityKWh)
+const EV_CAPACITY_KWH = 80;
 
-  // Time to full: ((100 - soc) / 100 * capacityKWh) / chargeRateKW
-  const timeToFull = useMemo(() => {
-    if (!isCharging || isFull || chargeRateKW <= 0) return null;
-    return ((100 - soc) / 100 * capacityKWh) / chargeRateKW;
-  }, [isCharging, isFull, soc, capacityKWh, chargeRateKW]);
+// ---------------------------------------------------------------------------
+// SoC ring
+// ---------------------------------------------------------------------------
 
-  // Cost per hour at current tariff
-  const costPerHour = isCharging ? chargeRateKW * tariffRate : 0;
+function SoCRing({ soc, isCharging }: { soc: number; isCharging: boolean }) {
+  const r = 44;
+  const circ = 2 * Math.PI * r;
+  const filled = (Math.min(100, Math.max(0, soc)) / 100) * circ;
 
-  // Status badge
-  const statusLabel = isFull ? 'Full' : isCharging ? 'Charging' : 'Idle';
-  const statusColor = isFull
-    ? 'var(--color-blue, #006494)'
-    : isCharging
-    ? 'var(--battery, #22c55e)'
-    : 'var(--text-secondary, #7a7974)';
-
-  // SVG ring dimensions
-  const R   = 28;
-  const C   = 2 * Math.PI * R;
-  const arc = (soc / 100) * C;
+  const ringColor = isCharging
+    ? 'var(--battery)'
+    : soc >= 80
+    ? 'var(--battery)'
+    : soc >= 30
+    ? 'var(--solar)'
+    : 'var(--consumption)';
 
   return (
-    <div className="flex flex-col gap-3 p-4 rounded-xl border border-[var(--border)] bg-[var(--bg-card-muted,var(--color-surface))]">
-      {/* Header row */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Car className="h-4 w-4 text-[var(--text-secondary)]" />
-          <span className="text-sm font-semibold text-[var(--text-primary)]">{label}</span>
-          <Badge
-            variant="outline"
-            className="text-[10px] px-1.5 py-0 border-0"
-            style={{ color: statusColor, backgroundColor: `${statusColor}18` }}
-          >
-            {statusLabel}
-          </Badge>
-        </div>
-        <Switch
-          checked={isCharging}
-          onCheckedChange={(val) => setEVCharging(evKey, val)}
-          disabled={isFull}
-          aria-label={`Toggle ${label} charging`}
+    <div className="relative flex items-center justify-center" style={{ width: 110, height: 110 }}>
+      <svg viewBox="0 0 100 100" width="110" height="110" className="-rotate-90">
+        {/* track */}
+        <circle
+          cx="50" cy="50" r={r}
+          fill="none"
+          stroke="var(--border)"
+          strokeWidth="8"
         />
-      </div>
-
-      {/* SoC ring + stats */}
-      <div className="flex items-center gap-4">
-        {/* Ring */}
-        <div className="relative flex-shrink-0">
-          <svg width="72" height="72" viewBox="0 0 72 72" className="-rotate-90">
-            {/* Track */}
-            <circle
-              cx="36" cy="36" r={R}
-              fill="none"
-              stroke="var(--border)"
-              strokeWidth="6"
-            />
-            {/* Progress */}
-            <circle
-              cx="36" cy="36" r={R}
-              fill="none"
-              stroke={isCharging && !isFull ? 'var(--battery, #22c55e)' : isFull ? 'var(--color-blue, #006494)' : 'var(--text-secondary)'}
-              strokeWidth="6"
-              strokeLinecap="round"
-              strokeDasharray={`${arc} ${C}`}
-              style={{ transition: 'stroke-dasharray 0.6s ease' }}
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-base font-bold text-[var(--text-primary)] leading-none">{Math.round(soc)}%</span>
-            <span className="text-[10px] text-[var(--text-secondary)] leading-none mt-0.5">SoC</span>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="flex-1 grid grid-cols-1 gap-1.5">
-          <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
-            <Zap className="h-3 w-3 flex-shrink-0" />
-            <span>{isCharging ? `${chargeRateKW.toFixed(1)} kW` : '—'}</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
-            <Clock className="h-3 w-3 flex-shrink-0" />
-            <span>{timeToFull != null ? formatTimeToFull(timeToFull) : '—'}</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
-            <BanknoteIcon className="h-3 w-3 flex-shrink-0" />
-            <span>{isCharging ? `KES ${costPerHour.toFixed(0)}/hr` : '—'}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Charge rate slider */}
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-[var(--text-secondary)]">Charge rate</span>
-          <span className="text-xs font-medium text-[var(--text-primary)]">{chargeRateKW.toFixed(1)} / {maxRateKW} kW</span>
-        </div>
-        <Slider
-          min={1}
-          max={maxRateKW}
-          step={0.5}
-          value={[chargeRateKW]}
-          onValueChange={([val]) => setEVChargeRate(evKey, val)}
-          disabled={!isCharging || isFull}
-          aria-label={`${label} charge rate`}
-          className="w-full"
+        {/* fill */}
+        <circle
+          cx="50" cy="50" r={r}
+          fill="none"
+          stroke={ringColor}
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeDasharray={`${filled} ${circ}`}
+          style={{ transition: 'stroke-dasharray 0.6s ease, stroke 0.4s ease' }}
         />
+      </svg>
+      <div className="absolute flex flex-col items-center">
+        <span className="text-2xl font-bold" style={{ color: ringColor }}>
+          {Math.round(soc)}%
+        </span>
+        <span className="text-[10px] text-[var(--text-tertiary)]">
+          {isCharging ? 'Charging' : 'Idle'}
+        </span>
       </div>
     </div>
   );
 }
 
-// ─── main card ────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+// EVChargingCard
+// ---------------------------------------------------------------------------
 
 export function EVChargingCard() {
-  // Read current tariff from the latest minuteData point (falls back to off-peak rate)
-  const minuteData   = useEnergySystemStore((s) => s.minuteData);
-  const systemConfig = useEnergySystemStore((s) => s.systemConfig);
-  const latestPoint  = minuteData[minuteData.length - 1];
-  const tariffRate   = latestPoint?.tariffRate ?? systemConfig.gridTariff.offPeakRate;
+  // ── store reads ────────────────────────────────────────────────────────────
+  const evControls   = useEnergySystemStore((s) => s.evControls);
+  const setEVCharging    = useEnergySystemStore((s) => s.setEVCharging);
+  const setEVChargeOption = useEnergySystemStore((s) => s.setEVChargeOption);
+  const evNode       = useEnergyNode('ev1');
+  const minuteData   = useMinuteData('today');
+  const { currentDate } = useSimulationState();
 
-  const ev1CapacityKWh = systemConfig.ev1CapacityKWh;
-  const ev2CapacityKWh = systemConfig.ev2CapacityKWh;
+  const { isCharging, chargerOptionIndex } = evControls.ev1;
+  const selectedOption = CHARGER_OPTIONS[chargerOptionIndex] ?? CHARGER_OPTIONS[1];
+
+  // current SoC from live simulation node (falls back to minuteData latest)
+  const latestSoC = useMemo(() => {
+    const fromNode = evNode.soc ?? null;
+    if (fromNode !== null) return fromNode;
+    const last = minuteData[minuteData.length - 1];
+    return last?.ev1SocPct ?? 0;
+  }, [evNode.soc, minuteData]);
+
+  // ── derived stats ──────────────────────────────────────────────────────────
+  const kw = isCharging ? selectedOption.rateKW : 0;
+
+  // Read live tariff rate from last minuteData point
+  const tariffRate = useMemo(() => {
+    const last = minuteData[minuteData.length - 1];
+    return last?.tariffRate ?? 14.93;
+  }, [minuteData]);
+
+  const costPerHour = kw * tariffRate; // KES/hr
+
+  const timeToFull = useMemo(() => {
+    if (!isCharging || selectedOption.rateKW === 0) return null;
+    const remaining = ((100 - latestSoC) / 100) * EV_CAPACITY_KWH;
+    const hours = remaining / selectedOption.rateKW;
+    if (hours <= 0) return 'Full';
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    return `${h}h ${m}m`;
+  }, [isCharging, selectedOption.rateKW, latestSoC]);
+
+  // status badge
+  const badgeLabel = latestSoC >= 98 ? 'Full' : isCharging ? 'Charging' : 'Idle';
+  const badgeColor =
+    latestSoC >= 98
+      ? 'var(--blue, #3b82f6)'
+      : isCharging
+      ? 'var(--battery)'
+      : 'var(--text-tertiary)';
+
+  const isPeakNow = useMemo(() => {
+    const h = currentDate?.getHours() ?? new Date().getHours();
+    return h >= 17 && h < 21;
+  }, [currentDate]);
 
   return (
     <Card className="dashboard-card">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-          <Zap className="h-5 w-5 text-[var(--battery,#22c55e)]" />
+          <Car className="h-5 w-5" style={{ color: 'var(--battery)' }} />
           EV Charging
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0 flex flex-col gap-3">
-        <EVRow
-          evKey="ev1"
-          label="EV 1"
-          capacityKWh={ev1CapacityKWh}
-          tariffRate={tariffRate}
-        />
-        <EVRow
-          evKey="ev2"
-          label="EV 2"
-          capacityKWh={ev2CapacityKWh}
-          tariffRate={tariffRate}
-        />
+
+      <CardContent className="space-y-5">
+        {/* ── SoC ring + badge ───────────────────────────────────────────── */}
+        <div className="flex flex-col items-center gap-2">
+          <SoCRing soc={latestSoC} isCharging={isCharging} />
+          <span
+            className="text-xs font-semibold px-2.5 py-0.5 rounded-full border"
+            style={{ color: badgeColor, borderColor: badgeColor }}
+          >
+            {badgeLabel}
+          </span>
+        </div>
+
+        {/* ── Start / Stop toggle ────────────────────────────────────────── */}
+        <div className="flex items-center justify-between rounded-lg border border-[var(--border)] px-4 py-3">
+          <Label htmlFor="ev-toggle" className="text-sm font-medium text-[var(--text-primary)] cursor-pointer">
+            Start charging
+          </Label>
+          <Switch
+            id="ev-toggle"
+            checked={isCharging}
+            onCheckedChange={(v) => setEVCharging('ev1', v)}
+            disabled={latestSoC >= 98}
+          />
+        </div>
+
+        {/* ── Charger selector ───────────────────────────────────────────── */}
+        <div className="space-y-1.5">
+          <Label className="text-xs text-[var(--text-secondary)]">Charger type &amp; size</Label>
+          <Select
+            value={String(chargerOptionIndex)}
+            onValueChange={(v) => setEVChargeOption('ev1', Number(v))}
+          >
+            <SelectTrigger className="w-full bg-[var(--bg-card-muted)] border-[var(--border)] text-[var(--text-primary)]">
+              <SelectValue placeholder="Select charger" />
+            </SelectTrigger>
+            <SelectContent className="bg-[var(--bg-card)] border-[var(--border)]">
+              {CHARGER_OPTIONS.map((opt, idx) => (
+                <SelectItem
+                  key={idx}
+                  value={String(idx)}
+                  className="text-[var(--text-primary)] focus:bg-[var(--bg-card-muted)]"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide"
+                      style={{
+                        backgroundColor: opt.delivery === 'DC' ? 'var(--solar-soft)' : 'var(--battery-soft)',
+                        color: opt.delivery === 'DC' ? 'var(--solar)' : 'var(--battery)',
+                      }}
+                    >
+                      {opt.delivery}
+                    </span>
+                    {opt.label.replace(/^(AC|DC)\s*/, '')}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* ── Live stats row ─────────────────────────────────────────────── */}
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { label: 'Power', value: isCharging ? `${selectedOption.rateKW} kW` : '—' },
+            { label: 'To full', value: timeToFull ?? '—' },
+            { label: 'Cost/hr', value: isCharging ? `${Math.round(costPerHour)} KES` : '—' },
+          ].map(({ label, value }) => (
+            <div
+              key={label}
+              className="flex flex-col items-center rounded-lg border border-[var(--border)] py-2 px-1"
+              style={{ backgroundColor: 'var(--bg-card-muted)' }}
+            >
+              <span className="text-xs text-[var(--text-tertiary)]">{label}</span>
+              <span className="text-sm font-semibold text-[var(--text-primary)] mt-0.5">{value}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Peak warning ───────────────────────────────────────────────── */}
+        {isPeakNow && isCharging && (
+          <div
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs"
+            style={{ backgroundColor: 'var(--consumption-soft)', color: 'var(--consumption)' }}
+          >
+            <Zap className="h-3.5 w-3.5 flex-shrink-0" />
+            Peak tariff active — charging costs {Math.round(costPerHour)} KES/hr
+          </div>
+        )}
       </CardContent>
     </Card>
   );

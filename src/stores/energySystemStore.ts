@@ -12,10 +12,13 @@
  * - timeRange: Time filter for data views
  * - accumulators: Running totals (energy, savings, carbon offset)
  * - minuteData: Complete simulation history for reports
- * - evControls: User-controlled EV charging state (on/off, rate)
+ * - fullSystemConfig: Complete SystemConfiguration used by the physics engine
+ * - evControls: User-controlled EV charge settings
  */
 
 import { create } from 'zustand';
+import type { SystemConfiguration } from '@/lib/system-config';
+import { DEFAULT_SYSTEM_CONFIG } from '@/lib/system-config';
 
 // Node types in the energy system
 export type NodeType = 'solar' | 'battery' | 'grid' | 'home' | 'ev1' | 'ev2';
@@ -89,22 +92,6 @@ export interface Accumulators {
 // Time range filter options
 export type TimeRange = 'today' | 'week' | 'month' | 'year' | 'all';
 
-// ── EV Charging Controls ──────────────────────────────────────────────────────
-
-export interface EVControl {
-  /** Whether the user has enabled charging for this EV */
-  isCharging: boolean;
-  /** Current charge rate set by the user (kW) */
-  chargeRateKW: number;
-  /** Hardware maximum charge rate for this EV (kW) */
-  maxRateKW: number;
-}
-
-export interface EVControls {
-  ev1: EVControl;
-  ev2: EVControl;
-}
-
 // ── Scenario Snapshots ────────────────────────────────────────────────────────
 
 export interface SystemConfigSnapshot {
@@ -149,8 +136,22 @@ export interface SavedScenario {
   location: LocationCoordinatesSnapshot;
 }
 
+// ── EV Controls ───────────────────────────────────────────────────────────────
+
+export interface EVControl {
+  /** Whether charging is active */
+  isCharging: boolean;
+  /** Index into CHARGER_OPTIONS in EVChargingCard (encodes both kW and AC/DC) */
+  chargerOptionIndex: number;
+}
+
+export interface EVControls {
+  ev1: EVControl;
+}
+
 // ── Energy System State ───────────────────────────────────────────────────────
 
+// Energy System State
 interface EnergySystemState {
   // Core nodes
   nodes: Record<NodeType, EnergyNode>;
@@ -187,7 +188,10 @@ interface EnergySystemState {
     };
   };
 
-  // EV charging controls (user-controlled)
+  // Full physics-engine configuration (drives the simulation tick loop)
+  fullSystemConfig: SystemConfiguration;
+
+  // EV charging controls (user-driven)
   evControls: EVControls;
 
   // Actions
@@ -204,11 +208,12 @@ interface EnergySystemState {
     simSpeed?: number;
   }) => void;
   updateSystemConfig: (config: Partial<EnergySystemState['systemConfig']>) => void;
+  updateFullSystemConfig: (config: SystemConfiguration) => void;
   resetSystem: () => void;
 
   // EV control actions
-  setEVCharging: (ev: 'ev1' | 'ev2', charging: boolean) => void;
-  setEVChargeRate: (ev: 'ev1' | 'ev2', rateKW: number) => void;
+  setEVCharging: (ev: 'ev1', charging: boolean) => void;
+  setEVChargeOption: (ev: 'ev1', optionIndex: number) => void;
 
   // Scenarios
   scenarios: SavedScenario[];
@@ -274,8 +279,7 @@ const initialAccumulators: Accumulators = {
 };
 
 const initialEVControls: EVControls = {
-  ev1: { isCharging: false, chargeRateKW: 7,  maxRateKW: 11 },
-  ev2: { isCharging: false, chargeRateKW: 11, maxRateKW: 22 },
+  ev1: { isCharging: false, chargerOptionIndex: 1 }, // default: AC 7.4 kW
 };
 
 // Create the store
@@ -290,7 +294,6 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
   simSpeed: 1,
   accumulators: initialAccumulators,
   minuteData: [],
-  evControls: initialEVControls,
   systemConfig: {
     solarCapacityKW: 10,
     batteryCapacityKWh: 50,
@@ -302,6 +305,8 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
       offPeakRate: 14.93,
     },
   },
+  fullSystemConfig: DEFAULT_SYSTEM_CONFIG,
+  evControls: initialEVControls,
   scenarios: [],
 
   updateNode: (nodeType, updates) =>
@@ -344,6 +349,8 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
       },
     })),
 
+  updateFullSystemConfig: (config) => set({ fullSystemConfig: config }),
+
   resetSystem: () =>
     set({
       nodes: initialNodes,
@@ -356,10 +363,12 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
       simSpeed: 1,
       accumulators: initialAccumulators,
       minuteData: [],
+      fullSystemConfig: DEFAULT_SYSTEM_CONFIG,
       evControls: initialEVControls,
     }),
 
-  // ── EV control actions ──────────────────────────────────────────────────
+  // ── EV control actions ────────────────────────────────────────────────────
+
   setEVCharging: (ev, charging) =>
     set((state) => ({
       evControls: {
@@ -368,13 +377,15 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
       },
     })),
 
-  setEVChargeRate: (ev, rateKW) =>
+  setEVChargeOption: (ev, optionIndex) =>
     set((state) => ({
       evControls: {
         ...state.evControls,
-        [ev]: { ...state.evControls[ev], chargeRateKW: rateKW },
+        [ev]: { ...state.evControls[ev], chargerOptionIndex: optionIndex },
       },
     })),
+
+  // ── Scenario actions ──────────────────────────────────────────────────────
 
   saveScenario: (name, finance, location) =>
     set((state) => {
