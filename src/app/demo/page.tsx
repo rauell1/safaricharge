@@ -30,6 +30,15 @@ import type { SolarIrradianceData } from '@/lib/nasa-power-api';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { MapPin } from 'lucide-react';
 
 // Force dynamic rendering - no static generation
 export const dynamic = 'force-dynamic';
@@ -49,50 +58,103 @@ const NAIROBI_SOLAR_DATA: SolarIrradianceData = {
 const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] as const;
 
 // Static fallback displayed while the simulation is still warming up (no minuteData yet).
-// Values are intentionally modest so the chart looks proportional at any scale.
 const FALLBACK_GEN  = [65, 70, 78, 85, 90, 95, 88, 92, 80, 75, 68, 62] as const;
 const FALLBACK_CONS = [55, 58, 60, 62, 65, 68, 70, 69, 65, 60, 57, 54] as const;
+
+// ─── Location picker data ────────────────────────────────────────────────────
+interface LocationOption {
+  name: string;
+  displayName: string;
+  latitude: number;
+  longitude: number;
+  annualAvgSunHours: number;
+}
+
+const KENYA_LOCATIONS: LocationOption[] = [
+  { name: 'Nairobi',  displayName: 'Nairobi, Kenya',  latitude: -1.2921, longitude:  36.8219, annualAvgSunHours: 5.4 },
+  { name: 'Mombasa',  displayName: 'Mombasa, Kenya',  latitude: -4.0435, longitude:  39.6682, annualAvgSunHours: 5.8 },
+  { name: 'Kisumu',   displayName: 'Kisumu, Kenya',   latitude: -0.1022, longitude:  34.7617, annualAvgSunHours: 5.2 },
+  { name: 'Nakuru',   displayName: 'Nakuru, Kenya',   latitude: -0.3031, longitude:  36.0800, annualAvgSunHours: 5.6 },
+  { name: 'Eldoret',  displayName: 'Eldoret, Kenya',  latitude:  0.5143, longitude:  35.2698, annualAvgSunHours: 5.3 },
+  { name: 'Thika',    displayName: 'Thika, Kenya',    latitude: -1.0332, longitude:  37.0693, annualAvgSunHours: 5.5 },
+  { name: 'Malindi',  displayName: 'Malindi, Kenya',  latitude: -3.2175, longitude:  40.1169, annualAvgSunHours: 6.0 },
+  { name: 'Garissa',  displayName: 'Garissa, Kenya',  latitude: -0.4532, longitude:  39.6461, annualAvgSunHours: 6.4 },
+];
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function ModularDashboardDemo() {
   useDemoEnergySystem();
   const { timeRange, setTimeRange } = useTimeRange();
   const { currentDate } = useSimulationState();
-  const solarNode = useEnergyNode('solar');
-  const batteryNode = useEnergyNode('battery');
-  const gridNode = useEnergyNode('grid');
-  const homeNode = useEnergyNode('home');
-  const flows = useEnergyFlows();
-  const stats = useEnergyStats(timeRange);
-  const minuteData = useMinuteData(timeRange);
+  const solarNode    = useEnergyNode('solar');
+  const batteryNode  = useEnergyNode('battery');
+  const gridNode     = useEnergyNode('grid');
+  const homeNode     = useEnergyNode('home');
+  const flows        = useEnergyFlows();
+  const stats        = useEnergyStats(timeRange);
+  const minuteData   = useMinuteData(timeRange);
   const accumulators = useAccumulators();
   const saveScenario = useEnergySystemStore((s) => s.saveScenario);
-  const { toast } = useToast();
+  const resetSystem  = useEnergySystemStore((s) => s.resetSystem);
+  const { toast }    = useToast();
 
   const [isReportOpen, setIsReportOpen] = useState(false);
+
+  // ─── Location state ──────────────────────────────────────────────────────
+  const [locationPickerOpen, setLocationPickerOpen] = useState(false);
+  const [activeLocation, setActiveLocation]         = useState<LocationOption>(KENYA_LOCATIONS[0]);
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ─── Reset handler ───────────────────────────────────────────────────────
+  const handleReset = useCallback(() => {
+    const confirmed = window.confirm(
+      'Reset the simulation?\n\nThis will clear all accumulated energy data and restart the system from its initial state.'
+    );
+    if (!confirmed) return;
+    resetSystem();
+    toast({
+      title: 'Simulation reset',
+      description: 'All energy data has been cleared. The simulation is restarting.',
+    });
+  }, [resetSystem, toast]);
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ─── Location picker handler ─────────────────────────────────────────────
+  const handleSelectLocation = useCallback((loc: LocationOption) => {
+    setActiveLocation(loc);
+    setLocationPickerOpen(false);
+    toast({
+      title: 'Location updated',
+      description: `Solar data will now reflect conditions in ${loc.displayName} (avg ${loc.annualAvgSunHours} sun-hours/day).`,
+    });
+  }, [toast]);
+  // ─────────────────────────────────────────────────────────────────────────
 
   const handleSaveScenario = useCallback((name: string) => {
     saveScenario(
       name,
       {
-        capexTotal: 0,
-        npvKes: 0,
-        irrPct: 0,
-        lcoeKesPerKwh: 0,
-        paybackYears: 0,
+        capexTotal:     0,
+        npvKes:         0,
+        irrPct:         0,
+        lcoeKesPerKwh:  0,
+        paybackYears:   0,
       },
-      { name: 'Nairobi', latitude: -1.2921, longitude: 36.8219 }
+      { name: activeLocation.name, latitude: activeLocation.latitude, longitude: activeLocation.longitude }
     );
     toast({
       title: 'Scenario saved',
       description: `"${name}" has been saved. View it on the Scenarios page.`,
     });
-  }, [saveScenario, toast]);
+  }, [saveScenario, toast, activeLocation]);
 
-  const latestPoint = minuteData[minuteData.length - 1];
-  const solarPower = latestPoint?.solarKW ?? solarNode.powerKW ?? 0;
-  const batteryPower = latestPoint?.batteryPowerKW ?? batteryNode.powerKW ?? 0;
-  const gridPower = latestPoint ? latestPoint.gridImportKW - latestPoint.gridExportKW : gridNode.powerKW ?? 0;
-  const homePower = latestPoint
+  const latestPoint  = minuteData[minuteData.length - 1];
+  const solarPower   = latestPoint?.solarKW          ?? solarNode.powerKW   ?? 0;
+  const batteryPower = latestPoint?.batteryPowerKW   ?? batteryNode.powerKW ?? 0;
+  const gridPower    = latestPoint
+    ? latestPoint.gridImportKW - latestPoint.gridExportKW
+    : gridNode.powerKW ?? 0;
+  const homePower    = latestPoint
     ? latestPoint.homeLoadKW + latestPoint.ev1LoadKW + latestPoint.ev2LoadKW
     : homeNode.powerKW ?? 0;
   const batteryLevel = latestPoint?.batteryLevelPct ?? batteryNode.soc ?? 0;
@@ -123,42 +185,42 @@ export default function ModularDashboardDemo() {
           const c = items.length;
           return {
             period,
-            totalSolarKWh: items.reduce((s, d) => s + (d.solarEnergyKWh || 0), 0),
-            totalHomeLoadKWh: items.reduce((s, d) => s + (d.homeLoadKWh ?? (d.homeLoadKW || 0) * (24 / 420)), 0),
-            totalEV1LoadKWh: items.reduce((s, d) => s + (d.ev1LoadKWh ?? (d.ev1LoadKW || 0) * (24 / 420)), 0),
-            totalEV2LoadKWh: items.reduce((s, d) => s + (d.ev2LoadKWh ?? (d.ev2LoadKW || 0) * (24 / 420)), 0),
+            totalSolarKWh:      items.reduce((s, d) => s + (d.solarEnergyKWh || 0), 0),
+            totalHomeLoadKWh:   items.reduce((s, d) => s + (d.homeLoadKWh ?? (d.homeLoadKW || 0) * (24 / 420)), 0),
+            totalEV1LoadKWh:    items.reduce((s, d) => s + (d.ev1LoadKWh  ?? (d.ev1LoadKW  || 0) * (24 / 420)), 0),
+            totalEV2LoadKWh:    items.reduce((s, d) => s + (d.ev2LoadKWh  ?? (d.ev2LoadKW  || 0) * (24 / 420)), 0),
             totalGridImportKWh: items.reduce((s, d) => s + (d.gridImportKWh || 0), 0),
             totalGridExportKWh: items.reduce((s, d) => s + (d.gridExportKWh || 0), 0),
             avgBatteryLevelPct: c > 0 ? items.reduce((s, d) => s + (d.batteryLevelPct || 0), 0) / c : 0,
-            avgEV1SocPct: c > 0 ? items.reduce((s, d) => s + (d.ev1SocPct || 0), 0) / c : 0,
-            avgEV2SocPct: c > 0 ? items.reduce((s, d) => s + (d.ev2SocPct || 0), 0) / c : 0,
-            totalSavingsKES: items.reduce((s, d) => s + (d.savingsKES || 0), 0),
-            peakHoursCount: items.filter(d => d.isPeakTime).length,
-            offPeakHoursCount: items.filter(d => !d.isPeakTime).length,
+            avgEV1SocPct:       c > 0 ? items.reduce((s, d) => s + (d.ev1SocPct || 0), 0) / c : 0,
+            avgEV2SocPct:       c > 0 ? items.reduce((s, d) => s + (d.ev2SocPct || 0), 0) / c : 0,
+            totalSavingsKES:    items.reduce((s, d) => s + (d.savingsKES || 0), 0),
+            peakHoursCount:     items.filter(d => d.isPeakTime).length,
+            offPeakHoursCount:  items.filter(d => !d.isPeakTime).length,
           };
         }).sort((a, b) => a.period.localeCompare(b.period));
       };
 
-      const hourlyData = aggregate(d => `${d.date} ${String(d.hour).padStart(2, '0')}:00`);
-      const dailyData = aggregate(d => d.date);
-      const weeklyData = aggregate(d => `${d.year}-W${String(d.week).padStart(2, '0')}`);
+      const hourlyData  = aggregate(d => `${d.date} ${String(d.hour).padStart(2, '0')}:00`);
+      const dailyData   = aggregate(d => d.date);
+      const weeklyData  = aggregate(d => `${d.year}-W${String(d.week).padStart(2, '0')}`);
       const monthlyData = aggregate(d => `${d.year}-${String(d.month).padStart(2, '0')}`);
-      const yearlyData = aggregate(d => String(d.year));
+      const yearlyData  = aggregate(d => String(d.year));
 
-      const totalSolar = minuteData.reduce((s, d) => s + (d.solarEnergyKWh || 0), 0);
+      const totalSolar      = minuteData.reduce((s, d) => s + (d.solarEnergyKWh || 0), 0);
       const totalGridImport = minuteData.reduce((s, d) => s + (d.gridImportKWh || 0), 0);
       const totalGridExport = minuteData.reduce((s, d) => s + (d.gridExportKWh || 0), 0);
-      const totalSavings = minuteData.reduce((s, d) => s + (d.savingsKES || 0), 0);
-      const totalHomeLoad = minuteData.reduce((s, d) => s + (d.homeLoadKWh ?? (d.homeLoadKW || 0) * (24 / 420)), 0);
-      const totalEV1Load = minuteData.reduce((s, d) => s + (d.ev1LoadKWh ?? (d.ev1LoadKW || 0) * (24 / 420)), 0);
-      const totalEV2Load = minuteData.reduce((s, d) => s + (d.ev2LoadKWh ?? (d.ev2LoadKW || 0) * (24 / 420)), 0);
-      const totalLoad = totalHomeLoad + totalEV1Load + totalEV2Load;
+      const totalSavings    = minuteData.reduce((s, d) => s + (d.savingsKES || 0), 0);
+      const totalHomeLoad   = minuteData.reduce((s, d) => s + (d.homeLoadKWh ?? (d.homeLoadKW || 0) * (24 / 420)), 0);
+      const totalEV1Load    = minuteData.reduce((s, d) => s + (d.ev1LoadKWh  ?? (d.ev1LoadKW  || 0) * (24 / 420)), 0);
+      const totalEV2Load    = minuteData.reduce((s, d) => s + (d.ev2LoadKWh  ?? (d.ev2LoadKW  || 0) * (24 / 420)), 0);
+      const totalLoad       = totalHomeLoad + totalEV1Load + totalEV2Load;
 
-      const uniqueDays = new Set(minuteData.map(d => d.date)).size;
-      const uniqueWeeks = new Set(minuteData.map(d => `${d.year}-W${d.week}`)).size;
+      const uniqueDays   = new Set(minuteData.map(d => d.date)).size;
+      const uniqueWeeks  = new Set(minuteData.map(d => `${d.year}-W${d.week}`)).size;
       const uniqueMonths = new Set(minuteData.map(d => `${d.year}-${d.month}`)).size;
-      const uniqueYears = new Set(minuteData.map(d => d.year)).size;
-      const peakCount = minuteData.filter(d => d.isPeakTime).length;
+      const uniqueYears  = new Set(minuteData.map(d => d.year)).size;
+      const peakCount    = minuteData.filter(d => d.isPeakTime).length;
       const offPeakCount = minuteData.filter(d => !d.isPeakTime).length;
 
       const parts: string[] = [];
@@ -201,17 +263,17 @@ export default function ModularDashboardDemo() {
         }
         parts.push('');
       };
-      writeSection('HOURLY SUMMARY', hourlyData, 'Period');
-      writeSection('DAILY SUMMARY', dailyData, 'Date');
-      writeSection('WEEKLY SUMMARY', weeklyData, 'Week');
+      writeSection('HOURLY SUMMARY',  hourlyData,  'Period');
+      writeSection('DAILY SUMMARY',   dailyData,   'Date');
+      writeSection('WEEKLY SUMMARY',  weeklyData,  'Week');
       writeSection('MONTHLY SUMMARY', monthlyData, 'Month');
-      writeSection('YEARLY SUMMARY', yearlyData, 'Year');
+      writeSection('YEARLY SUMMARY',  yearlyData,  'Year');
 
-      const csv = parts.join('\n');
+      const csv  = parts.join('\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
       a.download = `SafariCharge_Report_${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a);
       a.click();
@@ -241,42 +303,42 @@ export default function ModularDashboardDemo() {
       reportWindow.document.write('<html><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#0f172a;color:#94a3b8;"><p>Generating report\u2026</p></body></html>');
       reportWindow.document.close();
 
-      const totalSolar = minuteData.reduce((s, d) => s + (d.solarEnergyKWh ?? 0), 0);
+      const totalSolar      = minuteData.reduce((s, d) => s + (d.solarEnergyKWh ?? 0), 0);
       const totalGridImport = minuteData.reduce((s, d) => s + (d.gridImportKWh ?? 0), 0);
       const totalGridExport = minuteData.reduce((s, d) => s + (d.gridExportKWh ?? 0), 0);
-      const totalSavings = minuteData.reduce((s, d) => s + (d.savingsKES ?? 0), 0);
-      const totalHomeLoad = minuteData.reduce((s, d) => s + (d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (24 / 420)), 0);
-      const totalEV1 = minuteData.reduce((s, d) => s + (d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (24 / 420)), 0);
-      const totalEV2 = minuteData.reduce((s, d) => s + (d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (24 / 420)), 0);
+      const totalSavings    = minuteData.reduce((s, d) => s + (d.savingsKES ?? 0), 0);
+      const totalHomeLoad   = minuteData.reduce((s, d) => s + (d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (24 / 420)), 0);
+      const totalEV1        = minuteData.reduce((s, d) => s + (d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (24 / 420)), 0);
+      const totalEV2        = minuteData.reduce((s, d) => s + (d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (24 / 420)), 0);
       let peakGridImport = 0, peakInstantSolar = 0, peakEVLoad = 0;
       let batterySum = 0;
-      const peakBreakdown = { records: 0, solar: 0, gridImport: 0, gridExport: 0, savings: 0, homeLoad: 0, evLoad: 0 };
+      const peakBreakdown    = { records: 0, solar: 0, gridImport: 0, gridExport: 0, savings: 0, homeLoad: 0, evLoad: 0 };
       const offPeakBreakdown = { records: 0, solar: 0, gridImport: 0, gridExport: 0, savings: 0, homeLoad: 0, evLoad: 0 };
       for (const d of minuteData) {
-        const isPeak = Boolean(d.isPeakTime);
-        const gi = d.gridImportKW ?? 0;
-        if (gi > peakGridImport) peakGridImport = gi;
-        const sk = d.solarKW ?? 0;
-        if (sk > peakInstantSolar) peakInstantSolar = sk;
-        const ev = (d.ev1LoadKW ?? 0) + (d.ev2LoadKW ?? 0);
-        if (ev > peakEVLoad) peakEVLoad = ev;
-        const solarEnergy = d.solarEnergyKWh ?? 0;
-        const gridImportEnergy = d.gridImportKWh ?? 0;
-        const gridExportEnergy = d.gridExportKWh ?? 0;
-        const homeEnergy = d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (24 / 420);
-        const evEnergy = (d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (24 / 420)) + (d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (24 / 420));
+        const isPeak        = Boolean(d.isPeakTime);
+        const gi            = d.gridImportKW ?? 0;
+        if (gi > peakGridImport)     peakGridImport    = gi;
+        const sk            = d.solarKW ?? 0;
+        if (sk > peakInstantSolar)   peakInstantSolar  = sk;
+        const ev            = (d.ev1LoadKW ?? 0) + (d.ev2LoadKW ?? 0);
+        if (ev > peakEVLoad)         peakEVLoad        = ev;
+        const solarEnergy       = d.solarEnergyKWh ?? 0;
+        const gridImportEnergy  = d.gridImportKWh  ?? 0;
+        const gridExportEnergy  = d.gridExportKWh  ?? 0;
+        const homeEnergy        = d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (24 / 420);
+        const evEnergy          = (d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (24 / 420)) + (d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (24 / 420));
         const target = isPeak ? peakBreakdown : offPeakBreakdown;
-        target.records += 1;
-        target.solar += solarEnergy;
+        target.records    += 1;
+        target.solar      += solarEnergy;
         target.gridImport += gridImportEnergy;
         target.gridExport += gridExportEnergy;
-        target.savings += d.savingsKES ?? 0;
-        target.homeLoad += homeEnergy;
-        target.evLoad += evEnergy;
+        target.savings    += d.savingsKES ?? 0;
+        target.homeLoad   += homeEnergy;
+        target.evLoad     += evEnergy;
         batterySum += d.batteryLevelPct ?? 0;
       }
       const avgBattery = minuteData.length > 0 ? batterySum / minuteData.length : 0;
-      const peakSolar = peakBreakdown.solar;
+      const peakSolar  = peakBreakdown.solar;
 
       const dailyMap = new Map<string, {date: string; solar: number; gridImport: number; gridExport: number; savings: number; homeLoad: number; evLoad: number; ev1Load: number; ev2Load: number; avgBattery: number; batteryCount: number}>();
       for (const d of minuteData) {
@@ -284,25 +346,25 @@ export default function ModularDashboardDemo() {
           dailyMap.set(d.date, { date: d.date, solar: 0, gridImport: 0, gridExport: 0, savings: 0, homeLoad: 0, evLoad: 0, ev1Load: 0, ev2Load: 0, avgBattery: 0, batteryCount: 0 });
         }
         const a = dailyMap.get(d.date)!;
-        a.solar += d.solarEnergyKWh ?? 0;
-        a.gridImport += d.gridImportKWh ?? 0;
-        a.gridExport += d.gridExportKWh ?? 0;
-        a.savings += d.savingsKES ?? 0;
-        a.homeLoad += d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (24 / 420);
-        a.ev1Load += d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (24 / 420);
-        a.ev2Load += d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (24 / 420);
-        a.evLoad += (d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (24 / 420)) + (d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (24 / 420));
-        a.avgBattery += d.batteryLevelPct ?? 0;
+        a.solar      += d.solarEnergyKWh ?? 0;
+        a.gridImport += d.gridImportKWh  ?? 0;
+        a.gridExport += d.gridExportKWh  ?? 0;
+        a.savings    += d.savingsKES     ?? 0;
+        a.homeLoad   += d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (24 / 420);
+        a.ev1Load    += d.ev1LoadKWh  ?? (d.ev1LoadKW  ?? 0) * (24 / 420);
+        a.ev2Load    += d.ev2LoadKWh  ?? (d.ev2LoadKW  ?? 0) * (24 / 420);
+        a.evLoad     += (d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (24 / 420)) + (d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (24 / 420));
+        a.avgBattery   += d.batteryLevelPct ?? 0;
         a.batteryCount += 1;
       }
       const dailyAgg = Array.from(dailyMap.values())
         .map(r => ({ ...r, avgBattery: r.batteryCount > 0 ? r.avgBattery / r.batteryCount : 0 }))
         .sort((a, b) => a.date.localeCompare(b.date));
-      const uniqueDays = dailyAgg.length;
+      const uniqueDays    = dailyAgg.length;
       const dailyAggCharts = dailyAgg.slice(-30);
 
       const { createLoadProfileFromSimulation, generateRecommendation } = await import('@/lib/recommendation-engine');
-      const loadProfile = createLoadProfileFromSimulation(minuteData);
+      const loadProfile   = createLoadProfileFromSimulation(minuteData);
       const recommendation = generateRecommendation(loadProfile, NAIROBI_SOLAR_DATA, {
         batteryPreference: 'auto',
         gridBackupRequired: true,
@@ -310,7 +372,7 @@ export default function ModularDashboardDemo() {
       });
 
       const startDate = minuteData[0]?.date ?? new Date().toISOString().slice(0, 10);
-      const response = await fetch('/api/formal-report', {
+      const response  = await fetch('/api/formal-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -318,7 +380,7 @@ export default function ModularDashboardDemo() {
           startDate,
           reportDate: new Date().toLocaleDateString('en-KE', { year: 'numeric', month: 'long', day: 'numeric' }),
           dateFrom: minuteData[0]?.date ?? startDate,
-          dateTo: minuteData[minuteData.length - 1]?.date ?? startDate,
+          dateTo:   minuteData[minuteData.length - 1]?.date ?? startDate,
           totalDataPoints: minuteData.length,
           totalSolar, totalGridImport, totalGridExport, totalSavings,
           totalHomeLoad, totalEV1, totalEV2,
@@ -332,13 +394,13 @@ export default function ModularDashboardDemo() {
       });
 
       if (!response.ok) {
-        const fallback = `HTTP ${response.status}`;
-        const rawError = await response.text().catch(() => '');
+        const fallback  = `HTTP ${response.status}`;
+        const rawError  = await response.text().catch(() => '');
         let parsedMessage = fallback;
         if (rawError) {
           try {
             const errorData = JSON.parse(rawError) as { error?: string; message?: string; details?: string };
-            parsedMessage = errorData.error || errorData.message || fallback;
+            parsedMessage   = errorData.error || errorData.message || fallback;
             if (errorData.details && errorData.details !== parsedMessage) {
               parsedMessage = `${parsedMessage}: ${errorData.details}`;
             }
@@ -351,53 +413,49 @@ export default function ModularDashboardDemo() {
         throw new Error(parsedMessage);
       }
 
-      const html = await response.text();
-      const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
+      const html    = await response.text();
+      const blob    = new Blob([html], { type: 'text/html; charset=utf-8' });
       const blobUrl = URL.createObjectURL(blob);
       reportWindow.location.href = blobUrl;
       setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
     } catch (error) {
-      if (reportWindow && !reportWindow.closed) {
-        reportWindow.close();
-      }
+      if (reportWindow && !reportWindow.closed) reportWindow.close();
       console.error('Formal report error:', error);
       alert(`Failed to generate report: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
     }
   }, [minuteData]);
 
   const flowDirection = useMemo(() => ({
-    solarToHome: flows.some((f) => f.from === 'solar' && f.to === 'home' && f.active),
-    solarToBattery: flows.some((f) => f.from === 'solar' && f.to === 'battery' && f.active),
-    solarToGrid: flows.some((f) => f.from === 'solar' && f.to === 'grid' && f.active),
-    batteryToHome: flows.some((f) => f.from === 'battery' && f.to === 'home' && f.active),
-    gridToHome: flows.some((f) => f.from === 'grid' && f.to === 'home' && f.active),
+    solarToHome:    flows.some((f) => f.from === 'solar'   && f.to === 'home'    && f.active),
+    solarToBattery: flows.some((f) => f.from === 'solar'   && f.to === 'battery' && f.active),
+    solarToGrid:    flows.some((f) => f.from === 'solar'   && f.to === 'grid'    && f.active),
+    batteryToHome:  flows.some((f) => f.from === 'battery' && f.to === 'home'    && f.active),
+    gridToHome:     flows.some((f) => f.from === 'grid'    && f.to === 'home'    && f.active),
   }), [flows]);
 
   const graphData = useMemo(() => minuteData.map((d) => ({
-    timeOfDay: d.hour + d.minute / 60,
-    solar: d.solarKW,
-    load: d.homeLoadKW + d.ev1LoadKW + d.ev2LoadKW,
-    batSoc: d.batteryLevelPct,
+    timeOfDay:  d.hour + d.minute / 60,
+    solar:      d.solarKW,
+    load:       d.homeLoadKW + d.ev1LoadKW + d.ev2LoadKW,
+    batSoc:     d.batteryLevelPct,
     gridImport: d.gridImportKW,
     gridExport: d.gridExportKW,
   })), [minuteData]);
 
   const energySplit = useMemo(() => {
     const totalEnergy = stats.totalSolarKWh + stats.totalConsumptionKWh + stats.totalGridExportKWh;
-    if (!totalEnergy) {
-      return { solarPct: 0, consumptionPct: 0, exportPct: 0 };
-    }
+    if (!totalEnergy) return { solarPct: 0, consumptionPct: 0, exportPct: 0 };
     return {
-      solarPct: stats.totalSolarKWh / totalEnergy,
-      consumptionPct: stats.totalConsumptionKWh / totalEnergy,
-      exportPct: stats.totalGridExportKWh / totalEnergy,
+      solarPct:       stats.totalSolarKWh         / totalEnergy,
+      consumptionPct: stats.totalConsumptionKWh   / totalEnergy,
+      exportPct:      stats.totalGridExportKWh    / totalEnergy,
     };
   }, [stats]);
 
   const envImpact = useMemo(() => ([
-    { icon: Leaf, value: `${(accumulators.carbonOffset / 1000).toFixed(2)} tons`, label: 'CO₂ Offset (Year)', color: 'var(--battery)', tint: 'var(--battery-soft)' },
-    { icon: Trees, value: Math.round(accumulators.carbonOffset / 14).toString(), label: 'Trees Equivalent', color: 'var(--solar)', tint: 'var(--solar-soft)' },
-    { icon: Car, value: `${Math.round(accumulators.carbonOffset * 1.6)} km`, label: 'Car Miles Offset', color: 'var(--consumption)', tint: 'var(--consumption-soft)' },
+    { icon: Leaf,  value: `${(accumulators.carbonOffset / 1000).toFixed(2)} tons`, label: 'CO\u2082 Offset (Year)',  color: 'var(--battery)',     tint: 'var(--battery-soft)'     },
+    { icon: Trees, value: Math.round(accumulators.carbonOffset / 14).toString(),   label: 'Trees Equivalent',      color: 'var(--solar)',        tint: 'var(--solar-soft)'        },
+    { icon: Car,   value: `${Math.round(accumulators.carbonOffset * 1.6)} km`,     label: 'Car Miles Offset',      color: 'var(--consumption)', tint: 'var(--consumption-soft)' },
   ]), [accumulators]);
 
   const ringSegments = useMemo(() => {
@@ -405,19 +463,17 @@ export default function ModularDashboardDemo() {
     const clamp = (v: number) => Math.max(0, Math.min(1, v));
     return {
       circumference,
-      solar: clamp(energySplit.solarPct) * circumference,
+      solar:       clamp(energySplit.solarPct)       * circumference,
       consumption: clamp(energySplit.consumptionPct) * circumference,
-      export: clamp(energySplit.exportPct) * circumference,
+      export:      clamp(energySplit.exportPct)      * circumference,
     };
   }, [energySplit]);
 
-  // Calculate sparkline data (last 7 data points for each metric)
   const sparklineData = useMemo(() => {
-    const last7Days = minuteData.slice(-7 * 420); // 420 points per day
+    const last7Days = minuteData.slice(-7 * 420);
     const dailyData: { gen: number[]; power: number[]; cons: number[]; savings: number[] } = {
       gen: [], power: [], cons: [], savings: []
     };
-
     for (let i = 0; i < 7; i++) {
       const dayData = last7Days.slice(i * 420, (i + 1) * 420);
       if (dayData.length > 0) {
@@ -427,93 +483,55 @@ export default function ModularDashboardDemo() {
         dailyData.power.push(dayData.reduce((sum, d) => sum + d.solarKW, 0) / dayData.length);
       }
     }
-
     return dailyData;
   }, [minuteData]);
 
-  // Calculate weekly averages and yesterday's values for trends
   const trendsData = useMemo(() => {
-    const weekData = minuteData.slice(-7 * 420);
+    const weekData      = minuteData.slice(-7 * 420);
     const yesterdayData = minuteData.slice(-2 * 420, -420);
-
-    const weeklyAvgGen = weekData.length > 0
-      ? weekData.reduce((sum, d) => sum + d.solarEnergyKWh, 0) / 7
-      : 0;
+    const weeklyAvgGen  = weekData.length > 0
+      ? weekData.reduce((sum, d) => sum + d.solarEnergyKWh, 0) / 7 : 0;
     const weeklyAvgCons = weekData.length > 0
-      ? weekData.reduce((sum, d) => sum + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh, 0) / 7
-      : 0;
+      ? weekData.reduce((sum, d) => sum + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh, 0) / 7 : 0;
     const yesterdaySavings = yesterdayData.length > 0
-      ? yesterdayData.reduce((sum, d) => sum + d.savingsKES, 0)
-      : 0;
-
-    // Calculate system efficiency
-    const usefulEnergy = Math.min(homePower, solarPower) + (batteryPower > 0 ? Math.min(batteryPower, solarPower - homePower) : 0);
+      ? yesterdayData.reduce((sum, d) => sum + d.savingsKES, 0) : 0;
+    const usefulEnergy     = Math.min(homePower, solarPower) + (batteryPower > 0 ? Math.min(batteryPower, solarPower - homePower) : 0);
     const systemEfficiency = solarPower > 0 ? (usefulEnergy / solarPower) * 100 : 0;
-
-    // Savings change
-    const savingsChange = yesterdaySavings > 0
-      ? ((stats.totalSavingsKES - yesterdaySavings) / yesterdaySavings) * 100
-      : 0;
-
-    // Battery optimization check (if battery is above 70% during peak hours)
-    const now = new Date();
-    const isPeakHour = now.getHours() >= 18 && now.getHours() <= 22;
+    const savingsChange    = yesterdaySavings > 0
+      ? ((stats.totalSavingsKES - yesterdaySavings) / yesterdaySavings) * 100 : 0;
+    const now          = new Date();
+    const isPeakHour   = now.getHours() >= 18 && now.getHours() <= 22;
     const batteryOptimized = isPeakHour ? batteryLevel > 70 : batteryLevel > 50;
-
     return {
-      weeklyAvgGen,
-      weeklyAvgCons,
-      yesterdaySavings,
-      systemEfficiency,
-      savingsChange,
-      batteryOptimized,
-      forecastChange: 10, // Placeholder - would come from weather API
+      weeklyAvgGen, weeklyAvgCons, yesterdaySavings,
+      systemEfficiency, savingsChange, batteryOptimized,
+      forecastChange: 10,
     };
   }, [minuteData, stats, solarPower, homePower, batteryPower, batteryLevel]);
 
-  // ── Monthly Overview — real data aggregated from minuteData ────────────────
-  //
-  // Each entry in monthlyOverviewData corresponds to one calendar month (0=Jan … 11=Dec).
-  // gen  — total solar energy generated that month (kWh)
-  // cons — total home + EV load consumed that month (kWh)
-  //
-  // When minuteData is empty (simulation warming up) we fall back to the static
-  // FALLBACK_* arrays so the chart always renders with a sensible shape.
-  // The fallback bars are shown at reduced opacity to signal they are not yet live.
   const monthlyOverviewData = useMemo(() => {
     if (minuteData.length === 0) {
       return MONTH_LABELS.map((label, i) => ({
-        label,
-        gen: FALLBACK_GEN[i],
-        cons: FALLBACK_CONS[i],
-        isFallback: true,
+        label, gen: FALLBACK_GEN[i], cons: FALLBACK_CONS[i], isFallback: true,
       }));
     }
-
-    // Aggregate all minuteData into per-month buckets (month field is 1-based)
     const genByMonth  = new Array(12).fill(0) as number[];
     const consByMonth = new Array(12).fill(0) as number[];
-
     for (const d of minuteData) {
-      const idx = (d.month - 1 + 12) % 12; // guard against any off-by-one
+      const idx = (d.month - 1 + 12) % 12;
       genByMonth[idx]  += d.solarEnergyKWh ?? 0;
       consByMonth[idx] +=
-        (d.homeLoadKWh  ?? (d.homeLoadKW  ?? 0) * (1 / 60)) +
-        (d.ev1LoadKWh   ?? (d.ev1LoadKW   ?? 0) * (1 / 60)) +
-        (d.ev2LoadKWh   ?? (d.ev2LoadKW   ?? 0) * (1 / 60));
+        (d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (1 / 60)) +
+        (d.ev1LoadKWh  ?? (d.ev1LoadKW  ?? 0) * (1 / 60)) +
+        (d.ev2LoadKWh  ?? (d.ev2LoadKW  ?? 0) * (1 / 60));
     }
-
-    // Normalise to a 0-100 scale for the bar chart so all bars stay within the
-    // fixed 140 px height, matching the original chart contract.
-    const maxVal = Math.max(...genByMonth, ...consByMonth, 1); // avoid div-by-zero
-
+    const maxVal = Math.max(...genByMonth, ...consByMonth, 1);
     return MONTH_LABELS.map((label, i) => ({
       label,
-      gen:  (genByMonth[i]  / maxVal) * 100,
-      cons: (consByMonth[i] / maxVal) * 100,
-      // Raw kWh kept for tooltip / aria labels
-      genKWh:  genByMonth[i],
-      consKWh: consByMonth[i],
+      gen:      (genByMonth[i]  / maxVal) * 100,
+      cons:     (consByMonth[i] / maxVal) * 100,
+      genKWh:   genByMonth[i],
+      consKWh:  consByMonth[i],
       isFallback: false,
     }));
   }, [minuteData]);
@@ -523,6 +541,41 @@ export default function ModularDashboardDemo() {
   return (
     <DashboardLayout>
       <Toaster />
+
+      {/* ── Location Picker Dialog ─────────────────────────────────────── */}
+      <Dialog open={locationPickerOpen} onOpenChange={setLocationPickerOpen}>
+        <DialogContent className="bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)] max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-[var(--solar)]" />
+              Select Location
+            </DialogTitle>
+            <DialogDescription className="text-[var(--text-secondary)]">
+              Choose a Kenyan city to calibrate solar irradiance data for the simulation.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-2 flex flex-col gap-1.5">
+            {KENYA_LOCATIONS.map((loc) => (
+              <Button
+                key={loc.name}
+                variant="ghost"
+                onClick={() => handleSelectLocation(loc)}
+                className={[
+                  'justify-between rounded-lg px-3 py-2 text-sm transition-all duration-150',
+                  activeLocation.name === loc.name
+                    ? 'bg-[var(--solar-soft)] text-[var(--solar)] font-semibold'
+                    : 'text-[var(--text-primary)] hover:bg-[var(--bg-card-muted)]',
+                ].join(' ')}
+              >
+                <span>{loc.displayName}</span>
+                <span className="text-xs text-[var(--text-tertiary)]">{loc.annualAvgSunHours} sun-hrs/day</span>
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* ───────────────────────────────────────────────────────────────── */}
+
       <EnergyReportModal
         isOpen={isReportOpen}
         onClose={() => setIsReportOpen(false)}
@@ -537,17 +590,16 @@ export default function ModularDashboardDemo() {
       />
       <DashboardHeader
         currentDate={currentDate}
-        onReset={() => console.log('Reset clicked')}
-        onLocationClick={() => console.log('Location clicked')}
+        onReset={handleReset}
+        onLocationClick={() => setLocationPickerOpen(true)}
         onDownload={() => setIsReportOpen(true)}
         onSaveScenario={handleSaveScenario}
-        locationName="Nairobi, Kenya"
+        locationName={activeLocation.displayName}
         notificationCount={3}
       />
 
     <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
-        {/* Page title + time range */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold text-[var(--text-primary)]">Energy Dashboard</h2>
@@ -556,7 +608,6 @@ export default function ModularDashboardDemo() {
           <TimeRangeSwitcher selectedRange={timeRange} onRangeChange={setTimeRange} />
         </div>
 
-        {/* NEW: Insights Banner - Decision Layer */}
         <InsightsBanner
           systemEfficiency={trendsData.systemEfficiency}
           todaySavings={stats.totalSavingsKES}
@@ -566,7 +617,6 @@ export default function ModularDashboardDemo() {
           alertCount={3}
         />
 
-        {/* ROW 1 — 4 Stat Cards with Sparklines */}
         <StatCards
           totalGeneration={Number(stats.totalSolarKWh.toFixed(1))}
           currentPower={Number(solarPower.toFixed(1))}
@@ -581,7 +631,6 @@ export default function ModularDashboardDemo() {
           yesterdaySavings={trendsData.yesterdaySavings}
         />
 
-        {/* ROW 2 — Environmental Impact (moved up for storytelling) */}
         <Card className="dashboard-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
@@ -613,7 +662,6 @@ export default function ModularDashboardDemo() {
           </CardContent>
         </Card>
 
-        {/* ROW 3 — Energy Flow (full width) */}
         <PowerFlowVisualization
           solarPower={solarPower}
           batteryPower={batteryPower}
@@ -624,7 +672,6 @@ export default function ModularDashboardDemo() {
           detailBasePath="/demo"
         />
 
-        {/* ROW 4 — Generation vs Consumption (2/3) + Energy Distribution (1/3) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <Card className="dashboard-card">
@@ -648,7 +695,6 @@ export default function ModularDashboardDemo() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                {/* Doughnut-style visual using stacked rings */}
                 <div className="flex flex-col items-center justify-center py-6 gap-5">
                   <div className="relative flex h-40 w-40 items-center justify-center">
                     <div className="absolute inset-0 rounded-full bg-[var(--bg-card-muted)]" />
@@ -671,9 +717,9 @@ export default function ModularDashboardDemo() {
                   </div>
                   <div className="w-full space-y-2">
                     {[
-                      { label: 'Solar Generation', pct: Math.round(energySplit.solarPct * 100), color: 'var(--solar)' },
-                      { label: 'Consumption', pct: Math.round(energySplit.consumptionPct * 100), color: 'var(--consumption)' },
-                      { label: 'Grid Export', pct: Math.round(energySplit.exportPct * 100), color: 'var(--grid)' },
+                      { label: 'Solar Generation', pct: Math.round(energySplit.solarPct * 100),       color: 'var(--solar)' },
+                      { label: 'Consumption',       pct: Math.round(energySplit.consumptionPct * 100), color: 'var(--consumption)' },
+                      { label: 'Grid Export',        pct: Math.round(energySplit.exportPct * 100),      color: 'var(--grid)' },
                     ].map(item => (
                       <div key={item.label} className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
@@ -690,13 +736,12 @@ export default function ModularDashboardDemo() {
           </div>
         </div>
 
-        {/* ROW 5 — Panel Status (2/3) + Weather & Battery (1/3) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <PanelStatusTable />
           </div>
           <div className="flex flex-col gap-6">
-            <WeatherCard locationName="Nairobi, Kenya" />
+            <WeatherCard locationName={activeLocation.displayName} />
             <BatteryStatusCard
               batteryLevel={batteryLevel}
               batteryPower={batteryPower}
@@ -705,10 +750,8 @@ export default function ModularDashboardDemo() {
           </div>
         </div>
 
-        {/* ROW 6 — System Visualization & Monthly Overview */}
         <SystemVisualization />
 
-        {/* Monthly Overview — bars driven by real minuteData aggregation */}
         <Card className="dashboard-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
@@ -725,24 +768,15 @@ export default function ModularDashboardDemo() {
             <div className="flex items-end justify-between gap-2 h-44 px-2">
               {monthlyOverviewData.map(({ label, gen, cons, isFallback }) => (
                 <div key={label} className="flex-1 flex flex-col items-center gap-1">
-                  <div
-                    className="flex items-end gap-0.5 w-full justify-center"
-                    style={{ height: '140px' }}
-                  >
+                  <div className="flex items-end gap-0.5 w-full justify-center" style={{ height: '140px' }}>
                     <div
                       className="w-2.5 rounded-t-sm bg-gradient-to-t from-[var(--solar-soft)] to-[var(--solar)] transition-all duration-500 hover:opacity-100"
-                      style={{
-                        height: `${(gen / 100) * 140}px`,
-                        opacity: isFallback ? 0.35 : 0.9,
-                      }}
+                      style={{ height: `${(gen / 100) * 140}px`, opacity: isFallback ? 0.35 : 0.9 }}
                       title={`Generation: ${gen.toFixed(1)} ${isFallback ? '(placeholder)' : 'kWh'}`}
                     />
                     <div
                       className="w-2.5 rounded-t-sm bg-gradient-to-t from-[var(--consumption-soft)] to-[var(--consumption)] transition-all duration-500 hover:opacity-100"
-                      style={{
-                        height: `${(cons / 100) * 140}px`,
-                        opacity: isFallback ? 0.3 : 0.8,
-                      }}
+                      style={{ height: `${(cons / 100) * 140}px`, opacity: isFallback ? 0.3 : 0.8 }}
                       title={`Consumption: ${cons.toFixed(1)} ${isFallback ? '(placeholder)' : 'kWh'}`}
                     />
                   </div>
@@ -762,6 +796,9 @@ export default function ModularDashboardDemo() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Alerts — live from store */}
+        <AlertsList />
       </div>
     </main>
   </DashboardLayout>
