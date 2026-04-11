@@ -15,6 +15,7 @@
  */
 
 import { create } from 'zustand';
+import type { EngineeringKPIs } from '@/lib/engineering-kpis';
 
 // Node types in the energy system
 export type NodeType = 'solar' | 'battery' | 'grid' | 'home' | 'ev1' | 'ev2';
@@ -140,6 +141,10 @@ interface EnergySystemState {
   }) => void;
   updateSystemConfig: (config: Partial<EnergySystemState['systemConfig']>) => void;
   resetSystem: () => void;
+
+  // Engineering KPIs (computed after simulation complete)
+  engineeringKPIs: EngineeringKPIs | null;
+  setEngineeringKPIs: (kpis: EngineeringKPIs) => void;
 }
 
 // Initial state
@@ -206,6 +211,7 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
   simSpeed: 1,
   accumulators: initialAccumulators,
   minuteData: [],
+  engineeringKPIs: null,
   systemConfig: {
     solarCapacityKW: 10,
     batteryCapacityKWh: 50,
@@ -270,5 +276,8 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
       simSpeed: 1,
       accumulators: initialAccumulators,
       minuteData: [],
+      engineeringKPIs: null,
     }),
+
+  setEngineeringKPIs: (kpis) => set({ engineeringKPIs: kpis }),
 }));

@@ -22,7 +22,9 @@ import {
   useMinuteData,
   useSimulationState,
   useTimeRange,
+  useEngineeringKPIs,
 } from '@/hooks/useEnergySystem';
+import { EngineeringKPICard } from '@/components/dashboard/EngineeringKPICard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, PieChart, TrendingUp, Leaf, Car, Trees } from 'lucide-react';
 import { EnergyReportModal } from '@/components/EnergyReportModal';
@@ -54,6 +56,7 @@ export default function ModularDashboardDemo() {
   const stats = useEnergyStats(timeRange);
   const minuteData = useMinuteData(timeRange);
   const accumulators = useAccumulators();
+  const engineeringKPIs = useEngineeringKPIs();
 
   const [isReportOpen, setIsReportOpen] = useState(false);
 
@@ -669,6 +672,12 @@ export default function ModularDashboardDemo() {
             </div>
           </CardContent>
         </Card>
+
+        {/* ROW 7 — Engineering KPIs */}
+        <EngineeringKPICard
+          kpis={engineeringKPIs}
+          pvCapacityLabel={`${solarNode.capacityKW?.toFixed(1) ?? '—'} kWp installed`}
+        />
       </div>
     </main>
   </DashboardLayout>

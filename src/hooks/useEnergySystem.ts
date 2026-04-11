@@ -7,6 +7,7 @@
 
 import { useEnergySystemStore, type NodeType, type EnergyNode } from '@/stores/energySystemStore';
 import { useMemo } from 'react';
+import { useShallow } from 'zustand/shallow';
 
 /**
  * Get all energy system data
@@ -26,13 +27,15 @@ export function useEnergyNode(nodeType: NodeType): EnergyNode {
  * Get multiple nodes at once
  */
 export function useEnergyNodes(nodeTypes: NodeType[]): Record<NodeType, EnergyNode> {
-  return useEnergySystemStore((state) => {
-    const nodes: Record<string, EnergyNode> = {};
-    nodeTypes.forEach((type) => {
-      nodes[type] = state.nodes[type];
-    });
-    return nodes as Record<NodeType, EnergyNode>;
-  });
+  return useEnergySystemStore(
+    useShallow((state) => {
+      const nodes: Record<string, EnergyNode> = {};
+      nodeTypes.forEach((type) => {
+        nodes[type] = state.nodes[type];
+      });
+      return nodes as Record<NodeType, EnergyNode>;
+    })
+  );
 }
 
 /**
@@ -55,8 +58,12 @@ export function useSelectedNode() {
  * Get node selection actions
  */
 export function useNodeSelection() {
-  const selectNode = useEnergySystemStore((state) => state.selectNode);
-  const selectedNode = useEnergySystemStore((state) => state.selectedNode);
+  const { selectNode, selectedNode } = useEnergySystemStore(
+    useShallow((state) => ({
+      selectNode: state.selectNode,
+      selectedNode: state.selectedNode,
+    }))
+  );
 
   return {
     selectedNode,
@@ -96,33 +103,39 @@ export function useAccumulators() {
  * Get simulation state
  */
 export function useSimulationState() {
-  return useEnergySystemStore((state) => ({
-    currentDate: state.currentDate,
-    timeOfDay: state.timeOfDay,
-    isAutoMode: state.isAutoMode,
-    simSpeed: state.simSpeed,
-    setSimulationState: state.setSimulationState,
-  }));
+  return useEnergySystemStore(
+    useShallow((state) => ({
+      currentDate: state.currentDate,
+      timeOfDay: state.timeOfDay,
+      isAutoMode: state.isAutoMode,
+      simSpeed: state.simSpeed,
+      setSimulationState: state.setSimulationState,
+    }))
+  );
 }
 
 /**
  * Get time range filter
  */
 export function useTimeRange() {
-  return useEnergySystemStore((state) => ({
-    timeRange: state.timeRange,
-    setTimeRange: state.setTimeRange,
-  }));
+  return useEnergySystemStore(
+    useShallow((state) => ({
+      timeRange: state.timeRange,
+      setTimeRange: state.setTimeRange,
+    }))
+  );
 }
 
 /**
  * Get system configuration
  */
 export function useSystemConfig() {
-  return useEnergySystemStore((state) => ({
-    config: state.systemConfig,
-    updateConfig: state.updateSystemConfig,
-  }));
+  return useEnergySystemStore(
+    useShallow((state) => ({
+      config: state.systemConfig,
+      updateConfig: state.updateSystemConfig,
+    }))
+  );
 }
 
 /**
@@ -201,4 +214,12 @@ export function useEnergyStats(timeRange?: 'today' | 'week' | 'month' | 'year' |
       peakPowerKW,
     };
   }, [data]);
+}
+
+/**
+ * Get computed engineering KPIs from the store.
+ * Returns null when no simulation data has been processed yet.
+ */
+export function useEngineeringKPIs() {
+  return useEnergySystemStore((state) => state.engineeringKPIs);
 }
