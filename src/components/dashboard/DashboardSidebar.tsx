@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   LayoutDashboard,
   FlaskConical,
@@ -62,16 +62,17 @@ export function DashboardSidebar({
   contextualMetrics = [],
 }: DashboardSidebarProps) {
   const pathname = usePathname();
-  const resolvedActive = activeSection ?? (() => {
+  const resolvedActive: DashboardSection = useMemo(() => {
+    if (activeSection && activeSection !== 'dashboard') return activeSection;
     if (!pathname) return 'dashboard';
-    if (pathname.includes('simulation'))     return 'simulation';
-    if (pathname.includes('configuration'))  return 'configuration';
-    if (pathname.includes('financial'))      return 'financial';
-    if (pathname.includes('scenarios'))      return 'scenarios';
-    if (pathname.includes('recommendation')) return 'recommendation';
-    if (pathname.includes('ai-assistant'))   return 'ai-assistant';
-    return 'dashboard';
-  })();
+    if (pathname.startsWith('/scenarios'))                                        return 'scenarios';
+    if (pathname.startsWith('/demo/simulation') || pathname.includes('simulation')) return 'simulation';
+    if (pathname.includes('configuration'))                                       return 'configuration';
+    if (pathname.includes('financial'))                                           return 'financial';
+    if (pathname.includes('recommendation'))                                      return 'recommendation';
+    if (pathname.includes('ai-assistant'))                                        return 'ai-assistant';
+    return activeSection ?? 'dashboard';
+  }, [activeSection, pathname]);
 
   const mainMenuItems: Array<{
     id: DashboardSection;
@@ -132,7 +133,7 @@ export function DashboardSidebar({
                       <>
                         <item.icon className="h-4 w-4" />
                         <span className="font-medium">{item.label}</span>
-                        {activeSection === item.id && (
+                        {resolvedActive === item.id && (
                           <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--solar)] rounded-r" />
                         )}
                       </>
