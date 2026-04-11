@@ -107,18 +107,15 @@ def build_forecast_features(
 
     Uses a simple recursive/assumed feature fill:
     - Time features come from the actual future timestamp
-    - Lags are seeded from the last known observation and then from predicted
-      values (first-order Markov)
+    - Lags are seeded from the last known observation and then from
+      clearsky/average-load proxies (first-order Markov)
     """
-    base_dt: datetime = last_known["dt"]
+    base_dt: pd.Timestamp = last_known["dt"]
     rows = []
-    prev_solar = last_solar
-    prev_load = last_load
     solar_history: list[float] = [last_solar]
     load_history: list[float] = [last_load]
 
     for i in range(1, horizon_hours + 1):
-        import pandas as pd as _pd  # noqa: F401  (already imported above)
         fut_dt = base_dt + pd.Timedelta(hours=i)
         hour = fut_dt.hour
         dow = fut_dt.dayofweek
@@ -146,8 +143,8 @@ def build_forecast_features(
             "temperature_c": avg_temp,
             "cloud_cover_pct": 0.0,
         })
-        # Placeholder until we get actual predictions — overwritten in model.py
+        # Seed next step's lags with clearsky-scaled solar + flat load
         solar_history.append(clearsky * solar_capacity_kw * 0.8)
-        load_history.append(prev_load)
+        load_history.append(last_load)
 
     return pd.DataFrame(rows)
