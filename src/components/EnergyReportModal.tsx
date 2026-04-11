@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { FileSpreadsheet, X, DollarSign, Download, FileText, Loader2 } from 'lucide-react';
+import { FileSpreadsheet, X, DollarSign, Download, FileText, Loader2, Image as ImageIcon } from 'lucide-react';
 import { KPLC_TARIFF, GRID_EMISSION_FACTOR, TREE_CO2_KG_PER_YEAR, AVG_CAR_EMISSION_KG_PER_KM } from '@/lib/tariff';
 
 export type ReportMinuteRecord = {
@@ -42,6 +42,7 @@ interface EnergyReportModalProps {
   systemStartDate: string;
   onExport: () => void;
   onFormalReport: () => Promise<void>;
+  onDownloadCharts?: () => Promise<void>;
 }
 
 export const EnergyReportModal = ({
@@ -54,11 +55,13 @@ export const EnergyReportModal = ({
   systemStartDate,
   onExport,
   onFormalReport,
+  onDownloadCharts,
   carbonOffset,
 }: EnergyReportModalProps) => {
   const [activeTab, setActiveTab] = useState('daily');
   const [isExporting, setIsExporting] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [isDownloadingCharts, setIsDownloadingCharts] = useState(false);
 
   // Calculate summary stats from minute data in a single pass (memoised to
   // avoid re-computing the potentially large dataset on every render).
@@ -387,6 +390,75 @@ export const EnergyReportModal = ({
                 </p>
               )}
             </div>
+
+            {/* Charts ZIP download */}
+            {onDownloadCharts && (
+              <div className="bg-[var(--bg-card-muted)] p-6 rounded-xl border border-[var(--border)]">
+                <div className="flex items-center gap-3 mb-4">
+                  <ImageIcon size={24} className="text-[var(--solar)]" />
+                  <div>
+                    <h3 className="font-bold text-[var(--text-primary)] text-lg">Download Daily Charts</h3>
+                    <p className="text-xs text-[var(--text-secondary)]">
+                      ZIP archive containing one JPG energy chart per simulated day
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-[var(--bg-card)] p-4 rounded-lg border border-[var(--border)] mb-4">
+                  <h4 className="text-xs font-bold text-[var(--text-secondary)] mb-2 uppercase">What you get</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <div className="flex items-center gap-2 text-[var(--text-secondary)]">
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--solar)' }}></span>
+                      One JPG chart per day ({uniqueDays} charts)
+                    </div>
+                    <div className="flex items-center gap-2 text-[var(--text-secondary)]">
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--consumption)' }}></span>
+                      Solar generation + load + battery SOC
+                    </div>
+                    <div className="flex items-center gap-2 text-[var(--text-secondary)]">
+                      <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                      1640×680px (2× retina) images
+                    </div>
+                    <div className="flex items-center gap-2 text-[var(--text-secondary)]">
+                      <span className="w-2 h-2 bg-sky-500 rounded-full"></span>
+                      Packaged as SafariCharge_Charts_&lt;date&gt;.zip
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={async () => {
+                    setIsDownloadingCharts(true);
+                    try {
+                      await onDownloadCharts();
+                    } finally {
+                      setIsDownloadingCharts(false);
+                    }
+                  }}
+                  disabled={isDownloadingCharts || totalDataPoints === 0}
+                  className="w-full py-3 font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  style={{ backgroundColor: 'var(--solar)', color: '#000' }}
+                >
+                  {isDownloadingCharts ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      Building charts...
+                    </>
+                  ) : (
+                    <>
+                      <ImageIcon size={18} />
+                      Download Charts ZIP ({uniqueDays} day{uniqueDays !== 1 ? 's' : ''})
+                    </>
+                  )}
+                </button>
+
+                {totalDataPoints === 0 && (
+                  <p className="text-xs text-amber-600 mt-2 text-center">
+                    Start the simulation to generate charts
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Formal PDF Report */}
             <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-6 rounded-xl border border-slate-700">
