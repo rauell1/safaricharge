@@ -15,9 +15,9 @@ import {
 // ---------------------------------------------------------------------------
 
 const STATUS_COLORS: Record<KPIStatus, { bg: string; text: string; dot: string }> = {
-  good:    { bg: 'rgba(34,197,94,0.12)',  text: '#16a34a', dot: '#22c55e' },
-  warning: { bg: 'rgba(234,179,8,0.12)',  text: '#ca8a04', dot: '#eab308' },
-  poor:    { bg: 'rgba(239,68,68,0.12)',  text: '#dc2626', dot: '#ef4444' },
+  good:    { bg: 'rgba(34,197,94,0.12)',   text: '#16a34a', dot: '#22c55e' },
+  warning: { bg: 'rgba(234,179,8,0.12)',   text: '#ca8a04', dot: '#eab308' },
+  poor:    { bg: 'rgba(239,68,68,0.12)',   text: '#dc2626', dot: '#ef4444' },
   unknown: { bg: 'rgba(148,163,184,0.10)', text: 'var(--text-tertiary)', dot: 'var(--text-tertiary)' },
 };
 
@@ -62,7 +62,6 @@ function KPIRow({ label, value, range, status, description }: KPIRowProps) {
     <div
       className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] px-4 py-3 transition-colors hover:bg-[var(--bg-card-hover)]"
       title={description}
-      role="row"
     >
       <div className="min-w-0">
         <p className="text-xs font-medium text-[var(--text-secondary)] truncate">{label}</p>
@@ -117,14 +116,16 @@ export interface EngineeringKPICardProps {
  * green/amber/red status indicators.
  */
 export function EngineeringKPICard({ kpis, pvCapacityLabel }: EngineeringKPICardProps) {
-  const hasData = kpis !== null && kpis.annualEnergyKwh > 0;
+  // Show skeleton only when kpis is null (not yet computed).
+  // When kpis is non-null we always render rows — even if energy is 0, status badges will show 'N/A'.
+  const hasData = kpis !== null;
 
   const rows: (KPIRowProps & { key: string })[] = hasData && kpis
     ? [
         {
           key: 'specificYield',
           label: KENYA_KPI_RANGES.specificYield.label,
-          value: `${kpis.specificYield.toLocaleString()} kWh/kWp`,
+          value: `${kpis.specificYield.toLocaleString()} kWh/kWp/yr`,
           range: `Ref: ${KENYA_KPI_RANGES.specificYield.low.toLocaleString()}–${KENYA_KPI_RANGES.specificYield.high.toLocaleString()} kWh/kWp/yr`,
           status: getKPIStatus(kpis.specificYield, KENYA_KPI_RANGES.specificYield),
           description: KENYA_KPI_RANGES.specificYield.description,

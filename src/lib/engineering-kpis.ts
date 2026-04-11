@@ -96,8 +96,8 @@ export type KPIStatus = 'good' | 'warning' | 'poor' | 'unknown';
  * Return a traffic-light status for a KPI value against its reference range.
  *
  * - 'good'    : value is within [low, high]
- * - 'warning' : value is within 10 % below low or above high
- * - 'poor'    : value is more than 10 % outside the range
+ * - 'warning' : value is within 10 % of the threshold values (low * 0.9 or high * 1.1)
+ * - 'poor'    : value is more than 10 % outside the threshold values
  * - 'unknown' : value is 0 or NaN (no data)
  */
 export function getKPIStatus(
@@ -105,9 +105,9 @@ export function getKPIStatus(
   range: KPIRange
 ): KPIStatus {
   if (!Number.isFinite(value) || value === 0) return 'unknown';
-  const margin = (range.high - range.low) * 0.1;
   if (value >= range.low && value <= range.high) return 'good';
-  if (value >= range.low - margin && value <= range.high + margin) return 'warning';
+  // Warning band: within 10% below low or 10% above high (relative to the threshold)
+  if (value >= range.low * 0.9 && value <= range.high * 1.1) return 'warning';
   return 'poor';
 }
 
@@ -131,6 +131,9 @@ export function computeEngineeringKPIs(
 ): EngineeringKPIs {
   const { pvCapacityKwp, batteryCapacityKwh, minReservePct, peakSunHoursPerDay } = config;
 
+  // maxDod is purely config-driven — always return as percentage regardless of battery size
+  const maxDod = 100 - minReservePct;
+
   // Guard: return zeroed KPIs when there is no data or invalid config
   if (
     minuteData.length === 0 ||
@@ -142,34 +145,55 @@ export function computeEngineeringKPIs(
       performanceRatio: 0,
       capacityFactor: 0,
       batteryCyclesPerYear: 0,
-      maxDod: batteryCapacityKwh > 0 ? 1 - minReservePct / 100 : 0,
+      maxDod,
       annualEnergyKwh: 0,
       totalChargeKwh: 0,
     };
   }
 
-  // --- Aggregate energy from simulation data ---
+  // --- Derive dataset timestep from consecutive timestamps ---
+  // Done once up-front so nighttime/grid charging periods use the correct step.
+  const getTimestampMs = (value?: string): number => {
+    if (!value) return Number.NaN;
+    return Date.parse(value);
+  };
 
+  let datasetStepHours = 1 / 60; // default: 1-minute resolution
+  for (let i = 0; i < minuteData.length - 1; i++) {
+    const currentMs = getTimestampMs(minuteData[i].timestamp);
+    const nextMs = getTimestampMs(minuteData[i + 1].timestamp);
+    const deltaMs = nextMs - currentMs;
+    if (Number.isFinite(deltaMs) && deltaMs > 0) {
+      datasetStepHours = deltaMs / (1000 * 60 * 60);
+      break;
+    }
+  }
+
+  // --- Aggregate energy from simulation data ---
   let totalSolarKwh = 0;
   let totalBatChargeKwh = 0;
 
-  for (const d of minuteData) {
+  for (let i = 0; i < minuteData.length; i++) {
+    const d = minuteData[i];
     totalSolarKwh += d.solarEnergyKWh ?? 0;
-    // batteryPowerKW > 0 means charging; accumulate positive energy per timestep.
-    // solarEnergyKWh is already the kWh per timestep — use the same timestep for battery.
+
+    // batteryPowerKW > 0 means charging
     if (d.batteryPowerKW > 0) {
-      // Derive timestep duration from solarEnergyKWh / solarKW when possible,
-      // otherwise fall back to 1 min (1/60 h) as the standard simulation resolution.
+      // Derive this step's duration from consecutive timestamps; fall back to dataset default.
+      const currentMs = getTimestampMs(d.timestamp);
+      const nextMs = i < minuteData.length - 1
+        ? getTimestampMs(minuteData[i + 1].timestamp)
+        : Number.NaN;
+      const deltaMs = nextMs - currentMs;
       const dtHours =
-        d.solarKW > 0 && d.solarEnergyKWh > 0
-          ? d.solarEnergyKWh / d.solarKW
-          : 1 / 60;
+        Number.isFinite(deltaMs) && deltaMs > 0
+          ? deltaMs / (1000 * 60 * 60)
+          : datasetStepHours;
       totalBatChargeKwh += d.batteryPowerKW * dtHours;
     }
   }
 
   // --- Annualise if data does not span a full year ---
-  // Estimate number of unique days in the dataset.
   const uniqueDates = new Set(minuteData.map((d) => d.date ?? d.timestamp?.slice(0, 10)));
   const trackedDays = Math.max(1, uniqueDates.size);
   const annualisationFactor = 365 / trackedDays;
@@ -183,22 +207,17 @@ export function computeEngineeringKPIs(
   const specificYield = annualEnergyKwh / pvCapacityKwp;
 
   // Performance ratio: actual yield / theoretical maximum yield
-  // Theoretical max = peakSunHours * 365 * 1 kWh/kWp/day
   const theoreticalYield = peakSunHoursPerDay * 365;
   const performanceRatio =
     theoreticalYield > 0 ? (specificYield / theoreticalYield) * 100 : 0;
 
   // Capacity factor: average power / nameplate capacity
-  // = annualEnergy / (capacity_kW * 8760 h)
   const capacityFactor =
     pvCapacityKwp > 0 ? (annualEnergyKwh / (pvCapacityKwp * 8760)) * 100 : 0;
 
   // Battery cycles per year: total charge throughput / battery capacity
   const batteryCyclesPerYear =
     batteryCapacityKwh > 0 ? annualChargeKwh / batteryCapacityKwh : 0;
-
-  // Max DoD: fraction of capacity available for use
-  const maxDod = (1 - minReservePct / 100) * 100;
 
   return {
     specificYield: Number(specificYield.toFixed(1)),
