@@ -11,7 +11,9 @@ import { AlertsList } from '@/components/dashboard/AlertsList';
 import { TimeRangeSwitcher } from '@/components/dashboard/TimeRangeSwitcher';
 import { WeatherCard } from '@/components/dashboard/WeatherCard';
 import { BatteryStatusCard } from '@/components/dashboard/BatteryStatusCard';
+import { EVChargingCard } from '@/components/dashboard/EVChargingCard';
 import { InsightsBanner } from '@/components/dashboard/InsightsBanner';
+import { EngineeringKpisCard } from '@/components/dashboard/EngineeringKpisCard';
 import DailyEnergyGraph from '@/components/DailyEnergyGraph';
 import { SystemVisualization } from '@/components/dashboard/SystemVisualization';
 import { useDemoEnergySystem } from '@/hooks/useDemoEnergySystem';
@@ -574,8 +576,6 @@ export default function ModularDashboardDemo({
   );
   // ─────────────────────────────────────────────────────────────────────────
 
-  // ─────────────────────────────────────────────────────────────────────────
-
   // ── Section renderer ──────────────────────────────────────────────────────
   const renderSection = () => {
     switch (activeSection) {
@@ -682,7 +682,6 @@ export default function ModularDashboardDemo({
           </main>
         );
 
-      // 'dashboard' and 'scenarios' fall through to the default dashboard view
       default:
         return (
           <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
@@ -717,6 +716,9 @@ export default function ModularDashboardDemo({
                 weeklyAvgConsumption={trendsData.weeklyAvgCons}
                 yesterdaySavings={trendsData.yesterdaySavings}
               />
+
+              {/* Engineering KPIs — Specific Yield, PR, Capacity Factor, Battery Cycles */}
+              <EngineeringKpisCard />
 
               <Card className="dashboard-card">
                 <CardHeader>
@@ -823,6 +825,7 @@ export default function ModularDashboardDemo({
                 </div>
               </div>
 
+              {/* Lower grid: panels + weather/battery/EV */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2">
                   <PanelStatusTable />
@@ -834,6 +837,7 @@ export default function ModularDashboardDemo({
                     batteryPower={batteryPower}
                     isCharging={batteryPower >= 0}
                   />
+                  <EVChargingCard />
                 </div>
               </div>
 
@@ -891,7 +895,6 @@ export default function ModularDashboardDemo({
         );
     }
   };
-  // ─────────────────────────────────────────────────────────────────────────
 
   return (
     <DashboardLayout activeSection={activeSection} onSectionChange={setActiveSection}>
@@ -929,7 +932,6 @@ export default function ModularDashboardDemo({
           </div>
         </DialogContent>
       </Dialog>
-      {/* ───────────────────────────────────────────────────────────────── */}
 
       <EnergyReportModal
         isOpen={isReportOpen}
