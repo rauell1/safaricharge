@@ -491,3 +491,33 @@ export const HomeProduct = React.memo(
   )
 );
 HomeProduct.displayName = 'HomeProduct';
+
+// ---------------------------------------------------------------------------
+// SimulationNodes — self-contained demo wrapper
+// ---------------------------------------------------------------------------
+
+export function SimulationNodes() {
+  return (
+    <div className="flex flex-col items-center gap-6 py-8">
+      <div className="flex flex-wrap justify-center gap-8 items-end">
+        <SolarPanelProduct power={15.3} capacity={50} weather="Sunny" isNight={false} />
+        <BatteryProduct level={72} status="Charging" power={8.5} capacityKwh={60} />
+        <HomeProduct power={6.8} label="Home Load" />
+        <EVChargerProduct
+          id={1}
+          status="Charging"
+          power={7.4}
+          soc={55}
+          carName="EV Commuter"
+          capacity={75}
+          maxRate={11}
+          onToggle={() => {}}
+        />
+      </div>
+      <div className="flex flex-wrap justify-center gap-8 items-start mt-4">
+        <GridProduct power={2.1} isImporting={true} isExporting={false} gridStatus="Online" />
+        <InverterProduct id={1} power={22.1} ratedCapacityKw={48} />
+      </div>
+    </div>
+  );
+}
