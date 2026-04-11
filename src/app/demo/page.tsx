@@ -47,7 +47,8 @@ import FinancialDashboard from '@/components/FinancialDashboard';
 import { buildFinancialSnapshot, type FinancialInputs } from '@/lib/financial-dashboard';
 import { LoadConfigComponents } from '@/components/LoadConfigComponents';
 import { RecommendationComponents } from '@/components/RecommendationComponents';
-import { SimulationNodes } from '@/components/simulation/SimulationNodes';
+// SimulationPage replaces the old static SimulationNodes stub
+import { SimulationPage } from '@/components/simulation/SimulationPage';
 import { SafariChargeAIAssistant } from '@/components/dashboard/AIAssistant';
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -574,8 +575,6 @@ export default function ModularDashboardDemo({
   );
   // ─────────────────────────────────────────────────────────────────────────
 
-  // ─────────────────────────────────────────────────────────────────────────
-
   // ── Section renderer ──────────────────────────────────────────────────────
   const renderSection = () => {
     switch (activeSection) {
@@ -587,7 +586,8 @@ export default function ModularDashboardDemo({
                 <h2 className="text-2xl font-bold text-[var(--text-primary)]">Simulation</h2>
                 <p className="text-sm text-[var(--text-tertiary)]">Core physics engine, scenario controls and system visualisation</p>
               </div>
-              <SimulationNodes />
+              {/* Live-wired simulation view — reads directly from the running physics store */}
+              <SimulationPage />
             </div>
           </main>
         );
