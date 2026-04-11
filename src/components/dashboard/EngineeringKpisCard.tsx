@@ -6,6 +6,8 @@ import {
   BarChart2,
   Activity,
   BatteryCharging,
+  Sun,
+  Plug,
   Info,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,9 +31,22 @@ interface KpiTileProps {
   tooltip: string;
   accent?: string; // tailwind text colour class
   dim?: boolean;
+  /** Optional 0-100 progress bar beneath the value */
+  progress?: number;
+  progressColor?: string; // CSS custom-property string e.g. 'var(--battery)'
 }
 
-function KpiTile({ icon, label, value, unit, tooltip, accent = 'text-[var(--solar)]', dim }: KpiTileProps) {
+function KpiTile({
+  icon,
+  label,
+  value,
+  unit,
+  tooltip,
+  accent = 'text-[var(--solar)]',
+  dim,
+  progress,
+  progressColor = 'var(--battery)',
+}: KpiTileProps) {
   return (
     <TooltipProvider delayDuration={200}>
       <Tooltip>
@@ -41,7 +56,7 @@ function KpiTile({ icon, label, value, unit, tooltip, accent = 'text-[var(--sola
               dim ? 'opacity-60' : ''
             }`}
           >
-            <div className={`flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]`}>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
               <span className={accent}>{icon}</span>
               {label}
               <Info className="h-3 w-3 ml-auto text-[var(--text-tertiary)] opacity-50" />
@@ -50,6 +65,17 @@ function KpiTile({ icon, label, value, unit, tooltip, accent = 'text-[var(--sola
               <span className={`text-2xl font-bold tabular-nums ${accent}`}>{value}</span>
               <span className="text-xs text-[var(--text-tertiary)]">{unit}</span>
             </div>
+            {progress !== undefined && (
+              <div className="h-1.5 w-full rounded-full bg-[var(--bg-card)] overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-700 ease-out"
+                  style={{
+                    width: `${Math.min(Math.max(progress, 0), 100)}%`,
+                    backgroundColor: progressColor,
+                  }}
+                />
+              </div>
+            )}
           </div>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="max-w-[220px] text-xs">
@@ -70,23 +96,41 @@ export function EngineeringKpisCard() {
   const currentDate = useEnergySystemStore((s) => s.currentDate);
 
   const kpis = useMemo(() => {
-    const durationHours = minuteData.length / 60; // each record = 1 minute
+    const durationHours = minuteData.length / 60;
     const effectiveDuration = Math.max(durationHours, 1);
 
-    // Derive irradiance from monthly PSH for the current month
-    const currentMonth = new Date(currentDate).getMonth(); // 0-indexed
-    const monthlyPSH = solarData.monthlyAvgKwhPerKwp[currentMonth]; // kWh/kWp ≈ PSH
-    const irradianceKWhPerM2 = monthlyPSH * (effectiveDuration / 24); // scale to elapsed period
+    // Irradiance from monthly PSH for current month
+    const currentMonth = new Date(currentDate).getMonth();
+    const monthlyPSH = solarData.monthlyAvgKwhPerKwp[currentMonth];
+    const irradianceKWhPerM2 = monthlyPSH * (effectiveDuration / 24);
+
+    // Total load from minuteData (home + EV1 + EV2)
+    const totalLoadKWh = minuteData.reduce(
+      (sum, d) =>
+        sum +
+        (d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (1 / 60)) +
+        (d.ev1LoadKWh  ?? (d.ev1LoadKW  ?? 0) * (1 / 60)) +
+        (d.ev2LoadKWh  ?? (d.ev2LoadKW  ?? 0) * (1 / 60)),
+      0,
+    );
+
+    // Grid import from accumulators if available, else sum minuteData
+    const gridImportKWh =
+      (accumulators as Record<string, number>).gridImportKwh != null
+        ? (accumulators as Record<string, number>).gridImportKwh
+        : minuteData.reduce((sum, d) => sum + (d.gridImportKWh ?? 0), 0);
 
     return computeEngineeringKpis({
-      totalSolarKWh: accumulators.solar,
-      dcCapacityKWp: systemConfig.solarCapacityKW,
-      durationHours: effectiveDuration,
+      totalSolarKWh:        accumulators.solar,
+      dcCapacityKWp:        systemConfig.solarCapacityKW,
+      durationHours:        effectiveDuration,
       totalBatDischargeKWh: accumulators.batDischargeKwh,
-      batteryCapacityKWh: systemConfig.batteryCapacityKWh,
+      batteryCapacityKWh:   systemConfig.batteryCapacityKWh,
+      totalLoadKWh,
+      gridImportKWh,
       planeIrradianceKWhPerM2: irradianceKWhPerM2 > 0 ? irradianceKWhPerM2 : undefined,
     });
-  }, [minuteData.length, accumulators, systemConfig, solarData, currentDate]);
+  }, [minuteData, accumulators, systemConfig, solarData, currentDate]);
 
   // Battery cycles sparkline — sample every 60 points (≈ 1 simulated hour)
   const sparkData = useMemo(() => {
@@ -116,8 +160,9 @@ export function EngineeringKpisCard() {
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <CardContent className="space-y-4">
+        {/* ── 6-tile grid: 2 cols on mobile, 3 on sm+ ── */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <KpiTile
             icon={<Zap className="h-3.5 w-3.5" />}
             label="Specific Yield"
@@ -134,38 +179,79 @@ export function EngineeringKpisCard() {
             unit="%"
             accent="text-[var(--battery)]"
             dim={noData}
-            tooltip={`Ratio of actual yield to theoretical yield given irradiance. Values 70–85 % are typical for a well-maintained system.${kpis.prIsEstimated ? ' (Estimated from 5.5 h/day peak-sun-hours — link irradiance data for accuracy.)' : ''}`}
+            tooltip={`Ratio of actual yield to theoretical maximum given available irradiance. Good systems: 75–85 %. ${kpis.prIsEstimated ? 'Estimated from local peak-sun-hours.' : 'Computed from plane-of-array irradiance.'}`}
+            progress={kpis.performanceRatioPct}
+            progressColor="var(--battery)"
           />
           <KpiTile
             icon={<Activity className="h-3.5 w-3.5" />}
             label="Capacity Factor"
             value={noData ? '—' : `${kpis.capacityFactorPct.toFixed(1)}`}
             unit="%"
-            accent="text-[var(--grid)]"
+            accent="text-[var(--consumption)]"
             dim={noData}
-            tooltip="PV generation as a fraction of what would be produced running at full rated power 24/7. Typical sub-Saharan rooftop PV: 15–22 %."
+            tooltip="Actual energy output as a fraction of maximum possible output over the same period (P_dc × hours). Kenyan rooftop PV typically 15–22 %."
+            progress={kpis.capacityFactorPct}
+            progressColor="var(--consumption)"
           />
           <KpiTile
             icon={<BatteryCharging className="h-3.5 w-3.5" />}
             label="Battery Cycles"
             value={noData ? '—' : kpis.batteryCycles.toFixed(2)}
             unit="cycles"
-            accent="text-emerald-400"
+            accent="text-[var(--grid)]"
             dim={noData}
-            tooltip="Equivalent full cycles = cumulative discharge ÷ nominal capacity. Lithium-ion typically rated for 3 000–6 000 cycles (80 % DoD)."
+            tooltip="Equivalent full discharge cycles accumulated. Li-ion BESS typically rated 3 000–6 000 cycles at 80 % DoD. Lower is better for longevity."
+          />
+          <KpiTile
+            icon={<Sun className="h-3.5 w-3.5" />}
+            label="Self-Sufficiency"
+            value={noData ? '—' : `${kpis.selfSufficiencyPct.toFixed(1)}`}
+            unit="%"
+            accent="text-[var(--solar)]"
+            dim={noData}
+            tooltip="Percentage of total electrical load (home + EVs) met by solar and battery without drawing from the grid. Target ≥ 70 % for a well-sized off-peak system."
+            progress={kpis.selfSufficiencyPct}
+            progressColor="var(--solar)"
+          />
+          <KpiTile
+            icon={<Plug className="h-3.5 w-3.5" />}
+            label="Grid Dependency"
+            value={noData ? '—' : `${kpis.gridDependencyPct.toFixed(1)}`}
+            unit="%"
+            accent="text-[var(--grid)]"
+            dim={noData}
+            tooltip="Fraction of total load supplied by the grid. The complement of Self-Sufficiency. Lower values indicate a more energy-independent system."
+            progress={kpis.gridDependencyPct}
+            progressColor="var(--grid)"
           />
         </div>
-        {sparkData.length >= 2 && (
-          <div className="mt-4">
-            <p className="text-xs text-[var(--text-tertiary)] mb-1">Cycle history</p>
-            <ResponsiveContainer width="100%" height={48}>
-              <AreaChart data={sparkData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+
+        {/* ── Battery cycles sparkline ── */}
+        {sparkData.length > 1 && (
+          <div className="rounded-xl bg-[var(--bg-card-muted)] border border-[var(--border)] p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
+                Battery Cycle Accumulation
+              </span>
+              <span className="text-xs tabular-nums text-[var(--grid)]">
+                {kpis.batteryCycles.toFixed(2)} cycles total
+              </span>
+            </div>
+            <ResponsiveContainer width="100%" height={56}>
+              <AreaChart data={sparkData} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="cycleGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="var(--grid)" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="var(--grid)" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
                 <Area
                   type="monotone"
                   dataKey="cycles"
-                  stroke="var(--battery)"
-                  fill="var(--battery-soft)"
+                  stroke="var(--grid)"
                   strokeWidth={1.5}
+                  fill="url(#cycleGrad)"
                   dot={false}
                   isAnimationActive={false}
                 />
