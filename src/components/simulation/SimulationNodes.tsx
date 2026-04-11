@@ -2,15 +2,31 @@
 
 /**
  * SimulationNodes.tsx
- * Extracted from page.tsx — visual node components used in the power-flow diagram.
- * Fixes #3: separates pure-UI hardware nodes from the main dashboard God Component.
+ * Fully wired to the live energySystemStore — all values come from the
+ * real simulation tick loop.  No hardcoded demo values.
  */
 
-import React from 'react';
-import { ChevronDown, UtilityPole, ArrowDown, ArrowUp, Home, Battery } from 'lucide-react';
+import React, { useCallback } from 'react';
+import {
+  ChevronDown,
+  UtilityPole,
+  ArrowDown,
+  ArrowUp,
+  Home,
+  Zap,
+  Play,
+  Pause,
+  RotateCcw,
+  Gauge,
+} from 'lucide-react';
+import { useEnergySystemStore } from '@/stores/energySystemStore';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 // ---------------------------------------------------------------------------
-// Types (duplicated from page.tsx to keep this file self-contained)
+// Types
 // ---------------------------------------------------------------------------
 export type GridDirection = 'import' | 'export' | 'neutral';
 export type StorageDirection = 'charge' | 'discharge' | 'idle';
@@ -99,7 +115,7 @@ export const RigidCable = React.memo(
 RigidCable.displayName = 'RigidCable';
 
 // ---------------------------------------------------------------------------
-// HorizontalCable — horizontal animated power cable
+// HorizontalCable
 // ---------------------------------------------------------------------------
 export const HorizontalCable = React.memo(
   ({
@@ -229,10 +245,13 @@ export const SolarPanelProduct = React.memo(
         </div>
         <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-3 py-1 rounded-full border border-[var(--border)] backdrop-blur-sm">
           <div className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
-            PV Array ({safeCapacity.toFixed(1)}kW)
+            PV Array ({safeCapacity.toFixed(1)} kWp)
           </div>
           <div className="text-lg font-black text-[var(--text-primary)] leading-none">
-            {power.toFixed(1)} <span className="text-xs font-normal">kW</span>
+            {power.toFixed(2)} <span className="text-xs font-normal">kW</span>
+          </div>
+          <div className="text-[9px] text-[var(--text-tertiary)] mt-0.5">
+            {safeCapacity > 0 ? `${(utilization * 100).toFixed(0)}% utilisation` : 'No capacity'}
           </div>
         </div>
       </div>
@@ -271,8 +290,11 @@ export const BatteryProduct = React.memo(
               status === 'Charging' ? 'animate-pulse' : ''
             }`}
             style={{
-              height: `${level}%`,
-              backgroundColor: 'var(--battery)',
+              height: `${Math.max(0, Math.min(100, level))}%`,
+              backgroundColor:
+                level < 20 ? 'var(--alert, #ef4444)' :
+                level < 40 ? '#f59e0b' :
+                'var(--battery)',
               opacity: status === 'Discharging' ? 0.9 : 1,
             }}
           />
@@ -280,14 +302,17 @@ export const BatteryProduct = React.memo(
         </div>
         <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none" />
       </div>
-      <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] min-w-[72px] sm:min-w-[90px] backdrop-blur-sm">
+      <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] min-w-[90px] backdrop-blur-sm">
         <div className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase">
-          Storage ({(capacityKwh * health).toFixed(0)}kWh)
+          Storage ({(capacityKwh * health).toFixed(0)} kWh)
         </div>
         <div className="text-sm font-black text-[var(--text-primary)]">{level.toFixed(1)}%</div>
+        <div className="text-[10px] font-semibold text-[var(--text-secondary)]">
+          {power >= 0 ? '+' : ''}{power.toFixed(1)} kW · {status}
+        </div>
         <div
-          className={`text-[10px] font-semibold ${
-            health < 0.85 ? 'text-orange-500' : 'text-[var(--text-primary)]'
+          className={`text-[9px] font-semibold ${
+            health < 0.85 ? 'text-orange-500' : 'text-[var(--text-tertiary)]'
           }`}
         >
           Health: {(health * 100).toFixed(1)}% · {cycles.toFixed(1)} cyc
@@ -323,7 +348,7 @@ export const EVChargerProduct = React.memo(
     onToggle: () => void;
     v2g?: boolean;
   }) => (
-    <div className="flex flex-col items-center z-20" onClick={onToggle}>
+    <div className="flex flex-col items-center z-20 cursor-pointer" onClick={onToggle}>
       <div
         className={`relative w-20 h-28 bg-slate-800 rounded-xl shadow-lg border-l-4 border-slate-600 flex flex-col items-center pt-3 group transition-all duration-500 ease-out hover:-translate-y-1 hover:scale-[1.02] active:scale-95 ring-2 ${
           status === 'Charging'
@@ -337,7 +362,7 @@ export const EVChargerProduct = React.memo(
             <span className="text-purple-400 text-[8px] font-mono animate-pulse z-20">V2G↑</span>
           ) : status === 'Charging' ? (
             <span className="text-sky-100 text-[9px] font-semibold animate-pulse z-20">
-              {power.toFixed(1)}kW
+              {power.toFixed(1)} kW
             </span>
           ) : status === 'Away' ? (
             <span className="text-red-500 text-[8px] z-20">AWAY</span>
@@ -356,10 +381,10 @@ export const EVChargerProduct = React.memo(
           }`}
         />
       </div>
-      <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] backdrop-blur-sm min-w-[72px] sm:min-w-[90px]">
+      <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] backdrop-blur-sm min-w-[80px]">
         <div className="text-[8px] font-bold text-[var(--text-tertiary)] uppercase">{carName}</div>
-        <div className="text-[9px] sm:text-[10px] text-[var(--text-secondary)] font-semibold">
-          {capacity}kWh • {maxRate}kW
+        <div className="text-[9px] text-[var(--text-secondary)] font-semibold">
+          {capacity} kWh · {maxRate} kW max
         </div>
         <div className="flex justify-between items-end px-1 mt-1 border-t border-[var(--border)] pt-0.5">
           <span className="text-[8px] text-[var(--text-tertiary)]">SoC</span>
@@ -390,19 +415,25 @@ export const InverterProduct = React.memo(
     power: number;
     ratedCapacityKw: number;
   }) => (
-    <div className="flex flex-col items-center bg-[var(--bg-card)] rounded-xl border border-[var(--border)] w-24 p-2 z-20 transition-transform duration-300 ease-out hover:scale-[1.03] active:scale-95">
+    <div className="flex flex-col items-center bg-[var(--bg-card)] rounded-xl border border-[var(--border)] w-28 p-2 z-20 transition-transform duration-300 ease-out hover:scale-[1.03] active:scale-95">
       <div className="w-full flex justify-between items-center mb-1 border-b border-[var(--border)] pb-1">
         <span className="text-[8px] font-bold text-[var(--text-tertiary)]">
-          {ratedCapacityKw.toFixed(0)}kW Inverter #{id}
+          {ratedCapacityKw.toFixed(0)} kW INV #{id}
         </span>
         <div
           className={`w-1.5 h-1.5 rounded-full ${
-            power > 0 ? 'bg-green-500 animate-pulse' : 'bg-[var(--border)]'
+            power > 0.1 ? 'bg-green-500 animate-pulse' : 'bg-[var(--border)]'
           }`}
         />
       </div>
       <div className="bg-slate-800 rounded w-full h-8 flex items-center justify-center font-mono text-orange-400 text-[10px] shadow-inner">
-        {power.toFixed(1)} kW
+        {power.toFixed(2)} kW
+      </div>
+      <div className="mt-1 w-full bg-[var(--bg-card-muted)] rounded-full h-1.5 overflow-hidden">
+        <div
+          className="h-full rounded-full bg-orange-400 transition-all duration-500"
+          style={{ width: `${Math.min(100, ratedCapacityKw > 0 ? (Math.abs(power) / ratedCapacityKw) * 100 : 0)}%` }}
+        />
       </div>
     </div>
   )
@@ -445,7 +476,7 @@ export const GridProduct = React.memo(
             }`}
           >
             {isImporting ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
-            <span className="text-[9px] font-bold">{Math.abs(power).toFixed(1)} kW</span>
+            <span className="text-[9px] font-bold">{Math.abs(power).toFixed(2)} kW</span>
           </div>
         )}
       </div>
@@ -455,9 +486,9 @@ export const GridProduct = React.memo(
           {gridStatus === 'Offline'
             ? 'OFFLINE'
             : isImporting
-              ? 'IMPORTING'
+              ? `IMPORTING ${Math.abs(power).toFixed(2)} kW`
               : isExporting
-                ? 'EXPORTING'
+                ? `EXPORTING ${Math.abs(power).toFixed(2)} kW`
                 : 'IDLE'}
         </div>
       </div>
@@ -467,7 +498,7 @@ export const GridProduct = React.memo(
 GridProduct.displayName = 'GridProduct';
 
 // ---------------------------------------------------------------------------
-// HomeProduct — generic load node (home, commercial, industrial, accessory)
+// HomeProduct
 // ---------------------------------------------------------------------------
 export const HomeProduct = React.memo(
   ({
@@ -485,7 +516,7 @@ export const HomeProduct = React.memo(
       </div>
       <div className="text-center mt-2 bg-[var(--bg-card)]/90 px-2 py-1 rounded border border-[var(--border)] backdrop-blur-sm">
         <div className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase">{label}</div>
-        <div className="text-sm font-black text-[var(--text-primary)]">{power.toFixed(1)} kW</div>
+        <div className="text-sm font-black text-[var(--text-primary)]">{power.toFixed(2)} kW</div>
       </div>
     </div>
   )
@@ -493,31 +524,360 @@ export const HomeProduct = React.memo(
 HomeProduct.displayName = 'HomeProduct';
 
 // ---------------------------------------------------------------------------
-// SimulationNodes — self-contained demo wrapper
+// SimulationControls — speed slider + pause/play/reset
 // ---------------------------------------------------------------------------
+function SimulationControls() {
+  const simSpeed    = useEnergySystemStore((s) => s.simSpeed);
+  const isAutoMode  = useEnergySystemStore((s) => s.isAutoMode);
+  const setSimState = useEnergySystemStore((s) => s.setSimulationState);
+  const resetSystem = useEnergySystemStore((s) => s.resetSystem);
+  const { toast }   = useToast();
 
-export function SimulationNodes() {
+  const handleReset = useCallback(() => {
+    const ok = window.confirm(
+      'Reset the simulation?\n\nThis clears all accumulated energy data and restarts from the initial state.'
+    );
+    if (!ok) return;
+    resetSystem();
+    toast({ title: 'Simulation reset', description: 'All data cleared. Restarting…' });
+  }, [resetSystem, toast]);
+
+  const speeds = [0.25, 0.5, 1, 2, 5, 10, 30];
+
   return (
-    <div className="flex flex-col items-center gap-6 py-8">
-      <div className="flex flex-wrap justify-center gap-8 items-end">
-        <SolarPanelProduct power={15.3} capacity={50} weather="Sunny" isNight={false} />
-        <BatteryProduct level={72} status="Charging" power={8.5} capacityKwh={60} />
-        <HomeProduct power={6.8} label="Home Load" />
-        <EVChargerProduct
-          id={1}
-          status="Charging"
-          power={7.4}
-          soc={55}
-          carName="EV Commuter"
-          capacity={75}
-          maxRate={11}
-          onToggle={() => {}}
-        />
+    <Card className="dashboard-card">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-[var(--text-primary)] text-base">
+          <Gauge className="h-4 w-4 text-[var(--solar)]" />
+          Simulation Controls
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Play / Pause */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSimState({ isAutoMode: !isAutoMode })}
+            className="flex items-center gap-1.5 min-w-[90px]"
+          >
+            {isAutoMode ? (
+              <><Pause className="h-3.5 w-3.5" /> Pause</>
+            ) : (
+              <><Play className="h-3.5 w-3.5" /> Resume</>
+            )}
+          </Button>
+
+          {/* Speed buttons */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs text-[var(--text-secondary)] mr-1">Speed:</span>
+            {speeds.map((s) => (
+              <button
+                key={s}
+                onClick={() => setSimState({ simSpeed: s })}
+                className={[
+                  'px-2 py-1 rounded text-[11px] font-semibold border transition-all duration-150',
+                  simSpeed === s
+                    ? 'bg-[var(--solar)] text-white border-[var(--solar)]'
+                    : 'bg-[var(--bg-card-muted)] text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--solar)] hover:text-[var(--solar)]',
+                ].join(' ')}
+              >
+                {s}×
+              </button>
+            ))}
+          </div>
+
+          {/* Status badge */}
+          <Badge
+            variant="outline"
+            className={isAutoMode
+              ? 'border-green-500 text-green-500 bg-green-500/10'
+              : 'border-[var(--border)] text-[var(--text-tertiary)]'
+            }
+          >
+            <span
+              className={`mr-1.5 inline-block h-1.5 w-1.5 rounded-full ${
+                isAutoMode ? 'bg-green-500 animate-pulse' : 'bg-[var(--border)]'
+              }`}
+            />
+            {isAutoMode ? 'Running' : 'Paused'}
+          </Badge>
+
+          {/* Reset */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleReset}
+            className="ml-auto text-[var(--text-tertiary)] hover:text-red-400 flex items-center gap-1.5"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Reset
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// SimulationNodes — live-wired main export
+// ---------------------------------------------------------------------------
+export function SimulationNodes() {
+  // ── Pull live values from store ──────────────────────────────────────────
+  const nodes       = useEnergySystemStore((s) => s.nodes);
+  const flows       = useEnergySystemStore((s) => s.flows);
+  const systemConfig = useEnergySystemStore((s) => s.systemConfig);
+  const timeOfDay   = useEnergySystemStore((s) => s.timeOfDay);
+  const simSpeed    = useEnergySystemStore((s) => s.simSpeed);
+  const minuteData  = useEnergySystemStore((s) => s.minuteData);
+
+  const solarNode   = nodes.solar;
+  const batteryNode = nodes.battery;
+  const gridNode    = nodes.grid;
+  const homeNode    = nodes.home;
+  const ev1Node     = nodes.ev1;
+  const ev2Node     = nodes.ev2;
+
+  // Latest minute point for higher-fidelity values
+  const latest = minuteData[minuteData.length - 1];
+
+  // Resolved live values
+  const solarPower     = latest?.solarKW       ?? solarNode.powerKW   ?? 0;
+  const batteryLevel   = latest?.batteryLevelPct ?? batteryNode.soc   ?? 0;
+  const batteryPower   = latest?.batteryPowerKW  ?? batteryNode.powerKW ?? 0;
+  const gridImportKw   = latest?.gridImportKW   ?? (gridNode.status === 'importing' ? Math.abs(gridNode.powerKW ?? 0) : 0);
+  const gridExportKw   = latest?.gridExportKW   ?? (gridNode.status === 'exporting' ? Math.abs(gridNode.powerKW ?? 0) : 0);
+  const homeLoadKw     = latest
+    ? latest.homeLoadKW + latest.ev1LoadKW + latest.ev2LoadKW
+    : homeNode.powerKW ?? 0;
+  const ev1Power       = latest?.ev1LoadKW      ?? ev1Node.powerKW   ?? 0;
+  const ev2Power       = latest?.ev2LoadKW      ?? ev2Node.powerKW   ?? 0;
+  const ev1Soc         = latest?.ev1SocPct       ?? ev1Node.soc      ?? 0;
+  const ev2Soc         = latest?.ev2SocPct       ?? ev2Node.soc      ?? 0;
+
+  // Derive states
+  const isNight        = timeOfDay < 6 || timeOfDay > 19;
+  const isImporting    = gridImportKw > 0.05;
+  const isExporting    = gridExportKw > 0.05;
+  const gridPower      = isImporting ? gridImportKw : isExporting ? gridExportKw : 0;
+  const gridStatus     = gridNode.status === 'offline' ? 'Offline' : 'Online';
+  const batteryStatus  = batteryPower > 0.1 ? 'Charging' : batteryPower < -0.1 ? 'Discharging' : 'Idle';
+  const ev1Status      = ev1Power > 0.1 ? 'Charging' : (ev1Node.status === 'offline' ? 'Away' : 'Idle');
+  const ev2Status      = ev2Power > 0.1 ? 'Charging' : (ev2Node.status === 'offline' ? 'Away' : 'Idle');
+
+  // Inverter output = total AC load (home + EV)
+  const inverterPower  = homeLoadKw;
+  const inverterCapKw  = systemConfig.inverterKW ?? 10;
+
+  // Flow activity helpers
+  const hasFlow = (from: string, to: string) =>
+    flows.some((f) => f.from === from && f.to === to && f.active);
+
+  // Accumulator totals for summary
+  const totalSolarKWh  = minuteData.reduce((s, d) => s + d.solarEnergyKWh, 0);
+  const totalSavingsKES = minuteData.reduce((s, d) => s + d.savingsKES, 0);
+
+  return (
+    <div className="space-y-6">
+      {/* ── Controls ── */}
+      <SimulationControls />
+
+      {/* ── Live summary strip ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: 'Solar Power',     value: `${solarPower.toFixed(2)} kW`,             color: 'text-[var(--solar)]' },
+          { label: 'Battery SoC',     value: `${batteryLevel.toFixed(1)}%`,             color: 'text-[var(--battery)]' },
+          { label: 'Grid',            value: isImporting ? `↑ ${gridImportKw.toFixed(2)} kW` : isExporting ? `↓ ${gridExportKw.toFixed(2)} kW` : 'Idle', color: 'text-[var(--text-primary)]' },
+          { label: 'Total Savings',   value: `KES ${Math.round(totalSavingsKES).toLocaleString()}`, color: 'text-green-500' },
+        ].map(({ label, value, color }) => (
+          <Card key={label} className="dashboard-card">
+            <CardContent className="pt-4 pb-3">
+              <div className="text-[10px] text-[var(--text-tertiary)] uppercase font-semibold mb-0.5">{label}</div>
+              <div className={`text-xl font-black ${color}`}>{value}</div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
-      <div className="flex flex-wrap justify-center gap-8 items-start mt-4">
-        <GridProduct power={2.1} isImporting={true} isExporting={false} gridStatus="Online" />
-        <InverterProduct id={1} power={22.1} ratedCapacityKw={48} />
-      </div>
+
+      {/* ── Hardware nodes ── */}
+      <Card className="dashboard-card">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-[var(--text-primary)] text-base">
+            <Zap className="h-4 w-4 text-[var(--solar)]" />
+            Live System Nodes
+            <Badge variant="outline" className="ml-2 text-[10px] border-[var(--solar)] text-[var(--solar)]">
+              {simSpeed}× speed
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* Top row: PV → Inverter → Grid */}
+          <div className="flex flex-wrap justify-center gap-6 lg:gap-10 items-end mb-6">
+            <SolarPanelProduct
+              power={solarPower}
+              capacity={systemConfig.solarCapacityKW ?? 10}
+              weather={isNight ? 'Night' : solarPower > (systemConfig.solarCapacityKW ?? 10) * 0.7 ? 'Sunny' : 'Cloudy'}
+              isNight={isNight}
+            />
+            <div className="flex flex-col items-center gap-2">
+              <RigidCable
+                height={40}
+                active={solarPower > 0.1}
+                color="bg-yellow-400"
+                glowColor="var(--solar)"
+                powerKw={solarPower}
+                capacityKw={systemConfig.solarCapacityKW ?? 10}
+                flowDirection="down"
+                speed={simSpeed}
+                showLabel
+              />
+              <InverterProduct
+                id={1}
+                power={inverterPower}
+                ratedCapacityKw={inverterCapKw}
+              />
+              <RigidCable
+                height={40}
+                active={gridPower > 0.05}
+                color={isImporting ? 'bg-slate-400' : 'bg-[var(--alert)]'}
+                glowColor={isImporting ? '#94a3b8' : 'var(--alert, #ef4444)'}
+                powerKw={gridPower}
+                capacityKw={10}
+                flowDirection={isImporting ? 'down' : 'up'}
+                speed={simSpeed}
+              />
+            </div>
+            <GridProduct
+              power={gridPower}
+              isImporting={isImporting}
+              isExporting={isExporting}
+              gridStatus={gridStatus}
+            />
+          </div>
+
+          {/* Horizontal bus line */}
+          <div className="relative flex items-center justify-center mb-6">
+            <HorizontalCable
+              width="80%"
+              height={3}
+              active={solarPower > 0.1 || homeLoadKw > 0.1}
+              color="bg-[var(--solar)]"
+              glowColor="var(--solar)"
+              powerKw={solarPower}
+              capacityKw={systemConfig.solarCapacityKW ?? 10}
+              flowDirection="right"
+              speed={simSpeed}
+              showLabel
+            />
+          </div>
+
+          {/* Bottom row: Battery · Home · EV1 · EV2 */}
+          <div className="flex flex-wrap justify-center gap-6 lg:gap-10 items-start">
+            <div className="flex flex-col items-center gap-2">
+              <RigidCable
+                height={36}
+                active={batteryPower !== 0}
+                color="bg-green-400"
+                glowColor="var(--battery)"
+                powerKw={Math.abs(batteryPower)}
+                capacityKw={systemConfig.batteryCapacityKWh ?? 50}
+                flowDirection={batteryPower >= 0 ? 'down' : 'up'}
+                speed={simSpeed}
+              />
+              <BatteryProduct
+                level={batteryLevel}
+                status={batteryStatus}
+                power={batteryPower}
+                capacityKwh={systemConfig.batteryCapacityKWh ?? 50}
+              />
+            </div>
+
+            <div className="flex flex-col items-center gap-2">
+              <RigidCable
+                height={36}
+                active={homeLoadKw > 0.1}
+                color="bg-blue-300"
+                glowColor="#93c5fd"
+                powerKw={homeLoadKw}
+                capacityKw={10}
+                flowDirection="down"
+                speed={simSpeed}
+              />
+              <HomeProduct power={homeLoadKw} label="Home Load" />
+            </div>
+
+            <div className="flex flex-col items-center gap-2">
+              <RigidCable
+                height={36}
+                active={ev1Power > 0.1}
+                color="bg-sky-400"
+                glowColor="#38bdf8"
+                powerKw={ev1Power}
+                capacityKw={systemConfig.inverterKW ?? 10}
+                flowDirection="down"
+                speed={simSpeed}
+              />
+              <EVChargerProduct
+                id={1}
+                status={ev1Status}
+                power={ev1Power}
+                soc={ev1Soc}
+                carName="EV Commuter"
+                capacity={systemConfig.ev1CapacityKWh ?? 80}
+                maxRate={22}
+                onToggle={() => {}}
+              />
+            </div>
+
+            <div className="flex flex-col items-center gap-2">
+              <RigidCable
+                height={36}
+                active={ev2Power > 0.1}
+                color="bg-violet-400"
+                glowColor="#a78bfa"
+                powerKw={ev2Power}
+                capacityKw={systemConfig.inverterKW ?? 10}
+                flowDirection="down"
+                speed={simSpeed}
+              />
+              <EVChargerProduct
+                id={2}
+                status={ev2Status}
+                power={ev2Power}
+                soc={ev2Soc}
+                carName="EV Fleet"
+                capacity={systemConfig.ev2CapacityKWh ?? 118}
+                maxRate={50}
+                onToggle={() => {}}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Session totals ── */}
+      <Card className="dashboard-card">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm text-[var(--text-primary)]">Session Totals</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-center">
+            {[
+              { label: 'Solar Gen',    value: `${totalSolarKWh.toFixed(2)} kWh`,    color: 'var(--solar)' },
+              { label: 'Grid Import',  value: `${minuteData.reduce((s, d) => s + d.gridImportKWh, 0).toFixed(2)} kWh`, color: 'var(--text-primary)' },
+              { label: 'Grid Export',  value: `${minuteData.reduce((s, d) => s + d.gridExportKWh, 0).toFixed(2)} kWh`, color: 'var(--alert, #f59e0b)' },
+              { label: 'Home Load',    value: `${minuteData.reduce((s, d) => s + d.homeLoadKWh, 0).toFixed(2)} kWh`,   color: '#93c5fd' },
+              { label: 'EV Load',      value: `${minuteData.reduce((s, d) => s + d.ev1LoadKWh + d.ev2LoadKWh, 0).toFixed(2)} kWh`, color: '#38bdf8' },
+              { label: 'Savings',      value: `KES ${Math.round(totalSavingsKES).toLocaleString()}`,                   color: '#4ade80' },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="bg-[var(--bg-card-muted)] rounded-lg p-3 border border-[var(--border)]">
+                <div className="text-[9px] text-[var(--text-tertiary)] uppercase font-semibold mb-1">{label}</div>
+                <div className="text-sm font-black" style={{ color }}>{value}</div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
