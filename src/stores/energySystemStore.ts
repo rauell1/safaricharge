@@ -88,6 +88,52 @@ export interface Accumulators {
 // Time range filter options
 export type TimeRange = 'today' | 'week' | 'month' | 'year' | 'all';
 
+// ── Scenario Snapshots ────────────────────────────────────────────────────────
+
+export interface SystemConfigSnapshot {
+  solarCapacityKW: number;
+  batteryCapacityKWh: number;
+  inverterKW: number;
+  ev1CapacityKWh: number;
+  ev2CapacityKWh: number;
+  gridTariff: { peakRate: number; offPeakRate: number };
+}
+
+export interface FinancialSnapshot {
+  capexTotal: number;
+  npvKes: number;
+  irrPct: number;
+  lcoeKesPerKwh: number;
+  paybackYears: number;
+}
+
+export interface PerformanceSnapshot {
+  selfSufficiencyPct: number;
+  totalGridImportKWh: number;
+  totalGridExportKWh: number;
+  avgBatterySOC: number;
+  totalSolarKWh: number;
+  totalSavingsKES: number;
+}
+
+export interface LocationCoordinatesSnapshot {
+  name: string;
+  latitude: number;
+  longitude: number;
+}
+
+export interface SavedScenario {
+  id: string;
+  name: string;
+  createdAt: string;
+  system: SystemConfigSnapshot;
+  finance: FinancialSnapshot;
+  performance: PerformanceSnapshot;
+  location: LocationCoordinatesSnapshot;
+}
+
+// ── Energy System State ───────────────────────────────────────────────────────
+
 // Energy System State
 interface EnergySystemState {
   // Core nodes
@@ -140,6 +186,16 @@ interface EnergySystemState {
   }) => void;
   updateSystemConfig: (config: Partial<EnergySystemState['systemConfig']>) => void;
   resetSystem: () => void;
+
+  // Scenarios
+  scenarios: SavedScenario[];
+  saveScenario: (
+    name: string,
+    finance: FinancialSnapshot,
+    location: LocationCoordinatesSnapshot
+  ) => void;
+  deleteScenario: (id: string) => void;
+  loadScenario: (id: string) => void;
 }
 
 // Initial state
@@ -217,6 +273,7 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
       offPeakRate: 14.93,
     },
   },
+  scenarios: [],
 
   updateNode: (nodeType, updates) =>
     set((state) => ({
@@ -270,5 +327,60 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
       simSpeed: 1,
       accumulators: initialAccumulators,
       minuteData: [],
+    }),
+
+  saveScenario: (name, finance, location) =>
+    set((state) => {
+      const data = state.minuteData;
+      const totalSolarKWh = data.reduce((s, d) => s + d.solarEnergyKWh, 0);
+      const totalGridImportKWh = data.reduce((s, d) => s + d.gridImportKWh, 0);
+      const totalGridExportKWh = data.reduce((s, d) => s + d.gridExportKWh, 0);
+      const totalConsumptionKWh = data.reduce(
+        (s, d) => s + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh,
+        0
+      );
+      const totalSavingsKES = data.reduce((s, d) => s + d.savingsKES, 0);
+      const avgBatterySOC =
+        data.length > 0
+          ? data.reduce((s, d) => s + d.batteryLevelPct, 0) / data.length
+          : 0;
+      const selfSufficiencyPct =
+        totalConsumptionKWh > 0
+          ? Math.min(
+              100,
+              ((totalConsumptionKWh - totalGridImportKWh) / totalConsumptionKWh) * 100
+            )
+          : 0;
+
+      const scenario: SavedScenario = {
+        id: `scenario-${Date.now()}`,
+        name,
+        createdAt: new Date().toISOString(),
+        system: { ...state.systemConfig },
+        finance,
+        performance: {
+          selfSufficiencyPct,
+          totalGridImportKWh,
+          totalGridExportKWh,
+          avgBatterySOC,
+          totalSolarKWh,
+          totalSavingsKES,
+        },
+        location,
+      };
+
+      return { scenarios: [...state.scenarios, scenario] };
+    }),
+
+  deleteScenario: (id) =>
+    set((state) => ({
+      scenarios: state.scenarios.filter((s) => s.id !== id),
+    })),
+
+  loadScenario: (id) =>
+    set((state) => {
+      const scenario = state.scenarios.find((s) => s.id === id);
+      if (!scenario) return {};
+      return { systemConfig: { ...scenario.system } };
     }),
 }));

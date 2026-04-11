@@ -27,6 +27,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, PieChart, TrendingUp, Leaf, Car, Trees } from 'lucide-react';
 import { EnergyReportModal } from '@/components/EnergyReportModal';
 import type { SolarIrradianceData } from '@/lib/nasa-power-api';
+import { useEnergySystemStore } from '@/stores/energySystemStore';
+import { useToast } from '@/hooks/use-toast';
+import { Toaster } from '@/components/ui/toaster';
 
 // Force dynamic rendering - no static generation
 export const dynamic = 'force-dynamic';
@@ -54,8 +57,28 @@ export default function ModularDashboardDemo() {
   const stats = useEnergyStats(timeRange);
   const minuteData = useMinuteData(timeRange);
   const accumulators = useAccumulators();
+  const saveScenario = useEnergySystemStore((s) => s.saveScenario);
+  const { toast } = useToast();
 
   const [isReportOpen, setIsReportOpen] = useState(false);
+
+  const handleSaveScenario = useCallback((name: string) => {
+    saveScenario(
+      name,
+      {
+        capexTotal: 0,
+        npvKes: 0,
+        irrPct: 0,
+        lcoeKesPerKwh: 0,
+        paybackYears: 0,
+      },
+      { name: 'Nairobi', latitude: -1.2921, longitude: 36.8219 }
+    );
+    toast({
+      title: 'Scenario saved',
+      description: `"${name}" has been saved. View it on the Scenarios page.`,
+    });
+  }, [saveScenario, toast]);
 
   const latestPoint = minuteData[minuteData.length - 1];
   const solarPower = latestPoint?.solarKW ?? solarNode.powerKW ?? 0;
@@ -443,6 +466,7 @@ export default function ModularDashboardDemo() {
 
   return (
     <DashboardLayout>
+      <Toaster />
       <EnergyReportModal
         isOpen={isReportOpen}
         onClose={() => setIsReportOpen(false)}
@@ -460,6 +484,7 @@ export default function ModularDashboardDemo() {
         onReset={() => console.log('Reset clicked')}
         onLocationClick={() => console.log('Location clicked')}
         onDownload={() => setIsReportOpen(true)}
+        onSaveScenario={handleSaveScenario}
         locationName="Nairobi, Kenya"
         notificationCount={3}
       />

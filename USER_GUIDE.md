@@ -2,7 +2,49 @@
 
 ## New Features Overview
 
-Your SafariCharge dashboard now includes two powerful new features that make it easier to plan and size solar installations anywhere in Kenya.
+Your SafariCharge dashboard now includes powerful features for planning and sizing solar installations anywhere in Kenya, including location-aware recommendations and scenario management.
+
+## 3. Scenario Management 📋
+
+Save, compare, and restore named system configurations so you can evaluate multiple sizing options without losing your work.
+
+### What it does
+- **Save** a snapshot of the current system configuration (PV capacity, battery, inverter) together with live KPI values (self-sufficiency, solar production, savings).
+- **Compare** up to any number of saved scenarios side-by-side in the `/scenarios` page with delta indicators showing which configuration performs better.
+- **Load** a saved scenario back to the dashboard to restore its system configuration.
+- **Delete** scenarios you no longer need.
+
+### How to save a scenario
+
+1. Configure and simulate your system on the **Dashboard** page.
+2. Click the **🔖 bookmark icon** (Save scenario) in the top-right of the dashboard header.
+3. Enter a descriptive name in the dialog, for example *"10 kW PV + 50 kWh Battery"*, and click **Save**.
+4. A toast notification confirms the scenario has been saved.
+
+### Viewing and comparing scenarios
+
+1. Click **Scenarios** in the left sidebar (or navigate to `/scenarios`).
+2. The table lists all saved scenarios with key metrics:
+   - PV capacity (kW) and Battery capacity (kWh)
+   - Total solar generation (kWh)
+   - Self-sufficiency percentage
+   - Average battery SOC
+   - Cumulative savings (KES)
+   - Financial KPIs: NPV, IRR, payback period (when available)
+3. To compare against a **baseline**, click any scenario name in the *Comparison baseline* selector panel.
+   - Green 📈 indicators show values better than the baseline.
+   - Red 📉 indicators show values worse than the baseline.
+4. Use the **Load** button (↑ icon) to restore a scenario's system configuration to the dashboard.
+5. Use the **Delete** button (🗑 icon) to permanently remove a scenario.
+
+### Typical workflow for system sizing decisions
+
+1. Start with a conservative configuration (e.g. 5 kW PV, 20 kWh battery). Save as *"Base case"*.
+2. Increase PV capacity to 10 kW. Save as *"10 kW PV option"*.
+3. Add a larger battery (50 kWh). Save as *"Full build"*.
+4. Open the Scenarios page, set *"Base case"* as the baseline, and compare KPIs across all three to identify the configuration with the best financial and performance trade-off.
+
+> **Note:** Scenarios are stored in memory and will reset when you refresh the page. This is by design in the current sandboxed environment. Use **Export** on the dashboard to persist data externally.
 
 ## 1. Location Selector 📍
 
