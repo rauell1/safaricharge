@@ -104,7 +104,7 @@ export function resampleTo5MinBucketsProgressive(
   let lastReal = 0;
   for (let i = 0; i < minuteData.length; i++) {
     const tod = minutePointToTimeOfDay(minuteData[i]);
-    const slotIdx = Math.min(287, Math.floor((tod * 60) / 5));
+    const slotIdx = Math.min(SLOT_COUNT - 1, Math.floor((tod * 60) / 5));
     if (slotIdx > lastReal) lastReal = slotIdx;
   }
   // Return slots 0..lastReal + a few extra for smooth trailing edge
