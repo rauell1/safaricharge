@@ -115,6 +115,12 @@ export default function ModularDashboardDemo({
   const resetSystem  = useEnergySystemStore((s) => s.resetSystem);
   const { toast }    = useToast();
 
+  // ── Full unfiltered store slice — used only by handleDownloadCharts ────────
+  // This bypasses the time-range filter so the ZIP always contains every
+  // simulated day, regardless of which TimeRangeSwitcher option is active.
+  const allMinuteData = useEnergySystemStore((s) => s.minuteData);
+  // ─────────────────────────────────────────────────────────────────────────
+
   const [activeSection, setActiveSection] = useState<DashboardSection>(initialSection);
   const [isReportOpen, setIsReportOpen] = useState(false);
 
@@ -479,16 +485,19 @@ export default function ModularDashboardDemo({
     }
   }, [minuteData, financialSnapshot]);
 
+  // ── Download Charts ZIP ───────────────────────────────────────────────────
+  // Uses `allMinuteData` (full unfiltered store) so the ZIP always contains
+  // every simulated day, regardless of which TimeRangeSwitcher tab is active.
   const handleDownloadCharts = useCallback(async () => {
-    if (!minuteData || minuteData.length === 0) {
+    if (!allMinuteData || allMinuteData.length === 0) {
       alert('No data to chart. Please wait for the simulation to generate data.');
       return;
     }
 
     try {
-      // Group minuteData by date
-      const byDate = new Map<string, typeof minuteData>();
-      for (const d of minuteData) {
+      // Group ALL simulation data by calendar date
+      const byDate = new Map<string, typeof allMinuteData>();
+      for (const d of allMinuteData) {
         if (!byDate.has(d.date)) byDate.set(d.date, []);
         byDate.get(d.date)!.push(d);
       }
@@ -518,7 +527,8 @@ export default function ModularDashboardDemo({
       console.error('Charts ZIP error:', err);
       alert(`Failed to build charts ZIP: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
-  }, [minuteData]);
+  }, [allMinuteData]);
+  // ─────────────────────────────────────────────────────────────────────────
 
   const flowDirection = useMemo(() => ({
     solarToHome:    flows.some((f) => f.from === 'solar'   && f.to === 'home'    && f.active),
