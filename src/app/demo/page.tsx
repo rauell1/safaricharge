@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo, useState, useCallback } from 'react';
+import Link from 'next/link';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import type { DashboardSection } from '@/components/dashboard/DashboardSidebar';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
@@ -14,6 +15,7 @@ import { BatteryStatusCard } from '@/components/dashboard/BatteryStatusCard';
 import { InsightsBanner } from '@/components/dashboard/InsightsBanner';
 import DailyEnergyGraph from '@/components/DailyEnergyGraph';
 import { SystemVisualization } from '@/components/dashboard/SystemVisualization';
+import { EngineeringKpisCard } from '@/components/dashboard/EngineeringKpisCard';
 import { useDemoEnergySystem } from '@/hooks/useDemoEnergySystem';
 import {
   useAccumulators,
@@ -25,7 +27,8 @@ import {
   useTimeRange,
 } from '@/hooks/useEnergySystem';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart3, PieChart, TrendingUp, Leaf, Car, Trees } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { BarChart3, PieChart, TrendingUp, Leaf, Car, Trees, BookMarked, FlaskConical, SlidersHorizontal, DollarSign, ArrowRight } from 'lucide-react';
 import { EnergyReportModal } from '@/components/EnergyReportModal';
 import type { SolarIrradianceData } from '@/lib/nasa-power-api';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
@@ -38,7 +41,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { MapPin } from 'lucide-react';
 
 // Force dynamic rendering - no static generation
@@ -542,11 +544,10 @@ export default function ModularDashboardDemo({
 
   const isMonthlyFallback = monthlyOverviewData[0]?.isFallback ?? true;
 
-  return (
-    <DashboardLayout activeSection={activeSection} onSectionChange={setActiveSection}>
+  // ─── Shared header + dialogs (rendered for all sections) ─────────────────
+  const sharedChrome = (
+    <>
       <Toaster />
-
-      {/* ── Location Picker Dialog ─────────────────────────────────────── */}
       <Dialog open={locationPickerOpen} onOpenChange={setLocationPickerOpen}>
         <DialogContent className="bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)] max-w-sm">
           <DialogHeader>
@@ -578,8 +579,6 @@ export default function ModularDashboardDemo({
           </div>
         </DialogContent>
       </Dialog>
-      {/* ───────────────────────────────────────────────────────────────── */}
-
       <EnergyReportModal
         isOpen={isReportOpen}
         onClose={() => setIsReportOpen(false)}
@@ -601,6 +600,196 @@ export default function ModularDashboardDemo({
         locationName={activeLocation.displayName}
         notificationCount={3}
       />
+    </>
+  );
+
+  // ─── SIMULATION SECTION ───────────────────────────────────────────────────
+  if (activeSection === 'simulation') {
+    return (
+      <DashboardLayout activeSection={activeSection} onSectionChange={setActiveSection}>
+        {sharedChrome}
+        <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
+          <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
+                  <FlaskConical className="h-6 w-6 text-[var(--solar)]" />
+                  Simulation
+                </h2>
+                <p className="text-sm text-[var(--text-tertiary)]">Live physics engine output — generation vs consumption over time</p>
+              </div>
+              <TimeRangeSwitcher selectedRange={timeRange} onRangeChange={setTimeRange} />
+            </div>
+            <PowerFlowVisualization
+              solarPower={solarPower}
+              batteryPower={batteryPower}
+              gridPower={gridPower}
+              homePower={homePower}
+              batteryLevel={batteryLevel}
+              flowDirection={flowDirection}
+              detailBasePath="/demo"
+            />
+            <Card className="dashboard-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+                  <TrendingUp className="h-5 w-5 text-[var(--battery)]" />
+                  Generation vs Consumption
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <DailyEnergyGraph data={graphData} dateLabel={currentDate?.toISOString().slice(0, 10)} />
+              </CardContent>
+            </Card>
+            <SystemVisualization />
+            <PanelStatusTable />
+            <EngineeringKpisCard />
+          </div>
+        </main>
+      </DashboardLayout>
+    );
+  }
+
+  // ─── CONFIGURATION SECTION ────────────────────────────────────────────────
+  if (activeSection === 'configuration') {
+    return (
+      <DashboardLayout activeSection={activeSection} onSectionChange={setActiveSection}>
+        {sharedChrome}
+        <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
+          <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
+            <div>
+              <h2 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
+                <SlidersHorizontal className="h-6 w-6 text-[var(--solar)]" />
+                System Configuration
+              </h2>
+              <p className="text-sm text-[var(--text-tertiary)]">Review component specifications and system topology</p>
+            </div>
+            <SystemVisualization />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <PanelStatusTable />
+              </div>
+              <div className="flex flex-col gap-6">
+                <WeatherCard locationName={activeLocation.displayName} />
+                <BatteryStatusCard
+                  batteryLevel={batteryLevel}
+                  batteryPower={batteryPower}
+                  isCharging={batteryPower >= 0}
+                />
+              </div>
+            </div>
+            <AlertsList />
+          </div>
+        </main>
+      </DashboardLayout>
+    );
+  }
+
+  // ─── FINANCIAL SECTION ────────────────────────────────────────────────────
+  if (activeSection === 'financial') {
+    return (
+      <DashboardLayout activeSection={activeSection} onSectionChange={setActiveSection}>
+        {sharedChrome}
+        <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
+          <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
+                  <DollarSign className="h-6 w-6 text-[var(--solar)]" />
+                  Financial Analysis
+                </h2>
+                <p className="text-sm text-[var(--text-tertiary)]">Savings, grid costs, and KPI breakdown</p>
+              </div>
+              <TimeRangeSwitcher selectedRange={timeRange} onRangeChange={setTimeRange} />
+            </div>
+            <StatCards
+              totalGeneration={Number(stats.totalSolarKWh.toFixed(1))}
+              currentPower={Number(solarPower.toFixed(1))}
+              consumption={Number(stats.totalConsumptionKWh.toFixed(1))}
+              savings={Math.round(stats.totalSavingsKES)}
+              generationHistory={sparklineData.gen}
+              powerHistory={sparklineData.power}
+              consumptionHistory={sparklineData.cons}
+              savingsHistory={sparklineData.savings}
+              weeklyAvgGeneration={trendsData.weeklyAvgGen}
+              weeklyAvgConsumption={trendsData.weeklyAvgCons}
+              yesterdaySavings={trendsData.yesterdaySavings}
+            />
+            <EngineeringKpisCard />
+            <Card className="dashboard-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+                  <BarChart3 className="h-5 w-5 text-[var(--consumption)]" />
+                  Monthly Overview
+                  {isMonthlyFallback && (
+                    <span className="ml-2 text-xs font-normal text-[var(--text-tertiary)] italic">(warming up…)</span>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-end justify-between gap-2 h-44 px-2">
+                  {monthlyOverviewData.map(({ label, gen, cons, isFallback }) => (
+                    <div key={label} className="flex-1 flex flex-col items-center gap-1">
+                      <div className="flex items-end gap-0.5 w-full justify-center" style={{ height: '140px' }}>
+                        <div className="w-2.5 rounded-t-sm bg-gradient-to-t from-[var(--solar-soft)] to-[var(--solar)] transition-all duration-500"
+                          style={{ height: `${(gen / 100) * 140}px`, opacity: isFallback ? 0.35 : 0.9 }} />
+                        <div className="w-2.5 rounded-t-sm bg-gradient-to-t from-[var(--consumption-soft)] to-[var(--consumption)] transition-all duration-500"
+                          style={{ height: `${(cons / 100) * 140}px`, opacity: isFallback ? 0.3 : 0.8 }} />
+                      </div>
+                      <span className="text-[10px] text-[var(--text-tertiary)]">{label}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 flex items-center justify-center gap-6">
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: 'var(--solar)' }} />
+                    <span className="text-xs text-[var(--text-secondary)]">Generation (kWh)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: 'var(--consumption)' }} />
+                    <span className="text-xs text-[var(--text-secondary)]">Consumption (kWh)</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+      </DashboardLayout>
+    );
+  }
+
+  // ─── SCENARIOS SECTION — redirect card to /scenarios ─────────────────────
+  if (activeSection === 'scenarios') {
+    return (
+      <DashboardLayout activeSection={activeSection} onSectionChange={setActiveSection}>
+        {sharedChrome}
+        <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <Card className="dashboard-card">
+              <CardContent className="flex flex-col items-center justify-center py-20 gap-6 text-center">
+                <BookMarked className="h-14 w-14 text-[var(--solar)] opacity-80" />
+                <div>
+                  <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">Scenarios &amp; Comparisons</h2>
+                  <p className="text-sm text-[var(--text-secondary)] max-w-sm">
+                    View, compare, and manage your saved scenarios on the dedicated Scenarios page.
+                  </p>
+                </div>
+                <Link href="/scenarios">
+                  <Button className="bg-[var(--solar)] text-[var(--bg-primary)] hover:bg-[var(--solar-bright)] flex items-center gap-2">
+                    Open Scenarios <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+      </DashboardLayout>
+    );
+  }
+
+  // ─── DASHBOARD SECTION (default) ─────────────────────────────────────────
+  return (
+    <DashboardLayout activeSection={activeSection} onSectionChange={setActiveSection}>
+      {sharedChrome}
 
     <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
