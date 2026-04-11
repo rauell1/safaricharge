@@ -1,216 +1,311 @@
-# .github/workflows/update-codebase-map.yml
-# ------------------------------------------
-# Automatically regenerates docs/codebase-map.md and docs/codebase-map.json
-# on every push or pull request, then commits the updated files back to the branch.
-#
-# WHAT IT DOES:
-#   1. Checks out the repository with full git history
-#   2. Runs scripts/generate-codebase-map.js (Node.js, no extra deps)
-#   3. If the map files changed, commits and pushes them back
-#   4. Annotates the PR (on pull_request) with a summary of what changed
-#
-# PERMISSIONS REQUIRED (Settings → Actions → Workflow permissions):
-#   Read and write permissions  (for the auto-commit step)
-#   Allow GitHub Actions to create and approve pull requests  (optional)
-
 name: Update Codebase Map
 
 on:
   push:
-    branches:
-      - main
-      - develop
-      - 'release/**'
-    paths:
-      # Trigger on any source file change
-      - 'src/**'
-      - 'prisma/**'
-      - 'package.json'
-      - 'scripts/generate-codebase-map.js'
-  pull_request:
-    branches:
-      - main
-      - develop
-    paths:
-      - 'src/**'
-      - 'prisma/**'
-      - 'package.json'
-      - 'scripts/generate-codebase-map.js'
-  # Allow manual trigger
-  workflow_dispatch:
-    inputs:
-      full_scan:
-        description: 'Force full re-scan (ignore hash cache)'
-        required: false
-        default: 'false'
-        type: boolean
-
-# Prevent concurrent map updates on the same branch
-concurrency:
-  group: codebase-map-${{ github.ref }}
-  cancel-in-progress: false
-
-permissions:
-  contents: write       # needed to push the updated map files
-  pull-requests: write  # needed to post PR comments
+    branches: [main]
+    paths-ignore:
+      - 'CODEBASE_MAP.md'   # prevent infinite loop
 
 jobs:
   update-map:
-    name: Regenerate Codebase Map
+    name: Regenerate CODEBASE_MAP.md
     runs-on: ubuntu-latest
-    # Don't run on commits that are already map-update commits (prevent loop)
-    if: "!contains(github.event.head_commit.message, '[map] auto-update')"
+    permissions:
+      contents: write
 
     steps:
-      # -----------------------------------------------------------------------
-      # 1. Checkout with full history so git log and git diff work correctly
-      # -----------------------------------------------------------------------
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0          # full history for accurate change detection
-          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
-      # -----------------------------------------------------------------------
-      # 2. Set up Node.js (generator uses built-in modules only — no install needed)
-      # -----------------------------------------------------------------------
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      # -----------------------------------------------------------------------
-      # 3. Run the generator
-      # -----------------------------------------------------------------------
-      - name: Generate codebase map
-        id: generate
+      - name: Generate tree
+        id: tree
         run: |
-          FULL_FLAG=""
-          if [ "${{ github.event.inputs.full_scan }}" = "true" ]; then
-            FULL_FLAG="--full"
-          fi
-          node scripts/generate-codebase-map.js $FULL_FLAG
+          # Install tree if not present
+          sudo apt-get install -y tree > /dev/null 2>&1
 
-      # -----------------------------------------------------------------------
-      # 4. Check if the map files changed
-      # -----------------------------------------------------------------------
-      - name: Check for map changes
-        id: check
+          # Generate annotated directory trees for key paths
+          SRC_TREE=$(tree src -I 'node_modules|*.tsbuildinfo' --dirsfirst -L 4 2>/dev/null || find src -type f | sort)
+          ROOT_TREE=$(tree -L 1 --dirsfirst -I 'node_modules|.next|bun.lock|package-lock.json|tsconfig.tsbuildinfo' 2>/dev/null || ls -1)
+
+          echo "Generated trees"
+
+      - name: Count files and collect metadata
+        id: meta
         run: |
-          git diff --name-only docs/codebase-map.md docs/codebase-map.json docs/.map-hashes.json 2>/dev/null | tee /tmp/changed-files.txt || true
-          if [ -s /tmp/changed-files.txt ]; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "Map files changed:"
-            cat /tmp/changed-files.txt
-          else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "No map changes detected"
-          fi
+          TOTAL_TS=$(find src -name '*.ts' -o -name '*.tsx' | wc -l | tr -d ' ')
+          TOTAL_PY=$(find . -name '*.py' ! -path '*/node_modules/*' | wc -l | tr -d ' ')
+          LAST_COMMIT=$(git log -1 --format='%H' main)
+          LAST_AUTHOR=$(git log -1 --format='%an' main)
+          LAST_DATE=$(git log -1 --format='%ci' main)
+          BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-      # -----------------------------------------------------------------------
-      # 5. Commit and push updated map (push events on protected branches only)
-      # -----------------------------------------------------------------------
+          echo "total_ts=$TOTAL_TS" >> $GITHUB_OUTPUT
+          echo "total_py=$TOTAL_PY" >> $GITHUB_OUTPUT
+          echo "last_commit=$LAST_COMMIT" >> $GITHUB_OUTPUT
+          echo "last_author=$LAST_AUTHOR" >> $GITHUB_OUTPUT
+          echo "last_date=$LAST_DATE" >> $GITHUB_OUTPUT
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
+      - name: Rebuild CODEBASE_MAP.md
+        env:
+          TOTAL_TS: ${{ steps.meta.outputs.total_ts }}
+          TOTAL_PY: ${{ steps.meta.outputs.total_py }}
+          LAST_COMMIT: ${{ steps.meta.outputs.last_commit }}
+          LAST_AUTHOR: ${{ steps.meta.outputs.last_author }}
+          LAST_DATE: ${{ steps.meta.outputs.last_date }}
+          BRANCH: ${{ steps.meta.outputs.branch }}
+        run: |
+          python3 - <<'PYEOF'
+          import os, subprocess, datetime
+
+          total_ts  = os.environ['TOTAL_TS']
+          total_py  = os.environ['TOTAL_PY']
+          commit    = os.environ['LAST_COMMIT'][:8]
+          author    = os.environ['LAST_AUTHOR']
+          date      = os.environ['LAST_DATE']
+          branch    = os.environ['BRANCH']
+          now       = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
+
+          # ── helpers ──────────────────────────────────────────────────────────
+          def ls(path):
+              try:
+                  r = subprocess.run(['ls', '-1', path], capture_output=True, text=True)
+                  return sorted(r.stdout.strip().splitlines())
+              except Exception:
+                  return []
+
+          def tree_lines(path, depth=3):
+              try:
+                  r = subprocess.run(
+                      ['tree', path, '--dirsfirst', f'-L{depth}',
+                       '-I', 'node_modules|*.tsbuildinfo|*.lock|package-lock.json'],
+                      capture_output=True, text=True
+                  )
+                  return r.stdout.strip()
+              except Exception:
+                  return '(tree unavailable)'
+
+          def file_sizes(path):
+              rows = []
+              try:
+                  for f in sorted(os.listdir(path)):
+                      fp = os.path.join(path, f)
+                      if os.path.isfile(fp):
+                          size_kb = round(os.path.getsize(fp) / 1024, 1)
+                          rows.append((f, size_kb))
+              except Exception:
+                  pass
+              return rows
+
+          # ── dashboard components table ────────────────────────────────────
+          dashboard_descriptions = {
+              'AlertsList.tsx':               'Active alerts list with severity badges',
+              'BatteryHealthCard.tsx':        'Battery SoH, temperature, degradation timeline',
+              'BatteryPredictionCard.tsx':    'AI-powered remaining-life prediction',
+              'BatteryStatusCard.tsx':        'Real-time SoC gauge + power flow',
+              'DashboardHeader.tsx':          'Top nav bar — logo, time, dark-mode toggle, alerts bell',
+              'DashboardLayout.tsx':          'Sidebar + main-content shell',
+              'DashboardSidebar.tsx':         'Navigation tree',
+              'EnergyDetailShell.tsx':        'Shared card shell for energy detail views',
+              'EngineeringKpisCard.tsx':      'IEC 61724-1 KPIs — Specific Yield, PR, CF, Battery Cycles + sparkline',
+              'InsightsBanner.tsx':           'AI insights ribbon',
+              'PanelStatusTable.tsx':         'Per-string/panel telemetry table',
+              'PowerFlowVisualization.tsx':   'Animated Sankey-style power-flow diagram',
+              'Sparkline.tsx':               'Reusable 48px area sparkline (Recharts)',
+              'StatCards.tsx':               'Top KPI stat cards (solar, load, grid, battery)',
+              'SystemVisualization.tsx':      'Full system diagram SVG',
+              'TimeRangeSwitcher.tsx':        '1h / 6h / 24h / 7d time-range toggle',
+              'WeatherCard.tsx':             'Weather conditions + irradiance',
+          }
+
+          lib_descriptions = {
+              'auto-sizing-wizard.ts':        'System auto-sizing engine (PV + battery capacity)',
+              'battery-economics.ts':         'LCOE, payback, NPV, ROI calculations',
+              'config.ts':                    'App-wide feature flags and runtime config',
+              'db.ts':                        'Prisma client singleton',
+              'dc-ac-optimizer.ts':           'DC:AC ratio optimiser',
+              'demoEnergyState.ts':           'Deterministic demo data generator',
+              'dvshave-harness.ts':           'pvlib/SAM delta-validation harness',
+              'engineeringKpis.ts':           'IEC 61724-1 KPI calculations',
+              'financial-dashboard.ts':       'Financial metrics aggregation',
+              'intelligence.ts':             'AI insight generation orchestrator',
+              'load-validator.ts':            'Load profile validation and normalisation',
+              'logger.ts':                    'Structured logger (pino wrapper)',
+              'nasa-power-api.ts':            'NASA POWER API client — irradiance, weather',
+              'physics-engine-bridge.ts':     'TS <-> Python physics engine IPC bridge',
+              'physics-engine.ts':            'Core energy simulation physics',
+              'recommendation-engine.ts':     'System optimisation recommendations',
+              'security.ts':                  'Input sanitisation, rate-limit, CSRF',
+              'serverConfig.ts':              'Server-side validated env config',
+              'solar-component-catalog.ts':   'PV panel + inverter + battery catalog',
+              'system-config.ts':             'System configuration schema + defaults',
+              'tariff-config.ts':             'Kenya electricity tariff configuration',
+              'tariff.ts':                    'Tariff calculation utilities',
+              'utils.ts':                     'cn() and misc utilities',
+              'validateEnv.ts':               'Env-var validation (zod)',
+          }
+
+          # ── build dashboard component table ──────────────────────────────
+          comp_path = 'src/components/dashboard'
+          comp_rows = []
+          for f, kb in file_sizes(comp_path):
+              if f.endswith('.tsx') or f.endswith('.ts'):
+                  desc = dashboard_descriptions.get(f, '—')
+                  comp_rows.append(f'| `{f}` | {desc} | {kb} kB |')
+
+          # ── build lib table ───────────────────────────────────────────────
+          lib_path = 'src/lib'
+          lib_rows = []
+          for f, kb in file_sizes(lib_path):
+              if f.endswith('.ts'):
+                  desc = lib_descriptions.get(f, '—')
+                  lib_rows.append(f'| `{f}` | {desc} | {kb} kB |')
+
+          # ── build stores table ────────────────────────────────────────────
+          stores_rows = []
+          for f, kb in file_sizes('src/stores'):
+              if f.endswith('.ts'):
+                  stores_rows.append(f'| `{f}` | {kb} kB |')
+
+          # ── build api routes table ────────────────────────────────────────
+          api_rows = []
+          for entry in sorted(os.listdir('src/app/api')) if os.path.isdir('src/app/api') else []:
+              api_rows.append(f'| `/api/{entry}` | — |')
+
+          # ── full document ─────────────────────────────────────────────────
+          doc = f"""# SafariCharge — Codebase Map
+
+> **Auto-generated** · Updated: {now}  
+> Commit: `{commit}` by {author} on {date}  
+> Branch: `{branch}` · TypeScript files: **{total_ts}** · Python files: **{total_py}**  
+> _Do not edit manually — regenerated by `.github/workflows/update-codebase-map.yml` on every push to `main`_
+
+---
+
+## Repository Root
+
+```
+{tree_lines('.', 1)}
+```
+
+---
+
+## `src/` Source Tree
+
+```
+{tree_lines('src', 3)}
+```
+
+---
+
+## `src/app/` — Next.js App Router
+
+| Path | Purpose |
+|---|---|
+| `layout.tsx` | Root layout — fonts, global providers |
+| `page.tsx` | Root redirect (→ `/demo`) |
+| `error.tsx` | Global error boundary |
+| `globals.css` | CSS custom properties, Tailwind base, dark-mode tokens |
+| `api/` | Next.js Route Handlers |
+| `demo/` | Demo page — full dashboard with simulated data |
+| `scenarios/` | Scenario management & comparison UI |
+| `simulation/` | Simulation runner page |
+| `component-knowledge-base/` | Internal component reference |
+
+---
+
+## `src/components/dashboard/` — Dashboard Cards
+
+| File | Purpose | Size |
+|---|---|---|
+{chr(10).join(comp_rows)}
+
+---
+
+## `src/lib/` — Business Logic
+
+| File | Purpose | Size |
+|---|---|---|
+{chr(10).join(lib_rows)}
+
+---
+
+## `src/stores/` — Zustand Stores
+
+| File | Size |
+|---|---|
+{chr(10).join(stores_rows)}
+
+---
+
+## `forecasting/` — Python Micro-service
+
+```
+forecasting/
+└── pv_load_service/
+    ├── main.py          FastAPI app — POST /forecast
+    ├── models.py        Pydantic schemas
+    ├── trainer.py       GBR model training
+    ├── predictor.py     Quantile-band inference (P10/P50/P90)
+    ├── seasonal.py      Seasonal fallback
+    └── requirements.txt
+```
+
+---
+
+## Key Data-Flow
+
+```
+[NASA POWER API]
+      │ irradiance / weather
+      ▼
+[physics-engine.ts]  ←── systemConfig
+      │ minuteDataPoint per sim-tick
+      ▼
+[energySystemStore]  ──► [Dashboard Components]
+      │
+      ▼
+[forecasting/pv_load_service]  ◄── POST /api/forecast
+      │ P10 / P50 / P90
+      ▼
+[forecastStore]  ──────► [DailyEnergyGraph overlay]
+```
+
+---
+
+## Dependency Overview
+
+| Category | Libraries |
+|---|---|
+| **Framework** | Next.js 15 (App Router), React 19 |
+| **State** | Zustand |
+| **UI** | shadcn/ui, Tailwind CSS v4, Lucide icons |
+| **Charts** | Recharts |
+| **DB** | Prisma + PostgreSQL |
+| **Validation** | Zod |
+| **Auth** | NextAuth.js |
+| **Forecasting** | FastAPI, scikit-learn (GBR), pandas |
+| **Observability** | OpenTelemetry, Pino |
+| **Tooling** | Bun, ESLint, TypeScript 5 |
+"""
+
+          with open('CODEBASE_MAP.md', 'w') as fh:
+              fh.write(doc)
+
+          print('CODEBASE_MAP.md written successfully')
+          PYEOF
+
       - name: Commit updated map
-        if: |
-          steps.check.outputs.changed == 'true' &&
-          github.event_name == 'push'
         run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/codebase-map.md docs/codebase-map.json docs/.map-hashes.json
-          git commit -m "[map] auto-update codebase map @ ${{ github.sha }}"
-          git push
-
-      # -----------------------------------------------------------------------
-      # 6. On pull requests, push the updated map to the PR branch
-      # -----------------------------------------------------------------------
-      - name: Commit updated map to PR branch
-        if: |
-          steps.check.outputs.changed == 'true' &&
-          github.event_name == 'pull_request' &&
-          github.event.pull_request.head.repo.full_name == github.repository
-        run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/codebase-map.md docs/codebase-map.json docs/.map-hashes.json
-          git commit -m "[map] auto-update codebase map for PR #${{ github.event.pull_request.number }}"
-          git push origin HEAD:${{ github.head_ref }}
-
-      # -----------------------------------------------------------------------
-      # 7. Post a summary comment on the PR
-      # -----------------------------------------------------------------------
-      - name: Post PR comment with map diff summary
-        if: |
-          github.event_name == 'pull_request' &&
-          steps.check.outputs.changed == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            let summary = '### 🗺️ Codebase Map Updated\n\n';
-
-            try {
-              const mapJson = JSON.parse(fs.readFileSync('docs/codebase-map.json', 'utf8'));
-              const { version, stats } = mapJson;
-              summary += `**Commit:** \`${version.commit.slice(0, 7)}\`\n`;
-              summary += `**Branch:** \`${version.branch}\`\n\n`;
-              summary += `| Metric | Value |\n|--------|-------|\n`;
-              summary += `| Total files | ${stats.totalFiles} |\n`;
-              summary += `| Total LOC | ${stats.totalLinesOfCode.toLocaleString()} |\n`;
-              summary += `| Critical files | ${stats.criticalFiles} |\n`;
-              summary += `| High-risk files | ${stats.highRiskFiles} |\n`;
-              summary += `| Hotspot files | ${stats.hotspotFiles} |\n\n`;
-
-              const { added, modified, removed } = version.changes;
-              if (added.length + modified.length + removed.length > 0) {
-                summary += '**Changes detected:**\n';
-                added.forEach(f => { summary += `- ➕ \`${f}\`\n`; });
-                modified.forEach(f => { summary += `- ✏️ \`${f}\`\n`; });
-                removed.forEach(f => { summary += `- 🗑️ \`${f}\`\n`; });
-              }
-
-              summary += '\n> 📄 See [docs/codebase-map.md](docs/codebase-map.md) for the full updated map.';
-            } catch(e) {
-              summary += `> Map generated but could not read summary: ${e.message}`;
-            }
-
-            // Find existing bot comment to update (avoid duplicate comments)
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-
-            const botComment = comments.find(c =>
-              c.user.login === 'github-actions[bot]' &&
-              c.body.includes('🗺️ Codebase Map Updated')
-            );
-
-            if (botComment) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: botComment.id,
-                body: summary,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: summary,
-              });
-            }
-
-      # -----------------------------------------------------------------------
-      # 8. Upload map as workflow artifact (available even if no commit)
-      # -----------------------------------------------------------------------
-      - name: Upload map artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: codebase-map-${{ github.sha }}
-          path: |
-            docs/codebase-map.md
-            docs/codebase-map.json
-          retention-days: 30
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add CODEBASE_MAP.md
+          # Only commit if there are actual changes
+          if git diff --cached --quiet; then
+            echo 'No changes to CODEBASE_MAP.md — skipping commit'
+          else
+            git commit -m 'docs(auto): regenerate CODEBASE_MAP.md [skip ci]'
+            git push
+          fi
