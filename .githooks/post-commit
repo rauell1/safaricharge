@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# .githooks/post-commit
+# ---------------------
+# Automatically regenerates the codebase map after every local commit.
+#
+# INSTALL:
+#   git config core.hooksPath .githooks
+#
+# This hook runs AFTER the commit has been recorded, so it can read HEAD
+# metadata. If the map changes, it amends the commit with the updated files.
+
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+SCRIPT="$REPO_ROOT/scripts/generate-codebase-map.js"
+
+# Only run if the generator script exists
+if [ ! -f "$SCRIPT" ]; then
+  echo "[map] generator not found at $SCRIPT – skipping"
+  exit 0
+fi
+
+# Skip if this looks like an automated map-update commit (prevent loop)
+LAST_MSG="$(git log -1 --pretty=%s)"
+if echo "$LAST_MSG" | grep -q "\[map\] auto-update"; then
+  exit 0
+fi
+
+echo "[map] Regenerating codebase map..."
+node "$SCRIPT" 2>&1
+
+# Stage updated map files if they changed
+git add -f \
+  "$REPO_ROOT/docs/codebase-map.md" \
+  "$REPO_ROOT/docs/codebase-map.json" \
+  "$REPO_ROOT/docs/.map-hashes.json" \
+  2>/dev/null || true
+
+# Check if there are staged changes to the map files
+STAGED=$(git diff --cached --name-only | grep -E "^docs/codebase-map\." || true)
+
+if [ -n "$STAGED" ]; then
+  # Amend the current commit to include the map update
+  git commit --amend --no-edit --no-verify 2>/dev/null || true
+  echo "[map] ✅ Map files included in commit"
+else
+  echo "[map] ✅ No map changes"
+fi

@@ -1,0 +1,2797 @@
+{
+  "version": {
+    "commit": "80997f1768bb8277c28b32bf4d58d1b82019e4a6",
+    "branch": "copilot/design-self-updating-map-system",
+    "timestamp": "2026-04-11T00:37:45.733Z",
+    "generator": "scripts/generate-codebase-map.js",
+    "generatorVersion": "1.0.0",
+    "changes": {
+      "added": [
+        "src/app/api/component-library/route.ts",
+        "src/app/api/dvshave-harness/route.ts",
+        "src/app/api/export-report/route.ts",
+        "src/app/api/formal-report/route.ts",
+        "src/app/api/health/route.ts",
+        "src/app/api/safaricharge-ai/route.ts",
+        "src/app/component-knowledge-base/page.tsx",
+        "src/app/demo/battery/page.tsx",
+        "src/app/demo/ev/page.tsx",
+        "src/app/demo/grid/page.tsx",
+        "src/app/demo/page.tsx",
+        "src/app/demo/solar/page.tsx",
+        "src/app/error.tsx",
+        "src/app/globals.css",
+        "src/app/layout.tsx",
+        "src/app/page.tsx",
+        "src/app/simulation/page.tsx",
+        "src/components/DailyEnergyGraph.tsx",
+        "src/components/EnergyReportModal.tsx",
+        "src/components/FinancialDashboard.tsx",
+        "src/components/LoadConfigComponents.tsx",
+        "src/components/RecommendationComponents.tsx",
+        "src/components/SolarComponentLibrary.tsx",
+        "src/components/dashboard/AlertsList.tsx",
+        "src/components/dashboard/BatteryHealthCard.tsx",
+        "src/components/dashboard/BatteryPredictionCard.tsx",
+        "src/components/dashboard/BatteryStatusCard.tsx",
+        "src/components/dashboard/DashboardHeader.tsx",
+        "src/components/dashboard/DashboardLayout.tsx",
+        "src/components/dashboard/DashboardSidebar.tsx",
+        "src/components/dashboard/EnergyDetailShell.tsx",
+        "src/components/dashboard/InsightsBanner.tsx",
+        "src/components/dashboard/PanelStatusTable.tsx",
+        "src/components/dashboard/PowerFlowVisualization.tsx",
+        "src/components/dashboard/README.md",
+        "src/components/dashboard/Sparkline.tsx",
+        "src/components/dashboard/StatCards.tsx",
+        "src/components/dashboard/SystemVisualization.tsx",
+        "src/components/dashboard/TimeRangeSwitcher.tsx",
+        "src/components/dashboard/WeatherCard.tsx",
+        "src/components/dashboard/index.ts",
+        "src/components/ui/accordion.tsx",
+        "src/components/ui/alert-dialog.tsx",
+        "src/components/ui/alert.tsx",
+        "src/components/ui/aspect-ratio.tsx",
+        "src/components/ui/avatar.tsx",
+        "src/components/ui/badge.tsx",
+        "src/components/ui/breadcrumb.tsx",
+        "src/components/ui/button.tsx",
+        "src/components/ui/calendar.tsx",
+        "src/components/ui/card.tsx",
+        "src/components/ui/carousel.tsx",
+        "src/components/ui/chart.tsx",
+        "src/components/ui/checkbox.tsx",
+        "src/components/ui/collapsible.tsx",
+        "src/components/ui/command.tsx",
+        "src/components/ui/context-menu.tsx",
+        "src/components/ui/dialog.tsx",
+        "src/components/ui/drawer.tsx",
+        "src/components/ui/dropdown-menu.tsx",
+        "src/components/ui/form.tsx",
+        "src/components/ui/hover-card.tsx",
+        "src/components/ui/input-otp.tsx",
+        "src/components/ui/input.tsx",
+        "src/components/ui/label.tsx",
+        "src/components/ui/menubar.tsx",
+        "src/components/ui/navigation-menu.tsx",
+        "src/components/ui/pagination.tsx",
+        "src/components/ui/popover.tsx",
+        "src/components/ui/progress.tsx",
+        "src/components/ui/radio-group.tsx",
+        "src/components/ui/resizable.tsx",
+        "src/components/ui/scroll-area.tsx",
+        "src/components/ui/select.tsx",
+        "src/components/ui/separator.tsx",
+        "src/components/ui/sheet.tsx",
+        "src/components/ui/sidebar.tsx",
+        "src/components/ui/skeleton.tsx",
+        "src/components/ui/slider.tsx",
+        "src/components/ui/sonner.tsx",
+        "src/components/ui/switch.tsx",
+        "src/components/ui/table.tsx",
+        "src/components/ui/tabs.tsx",
+        "src/components/ui/textarea.tsx",
+        "src/components/ui/toast.tsx",
+        "src/components/ui/toaster.tsx",
+        "src/components/ui/toggle-group.tsx",
+        "src/components/ui/toggle.tsx",
+        "src/components/ui/tooltip.tsx",
+        "src/hooks/use-mobile.ts",
+        "src/hooks/use-toast.ts",
+        "src/hooks/useDemoEnergySystem.ts",
+        "src/hooks/useEnergySystem.ts",
+        "src/instrumentation.ts",
+        "src/lib/auto-sizing-wizard.ts",
+        "src/lib/battery-economics.ts",
+        "src/lib/config.ts",
+        "src/lib/db.ts",
+        "src/lib/dc-ac-optimizer.ts",
+        "src/lib/demoEnergyState.ts",
+        "src/lib/dvshave-harness.ts",
+        "src/lib/financial-dashboard.ts",
+        "src/lib/intelligence.ts",
+        "src/lib/load-validator.ts",
+        "src/lib/logger.ts",
+        "src/lib/nasa-power-api.ts",
+        "src/lib/physics-engine.ts",
+        "src/lib/recommendation-engine.ts",
+        "src/lib/security.ts",
+        "src/lib/serverConfig.ts",
+        "src/lib/services/reportService.ts",
+        "src/lib/solar-component-catalog.ts",
+        "src/lib/system-config.ts",
+        "src/lib/tariff-config.ts",
+        "src/lib/tariff.ts",
+        "src/lib/utils.ts",
+        "src/lib/validateEnv.ts",
+        "src/middleware.ts",
+        "src/simulation/mathUtils.ts",
+        "src/simulation/runSimulation.ts",
+        "src/simulation/solarEngine.ts",
+        "src/simulation/timeEngine.ts",
+        "src/stores/energySystemStore.ts",
+        "src/types/simulation-core.ts",
+        "prisma/schema.prisma",
+        "scripts/generate-codebase-map.js",
+        "package.json",
+        "next.config.ts",
+        "tsconfig.json",
+        "tailwind.config.ts",
+        ".env.example",
+        "Caddyfile.txt"
+      ],
+      "modified": [],
+      "removed": []
+    }
+  },
+  "stats": {
+    "totalFiles": 132,
+    "totalLinesOfCode": 28767,
+    "criticalFiles": 5,
+    "highRiskFiles": 11,
+    "hotspotFiles": 5
+  },
+  "files": [
+    {
+      "path": ".env.example",
+      "extension": ".example",
+      "linesOfCode": 64,
+      "sizeBytes": 3450,
+      "lastModified": "2026-04-11T00:30:38.498Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "Caddyfile.txt",
+      "extension": ".txt",
+      "linesOfCode": 24,
+      "sizeBytes": 493,
+      "lastModified": "2026-04-11T00:30:38.502Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "next.config.ts",
+      "extension": ".ts",
+      "linesOfCode": 77,
+      "sizeBytes": 2542,
+      "lastModified": "2026-04-11T00:30:38.506Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "nextConfig"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "package.json",
+      "extension": ".json",
+      "linesOfCode": 99,
+      "sizeBytes": 3297,
+      "lastModified": "2026-04-11T00:30:38.506Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "prisma/schema.prisma",
+      "extension": ".prisma",
+      "linesOfCode": 38,
+      "sizeBytes": 865,
+      "lastModified": "2026-04-11T00:30:38.506Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "scripts/generate-codebase-map.js",
+      "extension": ".js",
+      "linesOfCode": 601,
+      "sizeBytes": 18276,
+      "lastModified": "2026-04-11T00:36:25.301Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/app/api/component-library/route.ts",
+      "extension": ".ts",
+      "linesOfCode": 163,
+      "sizeBytes": 4761,
+      "lastModified": "2026-04-11T00:30:38.507Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "GET",
+        "POST"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/app/api/dvshave-harness/route.ts",
+      "extension": ".ts",
+      "linesOfCode": 97,
+      "sizeBytes": 2966,
+      "lastModified": "2026-04-11T00:30:38.507Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "POST",
+        "OPTIONS"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/app/api/export-report/route.ts",
+      "extension": ".ts",
+      "linesOfCode": 375,
+      "sizeBytes": 14114,
+      "lastModified": "2026-04-11T00:30:38.507Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/config"
+      ],
+      "exports": [
+        "POST"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/app/api/formal-report/route.ts",
+      "extension": ".ts",
+      "linesOfCode": 1404,
+      "sizeBytes": 51300,
+      "lastModified": "2026-04-11T00:30:38.507Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "POST",
+        "OPTIONS"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/app/api/health/route.ts",
+      "extension": ".ts",
+      "linesOfCode": 34,
+      "sizeBytes": 1017,
+      "lastModified": "2026-04-11T00:30:38.507Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "GET"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/app/api/safaricharge-ai/route.ts",
+      "extension": ".ts",
+      "linesOfCode": 677,
+      "sizeBytes": 21731,
+      "lastModified": "2026-04-11T00:30:38.507Z",
+      "risk": "critical",
+      "hotspot": true,
+      "imports": [
+        "@/lib/logger"
+      ],
+      "exports": [
+        "OPTIONS",
+        "POST"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/app/component-knowledge-base/page.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 18,
+      "sizeBytes": 1001,
+      "lastModified": "2026-04-11T00:30:38.507Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/components/SolarComponentLibrary"
+      ],
+      "exports": [
+        "ComponentKnowledgeBasePage"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/app/demo/battery/page.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 139,
+      "sizeBytes": 7110,
+      "lastModified": "2026-04-11T00:30:38.508Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/components/dashboard/EnergyDetailShell",
+        "@/hooks/useEnergySystem",
+        "@/components/ui/card"
+      ],
+      "exports": [
+        "BatteryDetailPage"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/app/demo/ev/page.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 168,
+      "sizeBytes": 7358,
+      "lastModified": "2026-04-11T00:30:38.508Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/components/dashboard/EnergyDetailShell",
+        "@/hooks/useEnergySystem",
+        "@/components/ui/card"
+      ],
+      "exports": [
+        "EVDetailPage"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/app/demo/grid/page.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 134,
+      "sizeBytes": 6332,
+      "lastModified": "2026-04-11T00:30:38.508Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/components/dashboard/EnergyDetailShell",
+        "@/hooks/useEnergySystem",
+        "@/components/ui/card"
+      ],
+      "exports": [
+        "GridDetailPage"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/app/demo/page.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 677,
+      "sizeBytes": 34938,
+      "lastModified": "2026-04-11T00:30:38.508Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/components/dashboard/DashboardLayout",
+        "@/components/dashboard/DashboardHeader",
+        "@/components/dashboard/StatCards",
+        "@/components/dashboard/PowerFlowVisualization",
+        "@/components/dashboard/PanelStatusTable",
+        "@/components/dashboard/AlertsList",
+        "@/components/dashboard/TimeRangeSwitcher",
+        "@/components/dashboard/WeatherCard",
+        "@/components/dashboard/BatteryStatusCard",
+        "@/components/dashboard/InsightsBanner",
+        "@/components/DailyEnergyGraph",
+        "@/components/dashboard/SystemVisualization",
+        "@/hooks/useDemoEnergySystem",
+        "@/components/ui/card",
+        "@/components/EnergyReportModal",
+        "@/lib/nasa-power-api"
+      ],
+      "exports": [
+        "dynamic",
+        "ModularDashboardDemo"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/app/demo/solar/page.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 141,
+      "sizeBytes": 6881,
+      "lastModified": "2026-04-11T00:30:38.508Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/components/dashboard/EnergyDetailShell",
+        "@/hooks/useEnergySystem",
+        "@/components/ui/card"
+      ],
+      "exports": [
+        "SolarDetailPage"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/app/error.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 38,
+      "sizeBytes": 1185,
+      "lastModified": "2026-04-11T00:30:38.508Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/components/ui/button"
+      ],
+      "exports": [
+        "GlobalError"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/app/globals.css",
+      "extension": ".css",
+      "linesOfCode": 296,
+      "sizeBytes": 7035,
+      "lastModified": "2026-04-11T00:30:38.508Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/app/layout.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 26,
+      "sizeBytes": 711,
+      "lastModified": "2026-04-11T00:30:38.508Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "./globals.css"
+      ],
+      "exports": [
+        "metadata",
+        "RootLayout"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/app/page.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 4690,
+      "sizeBytes": 225621,
+      "lastModified": "2026-04-11T00:30:38.508Z",
+      "risk": "critical",
+      "hotspot": true,
+      "imports": [
+        "@/components/DailyEnergyGraph",
+        "@/components/RecommendationComponents",
+        "@/lib/nasa-power-api",
+        "@/components/FinancialDashboard",
+        "@/lib/financial-dashboard",
+        "@/components/dashboard/DashboardLayout",
+        "@/components/dashboard/DashboardSidebar",
+        "@/components/dashboard/DashboardHeader",
+        "@/components/dashboard/PowerFlowVisualization",
+        "@/components/dashboard/WeatherCard",
+        "@/components/dashboard/BatteryStatusCard",
+        "@/components/dashboard/BatteryHealthCard",
+        "@/components/dashboard/BatteryPredictionCard",
+        "@/components/dashboard/PanelStatusTable",
+        "@/components/EnergyReportModal",
+        "@/components/dashboard/AlertsList",
+        "@/components/SolarComponentLibrary",
+        "@/simulation/timeEngine",
+        "@/simulation/runSimulation",
+        "@/components/ui/button",
+        "@/components/ui/card",
+        "@/components/ui/dialog",
+        "@/components/ui/carousel",
+        "@/components/ui/slider",
+        "@/lib/tariff",
+        "@/lib/recommendation-engine",
+        "@/types/simulation-core"
+      ],
+      "exports": [
+        "SafariChargeDashboardApp",
+        "App"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/app/simulation/page.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 8,
+      "sizeBytes": 180,
+      "lastModified": "2026-04-11T00:30:38.508Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "../page"
+      ],
+      "exports": [
+        "SimulationPage"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/DailyEnergyGraph.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 345,
+      "sizeBytes": 15137,
+      "lastModified": "2026-04-11T00:30:38.508Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "buildGraphSVG",
+        "triggerSVGDownload",
+        "triggerJPGDownload",
+        "buildJPGBlob",
+        "GraphDataPoint",
+        "DailyEnergyGraph"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/dashboard/AlertsList.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 219,
+      "sizeBytes": 7921,
+      "lastModified": "2026-04-11T00:30:38.509Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [
+        "@/components/ui/card",
+        "@/components/ui/badge",
+        "@/components/ui/skeleton"
+      ],
+      "exports": [
+        "AlertsList"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/dashboard/BatteryHealthCard.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 123,
+      "sizeBytes": 4400,
+      "lastModified": "2026-04-11T00:30:38.510Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [
+        "@/components/ui/card",
+        "./Sparkline"
+      ],
+      "exports": [
+        "BatteryHealthCard",
+        "BatteryInsight"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/dashboard/BatteryPredictionCard.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 64,
+      "sizeBytes": 2180,
+      "lastModified": "2026-04-11T00:30:38.510Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [
+        "@/components/ui/card"
+      ],
+      "exports": [
+        "BatteryPredictionCard",
+        "BatteryPrediction"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/dashboard/BatteryStatusCard.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 134,
+      "sizeBytes": 5699,
+      "lastModified": "2026-04-11T00:30:38.510Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [
+        "@/components/ui/card",
+        "@/components/ui/skeleton"
+      ],
+      "exports": [
+        "BatteryStatusCard"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/dashboard/DashboardHeader.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 156,
+      "sizeBytes": 7348,
+      "lastModified": "2026-04-11T00:30:38.510Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [
+        "@/components/ui/button",
+        "@/components/ui/sidebar",
+        "@/components/ui/badge"
+      ],
+      "exports": [
+        "DashboardHeader"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/dashboard/DashboardLayout.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 37,
+      "sizeBytes": 1430,
+      "lastModified": "2026-04-11T00:30:38.510Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [
+        "@/components/ui/sidebar",
+        "./DashboardSidebar"
+      ],
+      "exports": [
+        "DashboardLayout"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/dashboard/DashboardSidebar.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 146,
+      "sizeBytes": 5794,
+      "lastModified": "2026-04-11T00:30:38.510Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [
+        "DashboardSidebar",
+        "DashboardSection",
+        "SidebarContextMetric"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/dashboard/EnergyDetailShell.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 51,
+      "sizeBytes": 1784,
+      "lastModified": "2026-04-11T00:30:38.510Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [
+        "./DashboardLayout",
+        "./DashboardHeader",
+        "./TimeRangeSwitcher",
+        "@/hooks/useDemoEnergySystem",
+        "@/hooks/useEnergySystem"
+      ],
+      "exports": [
+        "EnergyDetailShell"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/dashboard/index.ts",
+      "extension": ".ts",
+      "linesOfCode": 17,
+      "sizeBytes": 858,
+      "lastModified": "2026-04-11T00:30:38.510Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/dashboard/InsightsBanner.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 140,
+      "sizeBytes": 4583,
+      "lastModified": "2026-04-11T00:30:38.510Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [
+        "@/components/ui/card"
+      ],
+      "exports": [
+        "InsightsBanner"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/dashboard/PanelStatusTable.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 237,
+      "sizeBytes": 9493,
+      "lastModified": "2026-04-11T00:30:38.510Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [
+        "@/components/ui/card",
+        "@/components/ui/skeleton",
+        "@/components/ui/badge"
+      ],
+      "exports": [
+        "PanelStatusTable"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/dashboard/PowerFlowVisualization.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 522,
+      "sizeBytes": 22993,
+      "lastModified": "2026-04-11T00:30:38.510Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [
+        "@/components/ui/card",
+        "@/components/ui/skeleton",
+        "@/hooks/useEnergySystem",
+        "@/stores/energySystemStore"
+      ],
+      "exports": [
+        "PowerFlowVisualization"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/dashboard/README.md",
+      "extension": ".md",
+      "linesOfCode": 312,
+      "sizeBytes": 7320,
+      "lastModified": "2026-04-11T00:30:38.510Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/dashboard/Sparkline.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 72,
+      "sizeBytes": 1759,
+      "lastModified": "2026-04-11T00:30:38.510Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "Sparkline"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/dashboard/StatCards.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 275,
+      "sizeBytes": 9394,
+      "lastModified": "2026-04-11T00:30:38.510Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [
+        "@/components/ui/card",
+        "@/components/ui/skeleton",
+        "./Sparkline"
+      ],
+      "exports": [
+        "StatCards"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/dashboard/SystemVisualization.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 282,
+      "sizeBytes": 13968,
+      "lastModified": "2026-04-11T00:30:38.510Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [
+        "@/components/ui/card",
+        "@/hooks/useEnergySystem",
+        "@/stores/energySystemStore",
+        "@/hooks/use-mobile",
+        "@/components/ui/carousel",
+        "@/components/ui/slider"
+      ],
+      "exports": [
+        "SystemVisualization"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/dashboard/TimeRangeSwitcher.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 46,
+      "sizeBytes": 1599,
+      "lastModified": "2026-04-11T00:30:38.510Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [
+        "@/components/ui/button"
+      ],
+      "exports": [
+        "TimeRangeSwitcher"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/dashboard/WeatherCard.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 119,
+      "sizeBytes": 5470,
+      "lastModified": "2026-04-11T00:30:38.510Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [
+        "@/components/ui/card",
+        "@/components/ui/skeleton"
+      ],
+      "exports": [
+        "WeatherCard"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/EnergyReportModal.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 468,
+      "sizeBytes": 27014,
+      "lastModified": "2026-04-11T00:30:38.509Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [
+        "@/lib/tariff"
+      ],
+      "exports": [
+        "EnergyReportModal",
+        "ReportMinuteRecord"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/FinancialDashboard.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 451,
+      "sizeBytes": 25823,
+      "lastModified": "2026-04-11T00:30:38.509Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [
+        "@/lib/financial-dashboard"
+      ],
+      "exports": [
+        "FinancialDashboard"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/LoadConfigComponents.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 771,
+      "sizeBytes": 25915,
+      "lastModified": "2026-04-11T00:30:38.509Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [
+        "@/lib/system-config"
+      ],
+      "exports": [
+        "LoadList"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/RecommendationComponents.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 749,
+      "sizeBytes": 34107,
+      "lastModified": "2026-04-11T00:30:38.509Z",
+      "risk": "high",
+      "hotspot": true,
+      "imports": [
+        "@/lib/recommendation-engine"
+      ],
+      "exports": [
+        "LocationSelector",
+        "RecommendationPanel"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/SolarComponentLibrary.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 470,
+      "sizeBytes": 25938,
+      "lastModified": "2026-04-11T00:30:38.509Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [
+        "@/components/ui/button",
+        "@/components/ui/drawer",
+        "@/components/ui/input",
+        "@/components/ui/scroll-area",
+        "@/hooks/use-mobile",
+        "@/lib/solar-component-catalog"
+      ],
+      "exports": [
+        "SolarComponentLibrary"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/accordion.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 67,
+      "sizeBytes": 2053,
+      "lastModified": "2026-04-11T00:30:38.510Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/alert-dialog.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 158,
+      "sizeBytes": 3864,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils",
+        "@/components/ui/button"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/alert.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 67,
+      "sizeBytes": 1614,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/aspect-ratio.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 12,
+      "sizeBytes": 280,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/avatar.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 54,
+      "sizeBytes": 1097,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/badge.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 47,
+      "sizeBytes": 1631,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/breadcrumb.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 110,
+      "sizeBytes": 2357,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/button.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 60,
+      "sizeBytes": 2303,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/calendar.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 214,
+      "sizeBytes": 7660,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils",
+        "@/components/ui/button"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/card.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 93,
+      "sizeBytes": 2128,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/carousel.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 242,
+      "sizeBytes": 5556,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils",
+        "@/components/ui/button"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/chart.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 354,
+      "sizeBytes": 9781,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [
+        "ChartConfig"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/checkbox.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 33,
+      "sizeBytes": 1226,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/collapsible.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 34,
+      "sizeBytes": 800,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/command.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 185,
+      "sizeBytes": 4818,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/context-menu.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 253,
+      "sizeBytes": 8222,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/dialog.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 144,
+      "sizeBytes": 3982,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/drawer.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 136,
+      "sizeBytes": 4255,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/dropdown-menu.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 258,
+      "sizeBytes": 8284,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/form.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 168,
+      "sizeBytes": 3759,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils",
+        "@/components/ui/label"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/hover-card.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 45,
+      "sizeBytes": 1532,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/input-otp.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 78,
+      "sizeBytes": 2254,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/input.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 23,
+      "sizeBytes": 1123,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/label.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 25,
+      "sizeBytes": 611,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/menubar.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 277,
+      "sizeBytes": 8394,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/navigation-menu.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 169,
+      "sizeBytes": 6664,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/pagination.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 128,
+      "sizeBytes": 2712,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils",
+        "@/components/ui/button"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/popover.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 49,
+      "sizeBytes": 1635,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/progress.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 32,
+      "sizeBytes": 740,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/radio-group.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 46,
+      "sizeBytes": 1466,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/resizable.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 57,
+      "sizeBytes": 2028,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/scroll-area.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 59,
+      "sizeBytes": 1645,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/select.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 186,
+      "sizeBytes": 6253,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/separator.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 29,
+      "sizeBytes": 699,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/sheet.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 140,
+      "sizeBytes": 4090,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/sidebar.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 727,
+      "sizeBytes": 21633,
+      "lastModified": "2026-04-11T00:30:38.511Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/hooks/use-mobile",
+        "@/lib/utils",
+        "@/components/ui/button",
+        "@/components/ui/input",
+        "@/components/ui/separator",
+        "@/components/ui/skeleton"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/skeleton.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 14,
+      "sizeBytes": 292,
+      "lastModified": "2026-04-11T00:30:38.512Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/slider.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 64,
+      "sizeBytes": 2001,
+      "lastModified": "2026-04-11T00:30:38.512Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/sonner.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 26,
+      "sizeBytes": 564,
+      "lastModified": "2026-04-11T00:30:38.512Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/switch.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 32,
+      "sizeBytes": 1177,
+      "lastModified": "2026-04-11T00:30:38.512Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/table.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 117,
+      "sizeBytes": 2448,
+      "lastModified": "2026-04-11T00:30:38.512Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/tabs.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 67,
+      "sizeBytes": 1969,
+      "lastModified": "2026-04-11T00:30:38.512Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/textarea.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 19,
+      "sizeBytes": 759,
+      "lastModified": "2026-04-11T00:30:38.512Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/toast.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 129,
+      "sizeBytes": 4829,
+      "lastModified": "2026-04-11T00:30:38.512Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/toaster.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 35,
+      "sizeBytes": 785,
+      "lastModified": "2026-04-11T00:30:38.512Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/hooks/use-toast"
+      ],
+      "exports": [
+        "Toaster"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/toggle-group.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 74,
+      "sizeBytes": 1925,
+      "lastModified": "2026-04-11T00:30:38.512Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils",
+        "@/components/ui/toggle"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/toggle.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 48,
+      "sizeBytes": 1570,
+      "lastModified": "2026-04-11T00:30:38.512Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/components/ui/tooltip.tsx",
+      "extension": ".tsx",
+      "linesOfCode": 62,
+      "sizeBytes": 1891,
+      "lastModified": "2026-04-11T00:30:38.512Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/utils"
+      ],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/hooks/use-mobile.ts",
+      "extension": ".ts",
+      "linesOfCode": 20,
+      "sizeBytes": 565,
+      "lastModified": "2026-04-11T00:30:38.512Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "useIsMobile"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/hooks/use-toast.ts",
+      "extension": ".ts",
+      "linesOfCode": 194,
+      "sizeBytes": 3917,
+      "lastModified": "2026-04-11T00:30:38.513Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "reducer"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/hooks/useDemoEnergySystem.ts",
+      "extension": ".ts",
+      "linesOfCode": 24,
+      "sizeBytes": 627,
+      "lastModified": "2026-04-11T00:30:38.513Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "@/lib/demoEnergyState",
+        "@/stores/energySystemStore"
+      ],
+      "exports": [
+        "useDemoEnergySystem"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/hooks/useEnergySystem.ts",
+      "extension": ".ts",
+      "linesOfCode": 205,
+      "sizeBytes": 5409,
+      "lastModified": "2026-04-11T00:30:38.513Z",
+      "risk": "high",
+      "hotspot": true,
+      "imports": [
+        "@/stores/energySystemStore"
+      ],
+      "exports": [
+        "useEnergyData",
+        "useEnergyNode",
+        "useEnergyNodes",
+        "useSelectedNode",
+        "useNodeSelection",
+        "useEnergyFlows",
+        "useNodeFlows",
+        "useAccumulators",
+        "useSimulationState",
+        "useTimeRange",
+        "useSystemConfig",
+        "useMinuteData",
+        "useEnergyStats"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/instrumentation.ts",
+      "extension": ".ts",
+      "linesOfCode": 20,
+      "sizeBytes": 707,
+      "lastModified": "2026-04-11T00:30:38.513Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "register"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/auto-sizing-wizard.ts",
+      "extension": ".ts",
+      "linesOfCode": 510,
+      "sizeBytes": 19267,
+      "lastModified": "2026-04-11T00:30:38.513Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "./system-config",
+        "./nasa-power-api"
+      ],
+      "exports": [
+        "autoSizeSystem",
+        "SizingWizardInput",
+        "SizingRecommendation"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/battery-economics.ts",
+      "extension": ".ts",
+      "linesOfCode": 377,
+      "sizeBytes": 12931,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "optimizeBatterySize",
+        "BatteryEconomicAnalysis",
+        "BatteryOptimizationResult"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/config.ts",
+      "extension": ".ts",
+      "linesOfCode": 165,
+      "sizeBytes": 5936,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "critical",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "PV_CAPACITY_KW",
+        "INVERTER_CAPACITY_KW",
+        "BATTERY_CAPACITY_KWH",
+        "BATTERY_ROUND_TRIP_EFFICIENCY",
+        "EV_CHARGER_RATE_KW",
+        "MAX_BATTERY_CHARGE_RATE_KW",
+        "MAX_BATTERY_DISCHARGE_RATE_KW",
+        "BATTERY_MIN_RESERVE_KWH",
+        "GRID_EMISSION_FACTOR_KG_CO2_PER_KWH",
+        "PANEL_TEMP_COEFFICIENT_PER_DEG_C",
+        "TREE_CO2_ABSORPTION_KG_PER_YEAR",
+        "AVG_FOSSIL_CAR_EMISSION_KG_CO2_PER_KM",
+        "SOILING_LOSS_PER_DAY",
+        "SOILING_MIN_FACTOR",
+        "KPLC_HIGH_RATE_BASE_KES",
+        "KPLC_LOW_RATE_BASE_KES",
+        "KPLC_FUEL_ENERGY_COST_KES",
+        "KPLC_FERFA_KES",
+        "KPLC_INFA_KES",
+        "KPLC_ERC_LEVY_KES",
+        "KPLC_WRA_LEVY_KES",
+        "KPLC_VAT_RATE",
+        "KPLC_DEMAND_CHARGE_KES_PER_KW",
+        "KPLC_PEAK_MORNING_START_H",
+        "KPLC_PEAK_MORNING_END_H",
+        "KPLC_PEAK_EVENING_START_H",
+        "KPLC_PEAK_EVENING_END_H",
+        "FEED_IN_TARIFF_RATE_KES",
+        "AI_MAX_BODY_BYTES",
+        "AI_MAX_PROMPT_CHARS",
+        "AI_MAX_HISTORY_TURNS",
+        "GEMINI_TIMEOUT_MS",
+        "ZAI_TIMEOUT_MS",
+        "AI_MAX_RETRIES",
+        "AI_CACHE_TTL_MS",
+        "MAX_EXPORT_DATA_POINTS",
+        "SIM_STEPS_PER_DAY",
+        "SIM_STEP_DURATION_HOURS"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/db.ts",
+      "extension": ".ts",
+      "linesOfCode": 15,
+      "sizeBytes": 471,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "db"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/dc-ac-optimizer.ts",
+      "extension": ".ts",
+      "linesOfCode": 204,
+      "sizeBytes": 8334,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "analyzeDCACRatio",
+        "calculateOptimalInverter",
+        "calculateOptimalSolar",
+        "getDCACBadge",
+        "DCACAnalysis"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/demoEnergyState.ts",
+      "extension": ".ts",
+      "linesOfCode": 258,
+      "sizeBytes": 7926,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "buildDemoEnergyState"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/dvshave-harness.ts",
+      "extension": ".ts",
+      "linesOfCode": 230,
+      "sizeBytes": 6855,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "runDvShaveHarness",
+        "buildDefaultDvShaveMatrix",
+        "DvShaveState",
+        "DisturbanceType",
+        "TariffWindow",
+        "HarnessScenario",
+        "ScenarioResult",
+        "HarnessReport"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/financial-dashboard.ts",
+      "extension": ".ts",
+      "linesOfCode": 244,
+      "sizeBytes": 7965,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "high",
+      "hotspot": false,
+      "imports": [
+        "@/lib/recommendation-engine",
+        "@/lib/nasa-power-api"
+      ],
+      "exports": [
+        "buildFinancialSnapshot",
+        "simulateScenario",
+        "FinancialInputs",
+        "FinancialSnapshot"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/intelligence.ts",
+      "extension": ".ts",
+      "linesOfCode": 37,
+      "sizeBytes": 974,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/load-validator.ts",
+      "extension": ".ts",
+      "linesOfCode": 349,
+      "sizeBytes": 12799,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [
+        "./system-config"
+      ],
+      "exports": [
+        "validateSystemForLoads",
+        "getValidationBadge",
+        "LoadValidationResult"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/logger.ts",
+      "extension": ".ts",
+      "linesOfCode": 30,
+      "sizeBytes": 757,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "logger"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/nasa-power-api.ts",
+      "extension": ".ts",
+      "linesOfCode": 285,
+      "sizeBytes": 9817,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "high",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "fetchSolarData",
+        "getSolarDataForLocation",
+        "calculateSeasonalPeakHour",
+        "buildHourlyIrradianceProfile",
+        "KENYA_LOCATIONS",
+        "LocationCoordinates",
+        "SolarIrradianceData"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/physics-engine.ts",
+      "extension": ".ts",
+      "linesOfCode": 621,
+      "sizeBytes": 19718,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "high",
+      "hotspot": false,
+      "imports": [
+        "./nasa-power-api"
+      ],
+      "exports": [
+        "generateDayScenario",
+        "calculateInstantPhysics",
+        "WeatherCondition",
+        "EVScenario",
+        "HomeScenario",
+        "CommercialScenario",
+        "HVACScenario",
+        "CustomScenario",
+        "LoadScenario",
+        "DayScenario",
+        "SolarData",
+        "InstantPhysicsResult",
+        "PriorityMode",
+        "PhysicsEngineState"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/recommendation-engine.ts",
+      "extension": ".ts",
+      "linesOfCode": 639,
+      "sizeBytes": 22243,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "high",
+      "hotspot": false,
+      "imports": [
+        "./nasa-power-api"
+      ],
+      "exports": [
+        "generateRecommendation",
+        "createLoadProfileFromSimulation",
+        "LoadProfile",
+        "HardwareRecommendation"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/security.ts",
+      "extension": ".ts",
+      "linesOfCode": 191,
+      "sizeBytes": 6227,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "buildCorsHeaders",
+        "enforceBodySize",
+        "enforceServiceAuth",
+        "enforceRbac",
+        "readJsonWithRaw",
+        "verifyRequestSignature",
+        "jsonResponse",
+        "withTimeout"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/serverConfig.ts",
+      "extension": ".ts",
+      "linesOfCode": 65,
+      "sizeBytes": 2335,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "API_ALLOWED_ORIGINS",
+        "API_SERVICE_TOKEN",
+        "ENABLE_RBAC",
+        "WEBHOOK_SECRET",
+        "DEFAULT_API_TIMEOUT_MS",
+        "ALLOWED_ROLES",
+        "ROLE_HEADER",
+        "RATE_LIMIT_WINDOW_MS",
+        "RATE_LIMIT_API_PER_WINDOW",
+        "RATE_LIMIT_AI_PER_WINDOW",
+        "RATE_LIMIT_REPORT_PER_WINDOW"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/services/reportService.ts",
+      "extension": ".ts",
+      "linesOfCode": 238,
+      "sizeBytes": 6254,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "medium",
+      "hotspot": false,
+      "imports": [
+        "@/stores/energySystemStore"
+      ],
+      "exports": [
+        "getReportData",
+        "generatePDFReport",
+        "generateExcelReport",
+        "generateCSVExport",
+        "getReportSummary",
+        "ReportData"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/solar-component-catalog.ts",
+      "extension": ".ts",
+      "linesOfCode": 197,
+      "sizeBytes": 22103,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "SOLAR_COMPONENT_CATALOG",
+        "SolarComponentCategory",
+        "SolarComponentSpec",
+        "SolarComponentEntry"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/system-config.ts",
+      "extension": ".ts",
+      "linesOfCode": 611,
+      "sizeBytes": 16930,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "createPresetConfig",
+        "validateSystemConfig",
+        "updateSolarCapacity",
+        "generateLoadId",
+        "createLoadTemplate",
+        "DEFAULT_HOME_LOAD",
+        "DEFAULT_EV_COMMUTER",
+        "DEFAULT_EV_FLEET",
+        "DEFAULT_SYSTEM_CONFIG",
+        "PRESET_CONSERVATIVE",
+        "PRESET_EXPECTED",
+        "PRESET_AGGRESSIVE",
+        "BaseLoadConfig",
+        "HomeLoadConfig",
+        "EVLoadConfig",
+        "CommercialLoadConfig",
+        "HVACLoadConfig",
+        "CustomLoadConfig",
+        "LoadConfig",
+        "InverterPhase",
+        "VoltageType",
+        "InverterConfig",
+        "BatteryConfig",
+        "SolarConfig",
+        "SystemConfiguration"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/tariff-config.ts",
+      "extension": ".ts",
+      "linesOfCode": 88,
+      "sizeBytes": 2065,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "high",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "TARIFF_PROFILES",
+        "TariffProfileType",
+        "TariffProfile"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/tariff.ts",
+      "extension": ".ts",
+      "linesOfCode": 60,
+      "sizeBytes": 2733,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "high",
+      "hotspot": false,
+      "imports": [
+        "./tariff-config"
+      ],
+      "exports": [
+        "KPLC_TARIFF",
+        "GRID_EMISSION_FACTOR",
+        "TREE_CO2_KG_PER_YEAR",
+        "AVG_CAR_EMISSION_KG_PER_KM"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/utils.ts",
+      "extension": ".ts",
+      "linesOfCode": 7,
+      "sizeBytes": 166,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "cn"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/lib/validateEnv.ts",
+      "extension": ".ts",
+      "linesOfCode": 118,
+      "sizeBytes": 3748,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "validateEnv"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/middleware.ts",
+      "extension": ".ts",
+      "linesOfCode": 130,
+      "sizeBytes": 4178,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "critical",
+      "hotspot": false,
+      "imports": [
+        "@/lib/logger"
+      ],
+      "exports": [
+        "middleware",
+        "config"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/simulation/mathUtils.ts",
+      "extension": ".ts",
+      "linesOfCode": 13,
+      "sizeBytes": 397,
+      "lastModified": "2026-04-11T00:30:38.514Z",
+      "risk": "high",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "gaussianRandom"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/simulation/runSimulation.ts",
+      "extension": ".ts",
+      "linesOfCode": 257,
+      "sizeBytes": 9856,
+      "lastModified": "2026-04-11T00:30:38.515Z",
+      "risk": "critical",
+      "hotspot": true,
+      "imports": [
+        "@/types/simulation-core",
+        "./timeEngine",
+        "./solarEngine",
+        "./mathUtils"
+      ],
+      "exports": [
+        "runSolarSimulation",
+        "EVSpecs",
+        "SolarSimulationResult"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/simulation/solarEngine.ts",
+      "extension": ".ts",
+      "linesOfCode": 53,
+      "sizeBytes": 2113,
+      "lastModified": "2026-04-11T00:30:38.515Z",
+      "risk": "high",
+      "hotspot": false,
+      "imports": [
+        "@/types/simulation-core",
+        "./timeEngine",
+        "@/lib/nasa-power-api"
+      ],
+      "exports": [
+        "getPanelTempEffect",
+        "simulateSolar"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/simulation/timeEngine.ts",
+      "extension": ".ts",
+      "linesOfCode": 145,
+      "sizeBytes": 5152,
+      "lastModified": "2026-04-11T00:30:38.515Z",
+      "risk": "high",
+      "hotspot": false,
+      "imports": [
+        "@/types/simulation-core",
+        "@/lib/nasa-power-api",
+        "./mathUtils"
+      ],
+      "exports": [
+        "getSeasonalPeakHour",
+        "nextWeatherMarkov",
+        "generateDayScenario",
+        "EVScenario",
+        "DayScenario"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/stores/energySystemStore.ts",
+      "extension": ".ts",
+      "linesOfCode": 275,
+      "sizeBytes": 6241,
+      "lastModified": "2026-04-11T00:30:38.515Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "useEnergySystemStore",
+        "NodeType",
+        "EnergyFlow",
+        "EnergyNode",
+        "MinuteDataPoint",
+        "Accumulators",
+        "TimeRange"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "src/types/simulation-core.ts",
+      "extension": ".ts",
+      "linesOfCode": 56,
+      "sizeBytes": 1294,
+      "lastModified": "2026-04-11T00:30:38.515Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "SystemConfig",
+        "DerivedSystemConfig",
+        "SimulationMinuteRecord"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "tailwind.config.ts",
+      "extension": ".ts",
+      "linesOfCode": 152,
+      "sizeBytes": 5341,
+      "lastModified": "2026-04-11T00:30:38.515Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [
+        "config"
+      ],
+      "commitCount": 0
+    },
+    {
+      "path": "tsconfig.json",
+      "extension": ".json",
+      "linesOfCode": 44,
+      "sizeBytes": 746,
+      "lastModified": "2026-04-11T00:30:38.515Z",
+      "risk": "low",
+      "hotspot": false,
+      "imports": [],
+      "exports": [],
+      "commitCount": 0
+    }
+  ],
+  "importGraph": {
+    "src/app/api/export-report/route.ts": [
+      "@/lib/config"
+    ],
+    "src/app/api/safaricharge-ai/route.ts": [
+      "@/lib/logger"
+    ],
+    "src/app/component-knowledge-base/page.tsx": [
+      "@/components/SolarComponentLibrary"
+    ],
+    "src/app/demo/battery/page.tsx": [
+      "@/components/dashboard/EnergyDetailShell",
+      "@/hooks/useEnergySystem",
+      "@/components/ui/card"
+    ],
+    "src/app/demo/ev/page.tsx": [
+      "@/components/dashboard/EnergyDetailShell",
+      "@/hooks/useEnergySystem",
+      "@/components/ui/card"
+    ],
+    "src/app/demo/grid/page.tsx": [
+      "@/components/dashboard/EnergyDetailShell",
+      "@/hooks/useEnergySystem",
+      "@/components/ui/card"
+    ],
+    "src/app/demo/page.tsx": [
+      "@/components/dashboard/DashboardLayout",
+      "@/components/dashboard/DashboardHeader",
+      "@/components/dashboard/StatCards",
+      "@/components/dashboard/PowerFlowVisualization",
+      "@/components/dashboard/PanelStatusTable",
+      "@/components/dashboard/AlertsList",
+      "@/components/dashboard/TimeRangeSwitcher",
+      "@/components/dashboard/WeatherCard",
+      "@/components/dashboard/BatteryStatusCard",
+      "@/components/dashboard/InsightsBanner",
+      "@/components/DailyEnergyGraph",
+      "@/components/dashboard/SystemVisualization",
+      "@/hooks/useDemoEnergySystem",
+      "@/components/ui/card",
+      "@/components/EnergyReportModal",
+      "@/lib/nasa-power-api"
+    ],
+    "src/app/demo/solar/page.tsx": [
+      "@/components/dashboard/EnergyDetailShell",
+      "@/hooks/useEnergySystem",
+      "@/components/ui/card"
+    ],
+    "src/app/error.tsx": [
+      "@/components/ui/button"
+    ],
+    "src/app/layout.tsx": [
+      "./globals.css"
+    ],
+    "src/app/page.tsx": [
+      "@/components/DailyEnergyGraph",
+      "@/components/RecommendationComponents",
+      "@/lib/nasa-power-api",
+      "@/components/FinancialDashboard",
+      "@/lib/financial-dashboard",
+      "@/components/dashboard/DashboardLayout",
+      "@/components/dashboard/DashboardSidebar",
+      "@/components/dashboard/DashboardHeader",
+      "@/components/dashboard/PowerFlowVisualization",
+      "@/components/dashboard/WeatherCard",
+      "@/components/dashboard/BatteryStatusCard",
+      "@/components/dashboard/BatteryHealthCard",
+      "@/components/dashboard/BatteryPredictionCard",
+      "@/components/dashboard/PanelStatusTable",
+      "@/components/EnergyReportModal",
+      "@/components/dashboard/AlertsList",
+      "@/components/SolarComponentLibrary",
+      "@/simulation/timeEngine",
+      "@/simulation/runSimulation",
+      "@/components/ui/button",
+      "@/components/ui/card",
+      "@/components/ui/dialog",
+      "@/components/ui/carousel",
+      "@/components/ui/slider",
+      "@/lib/tariff",
+      "@/lib/recommendation-engine",
+      "@/types/simulation-core"
+    ],
+    "src/app/simulation/page.tsx": [
+      "../page"
+    ],
+    "src/components/dashboard/AlertsList.tsx": [
+      "@/components/ui/card",
+      "@/components/ui/badge",
+      "@/components/ui/skeleton"
+    ],
+    "src/components/dashboard/BatteryHealthCard.tsx": [
+      "@/components/ui/card",
+      "./Sparkline"
+    ],
+    "src/components/dashboard/BatteryPredictionCard.tsx": [
+      "@/components/ui/card"
+    ],
+    "src/components/dashboard/BatteryStatusCard.tsx": [
+      "@/components/ui/card",
+      "@/components/ui/skeleton"
+    ],
+    "src/components/dashboard/DashboardHeader.tsx": [
+      "@/components/ui/button",
+      "@/components/ui/sidebar",
+      "@/components/ui/badge"
+    ],
+    "src/components/dashboard/DashboardLayout.tsx": [
+      "@/components/ui/sidebar",
+      "./DashboardSidebar"
+    ],
+    "src/components/dashboard/DashboardSidebar.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/dashboard/EnergyDetailShell.tsx": [
+      "./DashboardLayout",
+      "./DashboardHeader",
+      "./TimeRangeSwitcher",
+      "@/hooks/useDemoEnergySystem",
+      "@/hooks/useEnergySystem"
+    ],
+    "src/components/dashboard/InsightsBanner.tsx": [
+      "@/components/ui/card"
+    ],
+    "src/components/dashboard/PanelStatusTable.tsx": [
+      "@/components/ui/card",
+      "@/components/ui/skeleton",
+      "@/components/ui/badge"
+    ],
+    "src/components/dashboard/PowerFlowVisualization.tsx": [
+      "@/components/ui/card",
+      "@/components/ui/skeleton",
+      "@/hooks/useEnergySystem",
+      "@/stores/energySystemStore"
+    ],
+    "src/components/dashboard/StatCards.tsx": [
+      "@/components/ui/card",
+      "@/components/ui/skeleton",
+      "./Sparkline"
+    ],
+    "src/components/dashboard/SystemVisualization.tsx": [
+      "@/components/ui/card",
+      "@/hooks/useEnergySystem",
+      "@/stores/energySystemStore",
+      "@/hooks/use-mobile",
+      "@/components/ui/carousel",
+      "@/components/ui/slider"
+    ],
+    "src/components/dashboard/TimeRangeSwitcher.tsx": [
+      "@/components/ui/button"
+    ],
+    "src/components/dashboard/WeatherCard.tsx": [
+      "@/components/ui/card",
+      "@/components/ui/skeleton"
+    ],
+    "src/components/EnergyReportModal.tsx": [
+      "@/lib/tariff"
+    ],
+    "src/components/FinancialDashboard.tsx": [
+      "@/lib/financial-dashboard"
+    ],
+    "src/components/LoadConfigComponents.tsx": [
+      "@/lib/system-config"
+    ],
+    "src/components/RecommendationComponents.tsx": [
+      "@/lib/recommendation-engine"
+    ],
+    "src/components/SolarComponentLibrary.tsx": [
+      "@/components/ui/button",
+      "@/components/ui/drawer",
+      "@/components/ui/input",
+      "@/components/ui/scroll-area",
+      "@/hooks/use-mobile",
+      "@/lib/solar-component-catalog"
+    ],
+    "src/components/ui/accordion.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/alert-dialog.tsx": [
+      "@/lib/utils",
+      "@/components/ui/button"
+    ],
+    "src/components/ui/alert.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/avatar.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/badge.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/breadcrumb.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/button.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/calendar.tsx": [
+      "@/lib/utils",
+      "@/components/ui/button"
+    ],
+    "src/components/ui/card.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/carousel.tsx": [
+      "@/lib/utils",
+      "@/components/ui/button"
+    ],
+    "src/components/ui/chart.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/checkbox.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/command.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/context-menu.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/dialog.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/drawer.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/dropdown-menu.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/form.tsx": [
+      "@/lib/utils",
+      "@/components/ui/label"
+    ],
+    "src/components/ui/hover-card.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/input-otp.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/input.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/label.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/menubar.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/navigation-menu.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/pagination.tsx": [
+      "@/lib/utils",
+      "@/components/ui/button"
+    ],
+    "src/components/ui/popover.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/progress.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/radio-group.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/resizable.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/scroll-area.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/select.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/separator.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/sheet.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/sidebar.tsx": [
+      "@/hooks/use-mobile",
+      "@/lib/utils",
+      "@/components/ui/button",
+      "@/components/ui/input",
+      "@/components/ui/separator",
+      "@/components/ui/skeleton"
+    ],
+    "src/components/ui/skeleton.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/slider.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/switch.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/table.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/tabs.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/textarea.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/toast.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/toaster.tsx": [
+      "@/hooks/use-toast"
+    ],
+    "src/components/ui/toggle-group.tsx": [
+      "@/lib/utils",
+      "@/components/ui/toggle"
+    ],
+    "src/components/ui/toggle.tsx": [
+      "@/lib/utils"
+    ],
+    "src/components/ui/tooltip.tsx": [
+      "@/lib/utils"
+    ],
+    "src/hooks/useDemoEnergySystem.ts": [
+      "@/lib/demoEnergyState",
+      "@/stores/energySystemStore"
+    ],
+    "src/hooks/useEnergySystem.ts": [
+      "@/stores/energySystemStore"
+    ],
+    "src/lib/auto-sizing-wizard.ts": [
+      "./system-config",
+      "./nasa-power-api"
+    ],
+    "src/lib/financial-dashboard.ts": [
+      "@/lib/recommendation-engine",
+      "@/lib/nasa-power-api"
+    ],
+    "src/lib/load-validator.ts": [
+      "./system-config"
+    ],
+    "src/lib/physics-engine.ts": [
+      "./nasa-power-api"
+    ],
+    "src/lib/recommendation-engine.ts": [
+      "./nasa-power-api"
+    ],
+    "src/lib/services/reportService.ts": [
+      "@/stores/energySystemStore"
+    ],
+    "src/lib/tariff.ts": [
+      "./tariff-config"
+    ],
+    "src/middleware.ts": [
+      "@/lib/logger"
+    ],
+    "src/simulation/runSimulation.ts": [
+      "@/types/simulation-core",
+      "./timeEngine",
+      "./solarEngine",
+      "./mathUtils"
+    ],
+    "src/simulation/solarEngine.ts": [
+      "@/types/simulation-core",
+      "./timeEngine",
+      "@/lib/nasa-power-api"
+    ],
+    "src/simulation/timeEngine.ts": [
+      "@/types/simulation-core",
+      "@/lib/nasa-power-api",
+      "./mathUtils"
+    ]
+  },
+  "hotspots": [
+    {
+      "path": "src/app/api/safaricharge-ai/route.ts",
+      "linesOfCode": 677,
+      "risk": "critical",
+      "imports": [
+        "@/lib/logger"
+      ]
+    },
+    {
+      "path": "src/app/page.tsx",
+      "linesOfCode": 4690,
+      "risk": "critical",
+      "imports": [
+        "@/components/DailyEnergyGraph",
+        "@/components/RecommendationComponents",
+        "@/lib/nasa-power-api",
+        "@/components/FinancialDashboard",
+        "@/lib/financial-dashboard",
+        "@/components/dashboard/DashboardLayout",
+        "@/components/dashboard/DashboardSidebar",
+        "@/components/dashboard/DashboardHeader",
+        "@/components/dashboard/PowerFlowVisualization",
+        "@/components/dashboard/WeatherCard",
+        "@/components/dashboard/BatteryStatusCard",
+        "@/components/dashboard/BatteryHealthCard",
+        "@/components/dashboard/BatteryPredictionCard",
+        "@/components/dashboard/PanelStatusTable",
+        "@/components/EnergyReportModal",
+        "@/components/dashboard/AlertsList",
+        "@/components/SolarComponentLibrary",
+        "@/simulation/timeEngine",
+        "@/simulation/runSimulation",
+        "@/components/ui/button",
+        "@/components/ui/card",
+        "@/components/ui/dialog",
+        "@/components/ui/carousel",
+        "@/components/ui/slider",
+        "@/lib/tariff",
+        "@/lib/recommendation-engine",
+        "@/types/simulation-core"
+      ]
+    },
+    {
+      "path": "src/components/RecommendationComponents.tsx",
+      "linesOfCode": 749,
+      "risk": "high",
+      "imports": [
+        "@/lib/recommendation-engine"
+      ]
+    },
+    {
+      "path": "src/hooks/useEnergySystem.ts",
+      "linesOfCode": 205,
+      "risk": "high",
+      "imports": [
+        "@/stores/energySystemStore"
+      ]
+    },
+    {
+      "path": "src/simulation/runSimulation.ts",
+      "linesOfCode": 257,
+      "risk": "critical",
+      "imports": [
+        "@/types/simulation-core",
+        "./timeEngine",
+        "./solarEngine",
+        "./mathUtils"
+      ]
+    }
+  ],
+  "recentCommits": [
+    "80997f1 Merge pull request #126 from rauell1/codex/fix-static-battery-soc-in-dashboard-mjzhhd",
+    "16ac9d8 Merge branch 'main' into codex/fix-static-battery-soc-in-dashboard-mjzhhd",
+    "3969213 Merge pull request #125 from rauell1/codex/fix-static-battery-soc-in-dashboard"
+  ]
+}

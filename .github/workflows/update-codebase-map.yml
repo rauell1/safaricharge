@@ -1,0 +1,216 @@
+# .github/workflows/update-codebase-map.yml
+# ------------------------------------------
+# Automatically regenerates docs/codebase-map.md and docs/codebase-map.json
+# on every push or pull request, then commits the updated files back to the branch.
+#
+# WHAT IT DOES:
+#   1. Checks out the repository with full git history
+#   2. Runs scripts/generate-codebase-map.js (Node.js, no extra deps)
+#   3. If the map files changed, commits and pushes them back
+#   4. Annotates the PR (on pull_request) with a summary of what changed
+#
+# PERMISSIONS REQUIRED (Settings → Actions → Workflow permissions):
+#   Read and write permissions  (for the auto-commit step)
+#   Allow GitHub Actions to create and approve pull requests  (optional)
+
+name: Update Codebase Map
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'release/**'
+    paths:
+      # Trigger on any source file change
+      - 'src/**'
+      - 'prisma/**'
+      - 'package.json'
+      - 'scripts/generate-codebase-map.js'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'src/**'
+      - 'prisma/**'
+      - 'package.json'
+      - 'scripts/generate-codebase-map.js'
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      full_scan:
+        description: 'Force full re-scan (ignore hash cache)'
+        required: false
+        default: 'false'
+        type: boolean
+
+# Prevent concurrent map updates on the same branch
+concurrency:
+  group: codebase-map-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write       # needed to push the updated map files
+  pull-requests: write  # needed to post PR comments
+
+jobs:
+  update-map:
+    name: Regenerate Codebase Map
+    runs-on: ubuntu-latest
+    # Don't run on commits that are already map-update commits (prevent loop)
+    if: "!contains(github.event.head_commit.message, '[map] auto-update')"
+
+    steps:
+      # -----------------------------------------------------------------------
+      # 1. Checkout with full history so git log and git diff work correctly
+      # -----------------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # full history for accurate change detection
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # -----------------------------------------------------------------------
+      # 2. Set up Node.js (generator uses built-in modules only — no install needed)
+      # -----------------------------------------------------------------------
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # -----------------------------------------------------------------------
+      # 3. Run the generator
+      # -----------------------------------------------------------------------
+      - name: Generate codebase map
+        id: generate
+        run: |
+          FULL_FLAG=""
+          if [ "${{ github.event.inputs.full_scan }}" = "true" ]; then
+            FULL_FLAG="--full"
+          fi
+          node scripts/generate-codebase-map.js $FULL_FLAG
+
+      # -----------------------------------------------------------------------
+      # 4. Check if the map files changed
+      # -----------------------------------------------------------------------
+      - name: Check for map changes
+        id: check
+        run: |
+          git diff --name-only docs/codebase-map.md docs/codebase-map.json docs/.map-hashes.json 2>/dev/null | tee /tmp/changed-files.txt || true
+          if [ -s /tmp/changed-files.txt ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Map files changed:"
+            cat /tmp/changed-files.txt
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No map changes detected"
+          fi
+
+      # -----------------------------------------------------------------------
+      # 5. Commit and push updated map (push events on protected branches only)
+      # -----------------------------------------------------------------------
+      - name: Commit updated map
+        if: |
+          steps.check.outputs.changed == 'true' &&
+          github.event_name == 'push'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/codebase-map.md docs/codebase-map.json docs/.map-hashes.json
+          git commit -m "[map] auto-update codebase map @ ${{ github.sha }}"
+          git push
+
+      # -----------------------------------------------------------------------
+      # 6. On pull requests, push the updated map to the PR branch
+      # -----------------------------------------------------------------------
+      - name: Commit updated map to PR branch
+        if: |
+          steps.check.outputs.changed == 'true' &&
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/codebase-map.md docs/codebase-map.json docs/.map-hashes.json
+          git commit -m "[map] auto-update codebase map for PR #${{ github.event.pull_request.number }}"
+          git push origin HEAD:${{ github.head_ref }}
+
+      # -----------------------------------------------------------------------
+      # 7. Post a summary comment on the PR
+      # -----------------------------------------------------------------------
+      - name: Post PR comment with map diff summary
+        if: |
+          github.event_name == 'pull_request' &&
+          steps.check.outputs.changed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let summary = '### 🗺️ Codebase Map Updated\n\n';
+
+            try {
+              const mapJson = JSON.parse(fs.readFileSync('docs/codebase-map.json', 'utf8'));
+              const { version, stats } = mapJson;
+              summary += `**Commit:** \`${version.commit.slice(0, 7)}\`\n`;
+              summary += `**Branch:** \`${version.branch}\`\n\n`;
+              summary += `| Metric | Value |\n|--------|-------|\n`;
+              summary += `| Total files | ${stats.totalFiles} |\n`;
+              summary += `| Total LOC | ${stats.totalLinesOfCode.toLocaleString()} |\n`;
+              summary += `| Critical files | ${stats.criticalFiles} |\n`;
+              summary += `| High-risk files | ${stats.highRiskFiles} |\n`;
+              summary += `| Hotspot files | ${stats.hotspotFiles} |\n\n`;
+
+              const { added, modified, removed } = version.changes;
+              if (added.length + modified.length + removed.length > 0) {
+                summary += '**Changes detected:**\n';
+                added.forEach(f => { summary += `- ➕ \`${f}\`\n`; });
+                modified.forEach(f => { summary += `- ✏️ \`${f}\`\n`; });
+                removed.forEach(f => { summary += `- 🗑️ \`${f}\`\n`; });
+              }
+
+              summary += '\n> 📄 See [docs/codebase-map.md](docs/codebase-map.md) for the full updated map.';
+            } catch(e) {
+              summary += `> Map generated but could not read summary: ${e.message}`;
+            }
+
+            // Find existing bot comment to update (avoid duplicate comments)
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(c =>
+              c.user.login === 'github-actions[bot]' &&
+              c.body.includes('🗺️ Codebase Map Updated')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: summary,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: summary,
+              });
+            }
+
+      # -----------------------------------------------------------------------
+      # 8. Upload map as workflow artifact (available even if no commit)
+      # -----------------------------------------------------------------------
+      - name: Upload map artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codebase-map-${{ github.sha }}
+          path: |
+            docs/codebase-map.md
+            docs/codebase-map.json
+          retention-days: 30
