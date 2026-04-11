@@ -1,0 +1,1 @@
+# SafariCharge validation service package
