@@ -5,26 +5,14 @@
  * battery SOC, solar power, grid flows, and minute data all update
  * correctly each simulation tick.
  *
- * ROOT CAUSE FIX (Issue A — ENGINEERING_ISSUES_V2_2026-04-10.md):
- *   calculateInstantPhysics was implemented but never called from the
- *   running app. This hook is the missing caller. It:
- *     1. Persists PhysicsEngineState across ticks via useRef
- *        (prevents re-initialisation-per-tick)
- *     2. Calls calculateInstantPhysics each tick
- *     3. Writes battery/solar/grid results into energySystemStore
- *        via updateNode and addMinuteData
- *
- * STALE-ACCUMULATOR FIX (this commit):
- *   `accumulators` must NOT be subscribed as a reactive Zustand selector
- *   inside usePhysicsSimulation. Subscribing to it causes the `tick`
- *   useCallback to be recreated on every tick (accumulators is a dep),
- *   which makes useDemoEnergySystem's setInterval restart on every render,
- *   resetting the simulated clock and battery SOC each cycle.
- *
- *   Solution: read accumulators imperatively via
- *   `useEnergySystemStore.getState().accumulators` inside the tick body.
- *   This is the Zustand-idiomatic pattern for reading state inside
- *   callbacks without creating reactive subscriptions.
+ * ROOT CAUSE FIX (Issue A — battery SOC frozen):
+ *   1. PhysicsEngineState is persisted in a useRef — never recreated per tick.
+ *   2. calculateInstantPhysics is called with the SIMULATED currentDate so
+ *      monthly solar derating tracks simulated time, not wall-clock time.
+ *   3. state.evIsHome is refreshed from scenario.evIsHome at each day
+ *      boundary so EV away-from-home logic applies correctly.
+ *   4. accumulators are read imperatively via getState() to avoid reactive
+ *      re-subscription that would restart the setInterval in useDemoEnergySystem.
  */
 
 'use client';
@@ -48,22 +36,12 @@ import { SOILING_LOSS_PER_DAY, SOILING_MIN_FACTOR } from '@/lib/config';
 // ---------------------------------------------------------------------------
 
 export interface PhysicsSimulationOptions {
-  /** Full system configuration (panels, battery, inverter, loads). */
   systemConfig: SystemConfiguration;
-  /** Solar irradiance / location data. */
   solarData: SolarData;
-  /** Battery/grid dispatch priority. Default: 'auto' */
   priorityMode?: PriorityMode;
-  /** Whether the grid connection is active. Default: true */
   gridEnabled?: boolean;
-  /** KES/kWh tariff during peak hours. Default: 24.31 */
   peakRate?: number;
-  /** KES/kWh tariff off-peak. Default: 14.93 */
   offPeakRate?: number;
-  /**
-   * Peak-time window [startHour, endHour] in 0-24 decimal.
-   * Default: [17, 21] (Kenya KPLC evening peak).
-   */
   peakWindow?: [number, number];
 }
 
@@ -71,17 +49,6 @@ export interface PhysicsSimulationOptions {
 // Hook
 // ---------------------------------------------------------------------------
 
-/**
- * Call this hook once inside the component (or parent component) that
- * drives the simulation tick loop.  Pass the same `timeOfDay` and
- * `currentDate` values you already advance in your tick loop.
- *
- * @example
- * const { tick } = usePhysicsSimulation({ systemConfig, solarData });
- *
- * // Inside your setInterval / requestAnimationFrame tick:
- * tick(timeOfDay, currentDate);
- */
 export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
   const {
     systemConfig,
@@ -93,41 +60,24 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
     peakWindow = [17, 21],
   } = options;
 
-  // -------------------------------------------------------------------------
-  // Store write actions — these are stable references (Zustand guarantees
-  // action identity across renders), so they are safe deps for useCallback.
-  // -------------------------------------------------------------------------
+  // Store write actions — stable Zustand references, safe as useCallback deps
   const updateNode = useEnergySystemStore((s) => s.updateNode);
   const updateFlows = useEnergySystemStore((s) => s.updateFlows);
   const addMinuteData = useEnergySystemStore((s) => s.addMinuteData);
   const updateAccumulators = useEnergySystemStore((s) => s.updateAccumulators);
 
-  // NOTE: `accumulators` (the data) is intentionally NOT subscribed here.
-  // Reading it reactively would make this hook re-render on every tick,
-  // recreating `tick` and restarting the setInterval in useDemoEnergySystem.
-  // Instead, we call useEnergySystemStore.getState().accumulators imperatively
-  // inside the tick body — see step 8 below.
-
-  // -------------------------------------------------------------------------
-  // Persistent physics state (survives re-renders, resets only on unmount)
-  // -------------------------------------------------------------------------
+  // Persistent physics state — survives re-renders, reset only on unmount
   const physicsStateRef = useRef<PhysicsEngineState | null>(null);
-  /** Day scenario regenerated once per simulated calendar day. */
   const currentDayScenarioRef = useRef<DayScenario | null>(null);
-  /** Last simulated date string (YYYY-MM-DD) for day-boundary detection. */
   const lastDayKeyRef = useRef<string>('');
-  /** Cumulative soiling days counter. */
   const soilingDaysRef = useRef<number>(0);
 
-  // -------------------------------------------------------------------------
-  // Initialise physics state lazily (only once per mount)
-  // -------------------------------------------------------------------------
+  // Lazy-initialise physics state once per mount
   const getOrInitState = useCallback((): PhysicsEngineState => {
     if (!physicsStateRef.current) {
-      const initialSoc = systemConfig.battery.minReservePct + 20; // start 20% above reserve
+      const initialSoc = systemConfig.battery.minReservePct + 20;
       physicsStateRef.current = {
-        batteryKwh:
-          systemConfig.battery.capacityKwh * (initialSoc / 100),
+        batteryKwh: systemConfig.battery.capacityKwh * (initialSoc / 100),
         evSocs: Object.fromEntries(
           systemConfig.loads
             .filter((l) => l.type === 'ev')
@@ -144,15 +94,12 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
     return physicsStateRef.current;
   }, [systemConfig]);
 
-  // -------------------------------------------------------------------------
-  // Day-boundary: regenerate scenario and advance soiling
-  // -------------------------------------------------------------------------
+  // Day-boundary: regenerate scenario, advance soiling, sync evIsHome
   const refreshDayScenarioIfNeeded = useCallback(
     (date: Date, state: PhysicsEngineState) => {
       const dayKey = date.toISOString().slice(0, 10);
       if (dayKey === lastDayKeyRef.current) return;
 
-      // Advance soiling
       soilingDaysRef.current += 1;
       const newSoiling = Math.max(
         SOILING_MIN_FACTOR,
@@ -160,23 +107,26 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
       );
       state.soilingFactor = newSoiling;
 
-      // Build EV SOC map from current state
       const evSocStates = { ...state.evSocs };
 
-      currentDayScenarioRef.current = generateDayScenario(
+      const scenario = generateDayScenario(
         systemConfig,
         date,
         solarData,
         evSocStates
       );
+      currentDayScenarioRef.current = scenario;
       lastDayKeyRef.current = dayKey;
+
+      // FIX: sync state.evIsHome from the newly generated scenario so
+      // EV away-from-home randomisation actually takes effect each day.
+      // Without this, evIsHome stays as its initial value (all true) forever.
+      Object.assign(state.evIsHome, scenario.evIsHome);
     },
     [systemConfig, solarData]
   );
 
-  // -------------------------------------------------------------------------
-  // Core tick function — call this every simulation timestep
-  // -------------------------------------------------------------------------
+  // Core tick function — call every simulation timestep
   const tick = useCallback(
     (timeOfDay: number, currentDate: Date) => {
       const state = getOrInitState();
@@ -188,26 +138,25 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
       const hour = timeOfDay;
       const isPeakTime = hour >= peakWindow[0] && hour < peakWindow[1];
 
-      // Run physics
+      // FIX: pass currentDate (simulated) into calculateInstantPhysics.
+      // The engine uses it for monthly solar derating — if we omit it the
+      // engine would fall back to new Date() (wall-clock) and the solar
+      // output would be stuck at April values regardless of simulated month.
       const result = calculateInstantPhysics(
         systemConfig,
         scenario,
         hour,
         solarData,
-        state,        // state is mutated in-place by calculateInstantPhysics
+        state,
         priorityMode,
         gridEnabled,
         isPeakTime,
         peakRate,
-        offPeakRate
+        offPeakRate,
+        currentDate    // ← simulated date passed through
       );
 
-      // NOTE: calculateInstantPhysics mutates state.batteryKwh in-place,
-      // so physicsStateRef.current is already updated after the call above.
-
-      // -----------------------------------------------------------------------
-      // 1. Update battery node
-      // -----------------------------------------------------------------------
+      // 1. Battery node
       updateNode('battery', {
         powerKW: result.batteryPowerKw,
         soc: result.batteryLevelPct,
@@ -219,17 +168,13 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
             : 'idle',
       });
 
-      // -----------------------------------------------------------------------
-      // 2. Update solar node
-      // -----------------------------------------------------------------------
+      // 2. Solar node
       updateNode('solar', {
         powerKW: result.solarPowerKw,
         status: result.solarPowerKw > 0.1 ? 'online' : 'idle',
       });
 
-      // -----------------------------------------------------------------------
-      // 3. Update grid node
-      // -----------------------------------------------------------------------
+      // 3. Grid node
       const netGridKw = result.gridImportKw - result.gridExportKw;
       updateNode('grid', {
         powerKW: Math.abs(netGridKw),
@@ -241,23 +186,21 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
             : 'idle',
       });
 
-      // -----------------------------------------------------------------------
-      // 4. Update home load node
-      // -----------------------------------------------------------------------
+      // 4. Home load node
       updateNode('home', {
         powerKW: result.totalLoadKw,
         status: 'online',
       });
 
-      // -----------------------------------------------------------------------
-      // 5. Update EV nodes from evStates
-      // -----------------------------------------------------------------------
+      // 5. EV nodes
       const evIds = Object.keys(result.evStates);
       if (evIds[0]) {
         const ev1 = result.evStates[evIds[0]];
         updateNode('ev1', {
           soc: ev1.soc,
-          powerKW: ev1.isCharging ? (systemConfig.loads.find(l => l.id === evIds[0]) as { onboardChargerKw?: number })?.onboardChargerKw ?? 0 : 0,
+          powerKW: ev1.isCharging
+            ? (systemConfig.loads.find(l => l.id === evIds[0]) as { onboardChargerKw?: number })?.onboardChargerKw ?? 0
+            : 0,
           status: !ev1.isHome ? 'offline' : ev1.isCharging ? 'charging' : 'idle',
         });
       }
@@ -265,14 +208,14 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
         const ev2 = result.evStates[evIds[1]];
         updateNode('ev2', {
           soc: ev2.soc,
-          powerKW: ev2.isCharging ? (systemConfig.loads.find(l => l.id === evIds[1]) as { onboardChargerKw?: number })?.onboardChargerKw ?? 0 : 0,
+          powerKW: ev2.isCharging
+            ? (systemConfig.loads.find(l => l.id === evIds[1]) as { onboardChargerKw?: number })?.onboardChargerKw ?? 0
+            : 0,
           status: !ev2.isHome ? 'offline' : ev2.isCharging ? 'charging' : 'idle',
         });
       }
 
-      // -----------------------------------------------------------------------
-      // 6. Update energy flows
-      // -----------------------------------------------------------------------
+      // 6. Energy flows
       const flows: EnergyFlow[] = [
         {
           from: 'solar',
@@ -307,10 +250,8 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
       ];
       updateFlows(flows);
 
-      // -----------------------------------------------------------------------
-      // 7. Append MinuteDataPoint to history
-      // -----------------------------------------------------------------------
-      const timeStep = 24 / 420; // ~3.43-minute intervals (420 ticks/day)
+      // 7. Minute history
+      const timeStep = 24 / 420;
       const solarKwh = result.solarPowerKw * timeStep;
       const homeLoadKwh = result.totalLoadKw * timeStep;
       const gridImportKwh = result.gridImportKw * timeStep;
@@ -353,25 +294,18 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
 
       addMinuteData(minutePoint);
 
-      // -----------------------------------------------------------------------
-      // 8. Update accumulators
-      //
-      // IMPORTANT: Read the current accumulator values imperatively via
-      // getState() rather than from a reactive selector. Using a reactive
-      // selector would make `tick` a dep of itself through useCallback,
-      // causing the setInterval in useDemoEnergySystem to restart on every
-      // tick and resetting the simulation clock / battery SOC.
-      // -----------------------------------------------------------------------
+      // 8. Accumulators — read imperatively to avoid reactive re-subscription
+      //    (which would restart the setInterval in useDemoEnergySystem).
       const accumulators = useEnergySystemStore.getState().accumulators;
       updateAccumulators({
         solar: accumulators.solar + solarKwh,
         savings: accumulators.savings + result.savingsKES,
         gridImport: accumulators.gridImport + gridImportKwh,
-        carbonOffset: accumulators.carbonOffset + solarKwh * 0.233, // kg CO₂ per kWh (Kenya grid factor)
+        carbonOffset: accumulators.carbonOffset + solarKwh * 0.233,
         batDischargeKwh:
           accumulators.batDischargeKwh +
           (result.batteryPowerKw < 0 ? Math.abs(result.batteryPowerKw) * timeStep : 0),
-        feedInEarnings: accumulators.feedInEarnings + gridExportKwh * 5.0, // KES feed-in tariff
+        feedInEarnings: accumulators.feedInEarnings + gridExportKwh * 5.0,
       });
     },
     [
@@ -388,16 +322,10 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
       updateFlows,
       addMinuteData,
       updateAccumulators,
-      // `accumulators` (the data) is intentionally ABSENT from deps.
-      // It is read inside the tick body via getState() to avoid
-      // reactive re-subscription that would restart the simulation loop.
     ]
   );
 
-  // -------------------------------------------------------------------------
   // Reset physics state when system config changes fundamentally
-  // (e.g. battery capacity swapped out)
-  // -------------------------------------------------------------------------
   useEffect(() => {
     physicsStateRef.current = null;
     currentDayScenarioRef.current = null;
@@ -411,9 +339,7 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
   return { tick };
 }
 
-// ---------------------------------------------------------------------------
-// Utility: ISO week number
-// ---------------------------------------------------------------------------
+// ISO week number utility
 function getISOWeek(date: Date): number {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   const dayNum = d.getUTCDay() || 7;

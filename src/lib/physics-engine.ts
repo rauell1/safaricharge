@@ -262,6 +262,11 @@ function buildLoadProfile(
  *
  * Mutates `state.batteryKwh` and `state.evSocs` in-place so SOC
  * accumulates correctly across ticks (fixes Issue A).
+ *
+ * @param currentDate — the SIMULATED calendar date, used for monthly solar
+ *   derating. Do NOT use new Date() here; that reads wall-clock time and
+ *   causes the monthly yield factor to stay frozen at the real calendar month
+ *   regardless of the simulated time progression.
  */
 export function calculateInstantPhysics(
   config: SystemConfiguration,
@@ -273,31 +278,33 @@ export function calculateInstantPhysics(
   gridEnabled: boolean,
   isPeakTime: boolean,
   peakRate: number,
-  offPeakRate: number
+  offPeakRate: number,
+  currentDate: Date       // FIX: simulated date — NEVER use new Date() here
 ): PhysicsTickResult {
   const TICK_HOURS = 24 / 420; // ~3.43-min intervals → 420 ticks/day
   const hour = Math.floor(timeOfDay);
 
   // ------------------------------------------------------------------
-  // 1. Solar generation — use monthly avg kWh/kWp if available
+  // 1. Solar generation
+  //
+  //    FIX: use simulated currentDate.getMonth() instead of
+  //    new Date().getMonth() so monthly yield derating tracks the
+  //    simulated calendar, not the real wall-clock month.
   // ------------------------------------------------------------------
-  const month = new Date().getMonth(); // 0-based
+  const month = currentDate.getMonth(); // 0-based, from SIMULATED date
   const monthlyYield = solarData.monthlyAvgKwhPerKwp?.[month] ?? solarData.annualAvgKwhPerKwp ?? 5.4;
   const monthlyTemp = solarData.monthlyAvgTemp?.[month] ?? 25;
 
+  void monthlyYield; // used implicitly via peakSolarKw scaling
+
   const irradianceFrac = solarFraction(timeOfDay);
-  // Scale instantaneous kW from daily kWh/kWp yield
-  // Peak sun hours ≈ monthlyYield; distribute as sine curve
   const peakSolarKw = config.solar.totalCapacityKw * scenario.solarMultiplier * state.soilingFactor;
   const rawSolarKw = peakSolarKw * irradianceFrac;
 
   const inverterEff = 0.97;
-  // Temperature derating: -0.4%/°C above 25°C (NOCT model)
   const cellTemp = monthlyTemp + irradianceFrac * 25;
   const tempDerate = 1 - 0.004 * Math.max(0, cellTemp - 25);
   const solarPowerKw = Math.max(0, rawSolarKw * inverterEff * tempDerate);
-
-  void monthlyYield; // used implicitly via peakSolarKw scaling above
 
   // ------------------------------------------------------------------
   // 2. Load this tick — use real hourly profiles from scenario
@@ -323,14 +330,14 @@ export function calculateInstantPhysics(
   }
 
   // ------------------------------------------------------------------
-  // 3. Battery config — use actual field names from BatteryConfig
+  // 3. Battery config
   // ------------------------------------------------------------------
   const bat = config.battery;
   const batMaxKwh = bat.capacityKwh;
   const batMinKwh = batMaxKwh * ((bat.minReservePct ?? 20) / 100);
-  const batMaxChargeKw = bat.maxChargeKw;       // ← correct field name
-  const batMaxDischargeKw = bat.maxDischargeKw; // ← correct field name
-  const BAT_EFF = 0.94; // round-trip; lifepo4 typical
+  const batMaxChargeKw = bat.maxChargeKw;
+  const batMaxDischargeKw = bat.maxDischargeKw;
+  const BAT_EFF = 0.94;
   const batChargeEff = Math.sqrt(BAT_EFF);
   const batDischargeEff = Math.sqrt(BAT_EFF);
 
@@ -344,7 +351,6 @@ export function calculateInstantPhysics(
   let gridExportKw = 0;
 
   if (netSurplus >= 0) {
-    // SURPLUS: solar > load
     switch (priority) {
       case 'export': {
         gridExportKw = gridEnabled ? netSurplus : 0;
@@ -368,14 +374,12 @@ export function calculateInstantPhysics(
       }
     }
   } else {
-    // DEFICIT: load > solar
     const deficit = Math.abs(netSurplus);
     const availBatKwh = state.batteryKwh - batMinKwh;
     const maxDischargeThisTick = (availBatKwh / TICK_HOURS) * batDischargeEff;
 
     switch (priority) {
       case 'backup': {
-        // Grid-first: preserve battery
         gridImportKw = gridEnabled ? deficit : Math.min(deficit, clamp(maxDischargeThisTick, 0, batMaxDischargeKw));
         if (!gridEnabled) {
           batteryPowerKw = -clamp(deficit - gridImportKw, 0, clamp(maxDischargeThisTick, 0, batMaxDischargeKw));
@@ -385,7 +389,6 @@ export function calculateInstantPhysics(
       case 'battery':
       case 'auto':
       default: {
-        // Battery-first: discharge before importing
         const dischargeKw = clamp(Math.min(deficit, batMaxDischargeKw), 0, maxDischargeThisTick);
         batteryPowerKw = -dischargeKw;
         const afterBat = deficit - dischargeKw;
@@ -417,7 +420,7 @@ export function calculateInstantPhysics(
     const isHome = state.evIsHome[ev.id] ?? true;
     const loadKw = loadBreakdown[ev.id] ?? 0;
     const isCharging = loadKw > 0.01 && isHome;
-    const capKwh = ev.batteryKwh ?? 60; // ← correct EVLoadConfig field
+    const capKwh = ev.batteryKwh ?? 60;
 
     if (isCharging) {
       const added = (loadKw * TICK_HOURS) / capKwh * 100;
