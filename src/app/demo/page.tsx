@@ -14,7 +14,7 @@ import { WeatherCard } from '@/components/dashboard/WeatherCard';
 import { BatteryStatusCard } from '@/components/dashboard/BatteryStatusCard';
 import { InsightsBanner } from '@/components/dashboard/InsightsBanner';
 import { EngineeringKpisCard } from '@/components/dashboard/EngineeringKpisCard';
-import DailyEnergyGraph from '@/components/DailyEnergyGraph';
+import DailyEnergyGraph, { buildGraphSVG, buildJPGBlob } from '@/components/DailyEnergyGraph';
 import { SystemVisualization } from '@/components/dashboard/SystemVisualization';
 import { useDemoEnergySystem } from '@/hooks/useDemoEnergySystem';
 import {
@@ -42,7 +42,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { MapPin } from 'lucide-react';
-import { resampleTo5MinBucketsProgressive } from '@/lib/graphSampler';
+import { resampleTo5MinBucketsProgressive, resampleTo5MinBuckets } from '@/lib/graphSampler';
 import type { SimulationMinuteRecord } from '@/types/simulation-core';
 
 // ── Restored page components ──────────────────────────────────────────────────
@@ -478,6 +478,47 @@ export default function ModularDashboardDemo({
       alert(`Failed to generate report: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
     }
   }, [minuteData, financialSnapshot]);
+
+  const handleDownloadCharts = useCallback(async () => {
+    if (!minuteData || minuteData.length === 0) {
+      alert('No data to chart. Please wait for the simulation to generate data.');
+      return;
+    }
+
+    try {
+      // Group minuteData by date
+      const byDate = new Map<string, typeof minuteData>();
+      for (const d of minuteData) {
+        if (!byDate.has(d.date)) byDate.set(d.date, []);
+        byDate.get(d.date)!.push(d);
+      }
+
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      const chartsFolder = zip.folder('SafariCharge_Charts')!;
+
+      for (const [date, dayData] of Array.from(byDate.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
+        const graphPoints = resampleTo5MinBuckets(dayData);
+        if (graphPoints.length === 0) continue;
+        const svgStr = buildGraphSVG(graphPoints, date);
+        const jpgBlob = await buildJPGBlob(svgStr, 820, 340);
+        chartsFolder.file(`SafariCharge_${date}.jpg`, jpgBlob);
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `SafariCharge_Charts_${new Date().toISOString().slice(0, 10)}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 500);
+    } catch (err) {
+      console.error('Charts ZIP error:', err);
+      alert(`Failed to build charts ZIP: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  }, [minuteData]);
 
   const flowDirection = useMemo(() => ({
     solarToHome:    flows.some((f) => f.from === 'solar'   && f.to === 'home'    && f.active),
@@ -985,6 +1026,7 @@ export default function ModularDashboardDemo({
         systemStartDate={minuteData[0]?.date ?? new Date().toISOString().slice(0, 10)}
         onExport={handleExportReport}
         onFormalReport={handleFormalReport}
+        onDownloadCharts={handleDownloadCharts}
         carbonOffset={accumulators.carbonOffset}
       />
       <DashboardHeader
