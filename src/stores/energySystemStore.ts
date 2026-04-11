@@ -187,7 +187,7 @@ interface EnergySystemState {
   updateSystemConfig: (config: Partial<EnergySystemState['systemConfig']>) => void;
   resetSystem: () => void;
 
-  // Scenarios — consumed by /scenarios page (Issue D)
+  // Scenarios
   scenarios: SavedScenario[];
   saveScenario: (
     name: string,
@@ -338,23 +338,18 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
   saveScenario: (name, finance, location) =>
     set((state) => {
       const data = state.minuteData;
-
-      // Single-pass aggregation — avoids 6 separate reduce() calls over large datasets
-      let totalSolarKWh = 0;
-      let totalGridImportKWh = 0;
-      let totalGridExportKWh = 0;
-      let totalConsumptionKWh = 0;
-      let totalSavingsKES = 0;
-      let batterySOCSum = 0;
-      for (const d of data) {
-        totalSolarKWh += d.solarEnergyKWh;
-        totalGridImportKWh += d.gridImportKWh;
-        totalGridExportKWh += d.gridExportKWh;
-        totalConsumptionKWh += d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh;
-        totalSavingsKES += d.savingsKES;
-        batterySOCSum += d.batteryLevelPct;
-      }
-      const avgBatterySOC = data.length > 0 ? batterySOCSum / data.length : 0;
+      const totalSolarKWh = data.reduce((s, d) => s + d.solarEnergyKWh, 0);
+      const totalGridImportKWh = data.reduce((s, d) => s + d.gridImportKWh, 0);
+      const totalGridExportKWh = data.reduce((s, d) => s + d.gridExportKWh, 0);
+      const totalConsumptionKWh = data.reduce(
+        (s, d) => s + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh,
+        0
+      );
+      const totalSavingsKES = data.reduce((s, d) => s + d.savingsKES, 0);
+      const avgBatterySOC =
+        data.length > 0
+          ? data.reduce((s, d) => s + d.batteryLevelPct, 0) / data.length
+          : 0;
       const selfSufficiencyPct =
         totalConsumptionKWh > 0
           ? Math.min(
@@ -364,7 +359,7 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
           : 0;
 
       const scenario: SavedScenario = {
-        id: crypto.randomUUID(),
+        id: `scenario-${Date.now()}`,
         name,
         createdAt: new Date().toISOString(),
         system: { ...state.systemConfig },
