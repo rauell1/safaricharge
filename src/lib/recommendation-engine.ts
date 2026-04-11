@@ -636,3 +636,140 @@ export function createLoadProfileFromSimulation(simulationData: Array<{
     peakHoursLoadPct,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Forecast-based Recommendations
+// ---------------------------------------------------------------------------
+
+/** Minimal subset of ForecastPoint used by generateForecastRecommendations. */
+export interface ForecastPointLike {
+  timestamp: string;
+  solar_kw: number;
+  load_kw: number;
+}
+
+/** Lightweight actionable recommendation returned by the forecast engine. */
+export interface Recommendation {
+  type: 'surplus' | 'deficit' | 'shift';
+  priority: 'high' | 'medium' | 'low';
+  title: string;
+  description: string;
+  estimatedImpactKwh?: number;
+}
+
+/**
+ * Generate 2-3 actionable recommendations from a 24h forecast.
+ *
+ * Identifies surplus hours (solar > load), deficit hours (load > solar),
+ * and recommends load-shifting or battery charging actions accordingly.
+ *
+ * @param forecast    Array of hourly forecast points.
+ * @param systemConfig  Minimal system configuration (battery capacity, tariff).
+ * @param currentSoc    Current battery state of charge 0-100 (%).
+ */
+export function generateForecastRecommendations(
+  forecast: ForecastPointLike[],
+  systemConfig: {
+    batteryCapacityKWh: number;
+    solarCapacityKW: number;
+    gridTariff?: { peakRate: number; offPeakRate: number };
+  },
+  currentSoc: number,
+): Recommendation[] {
+  if (!forecast || forecast.length === 0) return [];
+
+  const recommendations: Recommendation[] = [];
+
+  // ---- Identify surplus and deficit windows --------------------------------
+  const surplusHours: { hour: number; excessKw: number }[] = [];
+  const deficitHours: { hour: number; shortfallKw: number }[] = [];
+  let totalSurplusKwh = 0;
+  let totalDeficitKwh = 0;
+
+  for (const point of forecast) {
+    const ts = new Date(point.timestamp);
+    const hour = ts.getHours();
+    const diff = point.solar_kw - point.load_kw; // positive = surplus
+    if (diff > 0.1) {
+      surplusHours.push({ hour, excessKw: diff });
+      totalSurplusKwh += diff; // hourly integral ≈ diff × 1h
+    } else if (diff < -0.1) {
+      deficitHours.push({ hour, shortfallKw: -diff });
+      totalDeficitKwh += -diff;
+    }
+  }
+
+  // ---- Recommendation 1: Battery pre-charge or export surplus ---------------
+  if (surplusHours.length > 0) {
+    const peakSurplus = surplusHours.reduce(
+      (max, h) => (h.excessKw > max.excessKw ? h : max),
+      surplusHours[0],
+    );
+    const availableBatteryKwh =
+      systemConfig.batteryCapacityKWh * ((100 - currentSoc) / 100);
+    const chargeableKwh = Math.min(totalSurplusKwh, availableBatteryKwh);
+
+    recommendations.push({
+      type: 'surplus',
+      priority: chargeableKwh > 5 ? 'high' : 'medium',
+      title: `Solar surplus expected around ${peakSurplus.hour.toString().padStart(2, '0')}:00`,
+      description:
+        `${totalSurplusKwh.toFixed(1)} kWh of surplus solar is forecast. ` +
+        (chargeableKwh > 0.5
+          ? `Charge battery now (${chargeableKwh.toFixed(1)} kWh available headroom) to store the excess.`
+          : 'Battery is near full — consider exporting surplus to the grid for feed-in credit.'),
+      estimatedImpactKwh: chargeableKwh,
+    });
+  }
+
+  // ---- Recommendation 2: Shift peak loads into surplus window ---------------
+  const peakHourDeficits = deficitHours.filter(h => h.hour >= 17 && h.hour <= 21);
+  const hasSurplusMidDay = surplusHours.some(h => h.hour >= 10 && h.hour <= 15);
+
+  if (peakHourDeficits.length > 0 && hasSurplusMidDay) {
+    const totalPeakDeficitKwh = peakHourDeficits.reduce((s, h) => s + h.shortfallKw, 0);
+    const peakRate = systemConfig.gridTariff?.peakRate ?? 24.3;
+    const offPeakRate = systemConfig.gridTariff?.offPeakRate ?? 14.9;
+    const potentialSavingsKES = totalPeakDeficitKwh * (peakRate - offPeakRate);
+
+    recommendations.push({
+      type: 'shift',
+      priority: 'high',
+      title: 'Shift heavy loads to midday solar window',
+      description:
+        `${totalPeakDeficitKwh.toFixed(1)} kWh demand is forecast during peak-tariff hours (17:00-21:00). ` +
+        `Moving dishwasher, washing machine, or EV charging to 10:00-15:00 could save up to KES ${potentialSavingsKES.toFixed(0)} today.`,
+      estimatedImpactKwh: totalPeakDeficitKwh,
+    });
+  }
+
+  // ---- Recommendation 3: Low solar day → conserve battery SOC ---------------
+  const totalForecastSolarKwh = forecast.reduce((s, p) => s + p.solar_kw, 0);
+  const expectedSolarAtFullCapacity = systemConfig.solarCapacityKW * 5; // assume 5 peak-sun-hours
+  const cloudyDay = totalForecastSolarKwh < expectedSolarAtFullCapacity * 0.4;
+
+  if (cloudyDay && currentSoc < 60) {
+    recommendations.push({
+      type: 'deficit',
+      priority: 'high',
+      title: 'Low solar generation forecast — preserve battery reserves',
+      description:
+        `Only ${totalForecastSolarKwh.toFixed(1)} kWh of solar is expected today (below 40 % of capacity). ` +
+        `With battery at ${currentSoc.toFixed(0)}% SOC, avoid non-essential loads during evening hours to maintain backup capability.`,
+      estimatedImpactKwh: totalDeficitKwh,
+    });
+  } else if (deficitHours.length > 0 && recommendations.length < 2) {
+    recommendations.push({
+      type: 'deficit',
+      priority: 'medium',
+      title: `Grid import likely during ${deficitHours.length} forecast hours`,
+      description:
+        `Total expected shortfall: ${totalDeficitKwh.toFixed(1)} kWh. ` +
+        'Consider reducing non-critical loads or ensuring battery is sufficiently charged before evening.',
+      estimatedImpactKwh: totalDeficitKwh,
+    });
+  }
+
+  // Return at most 3
+  return recommendations.slice(0, 3);
+}
