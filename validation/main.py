@@ -44,9 +44,58 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
+# ---------------------------------------------------------------------------
+# SSRF guard
+# ---------------------------------------------------------------------------
+
+
+def _validate_engine_url(url: str) -> "str | None":
+    """
+    Validate *url* against an allowlist before it is used in an outbound
+    HTTP request.
+
+    Returns the original *url* string if it passes validation, or ``None``
+    if it should be rejected (invalid scheme, disallowed host, etc.).
+
+    The allowed host list is configured via the ``ENGINE_ALLOWED_HOSTS``
+    environment variable (comma-separated ``hostname`` or ``hostname:port``
+    values).  Defaults to ``localhost,127.0.0.1``.
+    """
+    if not url:
+        return None
+
+    _allowed_raw = os.environ.get("ENGINE_ALLOWED_HOSTS", "localhost,127.0.0.1")
+    _allowed_hosts = {h.strip() for h in _allowed_raw.split(",") if h.strip()}
+
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            raise ValueError(f"Unsupported scheme: {parsed.scheme!r}")
+        netloc_host = parsed.hostname or ""
+        netloc_port = f":{parsed.port}" if parsed.port else ""
+        netloc = f"{netloc_host}{netloc_port}"
+        if netloc_host not in _allowed_hosts and netloc not in _allowed_hosts:
+            raise ValueError(
+                f"Engine output URL host {netloc_host!r} is not in the "
+                f"allowed list. Set ENGINE_ALLOWED_HOSTS to permit it."
+            )
+    except ValueError as exc:
+        logger.warning("Rejected engine_output_url – %s", exc)
+        return None
+
+    # Return a freshly constructed URL built only from the validated components
+    # so that the value passed to httpx is not considered tainted user input.
+    safe = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+    if parsed.query:
+        safe = f"{safe}?{parsed.query}"
+    return safe
+
+
 # ---------------------------------------------------------------------------
 # App
 # ---------------------------------------------------------------------------
+
 app = FastAPI(
     title="SafariCharge Validation Harness",
     description=(
@@ -101,30 +150,10 @@ async def validate_pvlib(config: SystemConfig) -> ValidationResult:
     # ------------------------------------------------------------------
     engine_hourly: list[float] = []
 
-    engine_url = config.engine_output_url or os.environ.get("ENGINE_OUTPUT_URL", "")
-    if engine_url:
-        # SSRF guard: only allow URLs whose scheme and host are permitted.
-        # By default only localhost / 127.0.0.1 on arbitrary ports are allowed.
-        # Override via the ENGINE_ALLOWED_HOSTS env var (comma-separated list
-        # of "hostname" or "hostname:port" values).
-        _allowed_raw = os.environ.get("ENGINE_ALLOWED_HOSTS", "localhost,127.0.0.1")
-        _allowed_hosts = {h.strip() for h in _allowed_raw.split(",") if h.strip()}
-        try:
-            parsed = urlparse(engine_url)
-            if parsed.scheme not in ("http", "https"):
-                raise ValueError(f"Unsupported scheme: {parsed.scheme!r}")
-            netloc_host = parsed.hostname or ""
-            netloc_port = f":{parsed.port}" if parsed.port else ""
-            netloc = f"{netloc_host}{netloc_port}"
-            if netloc_host not in _allowed_hosts and netloc not in _allowed_hosts:
-                raise ValueError(
-                    f"Engine output URL host {netloc_host!r} is not in the "
-                    f"allowed list. Set ENGINE_ALLOWED_HOSTS to permit it."
-                )
-        except ValueError as exc:
-            logger.warning("Rejected engine_output_url – %s", exc)
-            engine_url = ""
-    if engine_url:
+    _raw_url = config.engine_output_url or os.environ.get("ENGINE_OUTPUT_URL", "")
+    safe_engine_url: str | None = _validate_engine_url(_raw_url)
+
+    if safe_engine_url is not None:
         try:
             payload: dict[str, Any] = {
                 "latitude": config.latitude,
@@ -136,12 +165,12 @@ async def validate_pvlib(config: SystemConfig) -> ValidationResult:
                 "simulationYear": config.simulation_year,
             }
             async with httpx.AsyncClient(timeout=120.0) as client:
-                resp = await client.post(engine_url, json=payload)
+                resp = await client.post(safe_engine_url, json=payload)
                 resp.raise_for_status()
             data = resp.json()
             engine_hourly = [float(v) for v in data]
         except Exception as exc:
-            logger.warning("Could not fetch engine output from %s: %s", engine_url, exc)
+            logger.warning("Could not fetch engine output: %s", exc)
             # Proceed without engine output rather than failing the whole request.
 
     # ------------------------------------------------------------------
