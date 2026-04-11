@@ -421,7 +421,7 @@ export const EnergyReportModal = ({
                     </div>
                     <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                       <span className="w-2 h-2 bg-sky-500 rounded-full"></span>
-                      Packaged as SafariCharge_Charts.zip
+                      Packaged as SafariCharge_Charts_&lt;date&gt;.zip
                     </div>
                   </div>
                 </div>
