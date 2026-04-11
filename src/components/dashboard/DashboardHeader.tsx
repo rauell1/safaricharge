@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { Calendar, Bell, Filter, Download, RotateCcw, MapPin, Target } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, Bell, Filter, Download, RotateCcw, MapPin, Target, BookmarkPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import {
@@ -9,6 +9,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 
 interface DashboardHeaderProps {
@@ -17,6 +27,7 @@ interface DashboardHeaderProps {
   onLocationClick?: () => void;
   onRecommendationClick?: () => void;
   onDownload?: () => void;
+  onSaveScenario?: (name: string) => void;
   locationName?: string;
   notificationCount?: number;
 }
@@ -27,9 +38,13 @@ export function DashboardHeader({
   onLocationClick,
   onRecommendationClick,
   onDownload,
+  onSaveScenario,
   locationName = 'Nairobi',
   notificationCount = 0
 }: DashboardHeaderProps) {
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [scenarioName, setScenarioName] = useState('');
+
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
@@ -39,8 +54,52 @@ export function DashboardHeader({
     });
   };
 
+  const handleSave = () => {
+    const name = scenarioName.trim() || `Scenario ${new Date().toLocaleString()}`;
+    onSaveScenario?.(name);
+    setScenarioName('');
+    setSaveDialogOpen(false);
+  };
+
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-[var(--border)] bg-[linear-gradient(180deg,rgba(15,23,42,0.96),rgba(15,23,42,0.88))] backdrop-blur-lg supports-[backdrop-filter]:bg-[rgba(15,23,42,0.9)] shadow-sm">
+    <>
+      {/* Save Scenario Dialog */}
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent className="bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)]">
+          <DialogHeader>
+            <DialogTitle>Save Scenario</DialogTitle>
+            <DialogDescription className="text-[var(--text-secondary)]">
+              Save the current system configuration and KPI snapshot for comparison later.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <Label htmlFor="scenario-name" className="text-[var(--text-secondary)] text-sm mb-1 block">
+              Scenario name
+            </Label>
+            <Input
+              id="scenario-name"
+              placeholder="e.g. 10 kW PV + 50 kWh Battery"
+              value={scenarioName}
+              onChange={(e) => setScenarioName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+              className="bg-[var(--bg-card-muted)] border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSaveDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSave}
+              className="bg-[var(--battery)] text-white hover:bg-[var(--battery-bright)]"
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <header className="sticky top-0 z-40 w-full border-b border-[var(--border)] bg-[linear-gradient(180deg,rgba(15,23,42,0.96),rgba(15,23,42,0.88))] backdrop-blur-lg supports-[backdrop-filter]:bg-[rgba(15,23,42,0.9)] shadow-sm">
       <div className="flex h-auto items-start justify-between gap-4 px-4 py-3 md:h-[84px] md:px-6 md:py-0 flex-wrap md:flex-nowrap">
         <div className="flex items-center gap-3 md:gap-4 min-w-0">
           <SidebarTrigger className="h-9 w-9 md:h-10 md:w-10 shrink-0 rounded-xl border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-secondary)] transition-all duration-200 hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]" />
@@ -138,6 +197,20 @@ export function DashboardHeader({
             <span className="hidden md:inline">Export</span>
           </Button>
 
+          {/* Save Scenario */}
+          {onSaveScenario && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSaveDialogOpen(true)}
+              className="h-9 w-9 rounded-xl border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-secondary)] transition-all duration-200 hover:bg-[var(--bg-card)] hover:text-[var(--solar)] md:h-10 md:w-10"
+              aria-label="Save scenario"
+              title="Save scenario"
+            >
+              <BookmarkPlus className="h-4.5 w-4.5" />
+            </Button>
+          )}
+
           {/* Reset */}
           <Button
             variant="ghost"
@@ -151,5 +224,6 @@ export function DashboardHeader({
         </div>
       </div>
     </header>
+    </>
   );
 }
