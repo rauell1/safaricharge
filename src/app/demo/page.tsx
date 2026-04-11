@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import type { DashboardSection } from '@/components/dashboard/DashboardSidebar';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
@@ -98,6 +99,7 @@ export default function ModularDashboardDemo({
   initialSection = 'dashboard',
 }: { initialSection?: DashboardSection } = {}) {
   useDemoEnergySystem();
+  const router = useRouter();
   const { timeRange, setTimeRange } = useTimeRange();
   const { currentDate } = useSimulationState();
   const solarNode    = useEnergyNode('solar');
@@ -509,13 +511,36 @@ export default function ModularDashboardDemo({
       const dayData = last7Days.slice(i * 420, (i + 1) * 420);
       if (dayData.length > 0) {
         dailyData.gen.push(dayData.reduce((sum, d) => sum + d.solarEnergyKWh, 0));
-        dailyData.cons.push(dayData.reduce((sum, d) => sum + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh, 0));
+        dailyData.cons.push(dayData.reduce((sum, d) => sum + (d.homeLoadKWh ?? 0) + (d.ev1LoadKWh ?? 0) + (d.ev2LoadKWh ?? 0), 0));
         dailyData.savings.push(dayData.reduce((sum, d) => sum + d.savingsKES, 0));
         dailyData.power.push(dayData.reduce((sum, d) => sum + d.solarKW, 0) / dayData.length);
       }
     }
     return dailyData;
   }, [minuteData]);
+
+  const sidebarMetrics = useMemo(() => [
+    {
+      label: 'Solar Power',
+      value: `${solarPower.toFixed(1)} kW`,
+      tone: 'solar' as const,
+    },
+    {
+      label: 'Battery',
+      value: `${batteryLevel.toFixed(0)}%`,
+      tone: 'battery' as const,
+    },
+    {
+      label: 'Grid',
+      value: gridPower > 0 ? `+${gridPower.toFixed(1)} kW` : `${gridPower.toFixed(1)} kW`,
+      tone: 'grid' as const,
+    },
+    {
+      label: 'Savings',
+      value: `KES ${Math.round(stats.totalSavingsKES).toLocaleString()}`,
+      tone: 'neutral' as const,
+    },
+  ], [solarPower, batteryLevel, gridPower, stats.totalSavingsKES]);
 
   const trendsData = useMemo(() => {
     const weekData      = minuteData.slice(-7 * 420);
@@ -690,6 +715,10 @@ export default function ModularDashboardDemo({
         );
 
       // 'dashboard' and 'scenarios' fall through to the default dashboard view
+      case 'scenarios':
+        router.push('/scenarios');
+        return null;
+
       default:
         return (
           <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
@@ -904,7 +933,7 @@ export default function ModularDashboardDemo({
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <DashboardLayout activeSection={activeSection} onSectionChange={setActiveSection}>
+    <DashboardLayout activeSection={activeSection} onSectionChange={setActiveSection} contextualMetrics={sidebarMetrics}>
       <Toaster />
 
       {/* ── Location Picker Dialog ─────────────────────────────────────── */}
