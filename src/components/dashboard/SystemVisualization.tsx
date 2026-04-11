@@ -136,7 +136,7 @@ export function SystemVisualization() {
                           }}
                         >
                           <NodeIcon className="h-8 w-8 transition-transform duration-300" style={{ color: node.accent }} strokeWidth={2.5} />
-                          {node.status === 'active' && (
+                          {(node.status === 'online' || node.status === 'charging' || node.status === 'discharging') && (
                             <div
                               className="absolute -right-1 -top-1 h-4 w-4 rounded-full border-2 border-[var(--bg-card)] animate-pulse-glow"
                               style={{ backgroundColor: node.accent }}
@@ -146,7 +146,7 @@ export function SystemVisualization() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <div className="text-xs font-medium uppercase tracking-wider text-[var(--text-tertiary)]">{node.status}</div>
-                            {node.status === 'active' && (
+                            {(node.status === 'online' || node.status === 'charging' || node.status === 'discharging') && (
                               <span className="h-1.5 w-1.5 rounded-full animate-pulse-glow" style={{ backgroundColor: node.accent }} />
                             )}
                           </div>

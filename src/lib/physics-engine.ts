@@ -291,7 +291,7 @@ export function calculateInstantPhysics(
   const peakSolarKw = config.solar.totalCapacityKw * scenario.solarMultiplier * state.soilingFactor;
   const rawSolarKw = peakSolarKw * irradianceFrac;
 
-  const inverterEff = config.inverter?.efficiency ?? 0.97;
+  const inverterEff = 0.97;
   // Temperature derating: -0.4%/°C above 25°C (NOCT model)
   const cellTemp = monthlyTemp + irradianceFrac * 25;
   const tempDerate = 1 - 0.004 * Math.max(0, cellTemp - 25);

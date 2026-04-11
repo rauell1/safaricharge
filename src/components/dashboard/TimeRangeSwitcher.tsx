@@ -5,8 +5,8 @@ import { Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface TimeRangeSwitcherProps {
-  selectedRange: 'today' | 'week' | 'month' | 'year';
-  onRangeChange: (range: 'today' | 'week' | 'month' | 'year') => void;
+  selectedRange: 'today' | 'week' | 'month' | 'year' | 'all';
+  onRangeChange: (range: 'today' | 'week' | 'month' | 'year' | 'all') => void;
 }
 
 export function TimeRangeSwitcher({ selectedRange, onRangeChange }: TimeRangeSwitcherProps) {

@@ -4,7 +4,6 @@ import { useEffect, useRef, useCallback } from 'react';
 import { buildDemoEnergyState } from '@/lib/demoEnergyState';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
 import { usePhysicsSimulation } from '@/hooks/usePhysicsSimulation';
-import { DEFAULT_SYSTEM_CONFIG } from '@/lib/system-config';
 import type { SolarData } from '@/lib/physics-engine';
 
 // ---------------------------------------------------------------------------
@@ -51,13 +50,20 @@ const HOURS_PER_TICK = 24 / TICKS_PER_DAY; // ~3.43 simulated minutes per tick
  *      is not blank while the simulation warms up (behaviour preserved).
  *   2. Starts a live tick loop via usePhysicsSimulation so that battery SOC,
  *      solar power, grid flows, and minute history all evolve over time.
+ *   3. Reads systemConfig from the store (fullSystemConfig) so that config
+ *      changes from LoadConfigComponents propagate into the simulation.
  */
 export function useDemoEnergySystem() {
+  // -------------------------------------------------------------------------
+  // Read systemConfig from store so LoadConfigComponents changes propagate
+  // -------------------------------------------------------------------------
+  const fullSystemConfig = useEnergySystemStore((s) => s.fullSystemConfig);
+
   // -------------------------------------------------------------------------
   // Live physics tick (the missing piece)
   // -------------------------------------------------------------------------
   const { tick } = usePhysicsSimulation({
-    systemConfig: DEFAULT_SYSTEM_CONFIG,
+    systemConfig: fullSystemConfig,
     solarData: DEMO_SOLAR_DATA,
     priorityMode: 'auto',
     gridEnabled: true,

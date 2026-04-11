@@ -8,6 +8,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useEnergySystemStore } from '@/stores/energySystemStore';
 import {
   Plus, Trash2, Edit, Save, X, Home, Car, Building2, Wind, Zap, ChevronDown, ChevronUp
 } from 'lucide-react';
@@ -774,6 +775,13 @@ function getLoadSummary(load: LoadConfig): string {
 // ---------------------------------------------------------------------------
 
 export function LoadConfigComponents() {
-  const [config, setConfig] = useState<SystemConfiguration>(DEFAULT_SYSTEM_CONFIG);
-  return <LoadList config={config} onConfigChange={setConfig} />;
+  const fullSystemConfig = useEnergySystemStore((s) => s.fullSystemConfig);
+  const updateFullSystemConfig = useEnergySystemStore((s) => s.updateFullSystemConfig);
+
+  return (
+    <LoadList
+      config={fullSystemConfig}
+      onConfigChange={updateFullSystemConfig}
+    />
+  );
 }
