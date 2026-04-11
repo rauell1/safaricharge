@@ -1,0 +1,132 @@
+"""
+main.py
+~~~~~~~
+FastAPI microservice entry point for the SafariCharge validation harness.
+
+Endpoints
+---------
+GET  /health
+    Liveness probe – returns ``{"status": "ok"}``.
+
+POST /validate/pvlib
+    Runs a pvlib TMY simulation for the supplied system config, optionally
+    fetches the SafariCharge engine output from the Next.js API, computes
+    RMSE / bias / MAPE, and returns a ValidationResult.
+
+Usage
+-----
+    uvicorn main:app --reload --port 8000
+
+See validation/README.md for full documentation.
+"""
+
+from __future__ import annotations
+
+import logging
+import os
+from typing import Any
+
+import httpx
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
+
+from harness.comparator import compute_metrics
+from harness.models import SystemConfig, ValidationResult
+from harness.pvlib_runner import run_pvlib
+
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s – %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# App
+# ---------------------------------------------------------------------------
+app = FastAPI(
+    title="SafariCharge Validation Harness",
+    description=(
+        "Benchmarks the SafariCharge TypeScript physics engine against "
+        "pvlib (and optionally SAM) to report RMSE, bias, and MAPE."
+    ),
+    version="1.0.0",
+)
+
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
+
+
+@app.get("/health")
+async def health() -> dict[str, str]:
+    """Liveness probe."""
+    return {"status": "ok"}
+
+
+@app.post("/validate/pvlib", response_model=ValidationResult)
+async def validate_pvlib(config: SystemConfig) -> ValidationResult:
+    """
+    Run a pvlib TMY simulation for *config* and compare against the
+    SafariCharge engine output (if ``engine_output_url`` is set).
+
+    Steps
+    -----
+    1. Run pvlib PVSystem + ModelChain for the given lat/lon / capacity.
+    2. If ``config.engine_output_url`` is provided, POST the config to the
+       SafariCharge Next.js ``/api/engine-output`` endpoint and retrieve the
+       8 760-element hourly AC array.
+    3. Compute RMSE, bias, and MAPE between the two arrays.
+    4. Return a ValidationResult.
+
+    When ``engine_output_url`` is **not** set the endpoint still runs the
+    pvlib simulation and returns annual_reference_kwh, but the engine metrics
+    (rmse_kwh, bias_kwh, mape_pct) will be ``NaN`` and annual_engine_kwh
+    will be ``null``.
+    """
+    # ------------------------------------------------------------------
+    # 1. pvlib simulation
+    # ------------------------------------------------------------------
+    try:
+        pvlib_result = run_pvlib(config)
+    except Exception as exc:
+        logger.exception("pvlib simulation failed")
+        raise HTTPException(status_code=502, detail=f"pvlib simulation failed: {exc}") from exc
+
+    # ------------------------------------------------------------------
+    # 2. SafariCharge engine output (optional)
+    # ------------------------------------------------------------------
+    engine_hourly: list[float] = []
+
+    engine_url = config.engine_output_url or os.environ.get("ENGINE_OUTPUT_URL", "")
+    if engine_url:
+        try:
+            payload: dict[str, Any] = {
+                "latitude": config.latitude,
+                "longitude": config.longitude,
+                "solarCapacityKw": config.solar_capacity_kw,
+                "batteryCapacityKwh": config.battery_capacity_kwh,
+                "tiltDeg": config.tilt_deg,
+                "azimuthDeg": config.azimuth_deg,
+                "simulationYear": config.simulation_year,
+            }
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                resp = await client.post(engine_url, json=payload)
+                resp.raise_for_status()
+            data = resp.json()
+            engine_hourly = [float(v) for v in data]
+        except Exception as exc:
+            logger.warning("Could not fetch engine output from %s: %s", engine_url, exc)
+            # Proceed without engine output rather than failing the whole request.
+
+    # ------------------------------------------------------------------
+    # 3. Metrics
+    # ------------------------------------------------------------------
+    result = compute_metrics(
+        predicted=engine_hourly,
+        reference=pvlib_result.hourly_ac,
+        reference_tool="pvlib",
+    )
+    return result
