@@ -1,19 +1,4 @@
-/**
- * Energy System State Store
- *
- * This is the SINGLE SOURCE OF TRUTH for all energy system data.
- * All components (Energy Flow Diagram, System Visualization, Sidebar, Reports)
- * read from and update this shared state.
- *
- * Architecture:
- * - nodes: Current state of each energy component (power, capacity, status)
- * - flows: Active energy flows between nodes
- * - selectedNode: Currently selected node for detail views
- * - timeRange: Time filter for data views
- * - accumulators: Running totals (energy, savings, carbon offset)
- * - minuteData: Complete simulation history for reports
- * - fullSystemConfig: Complete SystemConfiguration used by the physics engine
- */
+'use client';
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
@@ -172,6 +157,17 @@ export interface SavedScenario {
   engineering?: EngineeringSnapshot;
 }
 
+// ── Scenario import result ────────────────────────────────────────────────────
+
+export interface ImportScenariosResult {
+  /** Number of scenarios successfully imported (not already present) */
+  imported: number;
+  /** Number of scenarios skipped because the same id already existed */
+  skipped: number;
+  /** Human-readable error if the JSON was structurally invalid */
+  error?: string;
+}
+
 // ── Energy System State ───────────────────────────────────────────────────────
 
 // Energy System State
@@ -244,6 +240,12 @@ interface EnergySystemState {
   deleteScenario: (id: string) => void;
   loadScenario: (id: string) => void;
   renameScenario: (id: string, newName: string) => void;
+  /**
+   * Parse a JSON string (either a single SavedScenario object or an array of
+   * them) and merge new scenarios into the store, skipping duplicates by id.
+   * Returns an ImportScenariosResult describing what happened.
+   */
+  importScenarios: (json: string) => ImportScenariosResult;
 }
 
 // Initial state
@@ -300,10 +302,31 @@ const initialAccumulators: Accumulators = {
 
 const MAX_SCENARIOS = 20;
 
+// ── Validation helper ─────────────────────────────────────────────────────────
+
+/**
+ * Returns true if the value looks enough like a SavedScenario to be imported
+ * safely.  We check the required top-level shape without being overly strict
+ * about every nested field — downstream rendering is already null-safe.
+ */
+function isScenarioShape(v: unknown): v is SavedScenario {
+  if (!v || typeof v !== 'object') return false;
+  const s = v as Record<string, unknown>;
+  return (
+    typeof s.id         === 'string' && s.id.length > 0 &&
+    typeof s.name       === 'string' &&
+    typeof s.createdAt  === 'string' &&
+    typeof s.system     === 'object' && s.system !== null &&
+    typeof s.finance    === 'object' && s.finance !== null &&
+    typeof s.performance === 'object' && s.performance !== null &&
+    typeof s.location   === 'object' && s.location !== null
+  );
+}
+
 // Create the store — scenarios slice is persisted to localStorage
 export const useEnergySystemStore = create<EnergySystemState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
   nodes: initialNodes,
   flows: [],
   selectedNode: null,
@@ -469,6 +492,46 @@ export const useEnergySystemStore = create<EnergySystemState>()(
         s.id === id ? { ...s, name: newName } : s
       ),
     })),
+
+  importScenarios: (json: string): ImportScenariosResult => {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(json);
+    } catch {
+      return { imported: 0, skipped: 0, error: 'Invalid JSON — could not parse the pasted text.' };
+    }
+
+    // Accept both a single scenario object and an array
+    const candidates: unknown[] = Array.isArray(parsed) ? parsed : [parsed];
+
+    const valid = candidates.filter(isScenarioShape);
+    if (valid.length === 0) {
+      return {
+        imported: 0,
+        skipped: 0,
+        error:
+          'No valid scenarios found. Make sure you pasted the full JSON exported from SafariCharge.',
+      };
+    }
+
+    const existingIds = new Set(get().scenarios.map((s) => s.id));
+    const fresh = valid.filter((s) => !existingIds.has(s.id));
+    const skipped = valid.length - fresh.length;
+
+    if (fresh.length > 0) {
+      set((state) => {
+        const merged = [...state.scenarios, ...fresh];
+        return {
+          scenarios:
+            merged.length > MAX_SCENARIOS
+              ? merged.slice(merged.length - MAX_SCENARIOS)
+              : merged,
+        };
+      });
+    }
+
+    return { imported: fresh.length, skipped };
+  },
     }),
     {
       name: 'safaricharge-scenarios',
