@@ -4,7 +4,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import {
   Trash2, Upload, ArrowLeft, BookMarked, TrendingUp, TrendingDown, Minus,
-  FileDown, Copy, BarChart2,
+  FileDown, Copy, BarChart2, FileUp,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid,
@@ -22,6 +22,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { useEnergySystemStore, type SavedScenario } from '@/stores/energySystemStore';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
@@ -52,7 +60,7 @@ function formatDateFilename(d: Date) {
   return d.toISOString().slice(0, 10);
 }
 
-// ── Delta indicator ────────────────────────────────────────────────────────────
+// ── Delta indicator ──────────────────────────────────────────────────────────
 
 type DeltaDir = 'up' | 'down' | 'same';
 
@@ -173,17 +181,122 @@ const SCENARIO_COLOURS = [
   '#a78bfa',
 ];
 
-// ── Main page ─────────────────────────────────────────────────────────────────
+// ── Import dialog ────────────────────────────────────────────────────────────
+
+interface ImportDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onImport: (json: string) => void;
+}
+
+function ImportDialog({ open, onOpenChange, onImport }: ImportDialogProps) {
+  const [text, setText] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const result = ev.target?.result;
+      if (typeof result === 'string') setText(result);
+    };
+    reader.readAsText(file);
+    // Reset input so the same file can be re-selected
+    e.target.value = '';
+  };
+
+  const handleSubmit = () => {
+    onImport(text.trim());
+    setText('');
+  };
+
+  const handleClose = () => {
+    setText('');
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)] max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileUp className="h-4 w-4 text-[var(--solar)]" />
+            Import Scenarios
+          </DialogTitle>
+          <DialogDescription className="text-[var(--text-secondary)]">
+            Paste the JSON copied from “Copy JSON”, or upload a <code className="text-[var(--solar)] text-xs">.json</code> file exported from another SafariCharge session. Duplicate scenarios (same id) will be skipped.
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* File picker */}
+        <div className="mt-1">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={handleFile}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => fileRef.current?.click()}
+            className="border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] w-full"
+          >
+            <FileUp className="h-3.5 w-3.5 mr-1.5" />
+            Upload .json file
+          </Button>
+        </div>
+
+        {/* Paste area */}
+        <div className="relative">
+          <div className="absolute inset-x-0 -top-px flex items-center">
+            <div className="flex-1 border-t border-[var(--border)]" />
+            <span className="px-2 text-xs text-[var(--text-tertiary)] bg-[var(--bg-card)]">or paste JSON</span>
+            <div className="flex-1 border-t border-[var(--border)]" />
+          </div>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={'[\n  { "id": "...", "name": "10kW Scenario", ... }\n]'}
+            rows={7}
+            className="mt-5 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2 font-mono text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-[var(--solar)] resize-y"
+            spellCheck={false}
+          />
+        </div>
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={text.trim().length === 0}
+            className="bg-[var(--battery)] text-white hover:bg-[var(--battery-bright)] disabled:opacity-50"
+          >
+            Import
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Main page ───────────────────────────────────────────────────────────────
 
 export default function ScenariosPage() {
   const scenarios = useEnergySystemStore((s) => s.scenarios);
   const deleteScenario = useEnergySystemStore((s) => s.deleteScenario);
   const loadScenario = useEnergySystemStore((s) => s.loadScenario);
   const renameScenario = useEnergySystemStore((s) => s.renameScenario);
+  const importScenarios = useEnergySystemStore((s) => s.importScenarios);
   const { toast } = useToast();
 
   const [baselineId, setBaselineId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [importOpen, setImportOpen] = useState(false);
 
   const baseline: SavedScenario | undefined = scenarios.find(
     (s) => s.id === baselineId
@@ -207,12 +320,12 @@ export default function ScenariosPage() {
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id);
-      if (prev.length >= MAX_CHART_SCENARIOS) return prev; // max 4
+      if (prev.length >= MAX_CHART_SCENARIOS) return prev;
       return [...prev, id];
     });
   }, []);
 
-  // ── Export helpers ───────────────────────────────────────────────────────
+  // ── Export helpers ──────────────────────────────────────────────────
 
   const handleExportCsv = () => {
     const headers = [
@@ -254,12 +367,32 @@ export default function ScenariosPage() {
     }
   };
 
-  // ── Chart data ───────────────────────────────────────────────────────────
+  // ── Import handler ──────────────────────────────────────────────────
+
+  const handleImport = useCallback((json: string) => {
+    const result = importScenarios(json);
+    if (result.error) {
+      toast({
+        title: 'Import failed',
+        description: result.error,
+        variant: 'destructive',
+      });
+      return;
+    }
+    setImportOpen(false);
+    const parts: string[] = [];
+    if (result.imported > 0) parts.push(`${result.imported} scenario${result.imported !== 1 ? 's' : ''} imported.`);
+    if (result.skipped  > 0) parts.push(`${result.skipped} duplicate${result.skipped !== 1 ? 's' : ''} skipped.`);
+    toast({
+      title: result.imported > 0 ? 'Import successful' : 'Nothing new to import',
+      description: parts.join(' ') || 'All scenarios were already present.',
+    });
+  }, [importScenarios, toast]);
+
+  // ── Chart data ──────────────────────────────────────────────────
 
   const selectedScenarios = scenarios.filter((s) => selectedIds.includes(s.id));
 
-  // Pre-compute a stable label for each selected scenario
-  // Use name as the dataKey but de-duplicate with index suffix to handle same names
   const labelMap = new Map<string, string>();
   const seenNames = new Map<string, number>();
   for (const s of selectedScenarios) {
@@ -294,6 +427,14 @@ export default function ScenariosPage() {
   return (
     <DashboardLayout activeSection="scenarios">
       <Toaster />
+
+      {/* Import dialog */}
+      <ImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImport={handleImport}
+      />
+
       <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-6">
 
@@ -326,6 +467,18 @@ export default function ScenariosPage() {
                   {scenarios.length} scenario{scenarios.length !== 1 ? 's' : ''} saved
                 </Badge>
               )}
+
+              {/* Import JSON — always visible so users can restore on a fresh session */}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setImportOpen(true)}
+                className="border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              >
+                <FileUp className="h-3.5 w-3.5 mr-1.5" />
+                Import JSON
+              </Button>
+
               {scenarios.length > 0 && (
                 <>
                   <Button
@@ -365,7 +518,14 @@ export default function ScenariosPage() {
                     <span className="inline-flex items-center gap-1 font-medium text-[var(--solar)]">
                       <BookMarked className="h-3.5 w-3.5" /> Save scenario
                     </span>{' '}
-                    button in the dashboard header to capture a snapshot.
+                    button in the dashboard header to capture a snapshot, or{' '}
+                    <button
+                      onClick={() => setImportOpen(true)}
+                      className="font-medium text-[var(--battery)] underline underline-offset-2 hover:opacity-80 transition-opacity"
+                    >
+                      import a JSON file
+                    </button>{' '}
+                    from a previous session.
                   </p>
                 </div>
                 <Link href="/demo">
@@ -447,7 +607,6 @@ export default function ScenariosPage() {
                   </TableHeader>
                   <TableBody>
                     {(() => {
-                      // Pre-compute a map of id → index within selectedIds for O(1) colour lookup
                       const selectedIndexMap = new Map(selectedIds.map((id, idx) => [id, idx]));
                       return scenarios.map((s) => {
                         const isBaseline = s.id === baselineId;
@@ -464,7 +623,6 @@ export default function ScenariosPage() {
                                 : 'hover:bg-[var(--bg-card-muted)]/50'
                             }`}
                           >
-                            {/* Checkbox for chart selection */}
                             <TableCell className="pr-0">
                               <Checkbox
                                 checked={isChecked}
@@ -485,176 +643,97 @@ export default function ScenariosPage() {
                             <TableCell className="text-[var(--text-secondary)] text-xs">
                               {formatDate(s.createdAt)}
                             </TableCell>
-                          {/* PV capacity */}
                           <TableCell>
                             {b ? (
-                              <DeltaCell
-                                value={fmt(s.system.solarCapacityKW)}
-                                current={s.system.solarCapacityKW}
-                                baseline={b.system.solarCapacityKW}
-                              />
+                              <DeltaCell value={fmt(s.system.solarCapacityKW)} current={s.system.solarCapacityKW} baseline={b.system.solarCapacityKW} />
                             ) : (
                               <span className="text-[var(--text-primary)]">{fmt(s.system.solarCapacityKW)}</span>
                             )}
                           </TableCell>
-                          {/* Battery */}
                           <TableCell>
                             {b ? (
-                              <DeltaCell
-                                value={fmt(s.system.batteryCapacityKWh)}
-                                current={s.system.batteryCapacityKWh}
-                                baseline={b.system.batteryCapacityKWh}
-                              />
+                              <DeltaCell value={fmt(s.system.batteryCapacityKWh)} current={s.system.batteryCapacityKWh} baseline={b.system.batteryCapacityKWh} />
                             ) : (
                               <span className="text-[var(--text-primary)]">{fmt(s.system.batteryCapacityKWh)}</span>
                             )}
                           </TableCell>
-                          {/* Solar kWh */}
                           <TableCell>
                             {b ? (
-                              <DeltaCell
-                                value={fmt(s.performance.totalSolarKWh)}
-                                current={s.performance.totalSolarKWh}
-                                baseline={b.performance.totalSolarKWh}
-                              />
+                              <DeltaCell value={fmt(s.performance.totalSolarKWh)} current={s.performance.totalSolarKWh} baseline={b.performance.totalSolarKWh} />
                             ) : (
                               <span className="text-[var(--text-primary)]">{fmt(s.performance.totalSolarKWh)}</span>
                             )}
                           </TableCell>
-                          {/* Self-sufficiency */}
                           <TableCell>
                             {b ? (
-                              <DeltaCell
-                                value={`${fmt(s.performance.selfSufficiencyPct)}%`}
-                                current={s.performance.selfSufficiencyPct}
-                                baseline={b.performance.selfSufficiencyPct}
-                              />
+                              <DeltaCell value={`${fmt(s.performance.selfSufficiencyPct)}%`} current={s.performance.selfSufficiencyPct} baseline={b.performance.selfSufficiencyPct} />
                             ) : (
                               <span className="text-[var(--text-primary)]">{fmt(s.performance.selfSufficiencyPct)}%</span>
                             )}
                           </TableCell>
-                          {/* Avg SOC */}
                           <TableCell>
                             {b ? (
-                              <DeltaCell
-                                value={`${fmt(s.performance.avgBatterySOC)}%`}
-                                current={s.performance.avgBatterySOC}
-                                baseline={b.performance.avgBatterySOC}
-                              />
+                              <DeltaCell value={`${fmt(s.performance.avgBatterySOC)}%`} current={s.performance.avgBatterySOC} baseline={b.performance.avgBatterySOC} />
                             ) : (
                               <span className="text-[var(--text-primary)]">{fmt(s.performance.avgBatterySOC)}%</span>
                             )}
                           </TableCell>
-                          {/* Savings */}
                           <TableCell>
                             {b ? (
-                              <DeltaCell
-                                value={fmtKES(s.performance.totalSavingsKES)}
-                                current={s.performance.totalSavingsKES}
-                                baseline={b.performance.totalSavingsKES}
-                              />
+                              <DeltaCell value={fmtKES(s.performance.totalSavingsKES)} current={s.performance.totalSavingsKES} baseline={b.performance.totalSavingsKES} />
                             ) : (
                               <span className="text-[var(--text-primary)]">{fmtKES(s.performance.totalSavingsKES)}</span>
                             )}
                           </TableCell>
-                          {/* NPV */}
                           <TableCell>
                             {b ? (
-                              <DeltaCell
-                                value={fmtKES(s.finance.npvKes)}
-                                current={s.finance.npvKes}
-                                baseline={b.finance.npvKes}
-                              />
+                              <DeltaCell value={fmtKES(s.finance.npvKes)} current={s.finance.npvKes} baseline={b.finance.npvKes} />
                             ) : (
                               <span className="text-[var(--text-primary)]">{fmtKES(s.finance.npvKes)}</span>
                             )}
                           </TableCell>
-                          {/* IRR */}
                           <TableCell>
                             {b ? (
-                              <DeltaCell
-                                value={s.finance.irrPct ? `${fmt(s.finance.irrPct)}%` : '—'}
-                                current={s.finance.irrPct}
-                                baseline={b.finance.irrPct}
-                              />
+                              <DeltaCell value={s.finance.irrPct ? `${fmt(s.finance.irrPct)}%` : '—'} current={s.finance.irrPct} baseline={b.finance.irrPct} />
                             ) : (
-                              <span className="text-[var(--text-primary)]">
-                                {s.finance.irrPct ? `${fmt(s.finance.irrPct)}%` : '—'}
-                              </span>
+                              <span className="text-[var(--text-primary)]">{s.finance.irrPct ? `${fmt(s.finance.irrPct)}%` : '—'}</span>
                             )}
                           </TableCell>
-                          {/* Payback */}
                           <TableCell>
                             {b ? (
-                              <DeltaCell
-                                value={s.finance.paybackYears ? `${fmt(s.finance.paybackYears)} yr` : '—'}
-                                current={s.finance.paybackYears}
-                                baseline={b.finance.paybackYears}
-                                higherIsBetter={false}
-                              />
+                              <DeltaCell value={s.finance.paybackYears ? `${fmt(s.finance.paybackYears)} yr` : '—'} current={s.finance.paybackYears} baseline={b.finance.paybackYears} higherIsBetter={false} />
                             ) : (
-                              <span className="text-[var(--text-primary)]">
-                                {s.finance.paybackYears ? `${fmt(s.finance.paybackYears)} yr` : '—'}
-                              </span>
+                              <span className="text-[var(--text-primary)]">{s.finance.paybackYears ? `${fmt(s.finance.paybackYears)} yr` : '—'}</span>
                             )}
                           </TableCell>
-                          {/* Spec. Yield */}
                           <TableCell>
                             {b ? (
-                              <DeltaCell
-                                value={s.engineering ? `${fmt(s.engineering.specificYieldKWhPerKWp)} kWh/kWp` : '—'}
-                                current={s.engineering?.specificYieldKWhPerKWp ?? 0}
-                                baseline={b.engineering?.specificYieldKWhPerKWp ?? 0}
-                              />
+                              <DeltaCell value={s.engineering ? `${fmt(s.engineering.specificYieldKWhPerKWp)} kWh/kWp` : '—'} current={s.engineering?.specificYieldKWhPerKWp ?? 0} baseline={b.engineering?.specificYieldKWhPerKWp ?? 0} />
                             ) : (
-                              <span className="text-[var(--text-primary)]">
-                                {s.engineering ? `${fmt(s.engineering.specificYieldKWhPerKWp)} kWh/kWp` : '—'}
-                              </span>
+                              <span className="text-[var(--text-primary)]">{s.engineering ? `${fmt(s.engineering.specificYieldKWhPerKWp)} kWh/kWp` : '—'}</span>
                             )}
                           </TableCell>
-                          {/* Perf. Ratio */}
                           <TableCell>
                             {b ? (
-                              <DeltaCell
-                                value={s.engineering ? `${fmt(s.engineering.performanceRatioPct)}%` : '—'}
-                                current={s.engineering?.performanceRatioPct ?? 0}
-                                baseline={b.engineering?.performanceRatioPct ?? 0}
-                              />
+                              <DeltaCell value={s.engineering ? `${fmt(s.engineering.performanceRatioPct)}%` : '—'} current={s.engineering?.performanceRatioPct ?? 0} baseline={b.engineering?.performanceRatioPct ?? 0} />
                             ) : (
-                              <span className="text-[var(--text-primary)]">
-                                {s.engineering ? `${fmt(s.engineering.performanceRatioPct)}%` : '—'}
-                              </span>
+                              <span className="text-[var(--text-primary)]">{s.engineering ? `${fmt(s.engineering.performanceRatioPct)}%` : '—'}</span>
                             )}
                           </TableCell>
-                          {/* Cap. Factor */}
                           <TableCell>
                             {b ? (
-                              <DeltaCell
-                                value={s.engineering ? `${fmt(s.engineering.capacityFactorPct)}%` : '—'}
-                                current={s.engineering?.capacityFactorPct ?? 0}
-                                baseline={b.engineering?.capacityFactorPct ?? 0}
-                              />
+                              <DeltaCell value={s.engineering ? `${fmt(s.engineering.capacityFactorPct)}%` : '—'} current={s.engineering?.capacityFactorPct ?? 0} baseline={b.engineering?.capacityFactorPct ?? 0} />
                             ) : (
-                              <span className="text-[var(--text-primary)]">
-                                {s.engineering ? `${fmt(s.engineering.capacityFactorPct)}%` : '—'}
-                              </span>
+                              <span className="text-[var(--text-primary)]">{s.engineering ? `${fmt(s.engineering.capacityFactorPct)}%` : '—'}</span>
                             )}
                           </TableCell>
-                          {/* Bat. Cycles */}
                           <TableCell>
                             {b ? (
-                              <DeltaCell
-                                value={s.engineering ? fmt(s.engineering.batteryCycles, 2) : '—'}
-                                current={s.engineering?.batteryCycles ?? 0}
-                                baseline={b.engineering?.batteryCycles ?? 0}
-                              />
+                              <DeltaCell value={s.engineering ? fmt(s.engineering.batteryCycles, 2) : '—'} current={s.engineering?.batteryCycles ?? 0} baseline={b.engineering?.batteryCycles ?? 0} />
                             ) : (
-                              <span className="text-[var(--text-primary)]">
-                                {s.engineering ? fmt(s.engineering.batteryCycles, 2) : '—'}
-                              </span>
+                              <span className="text-[var(--text-primary)]">{s.engineering ? fmt(s.engineering.batteryCycles, 2) : '—'}</span>
                             )}
                           </TableCell>
-                          {/* Actions */}
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
                               <Button
@@ -707,7 +786,7 @@ export default function ScenariosPage() {
             </div>
           )}
 
-          {/* Chart comparison — only shown when 2-4 scenarios are selected */}
+          {/* Chart comparison */}
           {selectedScenarios.length >= 2 && (
             <Card className="bg-[var(--bg-card)] border-[var(--border)] shadow-card">
               <CardHeader className="pb-3">
