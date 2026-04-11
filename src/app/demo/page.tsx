@@ -45,6 +45,14 @@ const NAIROBI_SOLAR_DATA: SolarIrradianceData = {
   peakSunHours: [5.5, 5.8, 5.6, 5.4, 5.2, 5.1, 5.0, 5.3, 5.7, 5.8, 5.4, 5.3],
 };
 
+// Month labels used across the Monthly Overview chart
+const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] as const;
+
+// Static fallback displayed while the simulation is still warming up (no minuteData yet).
+// Values are intentionally modest so the chart looks proportional at any scale.
+const FALLBACK_GEN  = [65, 70, 78, 85, 90, 95, 88, 92, 80, 75, 68, 62] as const;
+const FALLBACK_CONS = [55, 58, 60, 62, 65, 68, 70, 69, 65, 60, 57, 54] as const;
+
 export default function ModularDashboardDemo() {
   useDemoEnergySystem();
   const { timeRange, setTimeRange } = useTimeRange();
@@ -427,7 +435,6 @@ export default function ModularDashboardDemo() {
   const trendsData = useMemo(() => {
     const weekData = minuteData.slice(-7 * 420);
     const yesterdayData = minuteData.slice(-2 * 420, -420);
-    const todayData = minuteData.slice(-420);
 
     const weeklyAvgGen = weekData.length > 0
       ? weekData.reduce((sum, d) => sum + d.solarEnergyKWh, 0) / 7
@@ -463,6 +470,55 @@ export default function ModularDashboardDemo() {
       forecastChange: 10, // Placeholder - would come from weather API
     };
   }, [minuteData, stats, solarPower, homePower, batteryPower, batteryLevel]);
+
+  // ── Monthly Overview — real data aggregated from minuteData ────────────────
+  //
+  // Each entry in monthlyOverviewData corresponds to one calendar month (0=Jan … 11=Dec).
+  // gen  — total solar energy generated that month (kWh)
+  // cons — total home + EV load consumed that month (kWh)
+  //
+  // When minuteData is empty (simulation warming up) we fall back to the static
+  // FALLBACK_* arrays so the chart always renders with a sensible shape.
+  // The fallback bars are shown at reduced opacity to signal they are not yet live.
+  const monthlyOverviewData = useMemo(() => {
+    if (minuteData.length === 0) {
+      return MONTH_LABELS.map((label, i) => ({
+        label,
+        gen: FALLBACK_GEN[i],
+        cons: FALLBACK_CONS[i],
+        isFallback: true,
+      }));
+    }
+
+    // Aggregate all minuteData into per-month buckets (month field is 1-based)
+    const genByMonth  = new Array(12).fill(0) as number[];
+    const consByMonth = new Array(12).fill(0) as number[];
+
+    for (const d of minuteData) {
+      const idx = (d.month - 1 + 12) % 12; // guard against any off-by-one
+      genByMonth[idx]  += d.solarEnergyKWh ?? 0;
+      consByMonth[idx] +=
+        (d.homeLoadKWh  ?? (d.homeLoadKW  ?? 0) * (1 / 60)) +
+        (d.ev1LoadKWh   ?? (d.ev1LoadKW   ?? 0) * (1 / 60)) +
+        (d.ev2LoadKWh   ?? (d.ev2LoadKW   ?? 0) * (1 / 60));
+    }
+
+    // Normalise to a 0-100 scale for the bar chart so all bars stay within the
+    // fixed 140 px height, matching the original chart contract.
+    const maxVal = Math.max(...genByMonth, ...consByMonth, 1); // avoid div-by-zero
+
+    return MONTH_LABELS.map((label, i) => ({
+      label,
+      gen:  (genByMonth[i]  / maxVal) * 100,
+      cons: (consByMonth[i] / maxVal) * 100,
+      // Raw kWh kept for tooltip / aria labels
+      genKWh:  genByMonth[i],
+      consKWh: consByMonth[i],
+      isFallback: false,
+    }));
+  }, [minuteData]);
+
+  const isMonthlyFallback = monthlyOverviewData[0]?.isFallback ?? true;
 
   return (
     <DashboardLayout>
@@ -652,35 +708,47 @@ export default function ModularDashboardDemo() {
         {/* ROW 6 — System Visualization & Monthly Overview */}
         <SystemVisualization />
 
-        {/* Monthly Overview */}
+        {/* Monthly Overview — bars driven by real minuteData aggregation */}
         <Card className="dashboard-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
               <BarChart3 className="h-5 w-5 text-[var(--consumption)]" />
               Monthly Overview
+              {isMonthlyFallback && (
+                <span className="ml-2 text-xs font-normal text-[var(--text-tertiary)] italic">
+                  (warming up…)
+                </span>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-end justify-between gap-2 h-44 px-2">
-              {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((month, i) => {
-                const gen = [65, 70, 78, 85, 90, 95, 88, 92, 80, 75, 68, 62][i];
-                const cons = [55, 58, 60, 62, 65, 68, 70, 69, 65, 60, 57, 54][i];
-                return (
-                  <div key={month} className="flex-1 flex flex-col items-center gap-1">
-                    <div className="flex items-end gap-0.5 w-full justify-center" style={{ height: '140px' }}>
-                      <div
-                        className="w-2.5 rounded-t-sm bg-gradient-to-t from-[var(--solar-soft)] to-[var(--solar)] opacity-90 transition-all duration-500 hover:opacity-100"
-                        style={{ height: `${(gen / 100) * 140}px` }}
-                      />
-                      <div
-                        className="w-2.5 rounded-t-sm bg-gradient-to-t from-[var(--consumption-soft)] to-[var(--consumption)] opacity-80 transition-all duration-500 hover:opacity-100"
-                        style={{ height: `${(cons / 100) * 140}px` }}
-                      />
-                    </div>
-                    <span className="text-[10px] text-[var(--text-tertiary)]">{month}</span>
+              {monthlyOverviewData.map(({ label, gen, cons, isFallback }) => (
+                <div key={label} className="flex-1 flex flex-col items-center gap-1">
+                  <div
+                    className="flex items-end gap-0.5 w-full justify-center"
+                    style={{ height: '140px' }}
+                  >
+                    <div
+                      className="w-2.5 rounded-t-sm bg-gradient-to-t from-[var(--solar-soft)] to-[var(--solar)] transition-all duration-500 hover:opacity-100"
+                      style={{
+                        height: `${(gen / 100) * 140}px`,
+                        opacity: isFallback ? 0.35 : 0.9,
+                      }}
+                      title={`Generation: ${gen.toFixed(1)} ${isFallback ? '(placeholder)' : 'kWh'}`}
+                    />
+                    <div
+                      className="w-2.5 rounded-t-sm bg-gradient-to-t from-[var(--consumption-soft)] to-[var(--consumption)] transition-all duration-500 hover:opacity-100"
+                      style={{
+                        height: `${(cons / 100) * 140}px`,
+                        opacity: isFallback ? 0.3 : 0.8,
+                      }}
+                      title={`Consumption: ${cons.toFixed(1)} ${isFallback ? '(placeholder)' : 'kWh'}`}
+                    />
                   </div>
-                );
-              })}
+                  <span className="text-[10px] text-[var(--text-tertiary)]">{label}</span>
+                </div>
+              ))}
             </div>
             <div className="mt-4 flex items-center justify-center gap-6">
               <div className="flex items-center gap-1.5">
