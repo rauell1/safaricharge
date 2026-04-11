@@ -13,6 +13,18 @@
  *     2. Calls calculateInstantPhysics each tick
  *     3. Writes battery/solar/grid results into energySystemStore
  *        via updateNode and addMinuteData
+ *
+ * STALE-ACCUMULATOR FIX (this commit):
+ *   `accumulators` must NOT be subscribed as a reactive Zustand selector
+ *   inside usePhysicsSimulation. Subscribing to it causes the `tick`
+ *   useCallback to be recreated on every tick (accumulators is a dep),
+ *   which makes useDemoEnergySystem's setInterval restart on every render,
+ *   resetting the simulated clock and battery SOC each cycle.
+ *
+ *   Solution: read accumulators imperatively via
+ *   `useEnergySystemStore.getState().accumulators` inside the tick body.
+ *   This is the Zustand-idiomatic pattern for reading state inside
+ *   callbacks without creating reactive subscriptions.
  */
 
 'use client';
@@ -82,13 +94,19 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
   } = options;
 
   // -------------------------------------------------------------------------
-  // Store accessors
+  // Store write actions — these are stable references (Zustand guarantees
+  // action identity across renders), so they are safe deps for useCallback.
   // -------------------------------------------------------------------------
   const updateNode = useEnergySystemStore((s) => s.updateNode);
   const updateFlows = useEnergySystemStore((s) => s.updateFlows);
   const addMinuteData = useEnergySystemStore((s) => s.addMinuteData);
   const updateAccumulators = useEnergySystemStore((s) => s.updateAccumulators);
-  const accumulators = useEnergySystemStore((s) => s.accumulators);
+
+  // NOTE: `accumulators` (the data) is intentionally NOT subscribed here.
+  // Reading it reactively would make this hook re-render on every tick,
+  // recreating `tick` and restarting the setInterval in useDemoEnergySystem.
+  // Instead, we call useEnergySystemStore.getState().accumulators imperatively
+  // inside the tick body — see step 8 below.
 
   // -------------------------------------------------------------------------
   // Persistent physics state (survives re-renders, resets only on unmount)
@@ -337,7 +355,14 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
 
       // -----------------------------------------------------------------------
       // 8. Update accumulators
+      //
+      // IMPORTANT: Read the current accumulator values imperatively via
+      // getState() rather than from a reactive selector. Using a reactive
+      // selector would make `tick` a dep of itself through useCallback,
+      // causing the setInterval in useDemoEnergySystem to restart on every
+      // tick and resetting the simulation clock / battery SOC.
       // -----------------------------------------------------------------------
+      const accumulators = useEnergySystemStore.getState().accumulators;
       updateAccumulators({
         solar: accumulators.solar + solarKwh,
         savings: accumulators.savings + result.savingsKES,
@@ -363,7 +388,9 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
       updateFlows,
       addMinuteData,
       updateAccumulators,
-      accumulators,
+      // `accumulators` (the data) is intentionally ABSENT from deps.
+      // It is read inside the tick body via getState() to avoid
+      // reactive re-subscription that would restart the simulation loop.
     ]
   );
 
