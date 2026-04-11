@@ -7,18 +7,12 @@ import { usePhysicsSimulation } from '@/hooks/usePhysicsSimulation';
 import type { SolarData } from '@/lib/physics-engine';
 
 // ---------------------------------------------------------------------------
-// Simulation constants — MUST be module-level so references are stable
-// across re-renders. Inline array/object literals in hook bodies create new
-// references each render, causing tick/runTick to be recreated and the
-// setInterval to restart (resetting the simulated clock and battery SOC).
+// Module-level constants — stable references, no re-render churn
 // ---------------------------------------------------------------------------
 
 /** Peak-tariff window: 17:00–21:00 Kenya KPLC evening peak. */
 const DEMO_PEAK_WINDOW: [number, number] = [17, 21];
 
-// ---------------------------------------------------------------------------
-// Nairobi solar data (matches NAIROBI_SOLAR_DATA in page.tsx)
-// ---------------------------------------------------------------------------
 const DEMO_SOLAR_DATA: SolarData = {
   latitude: -1.2921,
   longitude: 36.8219,
@@ -28,40 +22,27 @@ const DEMO_SOLAR_DATA: SolarData = {
 };
 
 // ---------------------------------------------------------------------------
-// Simulation timing
-// 420 ticks/day × 100 ms = one simulated day in ~42 seconds wall-clock
+// Base timing — speed multiplier is applied dynamically in the effect
+// 420 ticks/day × BASE_INTERVAL_MS = one simulated day in ~42 s at 1×
 // ---------------------------------------------------------------------------
-const TICK_INTERVAL_MS = 100;
-const TICKS_PER_DAY = 420;
-const HOURS_PER_TICK = 24 / TICKS_PER_DAY; // ~3.43 simulated minutes per tick
+const BASE_INTERVAL_MS = 100;
+const TICKS_PER_DAY    = 420;
+const HOURS_PER_TICK   = 24 / TICKS_PER_DAY; // ~3.43 simulated minutes/tick
 
 /**
  * useDemoEnergySystem
  *
- * FIX for Issue A — Battery SOC frozen in dashboard
- * (ENGINEERING_ISSUES_V2_2026-04-10.md §A)
+ * Drives the live simulation tick loop.
  *
- * ROOT CAUSE: The previous implementation called buildDemoEnergyState() once
- * on mount and then stopped. The store was permanently frozen on that initial
- * snapshot, so battery SOC, solar power, and grid flows never changed.
- *
- * FIX:
- *   1. Seeds the store with static demo data on first mount so the dashboard
- *      is not blank while the simulation warms up (behaviour preserved).
- *   2. Starts a live tick loop via usePhysicsSimulation so that battery SOC,
- *      solar power, grid flows, and minute history all evolve over time.
- *   3. Reads systemConfig from the store (fullSystemConfig) so that config
- *      changes from LoadConfigComponents propagate into the simulation.
+ * FIX (this PR):
+ *   - isAutoMode  → tick only fires when isAutoMode === true (Play/Pause works)
+ *   - simSpeed    → interval = BASE_INTERVAL_MS / simSpeed, so 10× runs 10×
+ *                   faster wall-clock; cable animation speed is a separate
+ *                   cosmetic concern handled in SimulationNodes.
  */
 export function useDemoEnergySystem() {
-  // -------------------------------------------------------------------------
-  // Read systemConfig from store so LoadConfigComponents changes propagate
-  // -------------------------------------------------------------------------
   const fullSystemConfig = useEnergySystemStore((s) => s.fullSystemConfig);
 
-  // -------------------------------------------------------------------------
-  // Live physics tick (the missing piece)
-  // -------------------------------------------------------------------------
   const { tick } = usePhysicsSimulation({
     systemConfig: fullSystemConfig,
     solarData: DEMO_SOLAR_DATA,
@@ -72,49 +53,33 @@ export function useDemoEnergySystem() {
     peakWindow: DEMO_PEAK_WINDOW,
   });
 
-  // Simulated clock state — persisted in refs so setInterval closure stays stable
-  const timeOfDayRef = useRef<number>(0);
+  // Simulated clock — live in refs so interval closure is stable
+  const timeOfDayRef   = useRef<number>(0);
   const currentDateRef = useRef<Date>(new Date());
-  const tickCountRef = useRef<number>(0);
-  const seededRef = useRef<boolean>(false);
+  const tickCountRef   = useRef<number>(0);
+  const seededRef      = useRef<boolean>(false);
 
-  // -------------------------------------------------------------------------
-  // One-time static seed (preserved from original implementation)
-  // Gives the UI something to render before the first physics tick fires
-  // -------------------------------------------------------------------------
+  // ── One-time static seed ──────────────────────────────────────────────────
   useEffect(() => {
     if (seededRef.current) return;
     seededRef.current = true;
-
     const state = useEnergySystemStore.getState();
-    if (state.minuteData.length > 0) return; // already seeded (hot reload guard)
-
+    if (state.minuteData.length > 0) return; // hot-reload guard
     const demo = buildDemoEnergyState();
-    useEnergySystemStore.setState({
-      ...state,
-      ...demo,
-      timeRange: 'today',
-    });
+    useEnergySystemStore.setState({ ...state, ...demo, timeRange: 'today' });
   }, []);
 
-  // -------------------------------------------------------------------------
-  // Stable tick callback — advances simulated time and calls physics engine
-  // -------------------------------------------------------------------------
+  // ── Stable tick callback ──────────────────────────────────────────────────
   const runTick = useCallback(() => {
-    const timeOfDay = timeOfDayRef.current;
+    const timeOfDay   = timeOfDayRef.current;
     const currentDate = currentDateRef.current;
 
-    // Run physics: mutates PhysicsEngineState in-place (via useRef inside
-    // usePhysicsSimulation) and writes results into energySystemStore via
-    // updateNode, updateFlows, addMinuteData, and updateAccumulators.
     tick(timeOfDay, currentDate);
 
-    // Advance simulated time-of-day
     const nextTimeOfDay = (timeOfDay + HOURS_PER_TICK) % 24;
     timeOfDayRef.current = nextTimeOfDay;
     tickCountRef.current += 1;
 
-    // Day boundary: roll over to next simulated calendar day
     if (tickCountRef.current % TICKS_PER_DAY === 0) {
       const nextDay = new Date(currentDate);
       nextDay.setDate(nextDay.getDate() + 1);
@@ -122,7 +87,6 @@ export function useDemoEnergySystem() {
       currentDateRef.current = nextDay;
       useEnergySystemStore.setState({ currentDate: nextDay });
     } else {
-      // Keep store currentDate in sync with simulated hour/minute
       const h = Math.floor(nextTimeOfDay);
       const m = Math.round((nextTimeOfDay % 1) * 60);
       const syncedDate = new Date(currentDate);
@@ -132,24 +96,32 @@ export function useDemoEnergySystem() {
     }
   }, [tick]);
 
-  // -------------------------------------------------------------------------
-  // Live simulation interval
-  // Starts from current wall-clock time so the simulation feels live
-  // -------------------------------------------------------------------------
-  useEffect(() => {
-    const now = new Date();
-    timeOfDayRef.current = now.getHours() + now.getMinutes() / 60;
-    currentDateRef.current = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      now.getHours(),
-      now.getMinutes(),
-      0,
-      0
-    );
+  // ── Live interval — respects isAutoMode and simSpeed ─────────────────────
+  //
+  // We subscribe to both values from the store *outside* the effect so that
+  // when either changes, the effect re-runs, tearning down the old interval
+  // and starting a fresh one at the correct speed.
+  //
+  const isAutoMode = useEnergySystemStore((s) => s.isAutoMode);
+  const simSpeed   = useEnergySystemStore((s) => s.simSpeed);
 
-    const intervalId = setInterval(runTick, TICK_INTERVAL_MS);
-    return () => clearInterval(intervalId);
-  }, [runTick]);
+  useEffect(() => {
+    // Initialise simulated clock to current wall-clock time on first mount
+    const now = new Date();
+    if (tickCountRef.current === 0) {
+      timeOfDayRef.current   = now.getHours() + now.getMinutes() / 60;
+      currentDateRef.current = new Date(
+        now.getFullYear(), now.getMonth(), now.getDate(),
+        now.getHours(), now.getMinutes(), 0, 0
+      );
+    }
+
+    // Paused — do not start an interval
+    if (!isAutoMode) return;
+
+    // Speed-scaled interval: 1× = 100 ms, 10× = 10 ms, 0.25× = 400 ms
+    const intervalMs = Math.max(16, BASE_INTERVAL_MS / simSpeed);
+    const id = setInterval(runTick, intervalMs);
+    return () => clearInterval(id);
+  }, [isAutoMode, simSpeed, runTick]);
 }
