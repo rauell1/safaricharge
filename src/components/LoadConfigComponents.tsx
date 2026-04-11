@@ -12,15 +12,15 @@ import {
   Plus, Trash2, Edit, Save, X, Home, Car, Building2, Wind, Zap, ChevronDown, ChevronUp
 } from 'lucide-react';
 import type {
+  SystemConfiguration,
   LoadConfig,
   EVLoadConfig,
   HomeLoadConfig,
   CommercialLoadConfig,
   HVACLoadConfig,
   CustomLoadConfig,
-  SystemConfiguration,
 } from '@/lib/system-config';
-import { createLoadTemplate, generateLoadId } from '@/lib/system-config';
+import { createLoadTemplate, generateLoadId, DEFAULT_SYSTEM_CONFIG } from '@/lib/system-config';
 
 // ---------------------------------------------------------------------------
 // Load List Component
@@ -767,4 +767,13 @@ function getLoadSummary(load: LoadConfig): string {
   } else {
     return load.mode === 'constant' ? `${load.constantKw || 0} kW constant` : 'Hourly profile';
   }
+}
+
+// ---------------------------------------------------------------------------
+// Self-contained wrapper for use without external state
+// ---------------------------------------------------------------------------
+
+export function LoadConfigComponents() {
+  const [config, setConfig] = useState<SystemConfiguration>(DEFAULT_SYSTEM_CONFIG);
+  return <LoadList config={config} onConfigChange={setConfig} />;
 }

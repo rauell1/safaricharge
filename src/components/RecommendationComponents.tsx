@@ -29,6 +29,7 @@ import {
   getSolarDataForLocation
 } from '@/lib/nasa-power-api';
 import type { HardwareRecommendation, LoadProfile } from '@/lib/recommendation-engine';
+import { generateRecommendation } from '@/lib/recommendation-engine';
 
 interface LocationSelectorProps {
   onLocationSelected: (
@@ -746,3 +747,61 @@ export const RecommendationPanel: React.FC<RecommendationPanelProps> = ({
     </div>
   );
 };
+
+// ---------------------------------------------------------------------------
+// Self-contained wrapper: manages all state internally
+// ---------------------------------------------------------------------------
+
+const DEFAULT_LOAD_PROFILE: LoadProfile = {
+  dailyConsumption: 80,
+  peakPower: 15,
+  avgDayPower: 5,
+  avgNightPower: 2,
+  peakHoursLoadPct: 60,
+};
+
+export function RecommendationComponents({ solarData }: { solarData: SolarIrradianceData }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<LocationCoordinates>(KENYA_LOCATIONS[0]);
+  const [currentSolarData, setCurrentSolarData] = useState<SolarIrradianceData>(solarData);
+  const [recommendation, setRecommendation] = useState<HardwareRecommendation | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isSolarLoading, setIsSolarLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
+  const [fromCache, setFromCache] = useState(false);
+
+  const handleGenerate = () => {
+    setIsGenerating(true);
+    try {
+      const rec = generateRecommendation(DEFAULT_LOAD_PROFILE, currentSolarData);
+      setRecommendation(rec);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <>
+      <button
+        onClick={() => setIsOpen(true)}
+        className="flex items-center gap-2 px-6 py-3 bg-sky-600 text-white font-semibold rounded-xl shadow hover:bg-sky-700 transition-colors"
+      >
+        <Target size={20} />
+        Open Recommendation Engine
+      </button>
+      <RecommendationPanel
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        simulationData={[]}
+        solarData={currentSolarData}
+        currentLocation={currentLocation}
+        recommendation={recommendation}
+        onGenerate={handleGenerate}
+        isGenerating={isGenerating}
+        isSolarLoading={isSolarLoading}
+        lastUpdated={lastUpdated}
+        fromCache={fromCache}
+      />
+    </>
+  );
+}
