@@ -15,6 +15,7 @@
  */
 
 import { create } from 'zustand';
+import type { EngineeringKPIs } from '@/lib/engineering-kpis';
 
 // Node types in the energy system
 export type NodeType = 'solar' | 'battery' | 'grid' | 'home' | 'ev1' | 'ev2';
@@ -171,6 +172,9 @@ interface EnergySystemState {
     };
   };
 
+  // Engineering KPIs
+  engineeringKPIs: EngineeringKPIs | null;
+
   // Actions
   updateNode: (nodeType: NodeType, updates: Partial<EnergyNode>) => void;
   updateFlows: (flows: EnergyFlow[]) => void;
@@ -186,6 +190,7 @@ interface EnergySystemState {
   }) => void;
   updateSystemConfig: (config: Partial<EnergySystemState['systemConfig']>) => void;
   resetSystem: () => void;
+  setEngineeringKPIs: (kpis: EngineeringKPIs | null) => void;
 
   // Scenarios
   scenarios: SavedScenario[];
@@ -262,6 +267,7 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
   simSpeed: 1,
   accumulators: initialAccumulators,
   minuteData: [],
+  engineeringKPIs: null,
   systemConfig: {
     solarCapacityKW: 10,
     batteryCapacityKWh: 50,
@@ -315,6 +321,8 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
       },
     })),
 
+  setEngineeringKPIs: (kpis) => set({ engineeringKPIs: kpis }),
+
   resetSystem: () =>
     set({
       nodes: initialNodes,
@@ -327,6 +335,7 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
       simSpeed: 1,
       accumulators: initialAccumulators,
       minuteData: [],
+      engineeringKPIs: null,
     }),
 
   saveScenario: (name, finance, location) =>
@@ -353,7 +362,7 @@ export const useEnergySystemStore = create<EnergySystemState>((set) => ({
           : 0;
 
       const scenario: SavedScenario = {
-        id: `scenario-${Date.now()}`,
+        id: crypto.randomUUID(),
         name,
         createdAt: new Date().toISOString(),
         system: { ...state.systemConfig },

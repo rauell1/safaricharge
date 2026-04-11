@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { StatCards } from '@/components/dashboard/StatCards';
@@ -11,6 +11,7 @@ import { TimeRangeSwitcher } from '@/components/dashboard/TimeRangeSwitcher';
 import { WeatherCard } from '@/components/dashboard/WeatherCard';
 import { BatteryStatusCard } from '@/components/dashboard/BatteryStatusCard';
 import { InsightsBanner } from '@/components/dashboard/InsightsBanner';
+import { EngineeringKPICard } from '@/components/dashboard/EngineeringKPICard';
 import DailyEnergyGraph from '@/components/DailyEnergyGraph';
 import { SystemVisualization } from '@/components/dashboard/SystemVisualization';
 import { useDemoEnergySystem } from '@/hooks/useDemoEnergySystem';
@@ -30,6 +31,7 @@ import type { SolarIrradianceData } from '@/lib/nasa-power-api';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
+import { computeEngineeringKPIs } from '@/lib/engineering-kpis';
 
 // Force dynamic rendering - no static generation
 export const dynamic = 'force-dynamic';
@@ -58,9 +60,22 @@ export default function ModularDashboardDemo() {
   const minuteData = useMinuteData(timeRange);
   const accumulators = useAccumulators();
   const saveScenario = useEnergySystemStore((s) => s.saveScenario);
+  const setEngineeringKPIs = useEnergySystemStore((s) => s.setEngineeringKPIs);
+  const systemConfig = useEnergySystemStore((s) => s.systemConfig);
   const { toast } = useToast();
 
   const [isReportOpen, setIsReportOpen] = useState(false);
+
+  // ── Recompute engineering KPIs whenever minuteData changes ──────────────────
+  useEffect(() => {
+    const kpis = computeEngineeringKPIs(minuteData, {
+      pvCapacityKwp: systemConfig.solarCapacityKW,
+      batteryCapacityKwh: systemConfig.batteryCapacityKWh,
+      minReservePct: 20,
+      peakSunHours: 5.4,
+    });
+    setEngineeringKPIs(kpis);
+  }, [minuteData, systemConfig.solarCapacityKW, systemConfig.batteryCapacityKWh, setEngineeringKPIs]);
 
   const handleSaveScenario = useCallback((name: string) => {
     saveScenario(
@@ -403,13 +418,11 @@ export default function ModularDashboardDemo() {
     };
   }, [energySplit]);
 
-  // Calculate sparkline data (last 7 data points for each metric)
   const sparklineData = useMemo(() => {
-    const last7Days = minuteData.slice(-7 * 420); // 420 points per day
+    const last7Days = minuteData.slice(-7 * 420);
     const dailyData: { gen: number[]; power: number[]; cons: number[]; savings: number[] } = {
       gen: [], power: [], cons: [], savings: []
     };
-
     for (let i = 0; i < 7; i++) {
       const dayData = last7Days.slice(i * 420, (i + 1) * 420);
       if (dayData.length > 0) {
@@ -419,16 +432,12 @@ export default function ModularDashboardDemo() {
         dailyData.power.push(dayData.reduce((sum, d) => sum + d.solarKW, 0) / dayData.length);
       }
     }
-
     return dailyData;
   }, [minuteData]);
 
-  // Calculate weekly averages and yesterday's values for trends
   const trendsData = useMemo(() => {
     const weekData = minuteData.slice(-7 * 420);
     const yesterdayData = minuteData.slice(-2 * 420, -420);
-    const todayData = minuteData.slice(-420);
-
     const weeklyAvgGen = weekData.length > 0
       ? weekData.reduce((sum, d) => sum + d.solarEnergyKWh, 0) / 7
       : 0;
@@ -438,29 +447,18 @@ export default function ModularDashboardDemo() {
     const yesterdaySavings = yesterdayData.length > 0
       ? yesterdayData.reduce((sum, d) => sum + d.savingsKES, 0)
       : 0;
-
-    // Calculate system efficiency
     const usefulEnergy = Math.min(homePower, solarPower) + (batteryPower > 0 ? Math.min(batteryPower, solarPower - homePower) : 0);
     const systemEfficiency = solarPower > 0 ? (usefulEnergy / solarPower) * 100 : 0;
-
-    // Savings change
     const savingsChange = yesterdaySavings > 0
       ? ((stats.totalSavingsKES - yesterdaySavings) / yesterdaySavings) * 100
       : 0;
-
-    // Battery optimization check (if battery is above 70% during peak hours)
     const now = new Date();
     const isPeakHour = now.getHours() >= 18 && now.getHours() <= 22;
     const batteryOptimized = isPeakHour ? batteryLevel > 70 : batteryLevel > 50;
-
     return {
-      weeklyAvgGen,
-      weeklyAvgCons,
-      yesterdaySavings,
-      systemEfficiency,
-      savingsChange,
-      batteryOptimized,
-      forecastChange: 10, // Placeholder - would come from weather API
+      weeklyAvgGen, weeklyAvgCons, yesterdaySavings,
+      systemEfficiency, savingsChange, batteryOptimized,
+      forecastChange: 10,
     };
   }, [minuteData, stats, solarPower, homePower, batteryPower, batteryLevel]);
 
@@ -500,7 +498,7 @@ export default function ModularDashboardDemo() {
           <TimeRangeSwitcher selectedRange={timeRange} onRangeChange={setTimeRange} />
         </div>
 
-        {/* NEW: Insights Banner - Decision Layer */}
+        {/* Insights Banner */}
         <InsightsBanner
           systemEfficiency={trendsData.systemEfficiency}
           todaySavings={stats.totalSavingsKES}
@@ -510,7 +508,7 @@ export default function ModularDashboardDemo() {
           alertCount={3}
         />
 
-        {/* ROW 1 — 4 Stat Cards with Sparklines */}
+        {/* ROW 1 — Stat Cards */}
         <StatCards
           totalGeneration={Number(stats.totalSolarKWh.toFixed(1))}
           currentPower={Number(solarPower.toFixed(1))}
@@ -525,7 +523,7 @@ export default function ModularDashboardDemo() {
           yesterdaySavings={trendsData.yesterdaySavings}
         />
 
-        {/* ROW 2 — Environmental Impact (moved up for storytelling) */}
+        {/* ROW 2 — Environmental Impact */}
         <Card className="dashboard-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
@@ -557,7 +555,7 @@ export default function ModularDashboardDemo() {
           </CardContent>
         </Card>
 
-        {/* ROW 3 — Energy Flow (full width) */}
+        {/* ROW 3 — Energy Flow */}
         <PowerFlowVisualization
           solarPower={solarPower}
           batteryPower={batteryPower}
@@ -568,7 +566,7 @@ export default function ModularDashboardDemo() {
           detailBasePath="/demo"
         />
 
-        {/* ROW 4 — Generation vs Consumption (2/3) + Energy Distribution (1/3) */}
+        {/* ROW 4 — Generation vs Consumption + Energy Distribution */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <Card className="dashboard-card">
@@ -592,7 +590,6 @@ export default function ModularDashboardDemo() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                {/* Doughnut-style visual using stacked rings */}
                 <div className="flex flex-col items-center justify-center py-6 gap-5">
                   <div className="relative flex h-40 w-40 items-center justify-center">
                     <div className="absolute inset-0 rounded-full bg-[var(--bg-card-muted)]" />
@@ -634,7 +631,7 @@ export default function ModularDashboardDemo() {
           </div>
         </div>
 
-        {/* ROW 5 — Panel Status (2/3) + Weather & Battery (1/3) */}
+        {/* ROW 5 — Panel Status + Weather, Battery & Engineering KPIs */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <PanelStatusTable />
@@ -646,10 +643,11 @@ export default function ModularDashboardDemo() {
               batteryPower={batteryPower}
               isCharging={batteryPower >= 0}
             />
+            <EngineeringKPICard />
           </div>
         </div>
 
-        {/* ROW 6 — System Visualization & Monthly Overview */}
+        {/* ROW 6 — System Visualization */}
         <SystemVisualization />
 
         {/* Monthly Overview */}

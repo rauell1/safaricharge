@@ -126,6 +126,13 @@ export function useSystemConfig() {
 }
 
 /**
+ * Get engineering KPIs (null until simulation has enough data)
+ */
+export function useEngineeringKPIs() {
+  return useEnergySystemStore((state) => state.engineeringKPIs);
+}
+
+/**
  * Get minute data filtered by time range
  */
 export function useMinuteData(timeRange?: 'today' | 'week' | 'month' | 'year' | 'all') {
