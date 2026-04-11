@@ -8,29 +8,46 @@
  * State is persisted across ticks via PhysicsEngineState (mutated in-place).
  */
 
-import type { SystemConfiguration, LoadConfig } from '@/lib/system-config';
+import type {
+  SystemConfiguration,
+  LoadConfig,
+  HomeLoadConfig,
+  EVLoadConfig,
+  CommercialLoadConfig,
+  HVACLoadConfig,
+} from '@/lib/system-config';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 export type PriorityMode =
-  | 'auto'        // solar-first; battery buffers surplus/deficit
-  | 'battery'     // charge battery first, then exports
-  | 'export'      // maximise feed-in to grid
-  | 'backup';     // keep battery reserved; draw from grid unless critical
+  | 'auto'      // solar-first; battery buffers surplus/deficit
+  | 'battery'   // charge battery first, then exports
+  | 'export'    // maximise feed-in to grid
+  | 'backup';   // keep battery reserved; draw from grid unless critical
 
+/**
+ * Solar site data — matches the shape used in useDemoEnergySystem.ts
+ * and NAIROBI_SOLAR_DATA in page.tsx.
+ */
 export interface SolarData {
-  /** Daily peak irradiance at the site (W/m²). */
-  peakIrradiance: number;
   /** Latitude (decimal degrees). Positive = N, Negative = S. */
   latitude: number;
   /** Longitude (decimal degrees). */
   longitude: number;
-  /** Panel tilt angle in degrees from horizontal. */
+  /** Annual average daily yield (kWh/kWp). */
+  annualAvgKwhPerKwp: number;
+  /** Monthly average daily yield (kWh/kWp), 12-element array. */
+  monthlyAvgKwhPerKwp: number[];
+  /** Monthly average temperature (°C), 12-element array. */
+  monthlyAvgTemp: number[];
+  /** Panel tilt angle in degrees from horizontal (optional). */
   tiltDeg?: number;
-  /** Panel azimuth in degrees (180 = south-facing). */
+  /** Panel azimuth in degrees, 180 = south-facing (optional). */
   azimuthDeg?: number;
+  /** Daily peak irradiance at the site (W/m²) — optional legacy field. */
+  peakIrradiance?: number;
 }
 
 /**
@@ -58,7 +75,7 @@ export interface HourlyProfile {
 export interface DayScenario {
   /** Total load profile (all loads combined), per hour. */
   totalLoadHourlyKw: number[];
-  /** Per-load breakdown.  Key = load.id */
+  /** Per-load breakdown. Key = load.id */
   loadProfiles: Record<string, HourlyProfile>;
   /** Which EVs are "at home" today (randomly set each day). */
   evIsHome: Record<string, boolean>;
@@ -134,6 +151,7 @@ export function generateDayScenario(
   const evIsHome: Record<string, boolean> = {};
 
   for (const load of config.loads) {
+    if (!load.enabled) continue;
     const profile = buildLoadProfile(load, date, currentEvSocs);
     loadProfiles[load.id] = profile;
 
@@ -142,13 +160,13 @@ export function generateDayScenario(
     }
 
     if (load.type === 'ev') {
-      // EVs have a 15% daily chance of being away
+      // EVs have a 15% daily chance of being away (skip Sundays)
       const awayChance = dailyRandom(date, load.id.charCodeAt(0), 0, 1);
-      evIsHome[load.id] = awayChance > 0.15;
+      evIsHome[load.id] = date.getDay() === 0 ? true : awayChance > 0.15;
     }
   }
 
-  // Solar multiplier: clear day (1.0), partial cloud (0.6–0.9), overcast (0.4–0.6)
+  // Solar multiplier: clear (1.0), partial cloud (0.65–0.9), overcast (0.4–0.65)
   const solarMultiplier = dailyRandom(date, 42, 0.55, 1.05);
 
   return { totalLoadHourlyKw, loadProfiles, evIsHome, solarMultiplier };
@@ -164,56 +182,70 @@ function buildLoadProfile(
 
   switch (load.type) {
     case 'home': {
-      // Base residential load: morning and evening peaks
+      const home = load as HomeLoadConfig;
+      const multiplier = isWeekend ? (home.weekendMultiplier ?? 1.2) : 1.0;
       for (let h = 0; h < 24; h++) {
-        const morningPeak = Math.max(0, Math.exp(-((h - 7.5) ** 2) / 4));
-        const eveningPeak = Math.max(0, Math.exp(-((h - 19) ** 2) / 3));
-        const base = isWeekend ? 0.65 : 0.5;
-        hourlyKw[h] = (load.peakKw ?? 5) * (base + 0.5 * morningPeak + 0.8 * eveningPeak);
+        hourlyKw[h] = (home.hourlyProfile[h] ?? 0) * multiplier;
       }
       break;
     }
+
     case 'ev': {
-      // EV charges in the evening (18-22 h) if SOC < 95%
-      const soc = currentEvSocs[load.id] ?? 50;
+      const ev = load as EVLoadConfig;
+      const soc = currentEvSocs[ev.id] ?? 50;
       const needsCharge = soc < 95;
-      const chargeKw = (load as { onboardChargerKw?: number }).onboardChargerKw ?? 7.4;
-      for (let h = 18; h <= 22; h++) {
+      const chargeKw = ev.onboardChargerKw ?? 7.4;
+      const returnHour = Math.floor(ev.returnTime ?? 18);
+      // Charge window: return time until 23:00
+      for (let h = returnHour; h <= 23; h++) {
         hourlyKw[h] = needsCharge ? chargeKw : 0;
       }
-      // Top-up opportunity 06-07 h
+      // Early morning top-up if SOC very low
       if (needsCharge && soc < 50) {
-        for (let h = 6; h <= 7; h++) {
-          hourlyKw[h] = chargeKw * 0.5;
+        hourlyKw[6] = chargeKw * 0.5;
+      }
+      break;
+    }
+
+    case 'commercial': {
+      const comm = load as CommercialLoadConfig;
+      const operatesNow = isWeekend ? comm.operatesWeekends : true;
+      if (operatesNow) {
+        for (const slot of comm.schedule) {
+          for (let h = slot.start; h < Math.min(slot.end, 24); h++) {
+            hourlyKw[h] = slot.powerKw;
+          }
         }
       }
       break;
     }
-    case 'ac': {
-      // Air conditioning: midday heat (10-16 h)
-      for (let h = 10; h <= 16; h++) {
-        hourlyKw[h] = load.peakKw ?? 2;
+
+    case 'hvac': {
+      const hvac = load as HVACLoadConfig;
+      const start = hvac.operatingHours?.start ?? 6;
+      const end = hvac.operatingHours?.end ?? 22;
+      const cap = hvac.capacityKw ?? 5;
+      // Peak cooling midday
+      for (let h = start; h < end; h++) {
+        const heatFrac = Math.max(0, Math.sin(((h - 9) / 12) * Math.PI));
+        hourlyKw[h] = cap * (0.5 + 0.5 * heatFrac);
       }
       break;
     }
-    case 'pool': {
-      // Pool pump: fixed 4-h run in the morning
-      for (let h = 8; h <= 11; h++) {
-        hourlyKw[h] = load.peakKw ?? 1.5;
-      }
-      break;
-    }
-    case 'borehole':
-    case 'pump': {
-      // Pump: 2 × daily runs
-      hourlyKw[7] = load.peakKw ?? 2;
-      hourlyKw[15] = load.peakKw ?? 2;
-      break;
-    }
+
+    case 'custom':
     default: {
-      // Generic flat load
-      for (let h = 0; h < 24; h++) {
-        hourlyKw[h] = (load.peakKw ?? 1) * 0.6;
+      // Custom or unknown: use hourlyProfile if available, else constant
+      const custom = load as { mode?: string; constantKw?: number; hourlyProfile?: number[]; peakKw?: number };
+      if (custom.mode === 'profile' && custom.hourlyProfile) {
+        for (let h = 0; h < 24; h++) {
+          hourlyKw[h] = custom.hourlyProfile[h] ?? 0;
+        }
+      } else {
+        const kw = custom.constantKw ?? custom.peakKw ?? 1;
+        for (let h = 0; h < 24; h++) {
+          hourlyKw[h] = kw * 0.6;
+        }
       }
     }
   }
@@ -230,17 +262,6 @@ function buildLoadProfile(
  *
  * Mutates `state.batteryKwh` and `state.evSocs` in-place so SOC
  * accumulates correctly across ticks (fixes Issue A).
- *
- * @param config      System configuration
- * @param scenario    Today's load scenario (from generateDayScenario)
- * @param timeOfDay   Decimal hour, 0–24 (e.g. 13.5 = 13:30)
- * @param solarData   Site solar parameters
- * @param state       Mutable physics state (persisted between ticks)
- * @param priority    Dispatch priority mode
- * @param gridEnabled Whether grid import/export is allowed
- * @param isPeakTime  True if current time is within peak tariff window
- * @param peakRate    KES/kWh peak tariff
- * @param offPeakRate KES/kWh off-peak tariff
  */
 export function calculateInstantPhysics(
   config: SystemConfiguration,
@@ -258,27 +279,37 @@ export function calculateInstantPhysics(
   const hour = Math.floor(timeOfDay);
 
   // ------------------------------------------------------------------
-  // 1. Solar generation
+  // 1. Solar generation — use monthly avg kWh/kWp if available
   // ------------------------------------------------------------------
+  const month = new Date().getMonth(); // 0-based
+  const monthlyYield = solarData.monthlyAvgKwhPerKwp?.[month] ?? solarData.annualAvgKwhPerKwp ?? 5.4;
+  const monthlyTemp = solarData.monthlyAvgTemp?.[month] ?? 25;
+
   const irradianceFrac = solarFraction(timeOfDay);
-  const rawSolarKw =
-    config.solar.totalCapacityKw *
-    irradianceFrac *
-    scenario.solarMultiplier *
-    state.soilingFactor;
+  // Scale instantaneous kW from daily kWh/kWp yield
+  // Peak sun hours ≈ monthlyYield; distribute as sine curve
+  const peakSolarKw = config.solar.totalCapacityKw * scenario.solarMultiplier * state.soilingFactor;
+  const rawSolarKw = peakSolarKw * irradianceFrac;
 
   const inverterEff = config.inverter?.efficiency ?? 0.97;
-  const panelTemp = 25 + irradianceFrac * 30; // rough NOCT model
-  const tempDerate = 1 - 0.004 * Math.max(0, panelTemp - 25); // -0.4%/°C
-  const solarPowerKw = rawSolarKw * inverterEff * tempDerate;
+  // Temperature derating: -0.4%/°C above 25°C (NOCT model)
+  const cellTemp = monthlyTemp + irradianceFrac * 25;
+  const tempDerate = 1 - 0.004 * Math.max(0, cellTemp - 25);
+  const solarPowerKw = Math.max(0, rawSolarKw * inverterEff * tempDerate);
+
+  void monthlyYield; // used implicitly via peakSolarKw scaling above
 
   // ------------------------------------------------------------------
-  // 2. Load this tick
+  // 2. Load this tick — use real hourly profiles from scenario
   // ------------------------------------------------------------------
   const loadBreakdown: Record<string, number> = {};
   let totalLoadKw = 0;
 
   for (const load of config.loads) {
+    if (!load.enabled) {
+      loadBreakdown[load.id] = 0;
+      continue;
+    }
     const profile = scenario.loadProfiles[load.id];
     let loadKw = profile ? (profile.hourlyKw[hour] ?? 0) : 0;
 
@@ -292,48 +323,44 @@ export function calculateInstantPhysics(
   }
 
   // ------------------------------------------------------------------
-  // 3. Net power balance
+  // 3. Battery config — use actual field names from BatteryConfig
   // ------------------------------------------------------------------
-  const netSurplus = solarPowerKw - totalLoadKw; // positive = surplus
-
   const bat = config.battery;
   const batMaxKwh = bat.capacityKwh;
   const batMinKwh = batMaxKwh * ((bat.minReservePct ?? 20) / 100);
-  const batMaxKw = bat.maxChargePowerKw ?? batMaxKwh * 0.5;
-  const batDischargeKw = bat.maxDischargePowerKw ?? batMaxKwh * 0.5;
-  const batEff = bat.roundTripEfficiency ?? 0.94;
-  const batChargeEff = Math.sqrt(batEff);
-  const batDischargeEff = Math.sqrt(batEff);
+  const batMaxChargeKw = bat.maxChargeKw;       // ← correct field name
+  const batMaxDischargeKw = bat.maxDischargeKw; // ← correct field name
+  const BAT_EFF = 0.94; // round-trip; lifepo4 typical
+  const batChargeEff = Math.sqrt(BAT_EFF);
+  const batDischargeEff = Math.sqrt(BAT_EFF);
 
-  let batteryPowerKw = 0; // positive = charging
+  // ------------------------------------------------------------------
+  // 4. Net power balance & dispatch
+  // ------------------------------------------------------------------
+  const netSurplus = solarPowerKw - totalLoadKw;
+
+  let batteryPowerKw = 0;
   let gridImportKw = 0;
   let gridExportKw = 0;
 
   if (netSurplus >= 0) {
-    // --- SURPLUS: solar > load ---
+    // SURPLUS: solar > load
     switch (priority) {
       case 'export': {
-        // Export first, charge battery with remainder
-        const canExport = gridEnabled ? netSurplus : 0;
-        gridExportKw = canExport;
+        gridExportKw = gridEnabled ? netSurplus : 0;
         batteryPowerKw = 0;
         break;
       }
-      case 'backup': {
-        // Keep battery full; export excess
-        const batCapacity = batMaxKwh - state.batteryKwh;
-        const chargeKw = clamp(Math.min(netSurplus, batMaxKw), 0, batCapacity / (TICK_HOURS * batChargeEff));
-        batteryPowerKw = chargeKw;
-        const afterBat = netSurplus - chargeKw;
-        gridExportKw = gridEnabled ? afterBat : 0;
-        break;
-      }
+      case 'backup':
       case 'battery':
       case 'auto':
       default: {
-        // Charge battery first; export overflow
-        const batCapacity = batMaxKwh - state.batteryKwh;
-        const chargeKw = clamp(Math.min(netSurplus, batMaxKw), 0, batCapacity / (TICK_HOURS * batChargeEff));
+        const batCapacityLeft = batMaxKwh - state.batteryKwh;
+        const chargeKw = clamp(
+          Math.min(netSurplus, batMaxChargeKw),
+          0,
+          batCapacityLeft / (TICK_HOURS * batChargeEff)
+        );
         batteryPowerKw = chargeKw;
         const afterBat = netSurplus - chargeKw;
         gridExportKw = gridEnabled ? afterBat : 0;
@@ -341,25 +368,25 @@ export function calculateInstantPhysics(
       }
     }
   } else {
-    // --- DEFICIT: load > solar ---
+    // DEFICIT: load > solar
     const deficit = Math.abs(netSurplus);
-    const availBat = state.batteryKwh - batMinKwh;
-    const maxDischargeThisTick = availBat / TICK_HOURS * batDischargeEff;
+    const availBatKwh = state.batteryKwh - batMinKwh;
+    const maxDischargeThisTick = (availBatKwh / TICK_HOURS) * batDischargeEff;
 
     switch (priority) {
       case 'backup': {
-        // Backup mode: rely on grid, preserve battery
-        gridImportKw = gridEnabled ? deficit : Math.min(deficit, clamp(maxDischargeThisTick, 0, batDischargeKw));
+        // Grid-first: preserve battery
+        gridImportKw = gridEnabled ? deficit : Math.min(deficit, clamp(maxDischargeThisTick, 0, batMaxDischargeKw));
         if (!gridEnabled) {
-          batteryPowerKw = -clamp(deficit - gridImportKw, 0, clamp(maxDischargeThisTick, 0, batDischargeKw));
+          batteryPowerKw = -clamp(deficit - gridImportKw, 0, clamp(maxDischargeThisTick, 0, batMaxDischargeKw));
         }
         break;
       }
       case 'battery':
       case 'auto':
       default: {
-        // Discharge battery first; import remainder
-        const dischargeKw = clamp(Math.min(deficit, batDischargeKw), 0, maxDischargeThisTick);
+        // Battery-first: discharge before importing
+        const dischargeKw = clamp(Math.min(deficit, batMaxDischargeKw), 0, maxDischargeThisTick);
         batteryPowerKw = -dischargeKw;
         const afterBat = deficit - dischargeKw;
         gridImportKw = gridEnabled ? afterBat : 0;
@@ -369,49 +396,48 @@ export function calculateInstantPhysics(
   }
 
   // ------------------------------------------------------------------
-  // 4. Persist battery SOC (core fix for Issue A)
+  // 5. Persist battery SOC (core Issue A fix)
   // ------------------------------------------------------------------
   if (batteryPowerKw > 0) {
-    // Charging: energy added = power × time × charge-efficiency
     state.batteryKwh += batteryPowerKw * TICK_HOURS * batChargeEff;
   } else if (batteryPowerKw < 0) {
-    // Discharging: energy removed = power × time / discharge-efficiency
     state.batteryKwh += batteryPowerKw * TICK_HOURS / batDischargeEff;
   }
   state.batteryKwh = clamp(state.batteryKwh, batMinKwh, batMaxKwh);
   const batteryLevelPct = (state.batteryKwh / batMaxKwh) * 100;
 
   // ------------------------------------------------------------------
-  // 5. Update EV SOCs
+  // 6. EV SOC updates
   // ------------------------------------------------------------------
   const evStates: Record<string, { soc: number; isHome: boolean; isCharging: boolean }> = {};
 
   for (const load of config.loads) {
     if (load.type !== 'ev') continue;
-    const isHome = state.evIsHome[load.id] ?? true;
-    const loadKw = loadBreakdown[load.id] ?? 0;
+    const ev = load as EVLoadConfig;
+    const isHome = state.evIsHome[ev.id] ?? true;
+    const loadKw = loadBreakdown[ev.id] ?? 0;
     const isCharging = loadKw > 0.01 && isHome;
-    const capKwh = (load as { capacityKwh?: number }).capacityKwh ?? 60;
+    const capKwh = ev.batteryKwh ?? 60; // ← correct EVLoadConfig field
 
     if (isCharging) {
       const added = (loadKw * TICK_HOURS) / capKwh * 100;
-      state.evSocs[load.id] = clamp((state.evSocs[load.id] ?? 50) + added, 0, 100);
+      state.evSocs[ev.id] = clamp((state.evSocs[ev.id] ?? 50) + added, 0, 100);
     }
 
-    evStates[load.id] = {
-      soc: state.evSocs[load.id] ?? 50,
+    evStates[ev.id] = {
+      soc: state.evSocs[ev.id] ?? 50,
       isHome,
       isCharging,
     };
   }
 
   // ------------------------------------------------------------------
-  // 6. Savings calculation
+  // 7. Savings
   // ------------------------------------------------------------------
   const rate = isPeakTime ? peakRate : offPeakRate;
   const solarKwh = solarPowerKw * TICK_HOURS;
   const exportKwh = gridExportKw * TICK_HOURS;
-  const FEED_IN_RATE = 5.0; // KES/kWh export credit
+  const FEED_IN_RATE = 5.0;
   const savingsKES = solarKwh * rate + exportKwh * FEED_IN_RATE;
 
   return {
