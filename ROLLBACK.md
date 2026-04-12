@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 28 | `rollback/refactor-layout-remove-dashboardheader-2026-04-12` | `a4ce038` | refactor(layout): remove DashboardHeader from dashboard/ (moved to layout/) | 2026-04-12 |
 | 27 | `rollback/refactor-layout-remove-dashboardsideba-2026-04-12` | `843ddf4` | refactor(layout): remove DashboardSidebar from dashboard/ (moved to layout/) | 2026-04-12 |
 | 26 | `rollback/refactor-layout-remove-dashboardlayout-2026-04-12` | `51902ca` | refactor(layout): remove DashboardLayout from dashboard/ (moved to layout/) | 2026-04-12 |
 | 25 | `rollback/refactor-layout-move-shell-components-2026-04-12` | `7a4dd3c` | refactor(layout): move shell components to src/components/layout/ | 2026-04-12 |
@@ -335,6 +336,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/refactor-layout-remove-dashboardsideba-2026-04-12`
 - **Commit**: `843ddf4fefc24a2f78709cef2edf20b7c7a71526`
 - **Subject**: refactor(layout): remove DashboardSidebar from dashboard/ (moved to layout/)
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #28 — `rollback/refactor-layout-remove-dashboardheader-2026-04-12`
+
+- **Branch**: `rollback/refactor-layout-remove-dashboardheader-2026-04-12`
+- **Commit**: `a4ce038b572aa21f60f1bdb8562486a9f67bbcd0`
+- **Subject**: refactor(layout): remove DashboardHeader from dashboard/ (moved to layout/)
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
