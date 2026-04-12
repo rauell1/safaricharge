@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`843ddf4`](https://github.com/rauell1/safaricharge/commit/843ddf4fefc24a2f78709cef2edf20b7c7a71526) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`f7097b4`](https://github.com/rauell1/safaricharge/commit/f7097b421fee5164768749fd974c5bb4d45e20f1) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | refactor(layout): remove DashboardSidebar from dashboard/ (moved to layout/) |
-| **Total commits** | 650 |
-| **TypeScript files** | 141 |
+| **Message** | refactor(layout): remove MobileBottomNav from dashboard/ (moved to layout/) |
+| **Total commits** | 656 |
+| **TypeScript files** | 139 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
