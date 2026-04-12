@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`047112d`](https://github.com/rauell1/safaricharge/commit/047112dee6966a168b25daefe339880be06b8578) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`c077e41`](https://github.com/rauell1/safaricharge/commit/c077e41f0287d3760c21bbcd6226bb4f76ff1b96) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | restore: reinstate full src/components/dashboard/ from commit 9ab9427 |
-| **Total commits** | 782 |
+| **Message** | fix(ai): correct malformed generic on useState line 60 |
+| **Total commits** | 786 |
 | **TypeScript files** | 163 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
