@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 69 | `rollback/arch-codemod-v2-catches-import-type-x-2026-04-13` | `fa3eefb` | arch: codemod v2 catches import { type X } syntax + post-deletion ESLint resurrection guard | 2026-04-13 |
 | 68 | `rollback/arch-deprecation-notices-on-all-dashbo-2026-04-12` | `3ea2f0a` | arch: deprecation notices on all dashboard/ shims + domain boundary ESLint rule + codemod migration script | 2026-04-12 |
 | 67 | `rollback/fix-barrel-harden-all-4-export-consist-2026-04-12` | `125c32c` | fix(barrel): harden all 4 export consistency issues | 2026-04-12 |
 | 66 | `rollback/refactor-convert-dashboard-to-pure-bar-2026-04-12` | `83cd6e5` | refactor: convert dashboard/ to pure barrel re-export layer | 2026-04-12 |
@@ -746,6 +747,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Commit**: `3ea2f0ab8ccd10b2c3d0be39f74d374131f71c21`
 - **Subject**: arch: deprecation notices on all dashboard/ shims + domain boundary ESLint rule + codemod migration script
 - **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #69 — `rollback/arch-codemod-v2-catches-import-type-x-2026-04-13`
+
+- **Branch**: `rollback/arch-codemod-v2-catches-import-type-x-2026-04-13`
+- **Commit**: `fa3eefb2b7c6b04259a5d1dfb2a37c42f38d1e25`
+- **Subject**: arch: codemod v2 catches import { type X } syntax + post-deletion ESLint resurrection guard
+- **Date**: 2026-04-13
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
