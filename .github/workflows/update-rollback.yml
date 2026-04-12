@@ -26,13 +26,11 @@ jobs:
       - name: Collect metadata
         id: meta
         run: |
-          # --no-decorate prevents git appending "(HEAD -> main, origin/main)" to output
           SHA=$(git log -1 --no-decorate --format='%H' HEAD)
           SHA_SHORT=$(git log -1 --no-decorate --format='%h' HEAD)
           DATE=$(git log -1 --no-decorate --date=short --format='%ad' HEAD)
           SUBJECT=$(git log -1 --no-decorate --format='%s' HEAD)
 
-          # Slug: lowercase, non-alphanumeric → dash, collapse dashes, max 38 chars, no trailing dash
           SLUG=$(echo "$SUBJECT" \
             | tr '[:upper:]' '[:lower:]' \
             | sed 's/[^a-z0-9]/-/g' \
@@ -42,14 +40,13 @@ jobs:
 
           BRANCH_NAME="rollback/${SLUG}-${DATE}"
 
-          echo "sha=${SHA}"               >> $GITHUB_OUTPUT
-          echo "sha_short=${SHA_SHORT}"   >> $GITHUB_OUTPUT
-          echo "date=${DATE}"             >> $GITHUB_OUTPUT
-          printf 'subject=%s\n' "$SUBJECT" >> $GITHUB_OUTPUT
-          echo "slug=${SLUG}"             >> $GITHUB_OUTPUT
+          echo "sha=${SHA}"                 >> $GITHUB_OUTPUT
+          echo "sha_short=${SHA_SHORT}"     >> $GITHUB_OUTPUT
+          echo "date=${DATE}"               >> $GITHUB_OUTPUT
+          printf 'subject=%s\n' "$SUBJECT"  >> $GITHUB_OUTPUT
+          echo "slug=${SLUG}"               >> $GITHUB_OUTPUT
           echo "branch_name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
 
-          # Debug — visible in the Actions log
           echo "DEBUG slug:        ${SLUG}"
           echo "DEBUG date:        ${DATE}"
           echo "DEBUG branch_name: ${BRANCH_NAME}"
@@ -83,7 +80,11 @@ jobs:
         run: |
           git config user.name  'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
+          # Stash the ROLLBACK.md changes so rebase pull can proceed cleanly
+          git stash push --include-untracked -- ROLLBACK.md
           git pull --rebase origin main
+          # Restore the updated ROLLBACK.md on top of latest main
+          git stash pop
           git add ROLLBACK.md
           if git diff --cached --quiet; then
             echo 'No changes to ROLLBACK.md — skipping commit'
