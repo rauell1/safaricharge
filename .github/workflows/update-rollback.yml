@@ -20,23 +20,39 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Collect metadata
         id: meta
         run: |
-          SHA=$(git log -1 --format='%H' HEAD)
-          SHA_SHORT=$(git log -1 --format='%h' HEAD)
-          DATE=$(git log -1 --format='%Y-%m-%d' HEAD)
-          SUBJECT=$(git log -1 --format='%s' HEAD)
-          # Derive slug: lowercase, replace non-alphanumeric with dash, collapse dashes, trim to 40 chars
-          SLUG=$(echo "$SUBJECT" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | cut -c1-40 | sed 's/-$//')
-          echo "sha=${SHA}" >> $GITHUB_OUTPUT
-          echo "sha_short=${SHA_SHORT}" >> $GITHUB_OUTPUT
-          echo "date=${DATE}" >> $GITHUB_OUTPUT
-          # Use printf to safely handle special characters in subject
+          # --no-decorate prevents git appending "(HEAD -> main, origin/main)" to output
+          SHA=$(git log -1 --no-decorate --format='%H' HEAD)
+          SHA_SHORT=$(git log -1 --no-decorate --format='%h' HEAD)
+          DATE=$(git log -1 --no-decorate --date=short --format='%ad' HEAD)
+          SUBJECT=$(git log -1 --no-decorate --format='%s' HEAD)
+
+          # Slug: lowercase, non-alphanumeric → dash, collapse dashes, max 38 chars, no trailing dash
+          SLUG=$(echo "$SUBJECT" \
+            | tr '[:upper:]' '[:lower:]' \
+            | sed 's/[^a-z0-9]/-/g' \
+            | sed 's/--*/-/g' \
+            | cut -c1-38 \
+            | sed 's/-$//')
+
+          BRANCH_NAME="rollback/${SLUG}-${DATE}"
+
+          echo "sha=${SHA}"               >> $GITHUB_OUTPUT
+          echo "sha_short=${SHA_SHORT}"   >> $GITHUB_OUTPUT
+          echo "date=${DATE}"             >> $GITHUB_OUTPUT
           printf 'subject=%s\n' "$SUBJECT" >> $GITHUB_OUTPUT
-          echo "slug=${SLUG}" >> $GITHUB_OUTPUT
-          echo "branch_name=rollback/${SLUG}-${DATE}" >> $GITHUB_OUTPUT
+          echo "slug=${SLUG}"             >> $GITHUB_OUTPUT
+          echo "branch_name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+
+          # Debug — visible in the Actions log
+          echo "DEBUG slug:        ${SLUG}"
+          echo "DEBUG date:        ${DATE}"
+          echo "DEBUG branch_name: ${BRANCH_NAME}"
 
       - name: Create rollback branch
         env:
@@ -45,7 +61,6 @@ jobs:
         run: |
           git config user.name  'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          # ls-remote exits 2 when branch missing — use || true so step never fails
           EXISTS=$(git ls-remote --heads origin "${BRANCH_NAME}" | wc -l | tr -d ' ')
           if [ "$EXISTS" -gt "0" ]; then
             echo "Branch ${BRANCH_NAME} already exists — skipping"
