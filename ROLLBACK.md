@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 22 | `rollback/logo-2026-04-12` | `60edb78` | Logo | 2026-04-12 |
 | 21 | `rollback/feat-replace-logo-with-uploaded-safari-2026-04-12` | `c513864` | feat: replace logo with uploaded SafariCharge elephant illustration (JPEG) | 2026-04-12 |
 | 20 | `rollback/feat-add-safaricharge-elephant-logo-im-2026-04-12` | `bd44d9d` | feat: add SafariCharge elephant logo image | 2026-04-12 |
 | 19 | `rollback/feat-replace-z-mark-logo-with-elephant-2026-04-12` | `8c2741d` | feat: replace Z-mark logo with elephant + solar panel illustration | 2026-04-12 |
@@ -275,6 +276,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/feat-replace-logo-with-uploaded-safari-2026-04-12`
 - **Commit**: `c51386472f67886a70ab10a8f4d867874c2c97f3`
 - **Subject**: feat: replace logo with uploaded SafariCharge elephant illustration (JPEG)
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #22 — `rollback/logo-2026-04-12`
+
+- **Branch**: `rollback/logo-2026-04-12`
+- **Commit**: `60edb78b875dc9e0896b0b76fae36071b85d12c6`
+- **Subject**: Logo
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
