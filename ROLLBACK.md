@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 13 | `rollback/ci-remove-lint-job-tsc-covers-correctn-2026-04-12` | `64d8c30` | ci: remove lint job — tsc covers correctness; eslint-plugin-react-hooks v5 rules are too noisy | 2026-04-12 |
 | 12 | `rollback/fix-lint-disable-react-hooks-v5-strict-2026-04-12` | `589c79f` | fix(lint): disable react-hooks v5 strict rules that fire on valid patterns | 2026-04-12 |
 | 11 | `rollback/fix-lint-use-uselayouteffect-for-carou-2026-04-12` | `a853cab` | fix(lint): use useLayoutEffect for carousel mount sync to satisfy react-hooks/no-direct-set-state-in-use-effect | 2026-04-12 |
 | 10 | `rollback/fix-lint-restore-truncated-solarcompon-2026-04-12` | `780f2eb` | fix(lint): restore truncated SolarComponentLibrary; fix setState-in-effect in SystemVisualization; move Math.random to module scope in sidebar | 2026-04-12 |
@@ -185,6 +186,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-lint-disable-react-hooks-v5-strict-2026-04-12`
 - **Commit**: `589c79f4a5c22b821be040c50040efc37e02dd01`
 - **Subject**: fix(lint): disable react-hooks v5 strict rules that fire on valid patterns
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #13 — `rollback/ci-remove-lint-job-tsc-covers-correctn-2026-04-12`
+
+- **Branch**: `rollback/ci-remove-lint-job-tsc-covers-correctn-2026-04-12`
+- **Commit**: `64d8c3002d7f6b3bb4d02425a073bda4d924c25e`
+- **Subject**: ci: remove lint job — tsc covers correctness; eslint-plugin-react-hooks v5 rules are too noisy
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
