@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`a853cab`](https://github.com/rauell1/safaricharge/commit/a853cabec9e933c0a966e35d1251c5f18c9909ef) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`589c79f`](https://github.com/rauell1/safaricharge/commit/589c79f4a5c22b821be040c50040efc37e02dd01) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | fix(lint): use useLayoutEffect for carousel mount sync to satisfy react-hooks/no-direct-set-state-in-use-effect |
-| **Total commits** | 581 |
+| **Message** | fix(lint): disable react-hooks v5 strict rules that fire on valid patterns |
+| **Total commits** | 585 |
 | **TypeScript files** | 137 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
