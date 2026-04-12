@@ -1,7 +1,7 @@
 'use client';
 
-import { SafariChargeDashboardApp } from '../page';
+import ModularDashboardDemo from '../demo/page';
 
 export default function SimulationPage() {
-  return <SafariChargeDashboardApp initialSection="simulation" />;
+  return <ModularDashboardDemo />;
 }
