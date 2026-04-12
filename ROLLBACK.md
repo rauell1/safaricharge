@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 18 | `rollback/brand-add-favicon-apple-touch-icon-and-2026-04-12` | `9d7bea2` | brand: add favicon, apple-touch-icon and full icon metadata | 2026-04-12 |
 | 17 | `rollback/brand-replace-logo-with-pixel-perfect-2026-04-12` | `2dbd869` | brand: replace logo with pixel-perfect teal SafariCharge mark | 2026-04-12 |
 | 16 | `rollback/feat-nav-bottom-tab-bar-on-mobile-logo-2026-04-12` | `9ab9427` | feat(nav): bottom tab bar on mobile + logo image throughout | 2026-04-12 |
 | 15 | `rollback/fix-scenarios-drawer-backdrop-no-longe-2026-04-12` | `5b330db` | fix(scenarios): drawer backdrop no longer blocks sidebar nav | 2026-04-12 |
@@ -235,6 +236,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/brand-replace-logo-with-pixel-perfect-2026-04-12`
 - **Commit**: `2dbd869d0dd9ca8aba0af4b85958be9ae9317b0a`
 - **Subject**: brand: replace logo with pixel-perfect teal SafariCharge mark
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #18 — `rollback/brand-add-favicon-apple-touch-icon-and-2026-04-12`
+
+- **Branch**: `rollback/brand-add-favicon-apple-touch-icon-and-2026-04-12`
+- **Commit**: `9d7bea2b19d22770f08889a98bf65568a4dfef52`
+- **Subject**: brand: add favicon, apple-touch-icon and full icon metadata
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
