@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`9d7bea2`](https://github.com/rauell1/safaricharge/commit/9d7bea2b19d22770f08889a98bf65568a4dfef52) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`8c2741d`](https://github.com/rauell1/safaricharge/commit/8c2741dbfe0dabbcc67bec054634cef273dfed60) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | brand: add favicon, apple-touch-icon and full icon metadata |
-| **Total commits** | 612 |
+| **Message** | feat: replace Z-mark logo with elephant + solar panel illustration |
+| **Total commits** | 616 |
 | **TypeScript files** | 138 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
