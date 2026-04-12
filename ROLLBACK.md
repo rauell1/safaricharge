@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 66 | `rollback/refactor-convert-dashboard-to-pure-bar-2026-04-12` | `83cd6e5` | refactor: convert dashboard/ to pure barrel re-export layer | 2026-04-12 |
 | 65 | `rollback/chore-add-energyreportmodal-and-recomm-2026-04-12` | `e1cc564` | chore: add EnergyReportModal and RecommendationComponents to energy barrel | 2026-04-12 |
 | 64 | `rollback/refactor-consolidate-dashboardsidebar-2026-04-12` | `82cc47b` | refactor: consolidate DashboardSidebar — layout/ is canonical, dashboard/ re-exports | 2026-04-12 |
 | 63 | `rollback/feat-add-missing-energyreportmodal-com-2026-04-12` | `113e08c` | feat: add missing EnergyReportModal component to energy folder | 2026-04-12 |
@@ -715,6 +716,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/chore-add-energyreportmodal-and-recomm-2026-04-12`
 - **Commit**: `e1cc564bc96d8d128dd079500a9e2ac28d626fdb`
 - **Subject**: chore: add EnergyReportModal and RecommendationComponents to energy barrel
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #66 — `rollback/refactor-convert-dashboard-to-pure-bar-2026-04-12`
+
+- **Branch**: `rollback/refactor-convert-dashboard-to-pure-bar-2026-04-12`
+- **Commit**: `83cd6e540f4a084a735f1e8245526c1e7c0127df`
+- **Subject**: refactor: convert dashboard/ to pure barrel re-export layer
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
