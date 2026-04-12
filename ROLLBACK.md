@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 30 | `rollback/refactor-energy-move-energy-widget-com-2026-04-12` | `61d93a4` | refactor(energy): move energy widget components to src/components/energy/ | 2026-04-12 |
 | 29 | `rollback/refactor-layout-remove-mobilebottomnav-2026-04-12` | `f7097b4` | refactor(layout): remove MobileBottomNav from dashboard/ (moved to layout/) | 2026-04-12 |
 | 28 | `rollback/refactor-layout-remove-dashboardheader-2026-04-12` | `a4ce038` | refactor(layout): remove DashboardHeader from dashboard/ (moved to layout/) | 2026-04-12 |
 | 27 | `rollback/refactor-layout-remove-dashboardsideba-2026-04-12` | `843ddf4` | refactor(layout): remove DashboardSidebar from dashboard/ (moved to layout/) | 2026-04-12 |
@@ -355,6 +356,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/refactor-layout-remove-mobilebottomnav-2026-04-12`
 - **Commit**: `f7097b421fee5164768749fd974c5bb4d45e20f1`
 - **Subject**: refactor(layout): remove MobileBottomNav from dashboard/ (moved to layout/)
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #30 — `rollback/refactor-energy-move-energy-widget-com-2026-04-12`
+
+- **Branch**: `rollback/refactor-energy-move-energy-widget-com-2026-04-12`
+- **Commit**: `61d93a49adefd61d32dd0046e10c6016f53863ac`
+- **Subject**: refactor(energy): move energy widget components to src/components/energy/
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
