@@ -1,6 +1,3 @@
-// ⚠️ DEPRECATED IMPORT PATH
-// Use: '@/components/layout/DashboardHeader'
-// This file exists for backward compatibility only.
-// Run: node scripts/codemod-dashboard-imports.mjs --write
-export { DashboardHeader, default } from '@/components/layout/DashboardHeader';
+// ⚠️  COMPATIBILITY SHIM — use '@/components/layout/DashboardHeader' for new code
+export { DashboardHeader } from '@/components/layout/DashboardHeader';
 export type * from '@/components/layout/DashboardHeader';

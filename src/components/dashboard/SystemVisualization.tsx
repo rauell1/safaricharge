@@ -1,6 +1,3 @@
-// ⚠️ DEPRECATED IMPORT PATH
-// Use: '@/components/energy/SystemVisualization'
-// This file exists for backward compatibility only.
-// Run: node scripts/codemod-dashboard-imports.mjs --write
-export { SystemVisualization, default } from '@/components/energy/SystemVisualization';
+// ⚠️  COMPATIBILITY SHIM — use '@/components/energy/SystemVisualization' for new code
+export { SystemVisualization } from '@/components/energy/SystemVisualization';
 export type * from '@/components/energy/SystemVisualization';

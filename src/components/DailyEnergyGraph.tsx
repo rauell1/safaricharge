@@ -1,5 +1,6 @@
 // ⚠️  COMPATIBILITY SHIM
-// demo/page.tsx imports DailyEnergyGraph from '@/components/DailyEnergyGraph'.
-// The canonical file lives at src/components/energy/DailyEnergyGraph.tsx.
-// This shim keeps that import working without touching the consumer.
-export { default, buildGraphSVG, buildJPGBlob } from '@/components/energy/DailyEnergyGraph';
+// Consumers import DailyEnergyGraph and GraphDataPoint from '@/components/DailyEnergyGraph'.
+// The canonical file lives at src/components/energy/DailyEnergyGraph.
+export { default, DailyEnergyGraph } from '@/components/energy/DailyEnergyGraph';
+export type { GraphDataPoint } from '@/components/energy/DailyEnergyGraph';
+export * from '@/components/energy/DailyEnergyGraph';

@@ -1,6 +1,3 @@
-// ⚠️ DEPRECATED IMPORT PATH
-// Use: '@/components/layout/DashboardLayout'
-// This file exists for backward compatibility only.
-// Run: node scripts/codemod-dashboard-imports.mjs --write
-export { DashboardLayout, default } from '@/components/layout/DashboardLayout';
+// ⚠️  COMPATIBILITY SHIM — use '@/components/layout/DashboardLayout' for new code
+export { default as DashboardLayout } from '@/components/layout/DashboardLayout';
 export type * from '@/components/layout/DashboardLayout';
