@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" fill="none" role="img" aria-label="SafariCharge">
+  <defs>
+    <radialGradient id="bg" cx="35%" cy="28%" r="70%">
+      <stop offset="0%" stop-color="#0c8a92"/>
+      <stop offset="100%" stop-color="#014f54"/>
+    </radialGradient>
+  </defs>
+  <!-- Full bleed background (iOS clips to rounded rect automatically) -->
+  <rect width="180" height="180" fill="url(#bg)"/>
+  <!-- Z / lightning-bolt mark, scaled up with generous padding -->
+  <g fill="white" transform="scale(4.5) translate(0, 0)">
+    <path d="M9 9 H24.5 L21.8 13 H9 Z"/>
+    <path d="M21.8 13 L15.5 27 H13 L19.3 13 Z"/>
+    <path d="M15.5 27 L31 27 V31 H18.2 Z"/>
+  </g>
+</svg>
