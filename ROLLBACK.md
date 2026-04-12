@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 53 | `rollback/fix-restore-full-demo-page-tsx-body-fr-2026-04-12` | `473d4eb` | fix: restore full demo/page.tsx body from rollback snapshot, fix all import paths | 2026-04-12 |
 | 52 | `rollback/fix-correct-components-dashboard-compo-2026-04-12` | `9c67b53` | fix: correct @/components/dashboard → @/components/layout import paths in app/page.tsx and app/demo/page.tsx | 2026-04-12 |
 | 51 | `rollback/refactor-delete-dashboard-shim-subfold-2026-04-12` | `d1e901b` | refactor: delete dashboard/ shim subfolders — dashboard/ is now empty | 2026-04-12 |
 | 50 | `rollback/refactor-delete-dashboard-aiassistant-2026-04-12` | `0d07242` | refactor: delete dashboard/AIAssistant (moved to ai/AIAssistant) | 2026-04-12 |
@@ -585,6 +586,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-correct-components-dashboard-compo-2026-04-12`
 - **Commit**: `9c67b53d7c46c5fb487f674d7c7e1d7da1492f4e`
 - **Subject**: fix: correct @/components/dashboard → @/components/layout import paths in app/page.tsx and app/demo/page.tsx
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #53 — `rollback/fix-restore-full-demo-page-tsx-body-fr-2026-04-12`
+
+- **Branch**: `rollback/fix-restore-full-demo-page-tsx-body-fr-2026-04-12`
+- **Commit**: `473d4eb8ef2d14abe69d6891c39d2be56a685f21`
+- **Subject**: fix: restore full demo/page.tsx body from rollback snapshot, fix all import paths
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
