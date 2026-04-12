@@ -115,9 +115,10 @@ export function EngineeringKpisCard() {
     );
 
     // Grid import from accumulators if available, else sum minuteData
+    const accRec = accumulators as unknown as Record<string, number>;
     const gridImportKWh =
-      (accumulators as Record<string, number>).gridImportKwh != null
-        ? (accumulators as Record<string, number>).gridImportKwh
+      accRec.gridImportKwh != null
+        ? accRec.gridImportKwh
         : minuteData.reduce((sum, d) => sum + (d.gridImportKWh ?? 0), 0);
 
     return computeEngineeringKpis({
