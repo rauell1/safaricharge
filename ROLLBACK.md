@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 67 | `rollback/fix-barrel-harden-all-4-export-consist-2026-04-12` | `125c32c` | fix(barrel): harden all 4 export consistency issues | 2026-04-12 |
 | 66 | `rollback/refactor-convert-dashboard-to-pure-bar-2026-04-12` | `83cd6e5` | refactor: convert dashboard/ to pure barrel re-export layer | 2026-04-12 |
 | 65 | `rollback/chore-add-energyreportmodal-and-recomm-2026-04-12` | `e1cc564` | chore: add EnergyReportModal and RecommendationComponents to energy barrel | 2026-04-12 |
 | 64 | `rollback/refactor-consolidate-dashboardsidebar-2026-04-12` | `82cc47b` | refactor: consolidate DashboardSidebar — layout/ is canonical, dashboard/ re-exports | 2026-04-12 |
@@ -725,6 +726,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/refactor-convert-dashboard-to-pure-bar-2026-04-12`
 - **Commit**: `83cd6e540f4a084a735f1e8245526c1e7c0127df`
 - **Subject**: refactor: convert dashboard/ to pure barrel re-export layer
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #67 — `rollback/fix-barrel-harden-all-4-export-consist-2026-04-12`
+
+- **Branch**: `rollback/fix-barrel-harden-all-4-export-consist-2026-04-12`
+- **Commit**: `125c32c05810b24b5d0cdcca9e1b6a72ed0451ef`
+- **Subject**: fix(barrel): harden all 4 export consistency issues
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
