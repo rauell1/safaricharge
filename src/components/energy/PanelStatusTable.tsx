@@ -22,7 +22,7 @@ interface PanelData {
   efficiency: number;
 }
 
-interface PanelStatusTableProps {
+export interface PanelStatusTableProps {
   panels?: PanelData[];
   isLoading?: boolean;
 }
@@ -68,6 +68,7 @@ function EfficiencyBar({ value }: { value: number }) {
   );
 }
 
+// Named export (preferred for all new imports)
 export function PanelStatusTable({ panels = defaultPanels, isLoading }: PanelStatusTableProps) {
   const onlineCount = panels.filter(p => p.status === 'online').length;
   const warningCount = panels.filter(p => p.status === 'warning').length;
@@ -171,3 +172,6 @@ export function PanelStatusTable({ panels = defaultPanels, isLoading }: PanelSta
     </Card>
   );
 }
+
+// Default export alias — supports: import PanelStatusTable from '...'
+export default PanelStatusTable;

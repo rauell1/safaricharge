@@ -5,7 +5,8 @@ import { DollarSign, Gauge, LineChart, PieChart, Play, Sparkles, TrendingUp } fr
 import type { FinancialInputs, FinancialSnapshot } from '@/lib/financial-dashboard';
 import { simulateScenario } from '@/lib/financial-dashboard';
 
-type Props = {
+// ✅ Exported publicly so barrel shims and consumers can import this type directly
+export type FinancialDashboardProps = {
   snapshot: FinancialSnapshot;
   inputs: FinancialInputs;
   onInputsChange: (next: FinancialInputs) => void;
@@ -25,7 +26,7 @@ const ProgressBar = ({ value }: { value: number }) => (
   </div>
 );
 
-export default function FinancialDashboard({ snapshot, inputs, onInputsChange, hasSimulationData = true, onRunSimulation }: Props) {
+export default function FinancialDashboard({ snapshot, inputs, onInputsChange, hasSimulationData = true, onRunSimulation }: FinancialDashboardProps) {
   const [scenario, setScenario] = useState({
     chargingTariffKes: inputs.chargingTariffKes,
     utilizationPct: snapshot.utilizationPct || inputs.targetUtilizationPct || 45,

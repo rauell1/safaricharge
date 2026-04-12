@@ -1,3 +1,4 @@
 // ⚠️ Re-export layer — do not implement components here.
-// Canonical source: @/components/energy/EnergyDetailShell
-export { EnergyDetailShell } from '@/components/energy/EnergyDetailShell';
+// Canonical source: @/components/widgets/EnergyDetailShell
+export { EnergyDetailShell } from '@/components/widgets/EnergyDetailShell';
+export type * from '@/components/widgets/EnergyDetailShell';
