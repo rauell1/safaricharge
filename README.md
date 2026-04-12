@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`3ea2f0a`](https://github.com/rauell1/safaricharge/commit/3ea2f0ab8ccd10b2c3d0be39f74d374131f71c21) by Roy Otieno | Energy & Mobility Systems |
-| **Date** | 2026-04-12 |
-| **Message** | arch: deprecation notices on all dashboard/ shims + domain boundary ESLint rule + codemod migration script |
-| **Total commits** | 838 |
+| **Last commit** | [`fa3eefb`](https://github.com/rauell1/safaricharge/commit/fa3eefb2b7c6b04259a5d1dfb2a37c42f38d1e25) by Roy Otieno | Energy & Mobility Systems |
+| **Date** | 2026-04-13 |
+| **Message** | arch: codemod v2 catches import { type X } syntax + post-deletion ESLint resurrection guard |
+| **Total commits** | 842 |
 | **TypeScript files** | 168 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
