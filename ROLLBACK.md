@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 57 | `rollback/fix-replace-placeholder-stubs-with-rea-2026-04-12` | `3da49ee` | fix: replace placeholder stubs with real component content | 2026-04-12 |
 | 56 | `rollback/restore-add-missing-powerflowvisualiza-2026-04-12` | `23219ba` | restore: add missing PowerFlowVisualization, SystemVisualization, FinancialDashboard to dashboard/ | 2026-04-12 |
 | 55 | `rollback/fix-ai-correct-malformed-generic-on-us-2026-04-12` | `c077e41` | fix(ai): correct malformed generic on useState line 60 | 2026-04-12 |
 | 54 | `rollback/restore-reinstate-full-src-components-2026-04-12` | `047112d` | restore: reinstate full src/components/dashboard/ from commit 9ab9427 | 2026-04-12 |
@@ -625,6 +626,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/restore-add-missing-powerflowvisualiza-2026-04-12`
 - **Commit**: `23219ba1b07a4ff3d275587c38cc83cc0f9be406`
 - **Subject**: restore: add missing PowerFlowVisualization, SystemVisualization, FinancialDashboard to dashboard/
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #57 — `rollback/fix-replace-placeholder-stubs-with-rea-2026-04-12`
+
+- **Branch**: `rollback/fix-replace-placeholder-stubs-with-rea-2026-04-12`
+- **Commit**: `3da49ee1525241a40f7dda68bd9a716f8b78fac3`
+- **Subject**: fix: replace placeholder stubs with real component content
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
