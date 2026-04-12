@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 27 | `rollback/refactor-layout-remove-dashboardsideba-2026-04-12` | `843ddf4` | refactor(layout): remove DashboardSidebar from dashboard/ (moved to layout/) | 2026-04-12 |
 | 26 | `rollback/refactor-layout-remove-dashboardlayout-2026-04-12` | `51902ca` | refactor(layout): remove DashboardLayout from dashboard/ (moved to layout/) | 2026-04-12 |
 | 25 | `rollback/refactor-layout-move-shell-components-2026-04-12` | `7a4dd3c` | refactor(layout): move shell components to src/components/layout/ | 2026-04-12 |
 | 24 | `rollback/feat-use-google-drive-hosted-logo-acro-2026-04-12` | `48f05ce` | feat: use Google Drive hosted logo across all placements | 2026-04-12 |
@@ -325,6 +326,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/refactor-layout-remove-dashboardlayout-2026-04-12`
 - **Commit**: `51902cae8f23f97533385f0a7dce4ec87f25a467`
 - **Subject**: refactor(layout): remove DashboardLayout from dashboard/ (moved to layout/)
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #27 — `rollback/refactor-layout-remove-dashboardsideba-2026-04-12`
+
+- **Branch**: `rollback/refactor-layout-remove-dashboardsideba-2026-04-12`
+- **Commit**: `843ddf4fefc24a2f78709cef2edf20b7c7a71526`
+- **Subject**: refactor(layout): remove DashboardSidebar from dashboard/ (moved to layout/)
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
