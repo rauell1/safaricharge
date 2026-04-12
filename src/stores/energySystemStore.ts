@@ -168,6 +168,19 @@ export interface ImportScenariosResult {
   error?: string;
 }
 
+// ── EV Charging Controls ──────────────────────────────────────────────────────
+
+export interface EVControlState {
+  isCharging: boolean;
+  chargeRateKW: number;
+  maxRateKW: number;
+}
+
+export interface EVControls {
+  ev1: EVControlState;
+  ev2: EVControlState;
+}
+
 // ── Energy System State ───────────────────────────────────────────────────────
 
 // Energy System State
@@ -213,6 +226,9 @@ interface EnergySystemState {
   // Static solar site data (used for engineering KPI calculations)
   solarData: SolarData;
 
+  // EV charging controls (user-facing start/stop and rate sliders)
+  evControls: EVControls;
+
   // Actions
   updateNode: (nodeType: NodeType, updates: Partial<EnergyNode>) => void;
   updateFlows: (flows: EnergyFlow[]) => void;
@@ -229,6 +245,8 @@ interface EnergySystemState {
   updateSystemConfig: (config: Partial<EnergySystemState['systemConfig']>) => void;
   updateFullSystemConfig: (config: SystemConfiguration) => void;
   resetSystem: () => void;
+  setEVCharging: (ev: 'ev1' | 'ev2', charging: boolean) => void;
+  setEVChargeRate: (ev: 'ev1' | 'ev2', rateKW: number) => void;
 
   // Scenarios
   scenarios: SavedScenario[];
@@ -351,6 +369,10 @@ export const useEnergySystemStore = create<EnergySystemState>()(
   fullSystemConfig: DEFAULT_SYSTEM_CONFIG,
   solarData: DEMO_SOLAR_DATA,
   scenarios: [],
+  evControls: {
+    ev1: { isCharging: true, chargeRateKW: 7, maxRateKW: 11 },
+    ev2: { isCharging: true, chargeRateKW: 7, maxRateKW: 22 },
+  },
 
   updateNode: (nodeType, updates) =>
     set((state) => ({
@@ -407,7 +429,27 @@ export const useEnergySystemStore = create<EnergySystemState>()(
       accumulators: initialAccumulators,
       minuteData: [],
       fullSystemConfig: DEFAULT_SYSTEM_CONFIG,
+      evControls: {
+        ev1: { isCharging: true, chargeRateKW: 7, maxRateKW: 11 },
+        ev2: { isCharging: true, chargeRateKW: 7, maxRateKW: 22 },
+      },
     }),
+
+  setEVCharging: (ev, charging) =>
+    set((state) => ({
+      evControls: {
+        ...state.evControls,
+        [ev]: { ...state.evControls[ev], isCharging: charging },
+      },
+    })),
+
+  setEVChargeRate: (ev, rateKW) =>
+    set((state) => ({
+      evControls: {
+        ...state.evControls,
+        [ev]: { ...state.evControls[ev], chargeRateKW: rateKW },
+      },
+    })),
 
   saveScenario: (name, finance, location) =>
     set((state) => {

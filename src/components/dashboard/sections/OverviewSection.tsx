@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { EngineeringKpisCard } from '@/components/dashboard/EngineeringKpisCard';
+import { EVChargingCard } from '@/components/dashboard/EVChargingCard';
 // Re-export existing overview content if it exists; otherwise render a stub.
 // This file will be the canonical OverviewSection.
 
@@ -36,8 +37,14 @@ export default function OverviewSection() {
         ))}
       </div>
 
-      {/* Engineering KPIs — Issue E */}
-      <EngineeringKpisCard />
+      {/* Lower grid — Engineering KPIs (left) + EV Charging (right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Engineering KPIs — Issue E */}
+        <EngineeringKpisCard />
+
+        {/* EV Charging Controls */}
+        <EVChargingCard />
+      </div>
     </div>
   );
 }
