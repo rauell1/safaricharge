@@ -1,3 +1,6 @@
-// ⚠️ Re-export layer — do not implement components here.
-// Canonical source: @/components/energy/BatteryHealthCard
-export { BatteryHealthCard } from '@/components/energy/BatteryHealthCard';
+// ⚠️ DEPRECATED IMPORT PATH
+// Use: '@/components/energy/BatteryHealthCard'
+// This file exists for backward compatibility only.
+// Run: node scripts/codemod-dashboard-imports.mjs --write
+export { BatteryHealthCard, default } from '@/components/energy/BatteryHealthCard';
+export type * from '@/components/energy/BatteryHealthCard';

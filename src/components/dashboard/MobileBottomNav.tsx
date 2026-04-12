@@ -1,3 +1,6 @@
-// ⚠️ Re-export layer — do not implement components here.
-// Canonical source: @/components/layout/MobileBottomNav
-export { MobileBottomNav } from '@/components/layout/MobileBottomNav';
+// ⚠️ DEPRECATED IMPORT PATH
+// Use: '@/components/layout/MobileBottomNav'
+// This file exists for backward compatibility only.
+// Run: node scripts/codemod-dashboard-imports.mjs --write
+export { MobileBottomNav, default } from '@/components/layout/MobileBottomNav';
+export type * from '@/components/layout/MobileBottomNav';

@@ -63,6 +63,73 @@ const eslintConfig = [
       "no-useless-escape": "off",
     },
   },
+
+  // ─── Domain Hard Boundaries (Option C) ───────────────────────────────────
+  // Enforce architectural ownership rules. Violations are errors, not warnings.
+  // Rule: widgets/ cannot import from energy/ or dashboard/
+  {
+    files: ["src/components/widgets/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": ["error", {
+        patterns: [
+          {
+            group: ["@/components/energy/*", "../energy/*", "../../energy/*"],
+            message:
+              "[Domain boundary] widgets/ must not import from energy/. " +
+              "Extract shared logic to a shared/ utility or lift the dependency up.",
+          },
+          {
+            group: ["@/components/dashboard/*", "../dashboard/*", "../../dashboard/*"],
+            message:
+              "[Domain boundary] widgets/ must not import from dashboard/ (deprecated shim layer). " +
+              "Import from the canonical domain directly.",
+          },
+        ],
+      }],
+    },
+  },
+
+  // Rule: energy/ cannot import from dashboard/
+  {
+    files: ["src/components/energy/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": ["error", {
+        patterns: [
+          {
+            group: ["@/components/dashboard/*", "../dashboard/*", "../../dashboard/*"],
+            message:
+              "[Domain boundary] energy/ must not import from dashboard/ (deprecated shim layer). " +
+              "Import from the canonical domain directly.",
+          },
+        ],
+      }],
+    },
+  },
+
+  // Rule: dashboard/ shims must not contain implementation logic.
+  // They may only re-export from canonical domains.
+  // A shim file containing JSX, hooks, or state is a violation.
+  {
+    files: ["src/components/dashboard/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-syntax": ["error",
+        {
+          // Catches: useState, useEffect, useReducer, useCallback, useMemo, useRef, useContext
+          selector: "CallExpression[callee.name=/^use[A-Z]/]",
+          message:
+            "[Domain boundary] dashboard/ shims must not contain hooks. " +
+            "All implementation belongs in the canonical domain (energy/, widgets/, layout/, financial/).",
+        },
+        {
+          // Catches JSX elements: <div>, <Component />, etc.
+          selector: "JSXElement",
+          message:
+            "[Domain boundary] dashboard/ shims must not render JSX. " +
+            "Shims are re-export-only. Move implementation to the canonical domain folder.",
+        },
+      ],
+    },
+  },
 ];
 
 export default eslintConfig;

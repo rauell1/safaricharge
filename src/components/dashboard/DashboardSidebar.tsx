@@ -1,4 +1,6 @@
-// ⚠️ Re-export layer — do not implement components here.
-// Canonical source: @/components/layout/DashboardSidebar
-export { DashboardSidebar } from '@/components/layout/DashboardSidebar';
-export type { DashboardSection, SidebarContextMetric } from '@/components/layout/DashboardSidebar';
+// ⚠️ DEPRECATED IMPORT PATH
+// Use: '@/components/layout/DashboardSidebar'
+// This file exists for backward compatibility only.
+// Run: node scripts/codemod-dashboard-imports.mjs --write
+export { DashboardSidebar, default } from '@/components/layout/DashboardSidebar';
+export type * from '@/components/layout/DashboardSidebar';

@@ -1,9 +1,19 @@
-// ⚠️ This file is a re-export layer. Do not implement components here.
-// All canonical implementations live in their respective domain folders:
-//   layout/     — DashboardLayout, DashboardHeader, DashboardSidebar, MobileBottomNav
-//   energy/     — Battery*, PanelStatusTable, PowerFlowVisualization, SystemVisualization, Sparkline, EnergyDetailShell
-//   widgets/    — AlertsList, StatCards, InsightsBanner, WeatherCard, EngineeringKpisCard, TimeRangeSwitcher
-//   financial/  — FinancialDashboard
+// ⚠️ DEPRECATED IMPORT PATH
+// This barrel re-export layer exists for backward compatibility only.
+// New code must import directly from the canonical domain path.
+//
+// Canonical paths:
+//   layout/     → @/components/layout/
+//   energy/     → @/components/energy/
+//   widgets/    → @/components/widgets/
+//   financial/  → @/components/financial/
+//
+// To migrate all usages at once, run:
+//   node scripts/codemod-dashboard-imports.mjs
+//   node scripts/codemod-dashboard-imports.mjs --write
+//
+// Avoid: import * as Dashboard from '@/components/dashboard'
+//   Namespace imports defeat tree-shaking and pull in all domains.
 
 // Layout
 export { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -20,7 +30,7 @@ export { PanelStatusTable } from '@/components/energy/PanelStatusTable';
 export { PowerFlowVisualization } from '@/components/energy/PowerFlowVisualization';
 export { SystemVisualization } from '@/components/energy/SystemVisualization';
 export { Sparkline } from '@/components/energy/Sparkline';
-export { EnergyDetailShell } from '@/components/energy/EnergyDetailShell';
+export { EnergyDetailShell } from '@/components/widgets/EnergyDetailShell';
 
 // Widgets
 export { AlertsList } from '@/components/widgets/AlertsList';
@@ -32,3 +42,4 @@ export { TimeRangeSwitcher } from '@/components/widgets/TimeRangeSwitcher';
 
 // Financial
 export { default as FinancialDashboard } from '@/components/financial/FinancialDashboard';
+export type { FinancialDashboardProps } from '@/components/financial/FinancialDashboard';

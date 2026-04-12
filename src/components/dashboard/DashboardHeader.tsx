@@ -1,4 +1,6 @@
-// ⚠️ Re-export layer — do not implement components here.
-// Canonical source: @/components/layout/DashboardHeader
-export { DashboardHeader } from '@/components/layout/DashboardHeader';
-export type { DashboardHeaderProps } from '@/components/layout/DashboardHeader';
+// ⚠️ DEPRECATED IMPORT PATH
+// Use: '@/components/layout/DashboardHeader'
+// This file exists for backward compatibility only.
+// Run: node scripts/codemod-dashboard-imports.mjs --write
+export { DashboardHeader, default } from '@/components/layout/DashboardHeader';
+export type * from '@/components/layout/DashboardHeader';

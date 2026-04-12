@@ -1,3 +1,6 @@
-// ⚠️ Re-export layer — do not implement components here.
-// Canonical source: @/components/widgets/StatCards
-export { StatCards } from '@/components/widgets/StatCards';
+// ⚠️ DEPRECATED IMPORT PATH
+// Use: '@/components/widgets/StatCards'
+// This file exists for backward compatibility only.
+// Run: node scripts/codemod-dashboard-imports.mjs --write
+export { StatCards, default } from '@/components/widgets/StatCards';
+export type * from '@/components/widgets/StatCards';
