@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`64d8c30`](https://github.com/rauell1/safaricharge/commit/64d8c3002d7f6b3bb4d02425a073bda4d924c25e) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`2abc94d`](https://github.com/rauell1/safaricharge/commit/2abc94d010e7b9629e3e07479fe6d29ef44fb899) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | ci: remove lint job — tsc covers correctness; eslint-plugin-react-hooks v5 rules are too noisy |
-| **Total commits** | 589 |
+| **Message** | refactor: codebase cleanup — dead code, constant consolidation, font fix (#176) |
+| **Total commits** | 593 |
 | **TypeScript files** | 137 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
