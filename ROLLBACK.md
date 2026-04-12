@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 49 | `rollback/refactor-move-aiassistant-components-a-2026-04-12` | `8493403` | refactor: move AIAssistant → components/ai/AIAssistant, fix BatteryPredictionCard import path | 2026-04-12 |
 | 48 | `rollback/refactor-delete-dashboard-shim-folder-2026-04-12` | `49f110d` | refactor: delete dashboard/ shim folder | 2026-04-12 |
 | 47 | `rollback/refactor-remove-energy-energyreportmod-2026-04-12` | `fd9e8c6` | refactor: remove energy/EnergyReportModal.tsx (moved to reports/) | 2026-04-12 |
 | 46 | `rollback/refactor-remove-energy-recommendationc-2026-04-12` | `0cec915` | refactor: remove energy/RecommendationComponents.tsx (moved to recommendation/) | 2026-04-12 |
@@ -545,6 +546,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/refactor-delete-dashboard-shim-folder-2026-04-12`
 - **Commit**: `49f110d49aea332550f9909dbdb3f95523788221`
 - **Subject**: refactor: delete dashboard/ shim folder
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #49 — `rollback/refactor-move-aiassistant-components-a-2026-04-12`
+
+- **Branch**: `rollback/refactor-move-aiassistant-components-a-2026-04-12`
+- **Commit**: `8493403b281a0eab5a588a09ef6b98f0f5975c36`
+- **Subject**: refactor: move AIAssistant → components/ai/AIAssistant, fix BatteryPredictionCard import path
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
