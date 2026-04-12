@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`8493403`](https://github.com/rauell1/safaricharge/commit/8493403b281a0eab5a588a09ef6b98f0f5975c36) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`0d07242`](https://github.com/rauell1/safaricharge/commit/0d07242a70cd83bb00564da48347d8ad48ca5f52) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | refactor: move AIAssistant → components/ai/AIAssistant, fix BatteryPredictionCard import path |
-| **Total commits** | 759 |
-| **TypeScript files** | 153 |
+| **Message** | refactor: delete dashboard/AIAssistant (moved to ai/AIAssistant) |
+| **Total commits** | 763 |
+| **TypeScript files** | 152 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
