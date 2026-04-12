@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 46 | `rollback/refactor-remove-energy-recommendationc-2026-04-12` | `0cec915` | refactor: remove energy/RecommendationComponents.tsx (moved to recommendation/) | 2026-04-12 |
 | 45 | `rollback/refactor-complete-structure-move-to-re-2026-04-12` | `da5aaa2` | refactor: complete structure — move to recommendation/ & reports/, scaffold LoadConfigComponents, nuke dashboard/ shims | 2026-04-12 |
 | 44 | `rollback/refactor-replace-13-duplicate-dashboar-2026-04-12` | `0d861ed` | refactor: replace 13 duplicate dashboard/ flat files with canonical re-export shims | 2026-04-12 |
 | 43 | `rollback/refactor-replace-stub-ai-with-real-wir-2026-04-12` | `abfbc3c` | refactor: replace stub ai/ with real wiring; flesh out reports/ CSV export; add dashboard/ shims for duplicates | 2026-04-12 |
@@ -515,6 +516,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/refactor-complete-structure-move-to-re-2026-04-12`
 - **Commit**: `da5aaa20a24500eb40017ab11a4096c6f7eb939d`
 - **Subject**: refactor: complete structure — move to recommendation/ & reports/, scaffold LoadConfigComponents, nuke dashboard/ shims
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #46 — `rollback/refactor-remove-energy-recommendationc-2026-04-12`
+
+- **Branch**: `rollback/refactor-remove-energy-recommendationc-2026-04-12`
+- **Commit**: `0cec915630ff6d44669c35f3b397e9518339281e`
+- **Subject**: refactor: remove energy/RecommendationComponents.tsx (moved to recommendation/)
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
