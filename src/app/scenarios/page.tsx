@@ -231,7 +231,19 @@ function DetailDrawer({ scenario, baseline, onClose, onLoad, onDuplicate, onDele
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    /*
+     * Backdrop: covers only the content area (right of the sidebar).
+     * The sidebar is at z-40 in DashboardLayout; this overlay is z-50 but
+     * scoped so it never sits on top of the nav — sidebar links stay clickable.
+     *
+     * On mobile the sidebar is off-canvas (width 0), so `left-0` kicks in
+     * via the CSS variable fallback and the full screen is covered as expected.
+     */
+    <div
+      className="fixed inset-y-0 right-0 z-50 flex items-end md:items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      style={{ left: 'var(--sidebar-width, 0px)' }}
+      onClick={onClose}
+    >
       <div
         className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
@@ -418,14 +430,6 @@ function ImportDialog({ open, onOpenChange, onImport }: ImportDialogProps) {
 
 // ── Radar normalisation ───────────────────────────────────────────────────────
 
-/**
- * Normalise each metric to 0–100 across the selected scenarios so the
- * radar axes are comparable regardless of unit magnitude.
- * Returns an array of objects shaped:
- *   { label: string, [scenarioLabel]: number, ... }
- * one object per RADAR_AXES entry — suitable for <RadarChart data={...}> with
- * per-scenario <Radar dataKey={label}> children.
- */
 function normaliseRadarData(
   scenarios: SavedScenario[],
   labelMap: Map<string, string>,
@@ -445,7 +449,6 @@ function normaliseRadarData(
   const mins = axes.map(a => Math.min(...scenarios.map(a.get)));
   const maxs = axes.map(a => Math.max(...scenarios.map(a.get)));
 
-  // One row per axis — each scenario contributes a column
   return axes.map((a, i) => {
     const row: Record<string, string | number> = { label: a.label };
     scenarios.forEach(s => {
@@ -490,7 +493,6 @@ export default function ScenariosPage() {
     toast({ title: 'Scenario loaded', description: `"${name}" configuration restored to dashboard.` });
   };
 
-  // Duplicate re-saves source scenario's finance + location snapshots under a new name.
   const handleDuplicate = useCallback((id: string) => {
     const source = scenarios.find(s => s.id === id);
     if (!source) return;
@@ -551,7 +553,6 @@ export default function ScenariosPage() {
     }
   };
 
-  /** Export a comparison table as a print-ready HTML page (opens in new tab for Ctrl+P / Save as PDF) */
   const handleExportPdf = () => {
     const targetScenarios = selectedIds.length >= 2
       ? scenarios.filter(s => selectedIds.includes(s.id))
@@ -667,7 +668,6 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
     { kpi: 'Payback (yr)', ...Object.fromEntries(selectedScenarios.map(s => [labelMap.get(s.id)!, Number(s.finance.paybackYears.toFixed(2))])) },
   ];
 
-  // radarData: one row per axis, columns keyed by scenario label
   const radarData = normaliseRadarData(selectedScenarios, labelMap);
 
   return (
@@ -677,7 +677,7 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
       {/* Import dialog */}
       <ImportDialog open={importOpen} onOpenChange={setImportOpen} onImport={handleImport} />
 
-      {/* Detail drawer */}
+      {/* Detail drawer — scoped to content area, sidebar stays interactive */}
       {detailId && (
         <DetailDrawer
           scenario={detailScenario}
@@ -1025,7 +1025,6 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
                     <BarChart2 className="h-4 w-4 text-[var(--solar)]" />
                     Compare Charts ({selectedScenarios.length} selected)
                   </CardTitle>
-                  {/* Tab switcher */}
                   <div className="flex items-center gap-1 bg-[var(--bg-card-muted)] rounded-lg p-1 border border-[var(--border)]">
                     <button
                       onClick={() => setChartTab('bar')}
@@ -1089,12 +1088,6 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
                     <p className="text-xs text-[var(--text-tertiary)] mb-4">
                       All axes are normalised (10–90) so different units can be shown together. Higher = better on every axis (Payback is inverted).
                     </p>
-                    {/*
-                      RadarChart receives data={radarData} where each row represents one
-                      axis and has columns keyed by scenario label.  Each RechartsRadar
-                      child uses dataKey={label} to pull its column from those rows.
-                      This avoids the invalid `data` prop that was previously on <Radar>.
-                    */}
                     <ResponsiveContainer width="100%" height={360}>
                       <RadarChart data={radarData} margin={{ top: 16, right: 32, left: 32, bottom: 16 }}>
                         <PolarGrid stroke="var(--border)" />
