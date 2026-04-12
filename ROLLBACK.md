@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 73 | `rollback/fix-correct-3-broken-shims-causing-ts2-2026-04-13` | `457fa61` | fix: correct 3 broken shims causing TS2305/TS2614 errors | 2026-04-13 |
 | 72 | `rollback/fix-resolve-all-21-typescript-build-er-2026-04-13` | `3a27dc6` | fix: resolve all 21 TypeScript build errors | 2026-04-13 |
 | 71 | `rollback/fix-repair-two-broken-imports-crashing-2026-04-13` | `4c26e8f` | fix: repair two broken imports crashing the build | 2026-04-13 |
 | 70 | `rollback/arch-component-ownership-contract-no-b-2026-04-13` | `15d14b2` | arch: component ownership contract + no-barrel ESLint rule + codemod v3 multiline/comment-safe | 2026-04-13 |
@@ -785,6 +786,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-resolve-all-21-typescript-build-er-2026-04-13`
 - **Commit**: `3a27dc6602fdc8d7b00958a49a225f9e0dd67b1f`
 - **Subject**: fix: resolve all 21 TypeScript build errors
+- **Date**: 2026-04-13
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #73 — `rollback/fix-correct-3-broken-shims-causing-ts2-2026-04-13`
+
+- **Branch**: `rollback/fix-correct-3-broken-shims-causing-ts2-2026-04-13`
+- **Commit**: `457fa6156deee4d63ad7dbca79d176c3172838ad`
+- **Subject**: fix: correct 3 broken shims causing TS2305/TS2614 errors
 - **Date**: 2026-04-13
 - **Auto-generated**: yes (by update-rollback.yml)
 
