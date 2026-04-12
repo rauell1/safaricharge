@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`473d4eb`](https://github.com/rauell1/safaricharge/commit/473d4eb8ef2d14abe69d6891c39d2be56a685f21) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`047112d`](https://github.com/rauell1/safaricharge/commit/047112dee6966a168b25daefe339880be06b8578) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | fix: restore full demo/page.tsx body from rollback snapshot, fix all import paths |
-| **Total commits** | 778 |
-| **TypeScript files** | 147 |
+| **Message** | restore: reinstate full src/components/dashboard/ from commit 9ab9427 |
+| **Total commits** | 782 |
+| **TypeScript files** | 163 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
