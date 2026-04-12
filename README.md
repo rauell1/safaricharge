@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`125c32c`](https://github.com/rauell1/safaricharge/commit/125c32c05810b24b5d0cdcca9e1b6a72ed0451ef) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`3ea2f0a`](https://github.com/rauell1/safaricharge/commit/3ea2f0ab8ccd10b2c3d0be39f74d374131f71c21) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | fix(barrel): harden all 4 export consistency issues |
-| **Total commits** | 834 |
+| **Message** | arch: deprecation notices on all dashboard/ shims + domain boundary ESLint rule + codemod migration script |
+| **Total commits** | 838 |
 | **TypeScript files** | 168 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
