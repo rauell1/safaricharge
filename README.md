@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`8c2741d`](https://github.com/rauell1/safaricharge/commit/8c2741dbfe0dabbcc67bec054634cef273dfed60) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`bd44d9d`](https://github.com/rauell1/safaricharge/commit/bd44d9df2821afdd1a22a6784819c8676d2e19cc) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | feat: replace Z-mark logo with elephant + solar panel illustration |
-| **Total commits** | 616 |
+| **Message** | feat: add SafariCharge elephant logo image |
+| **Total commits** | 620 |
 | **TypeScript files** | 138 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
