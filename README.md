@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`2beb51b`](https://github.com/rauell1/safaricharge/commit/2beb51b0ab4b6bb1407e52b166e1ef56b1acbc42) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`5b330db`](https://github.com/rauell1/safaricharge/commit/5b330dbe7cd54e6bb9cc0b9c582c5f4a771cf649) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | fix(ci): restore ROLLBACK.md after reset so rebase doesn't fail on retry |
-| **Total commits** | 596 |
+| **Message** | fix(scenarios): drawer backdrop no longer blocks sidebar nav |
+| **Total commits** | 600 |
 | **TypeScript files** | 137 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
