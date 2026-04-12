@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 72 | `rollback/fix-resolve-all-21-typescript-build-er-2026-04-13` | `3a27dc6` | fix: resolve all 21 TypeScript build errors | 2026-04-13 |
 | 71 | `rollback/fix-repair-two-broken-imports-crashing-2026-04-13` | `4c26e8f` | fix: repair two broken imports crashing the build | 2026-04-13 |
 | 70 | `rollback/arch-component-ownership-contract-no-b-2026-04-13` | `15d14b2` | arch: component ownership contract + no-barrel ESLint rule + codemod v3 multiline/comment-safe | 2026-04-13 |
 | 69 | `rollback/arch-codemod-v2-catches-import-type-x-2026-04-13` | `fa3eefb` | arch: codemod v2 catches import { type X } syntax + post-deletion ESLint resurrection guard | 2026-04-13 |
@@ -775,6 +776,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-repair-two-broken-imports-crashing-2026-04-13`
 - **Commit**: `4c26e8f9552cb3f96a574b955a147adcb895dd5b`
 - **Subject**: fix: repair two broken imports crashing the build
+- **Date**: 2026-04-13
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #72 — `rollback/fix-resolve-all-21-typescript-build-er-2026-04-13`
+
+- **Branch**: `rollback/fix-resolve-all-21-typescript-build-er-2026-04-13`
+- **Commit**: `3a27dc6602fdc8d7b00958a49a225f9e0dd67b1f`
+- **Subject**: fix: resolve all 21 TypeScript build errors
 - **Date**: 2026-04-13
 - **Auto-generated**: yes (by update-rollback.yml)
 
