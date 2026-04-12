@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { EngineeringKPIsCard } from '@/components/dashboard/EngineeringKPIsCard';
+import { EngineeringKpisCard } from '@/components/dashboard/EngineeringKpisCard';
 // Re-export existing overview content if it exists; otherwise render a stub.
 // This file will be the canonical OverviewSection.
 
@@ -37,7 +37,7 @@ export default function OverviewSection() {
       </div>
 
       {/* Engineering KPIs — Issue E */}
-      <EngineeringKPIsCard />
+      <EngineeringKpisCard />
     </div>
   );
 }

@@ -8,9 +8,9 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export async function GET(req: NextRequest) {
-  const siteId = req.nextUrl.searchParams.get('siteId') ?? 'default';
+  const createdBy = req.nextUrl.searchParams.get('siteId') ?? 'default';
   const rows = await prisma.scenario.findMany({
-    where:   { siteId },
+    where:   { createdBy },
     orderBy: { createdAt: 'desc' },
   });
   return NextResponse.json({ scenarios: rows });
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'name and config required' }, { status: 422 });
   }
   const scenario = await prisma.scenario.create({
-    data: { siteId, name, config, status: 'pending' },
+    data: { createdBy: siteId, name, config },
   });
   return NextResponse.json({ scenario }, { status: 201 });
 }
