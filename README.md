@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`83cd6e5`](https://github.com/rauell1/safaricharge/commit/83cd6e540f4a084a735f1e8245526c1e7c0127df) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`125c32c`](https://github.com/rauell1/safaricharge/commit/125c32c05810b24b5d0cdcca9e1b6a72ed0451ef) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | refactor: convert dashboard/ to pure barrel re-export layer |
-| **Total commits** | 830 |
+| **Message** | fix(barrel): harden all 4 export consistency issues |
+| **Total commits** | 834 |
 | **TypeScript files** | 168 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
