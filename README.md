@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`3a27dc6`](https://github.com/rauell1/safaricharge/commit/3a27dc6602fdc8d7b00958a49a225f9e0dd67b1f) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`457fa61`](https://github.com/rauell1/safaricharge/commit/457fa6156deee4d63ad7dbca79d176c3172838ad) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-13 |
-| **Message** | fix: resolve all 21 TypeScript build errors |
-| **Total commits** | 854 |
+| **Message** | fix: correct 3 broken shims causing TS2305/TS2614 errors |
+| **Total commits** | 858 |
 | **TypeScript files** | 171 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
