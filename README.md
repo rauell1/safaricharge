@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`480cab5`](https://github.com/rauell1/safaricharge/commit/480cab554a58f233d8f5d34f45d25945c964337d) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`0d66526`](https://github.com/rauell1/safaricharge/commit/0d665269bf068dccab8667663f744a2232f3ec96) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | fix(ts): TS2554 handleDuplicate uses source.finance+location; TS2769 radar restructured to RadarChart data=radarData with per-scenario dataKey columns |
-| **Total commits** | 561 |
+| **Message** | fix(ci): replace next lint --max-warnings with npm run lint (eslint .) |
+| **Total commits** | 565 |
 | **TypeScript files** | 137 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
