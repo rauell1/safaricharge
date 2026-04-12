@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`1d9f900`](https://github.com/rauell1/safaricharge/commit/1d9f9005d671a44899174b3eb6d2bccdd521ad56) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`23ef28a`](https://github.com/rauell1/safaricharge/commit/23ef28ab924a3eaeb20746e52e8af5a050d64ea4) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | refactor: move flat components into subfolders + fix import paths |
-| **Total commits** | 681 |
-| **TypeScript files** | 152 |
+| **Message** | refactor: remove flat EnergyReportModal.tsx (moved to energy/) |
+| **Total commits** | 685 |
+| **TypeScript files** | 151 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
