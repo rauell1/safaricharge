@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - 'ROLLBACK.md'      # prevent infinite loop
+      - 'ROLLBACK.md'
       - 'CODEBASE_MAP.md'
       - 'README.md'
 
@@ -30,23 +30,19 @@ jobs:
           SHA_SHORT=$(git log -1 --no-decorate --format='%h' HEAD)
           DATE=$(git log -1 --no-decorate --date=short --format='%ad' HEAD)
           SUBJECT=$(git log -1 --no-decorate --format='%s' HEAD)
-
           SLUG=$(echo "$SUBJECT" \
             | tr '[:upper:]' '[:lower:]' \
             | sed 's/[^a-z0-9]/-/g' \
             | sed 's/--*/-/g' \
             | cut -c1-38 \
             | sed 's/-$//')
-
           BRANCH_NAME="rollback/${SLUG}-${DATE}"
-
           echo "sha=${SHA}"                 >> $GITHUB_OUTPUT
           echo "sha_short=${SHA_SHORT}"     >> $GITHUB_OUTPUT
           echo "date=${DATE}"               >> $GITHUB_OUTPUT
           printf 'subject=%s\n' "$SUBJECT"  >> $GITHUB_OUTPUT
           echo "slug=${SLUG}"               >> $GITHUB_OUTPUT
           echo "branch_name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
-
           echo "DEBUG slug:        ${SLUG}"
           echo "DEBUG date:        ${DATE}"
           echo "DEBUG branch_name: ${BRANCH_NAME}"
@@ -76,19 +72,26 @@ jobs:
           BRANCH_NAME: ${{ steps.meta.outputs.branch_name }}
         run: python3 .github/scripts/gen_rollback_entry.py
 
-      - name: Commit updated ROLLBACK.md
+      - name: Commit and push ROLLBACK.md
         run: |
           git config user.name  'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          # Stash the ROLLBACK.md changes so rebase pull can proceed cleanly
+          # Stash script-generated changes so rebase pull has a clean tree
           git stash push --include-untracked -- ROLLBACK.md
-          git pull --rebase origin main
-          # Restore the updated ROLLBACK.md on top of latest main
-          git stash pop
-          git add ROLLBACK.md
-          if git diff --cached --quiet; then
-            echo 'No changes to ROLLBACK.md — skipping commit'
-          else
-            git commit -m 'docs(auto): update ROLLBACK.md snapshot log [skip ci]'
-            git push
-          fi
+          for i in 1 2 3 4 5; do
+            echo "Push attempt ${i}"
+            git pull --rebase origin main
+            git stash pop
+            git add ROLLBACK.md
+            if git diff --cached --quiet; then
+              echo 'No changes — skipping'
+              exit 0
+            fi
+            git commit -m 'docs(auto): update ROLLBACK.md snapshot log [skip ci]' || true
+            git push origin main && exit 0
+            # Push failed — re-stash and retry
+            git stash push --include-untracked -- ROLLBACK.md 2>/dev/null || true
+            echo "Push rejected — retrying in 3s"
+            sleep 3
+          done
+          echo 'All push attempts failed' && exit 1

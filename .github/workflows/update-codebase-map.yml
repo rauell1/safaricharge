@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - 'CODEBASE_MAP.md'  # prevent infinite loop
+      - 'CODEBASE_MAP.md'
 
 jobs:
   update-map:
@@ -27,12 +27,12 @@ jobs:
       - name: Collect metadata
         id: meta
         run: |
-          echo "total_ts=$(find src -name '*.ts' -o -name '*.tsx' | wc -l | tr -d ' ')" >> $GITHUB_OUTPUT
+          echo "total_ts=$(find src -name '*.ts' -o -name '*.tsx' | wc -l | tr -d ' ')"        >> $GITHUB_OUTPUT
           echo "total_py=$(find . -name '*.py' ! -path '*/node_modules/*' | wc -l | tr -d ' ')" >> $GITHUB_OUTPUT
-          echo "last_commit=$(git log -1 --no-decorate --format='%H' HEAD)" >> $GITHUB_OUTPUT
-          echo "last_author=$(git log -1 --no-decorate --format='%an' HEAD)" >> $GITHUB_OUTPUT
-          echo "last_date=$(git log -1 --no-decorate --date=short --format='%ad' HEAD)" >> $GITHUB_OUTPUT
-          echo "branch=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_OUTPUT
+          echo "last_commit=$(git log -1 --no-decorate --format='%H' HEAD)"                    >> $GITHUB_OUTPUT
+          echo "last_author=$(git log -1 --no-decorate --format='%an' HEAD)"                   >> $GITHUB_OUTPUT
+          echo "last_date=$(git log -1 --no-decorate --date=short --format='%ad' HEAD)"        >> $GITHUB_OUTPUT
+          echo "branch=$(git rev-parse --abbrev-ref HEAD)"                                     >> $GITHUB_OUTPUT
 
       - name: Rebuild CODEBASE_MAP.md
         env:
@@ -44,15 +44,21 @@ jobs:
           BRANCH: ${{ steps.meta.outputs.branch }}
         run: python3 .github/scripts/gen_codebase_map.py
 
-      - name: Commit updated map
+      - name: Commit and push CODEBASE_MAP.md
         run: |
           git config user.name  'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git add CODEBASE_MAP.md
           if git diff --cached --quiet; then
-            echo 'No changes to CODEBASE_MAP.md — skipping commit'
-          else
-            git commit -m 'docs(auto): regenerate CODEBASE_MAP.md [skip ci]'
-            git pull --rebase origin main
-            git push
+            echo 'No changes — skipping'
+            exit 0
           fi
+          git commit -m 'docs(auto): regenerate CODEBASE_MAP.md [skip ci]'
+          for i in 1 2 3 4 5; do
+            echo "Push attempt ${i}"
+            git pull --rebase origin main
+            git push origin main && exit 0
+            echo "Push rejected — retrying in 3s"
+            sleep 3
+          done
+          echo 'All push attempts failed' && exit 1
