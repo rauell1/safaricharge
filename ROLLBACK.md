@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 5 | `rollback/fix-ci-replace-single-pull-rebase-with-2026-04-12` | `abce273` | fix(ci): replace single pull--rebase with 5-attempt push retry loop in all auto-update workflows | 2026-04-12 |
 | 4 | `rollback/fix-ci-update-rollback-stash-before-re-2026-04-12` | `c4aed71` | fix(ci): update-rollback — stash before rebase pull, unstash after | 2026-04-12 |
 | 3 | `rollback/pre-soc-fix-2026-04-11` | `1063f307` | State before Battery SOC clean fix — includes WIP SOC merge (PR #136) + scenario management (PR #137) | 2026-04-11 |
 | 2 | *(tag)* `original-dashboard-v1` | `8039cb4` | Original dashboard UI before card-based refactor (PR #41) | 2026-03-29 |
@@ -105,6 +106,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-ci-update-rollback-stash-before-re-2026-04-12`
 - **Commit**: `c4aed7146d16cb9b5cbbdc56455ab98bf4791bcc`
 - **Subject**: fix(ci): update-rollback — stash before rebase pull, unstash after
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #5 — `rollback/fix-ci-replace-single-pull-rebase-with-2026-04-12`
+
+- **Branch**: `rollback/fix-ci-replace-single-pull-rebase-with-2026-04-12`
+- **Commit**: `abce273db3478396cc54b8b145a39051d18c5b72`
+- **Subject**: fix(ci): replace single pull--rebase with 5-attempt push retry loop in all auto-update workflows
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
