@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`18807ae`](https://github.com/rauell1/safaricharge/commit/18807aed8706c46852ddd11f0a6bd934850cff40) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`5c02e4f`](https://github.com/rauell1/safaricharge/commit/5c02e4f49312c1b4e20b6a6d311f0c939a1b9553) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | restore: exact original PowerFlowVisualization from pre-deletion commit 9ab9427 |
-| **Total commits** | 810 |
-| **TypeScript files** | 166 |
+| **Message** | restore: add missing EngineeringKpisCard component |
+| **Total commits** | 814 |
+| **TypeScript files** | 167 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
