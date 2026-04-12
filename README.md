@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`abfbc3c`](https://github.com/rauell1/safaricharge/commit/abfbc3c8579197fc0bc2e02e999f446d3bdf6544) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`0d861ed`](https://github.com/rauell1/safaricharge/commit/0d861edb796c958b526a17434397aa2c5b5b60de) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | refactor: replace stub ai/ with real wiring; flesh out reports/ CSV export; add dashboard/ shims for duplicates |
-| **Total commits** | 712 |
+| **Message** | refactor: replace 13 duplicate dashboard/ flat files with canonical re-export shims |
+| **Total commits** | 716 |
 | **TypeScript files** | 166 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
