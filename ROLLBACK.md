@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 52 | `rollback/fix-correct-components-dashboard-compo-2026-04-12` | `9c67b53` | fix: correct @/components/dashboard → @/components/layout import paths in app/page.tsx and app/demo/page.tsx | 2026-04-12 |
 | 51 | `rollback/refactor-delete-dashboard-shim-subfold-2026-04-12` | `d1e901b` | refactor: delete dashboard/ shim subfolders — dashboard/ is now empty | 2026-04-12 |
 | 50 | `rollback/refactor-delete-dashboard-aiassistant-2026-04-12` | `0d07242` | refactor: delete dashboard/AIAssistant (moved to ai/AIAssistant) | 2026-04-12 |
 | 49 | `rollback/refactor-move-aiassistant-components-a-2026-04-12` | `8493403` | refactor: move AIAssistant → components/ai/AIAssistant, fix BatteryPredictionCard import path | 2026-04-12 |
@@ -575,6 +576,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/refactor-delete-dashboard-shim-subfold-2026-04-12`
 - **Commit**: `d1e901b89fd7ae66c0848b032fbfce43a5ca79ae`
 - **Subject**: refactor: delete dashboard/ shim subfolders — dashboard/ is now empty
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #52 — `rollback/fix-correct-components-dashboard-compo-2026-04-12`
+
+- **Branch**: `rollback/fix-correct-components-dashboard-compo-2026-04-12`
+- **Commit**: `9c67b53d7c46c5fb487f674d7c7e1d7da1492f4e`
+- **Subject**: fix: correct @/components/dashboard → @/components/layout import paths in app/page.tsx and app/demo/page.tsx
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
