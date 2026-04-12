@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 38 | `rollback/refactor-remove-flat-loadconfigcompone-2026-04-12` | `78746d6` | refactor: remove flat LoadConfigComponents.tsx (moved to simulation/) | 2026-04-12 |
 | 37 | `rollback/refactor-remove-flat-financialdashboar-2026-04-12` | `c23231a` | refactor: remove flat FinancialDashboard.tsx (moved to dashboard/) | 2026-04-12 |
 | 36 | `rollback/refactor-remove-flat-energyreportmodal-2026-04-12` | `23ef28a` | refactor: remove flat EnergyReportModal.tsx (moved to energy/) | 2026-04-12 |
 | 35 | `rollback/refactor-move-flat-components-into-sub-2026-04-12` | `1d9f900` | refactor: move flat components into subfolders + fix import paths | 2026-04-12 |
@@ -435,6 +436,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/refactor-remove-flat-financialdashboar-2026-04-12`
 - **Commit**: `c23231a1567a0318c2518ea3f353893205555243`
 - **Subject**: refactor: remove flat FinancialDashboard.tsx (moved to dashboard/)
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #38 — `rollback/refactor-remove-flat-loadconfigcompone-2026-04-12`
+
+- **Branch**: `rollback/refactor-remove-flat-loadconfigcompone-2026-04-12`
+- **Commit**: `78746d6889ed79c8b3e5cf3d79e39d91aa74812a`
+- **Subject**: refactor: remove flat LoadConfigComponents.tsx (moved to simulation/)
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
