@@ -1,0 +1,57 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+
+# Only one deploy at a time; cancel stale runs.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: SSH deploy
+    runs-on: ubuntu-latest
+    # Only deploy after CI passes (typecheck + lint + build must be green).
+    needs: []
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── SSH into the VPS and run the deploy script ──────────────────────────
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host:     ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key:      ${{ secrets.VPS_SSH_KEY }}
+          port:     ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            set -e
+            cd /opt/safaricharge
+
+            # Pull latest code
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Re-build images and restart containers (zero-downtime rolling)
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+              pull --ignore-pull-failures || true
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+              build --pull
+
+            # Run DB migrations before swapping the app container
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+              run --rm app npx prisma migrate deploy
+
+            # Bring up new containers; keep others running during build
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+              up -d --remove-orphans
+
+            # Prune dangling images to free disk space
+            docker image prune -f
+
+            echo "✅ Deploy complete"

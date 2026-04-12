@@ -1,37 +1,79 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// SafariCharge — Prisma schema
+// Dev:  SQLite  (DATABASE_URL="file:./dev.db")
+// Prod: PostgreSQL (DATABASE_URL="postgresql://...")
+//
+// Switch provider via DATABASE_URL — no code change needed.
+// To regenerate after editing: npx prisma generate
+// To migrate:                  npx prisma migrate dev --name <name>
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+// ───────────────────────────────────────────────────────────────────────
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String?
+  role      String   @default("viewer") // viewer | operator | analyst | admin
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([createdAt])
+  @@index([role])
 }
 
-model Post {
+// ───────────────────────────────────────────────────────────────────────
+// Live readings ingested from MQTT / Modbus via the IoT bridge.
+// One row per reading event; kept for 90 days by default.
+model LiveReading {
   id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
+  siteId    String                          // logical site identifier
+  source    String                          // "mqtt" | "modbus"
+  metric    String                          // e.g. "battery_soc", "pv_power_w"
+  value     Float
+  unit      String   @default("")
+  quality   String   @default("good")       // "good" | "uncertain" | "bad"
+  ts        DateTime @default(now())        // device timestamp
+  createdAt DateTime @default(now())
+
+  @@index([siteId, metric, ts])
+  @@index([ts])
+}
+
+// ───────────────────────────────────────────────────────────────────────
+// Saved simulation / scenario snapshots for comparison.
+model Scenario {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @default("")
+  config      Json                           // full SimulationConfig blob
+  results     Json?                          // cached KPI results
+  createdBy   String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([createdBy])
+}
+
+// ───────────────────────────────────────────────────────────────────────
+// Alert rules that fire when a metric crosses a threshold.
+model AlertRule {
+  id        String   @id @default(cuid())
+  siteId    String
+  metric    String
+  operator  String                           // "gt" | "lt" | "eq"
+  threshold Float
+  severity  String   @default("warning")    // "info" | "warning" | "critical"
+  enabled   Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([authorId])
-  @@index([createdAt])
+  @@index([siteId, metric])
 }

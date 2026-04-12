@@ -1,0 +1,14 @@
+# Production overlay — merge with base:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  db:
+    ports: []  # Don't expose Postgres port in prod
+
+  app:
+    environment:
+      NODE_ENV: production
+
+  forecasting:
+    environment:
+      LOG_LEVEL: warning
