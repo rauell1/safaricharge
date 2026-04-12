@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 64 | `rollback/refactor-consolidate-dashboardsidebar-2026-04-12` | `82cc47b` | refactor: consolidate DashboardSidebar — layout/ is canonical, dashboard/ re-exports | 2026-04-12 |
 | 63 | `rollback/feat-add-missing-energyreportmodal-com-2026-04-12` | `113e08c` | feat: add missing EnergyReportModal component to energy folder | 2026-04-12 |
 | 62 | `rollback/restore-add-missing-engineeringkpiscar-2026-04-12` | `5c02e4f` | restore: add missing EngineeringKpisCard component | 2026-04-12 |
 | 61 | `rollback/restore-exact-original-powerflowvisual-2026-04-12` | `18807ae` | restore: exact original PowerFlowVisualization from pre-deletion commit 9ab9427 | 2026-04-12 |
@@ -695,6 +696,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/feat-add-missing-energyreportmodal-com-2026-04-12`
 - **Commit**: `113e08c9c7c6695483bf9ecb9e02173d3efaea31`
 - **Subject**: feat: add missing EnergyReportModal component to energy folder
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #64 — `rollback/refactor-consolidate-dashboardsidebar-2026-04-12`
+
+- **Branch**: `rollback/refactor-consolidate-dashboardsidebar-2026-04-12`
+- **Commit**: `82cc47b28972d9f31ef43a7606732429b5541c20`
+- **Subject**: refactor: consolidate DashboardSidebar — layout/ is canonical, dashboard/ re-exports
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
