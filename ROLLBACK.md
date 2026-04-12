@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 62 | `rollback/restore-add-missing-engineeringkpiscar-2026-04-12` | `5c02e4f` | restore: add missing EngineeringKpisCard component | 2026-04-12 |
 | 61 | `rollback/restore-exact-original-powerflowvisual-2026-04-12` | `18807ae` | restore: exact original PowerFlowVisualization from pre-deletion commit 9ab9427 | 2026-04-12 |
 | 60 | `rollback/restore-full-financialdashboard-tsx-wa-2026-04-12` | `626f811` | restore: full FinancialDashboard.tsx (was stub from bad commit) | 2026-04-12 |
 | 59 | `rollback/restore-full-systemvisualization-tsx-w-2026-04-12` | `ea5c418` | restore: full SystemVisualization.tsx (was stub from bad commit) | 2026-04-12 |
@@ -675,6 +676,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/restore-exact-original-powerflowvisual-2026-04-12`
 - **Commit**: `18807aed8706c46852ddd11f0a6bd934850cff40`
 - **Subject**: restore: exact original PowerFlowVisualization from pre-deletion commit 9ab9427
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #62 — `rollback/restore-add-missing-engineeringkpiscar-2026-04-12`
+
+- **Branch**: `rollback/restore-add-missing-engineeringkpiscar-2026-04-12`
+- **Commit**: `5c02e4f49312c1b4e20b6a6d311f0c939a1b9553`
+- **Subject**: restore: add missing EngineeringKpisCard component
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
