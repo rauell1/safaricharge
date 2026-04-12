@@ -24,6 +24,11 @@ import {
   type SolarData,
   type PriorityMode,
 } from './physics-engine';
+import {
+  SIM_STEP_DURATION_HOURS,
+  FEED_IN_TARIFF_RATE_KES,
+  GRID_EMISSION_FACTOR_KG_CO2_PER_KWH,
+} from './config';
 
 // ---------------------------------------------------------------------------
 // State factory — call once per simulation session
@@ -187,8 +192,6 @@ export function tickPhysicsEngine(params: TickPhysicsParams) {
   const timestampDate = new Date(currentDate);
   timestampDate.setHours(minuteH, minuteM, 0, 0);
 
-  const STEP_H = 24 / 420; // each step is 24h / 420 steps ≈ 3.43 min
-
   const firstEvState = evIds[0] ? result.evStates[evIds[0]] : null;
   const secondEvState = evIds[1] ? result.evStates[evIds[1]] : null;
 
@@ -208,7 +211,7 @@ export function tickPhysicsEngine(params: TickPhysicsParams) {
     ev2LoadKW: result.loadBreakdown[evIds[1]] ?? 0,
 
     batteryPowerKW: result.batteryPowerKw,
-    batteryLevelPct: result.batteryLevelPct,  // ← this is what was frozen before
+    batteryLevelPct: result.batteryLevelPct,
 
     gridImportKW: result.gridImportKw,
     gridExportKW: result.gridExportKw,
@@ -221,12 +224,12 @@ export function tickPhysicsEngine(params: TickPhysicsParams) {
     savingsKES: result.savingsKES,
 
     // Energy totals for this step (power × time)
-    solarEnergyKWh: result.solarPowerKw * STEP_H,
-    homeLoadKWh: result.totalLoadKw * STEP_H,
-    ev1LoadKWh: (result.loadBreakdown[evIds[0]] ?? 0) * STEP_H,
-    ev2LoadKWh: (result.loadBreakdown[evIds[1]] ?? 0) * STEP_H,
-    gridImportKWh: result.gridImportKw * STEP_H,
-    gridExportKWh: result.gridExportKw * STEP_H,
+    solarEnergyKWh: result.solarPowerKw * SIM_STEP_DURATION_HOURS,
+    homeLoadKWh: result.totalLoadKw * SIM_STEP_DURATION_HOURS,
+    ev1LoadKWh: (result.loadBreakdown[evIds[0]] ?? 0) * SIM_STEP_DURATION_HOURS,
+    ev2LoadKWh: (result.loadBreakdown[evIds[1]] ?? 0) * SIM_STEP_DURATION_HOURS,
+    gridImportKWh: result.gridImportKw * SIM_STEP_DURATION_HOURS,
+    gridExportKWh: result.gridExportKw * SIM_STEP_DURATION_HOURS,
   };
 
   addMinuteData(dataPoint);
@@ -236,12 +239,12 @@ export function tickPhysicsEngine(params: TickPhysicsParams) {
     solar: dataPoint.solarEnergyKWh,
     savings: result.savingsKES,
     gridImport: dataPoint.gridImportKWh,
-    carbonOffset: dataPoint.solarEnergyKWh * 0.5, // ~0.5 kg CO₂/kWh Kenya grid average
+    carbonOffset: dataPoint.solarEnergyKWh * GRID_EMISSION_FACTOR_KG_CO2_PER_KWH,
     batDischargeKwh:
       result.batteryPowerKw < 0
-        ? Math.abs(result.batteryPowerKw) * STEP_H
+        ? Math.abs(result.batteryPowerKw) * SIM_STEP_DURATION_HOURS
         : 0,
-    feedInEarnings: result.gridExportKw * STEP_H * 5.0, // KES 5/kWh feed-in tariff
+    feedInEarnings: result.gridExportKw * SIM_STEP_DURATION_HOURS * FEED_IN_TARIFF_RATE_KES,
   });
 
   return result;

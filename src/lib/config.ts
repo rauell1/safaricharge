@@ -1,9 +1,9 @@
 /**
  * SafariCharge – Central configuration file
  *
- * All system-level constants, tariff parameters, and physical coefficients
- * are defined here so they can be updated in one place without hunting
- * through individual source files.
+ * All system-level constants and physical coefficients are defined here.
+ * KPLC tariff numbers are the single source of truth in tariff-config.ts —
+ * import from there instead of duplicating values here.
  */
 
 // ---------------------------------------------------------------------------
@@ -76,44 +76,6 @@ export const SOILING_LOSS_PER_DAY = 0.005; // 0.5 % per day
  * Panels will not derate below 70 % of rated output before rain cleans them.
  */
 export const SOILING_MIN_FACTOR = 0.70;
-
-// ---------------------------------------------------------------------------
-// Kenya Power & Lighting Company (KPLC) – Commercial E-Mobility Tariff
-// Based on actual KPLC invoice for ROAM ELECTRIC LIMITED, February 2026.
-// ---------------------------------------------------------------------------
-
-/** Peak energy consumption rate before levies and VAT (KES/kWh) */
-export const KPLC_HIGH_RATE_BASE_KES = 16.00;
-
-/** Off-peak energy consumption rate before levies and VAT (KES/kWh) */
-export const KPLC_LOW_RATE_BASE_KES = 8.00;
-
-/** Fuel cost adjustment levy (KES/kWh) */
-export const KPLC_FUEL_ENERGY_COST_KES = 3.10;
-
-/** Foreign-exchange rate fluctuation adjustment (KES/kWh) */
-export const KPLC_FERFA_KES = 1.2061;
-
-/** Inflation adjustment levy (KES/kWh) */
-export const KPLC_INFA_KES = 0.46;
-
-/** Energy Regulatory Commission levy (KES/kWh) */
-export const KPLC_ERC_LEVY_KES = 0.08;
-
-/** Water Resources Authority levy (KES/kWh) */
-export const KPLC_WRA_LEVY_KES = 0.0121;
-
-/** Value Added Tax rate (decimal fraction) */
-export const KPLC_VAT_RATE = 0.16;
-
-/** Monthly peak-demand charge (KES per kW of recorded peak demand) */
-export const KPLC_DEMAND_CHARGE_KES_PER_KW = 750.0;
-
-// Peak hours (24-hour clock, inclusive start, exclusive end)
-export const KPLC_PEAK_MORNING_START_H = 6;
-export const KPLC_PEAK_MORNING_END_H = 10;
-export const KPLC_PEAK_EVENING_START_H = 18;
-export const KPLC_PEAK_EVENING_END_H = 22;
 
 // ---------------------------------------------------------------------------
 // Feed-in Tariff
