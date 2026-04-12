@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`9c67b53`](https://github.com/rauell1/safaricharge/commit/9c67b53d7c46c5fb487f674d7c7e1d7da1492f4e) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`473d4eb`](https://github.com/rauell1/safaricharge/commit/473d4eb8ef2d14abe69d6891c39d2be56a685f21) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | fix: correct @/components/dashboard → @/components/layout import paths in app/page.tsx and app/demo/page.tsx |
-| **Total commits** | 774 |
+| **Message** | fix: restore full demo/page.tsx body from rollback snapshot, fix all import paths |
+| **Total commits** | 778 |
 | **TypeScript files** | 147 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
