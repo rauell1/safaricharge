@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`0d861ed`](https://github.com/rauell1/safaricharge/commit/0d861edb796c958b526a17434397aa2c5b5b60de) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`da5aaa2`](https://github.com/rauell1/safaricharge/commit/da5aaa20a24500eb40017ab11a4096c6f7eb939d) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | refactor: replace 13 duplicate dashboard/ flat files with canonical re-export shims |
-| **Total commits** | 716 |
-| **TypeScript files** | 166 |
+| **Message** | refactor: complete structure — move to recommendation/ & reports/, scaffold LoadConfigComponents, nuke dashboard/ shims |
+| **Total commits** | 720 |
+| **TypeScript files** | 169 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
