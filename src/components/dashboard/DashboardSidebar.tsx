@@ -92,23 +92,17 @@ export function DashboardSidebar({
 
   return (
     <Sidebar className="border-r border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-primary)] shadow-[10px_0_40px_rgba(0,0,0,0.22)]">
-      <SidebarHeader className="border-b border-[var(--border)] p-6">
-        <div className="flex items-center gap-3">
-          {/* SafariCharge logo from /public/logo.svg */}
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-accent-solar to-accent-energy shadow-glow-solar overflow-hidden">
-            <Image
-              src="/logo.svg"
-              alt="SafariCharge logo"
-              width={32}
-              height={32}
-              priority
-              className="object-contain"
-            />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-[var(--text-primary)]">SafariCharge</h1>
-            <p className="text-xs text-[var(--text-tertiary)]">Energy Management</p>
-          </div>
+      <SidebarHeader className="border-b border-[var(--border)] px-4 py-5">
+        {/* Full SafariCharge logo — elephant + wordmark */}
+        <div className="flex items-center justify-center">
+          <Image
+            src="/logo.png"
+            alt="SafariCharge"
+            width={180}
+            height={72}
+            priority
+            className="object-contain w-full max-w-[180px] h-auto"
+          />
         </div>
       </SidebarHeader>
 
