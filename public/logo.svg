@@ -1,31 +1,52 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none" role="img" aria-label="SafariCharge logo">
-  <defs>
-    <radialGradient id="bg" cx="35%" cy="28%" r="70%">
-      <stop offset="0%" stop-color="#0c8a92"/>
-      <stop offset="100%" stop-color="#014f54"/>
-    </radialGradient>
-    <style>
-      .mark { animation: breathe 2.8s ease-in-out infinite; }
-      @keyframes breathe {
-        0%,100% { opacity:.85; }
-        50%      { opacity:1;  }
-      }
-      @media (prefers-reduced-motion:reduce) {
-        .mark { animation:none; opacity:1; }
-      }
-    </style>
-  </defs>
-
-  <!-- Rounded square background -->
-  <rect width="40" height="40" rx="9" fill="url(#bg)"/>
-
-  <!-- Z / lightning-bolt mark (3 pieces) -->
-  <g class="mark" fill="white">
-    <!-- Top horizontal bar -->
-    <path d="M9 9 H24.5 L21.8 13 H9 Z"/>
-    <!-- Diagonal slash -->
-    <path d="M21.8 13 L15.5 27 H13 L19.3 13 Z"/>
-    <!-- Bottom horizontal bar -->
-    <path d="M15.5 27 L31 27 V31 H18.2 Z"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 580" fill="none" role="img" aria-label="SafariCharge logo">
+<defs>
+  <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#1a6644"/>
+    <stop offset="55%" stop-color="#0d4f32"/>
+    <stop offset="100%" stop-color="#083d25"/>
+  </linearGradient>
+  <linearGradient id="panelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#22784f"/>
+    <stop offset="100%" stop-color="#145c38"/>
+  </linearGradient>
+  <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#f5a623"/>
+    <stop offset="100%" stop-color="#e07b00"/>
+  </linearGradient>
+</defs>
+<ellipse fill="url(#bodyGrad)" cx="390" cy="255" rx="175" ry="130"/>
+<ellipse fill="url(#bodyGrad)" cx="208" cy="232" rx="72" ry="65"/>
+<ellipse fill="url(#bodyGrad)" cx="218" cy="178" rx="50" ry="40"/>
+<ellipse fill="#1a6644" cx="152" cy="230" rx="44" ry="54"/>
+<ellipse fill="#22784f" opacity="0.55" cx="157" cy="230" rx="31" ry="40"/>
+<rect fill="url(#panelGrad)" opacity="0.78" x="255" y="152" width="52" height="38" rx="5" transform="rotate(-5 281 171)"/>
+<rect fill="url(#panelGrad)" opacity="0.78" x="314" y="147" width="52" height="38" rx="5" transform="rotate(-3 340 166)"/>
+<rect fill="url(#panelGrad)" opacity="0.78" x="372" y="145" width="52" height="38" rx="5" transform="rotate(-1 398 164)"/>
+<rect fill="url(#panelGrad)" opacity="0.78" x="430" y="150" width="52" height="38" rx="5" transform="rotate(2 456 169)"/>
+<rect fill="url(#panelGrad)" opacity="0.78" x="484" y="162" width="46" height="36" rx="5" transform="rotate(6 507 180)"/>
+<rect fill="url(#panelGrad)" opacity="0.78" x="248" y="198" width="54" height="40" rx="5" transform="rotate(-4 275 218)"/>
+<rect fill="url(#panelGrad)" opacity="0.78" x="308" y="193" width="54" height="40" rx="5" transform="rotate(-2 335 213)"/>
+<rect fill="url(#panelGrad)" opacity="0.78" x="368" y="191" width="54" height="40" rx="5" transform="rotate(0 395 211)"/>
+<rect fill="url(#panelGrad)" opacity="0.78" x="426" y="194" width="54" height="40" rx="5" transform="rotate(3 453 214)"/>
+<rect fill="url(#panelGrad)" opacity="0.78" x="480" y="204" width="48" height="38" rx="5" transform="rotate(7 504 223)"/>
+<rect fill="url(#panelGrad)" opacity="0.78" x="252" y="246" width="52" height="38" rx="5" transform="rotate(-3 278 265)"/>
+<rect fill="url(#panelGrad)" opacity="0.78" x="310" y="242" width="54" height="38" rx="5" transform="rotate(-1 337 261)"/>
+<rect fill="url(#panelGrad)" opacity="0.78" x="368" y="240" width="54" height="38" rx="5" transform="rotate(1 395 259)"/>
+<rect fill="url(#panelGrad)" opacity="0.78" x="426" y="245" width="54" height="38" rx="5" transform="rotate(4 453 264)"/>
+<rect fill="url(#panelGrad)" opacity="0.78" x="479" y="254" width="48" height="36" rx="5" transform="rotate(8 503 272)"/>
+<path fill="url(#bodyGrad)" d="M 152 272 C 138 282 128 300 125 320 C 122 339 128 356 140 361 C 151 366 163 359 167 346 C 171 332 165 318 161 306 C 157 294 155 282 163 274 Z"/>
+<rect fill="url(#bodyGrad)" x="258" y="368" width="48" height="90" rx="10"/>
+<rect fill="url(#bodyGrad)" x="322" y="372" width="48" height="86" rx="10"/>
+<rect fill="url(#bodyGrad)" x="406" y="372" width="48" height="86" rx="10"/>
+<rect fill="url(#bodyGrad)" x="468" y="366" width="46" height="90" rx="10"/>
+<path fill="none" stroke="#0d4f32" stroke-width="6" stroke-linecap="round" d="M 556 278 C 572 288 578 308 570 323 C 563 337 550 343 546 358"/>
+<circle fill="#0d4f32" cx="545" cy="362" r="8"/>
+<ellipse fill="#0d4f32" opacity="0.11" cx="395" cy="462" rx="210" ry="12"/>
+<circle fill="white" cx="178" cy="217" r="7"/>
+<circle fill="#083d25" cx="179" cy="218" r="3.5"/>
+<path fill="url(#orangeGrad)" d="M 148 272 C 124 282 102 298 90 318 C 80 334 82 352 93 358 C 102 363 115 360 122 350 C 130 340 132 324 128 310 C 125 300 132 284 148 276 Z"/>
+<path fill="url(#orangeGrad)" d="M 90 125 L 64 226 L 96 226 L 60 340 L 72 340 L 116 230 L 84 230 L 106 125 Z"/>
+<text x="50" y="535" font-family="'Helvetica Neue', 'Arial Black', Arial, sans-serif" font-weight="900" font-size="68" fill="#0d4f32" letter-spacing="2">SAFARI</text>
+<path fill="#e07b00" d="M 388 478 L 370 516 L 388 516 L 364 555 L 368 555 L 396 520 L 378 520 L 394 478 Z"/>
+<text x="404" y="535" font-family="'Helvetica Neue', 'Arial Black', Arial, sans-serif" font-weight="900" font-size="68" fill="#0d4f32" letter-spacing="2">HARGE</text>
 </svg>
