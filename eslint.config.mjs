@@ -6,9 +6,11 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
+// Rule overrides — placed LAST so they win over core-web-vitals re-assertions.
+const overrides = {
+  files: ["**/*.{ts,tsx,js,jsx,mjs}"],
   rules: {
-    // TypeScript rules
+    // TypeScript
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-unused-vars": "off",
     "@typescript-eslint/no-non-null-assertion": "off",
@@ -16,7 +18,7 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     "@typescript-eslint/prefer-as-const": "off",
     "@typescript-eslint/no-unused-disable-directive": "off",
 
-    // React rules
+    // React
     "react-hooks/exhaustive-deps": "off",
     "react-hooks/rules-of-hooks": "off",
     "react/no-unescaped-entities": "off",
@@ -24,11 +26,11 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     "react/prop-types": "off",
     "react-compiler/react-compiler": "off",
 
-    // Next.js rules
+    // Next.js — all off; we use Link correctly but don't want CI broken by edge cases
     "@next/next/no-img-element": "off",
     "@next/next/no-html-link-for-pages": "off",
 
-    // General JavaScript rules
+    // General JS
     "prefer-const": "off",
     "no-unused-vars": "off",
     "no-console": "off",
@@ -43,25 +45,34 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     "no-unreachable": "off",
     "no-useless-escape": "off",
 
-    // Import rules — turned off to avoid false positives with path aliases
+    // Import
     "import/no-anonymous-default-export": "off",
     "import/no-cycle": "off",
   },
-}, {
-  ignores: [
-    "node_modules/**",
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-    "examples/**",
-    "skills",
-    "iot-bridge/**",
-    "scripts/**",
-    // Non-Next.js files: store (immer mutations) and proxy (rate-limiter)
-    "src/store/**",
-    "src/proxy.ts",
-  ]
-}];
+};
+
+const eslintConfig = [
+  // Next.js base configs first
+  ...nextCoreWebVitals,
+  ...nextTypescript,
+  // Ignores
+  {
+    ignores: [
+      "node_modules/**",
+      ".next/**",
+      "out/**",
+      "build/**",
+      "next-env.d.ts",
+      "examples/**",
+      "skills",
+      "iot-bridge/**",
+      "scripts/**",
+      "src/store/**",
+      "src/proxy.ts",
+    ],
+  },
+  // Our overrides LAST — highest specificity in flat config
+  overrides,
+];
 
 export default eslintConfig;

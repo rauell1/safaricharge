@@ -131,7 +131,8 @@ export default function LandingPage() {
       {/* ─── Nav ──────────────────────────────────────────────────────── */}
       <nav style={styles.nav}>
         <div style={styles.navInner}>
-          <a href="/" style={styles.navLogo} aria-label="SafariCharge home">
+          {/* Use Next.js Link for internal navigation */}
+          <Link href="/" style={styles.navLogo} aria-label="SafariCharge home">
             {/* Inline SVG wordmark */}
             <svg width="160" height="32" viewBox="0 0 160 32" fill="none" aria-hidden="true">
               {/* Sun mark */}
@@ -147,7 +148,7 @@ export default function LandingPage() {
               {/* Wordmark */}
               <text x="30" y="21" fontFamily="'Plus Jakarta Sans', sans-serif" fontWeight="700" fontSize="16" fill="#0a4a3a" letterSpacing="-0.3">SafariCharge</text>
             </svg>
-          </a>
+          </Link>
 
           <div style={{ ...styles.navLinks, display: menuOpen ? 'flex' : undefined }} className="nav-links">
             <a href="#features" style={styles.navLink} onClick={() => setMenuOpen(false)}>Features</a>
@@ -184,7 +185,7 @@ export default function LandingPage() {
             </h1>
             <p style={styles.heroBody}>
               SafariCharge gives solar engineers and project developers a real-time
-              window into off-grid PV systems — from panel to battery to load — with
+              window into off-grid PV systems — from panel to battery to load — with
               the forecasting and KPI analytics that bankability reports demand.
             </p>
             <div style={styles.heroCtas}>
@@ -290,7 +291,7 @@ export default function LandingPage() {
         <section style={styles.ctaBand}>
           <div style={{ ...styles.container, textAlign: 'center' }}>
             <h2 style={styles.ctaBandTitle}>Ready to see your system?</h2>
-            <p  style={styles.ctaBandSub}>The demo dashboard runs on simulated Nairobi data. No sign-up, no hardware required.</p>
+            <p  style={styles.ctaBandSub}>The demo dashboard runs on simulated Nairobi data. No sign-up, no hardware required.</p>
             <Link href="/dashboard" style={styles.ctaPrimaryLarge}>Open the dashboard →</Link>
           </div>
         </section>
