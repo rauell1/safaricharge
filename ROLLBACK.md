@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 7 | `rollback/fix-ts-ts2554-handleduplicate-uses-sou-2026-04-12` | `480cab5` | fix(ts): TS2554 handleDuplicate uses source.finance+location; TS2769 radar restructured to RadarChart data=radarData with per-scenario dataKey columns | 2026-04-12 |
 | 6 | `rollback/fix-ci-resolve-all-5-type-check-errors-2026-04-12` | `037d751` | fix(ci): resolve all 5 type-check errors and lint flag error | 2026-04-12 |
 | 5 | `rollback/fix-ci-replace-single-pull-rebase-with-2026-04-12` | `abce273` | fix(ci): replace single pull--rebase with 5-attempt push retry loop in all auto-update workflows | 2026-04-12 |
 | 4 | `rollback/fix-ci-update-rollback-stash-before-re-2026-04-12` | `c4aed71` | fix(ci): update-rollback — stash before rebase pull, unstash after | 2026-04-12 |
@@ -125,6 +126,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-ci-resolve-all-5-type-check-errors-2026-04-12`
 - **Commit**: `037d751f2b45da0ad82e55a4bea2b42650f89805`
 - **Subject**: fix(ci): resolve all 5 type-check errors and lint flag error
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #7 — `rollback/fix-ts-ts2554-handleduplicate-uses-sou-2026-04-12`
+
+- **Branch**: `rollback/fix-ts-ts2554-handleduplicate-uses-sou-2026-04-12`
+- **Commit**: `480cab554a58f233d8f5d34f45d25945c964337d`
+- **Subject**: fix(ts): TS2554 handleDuplicate uses source.finance+location; TS2769 radar restructured to RadarChart data=radarData with per-scenario dataKey columns
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
