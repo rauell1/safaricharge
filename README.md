@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`3da49ee`](https://github.com/rauell1/safaricharge/commit/3da49ee1525241a40f7dda68bd9a716f8b78fac3) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`21e7e57`](https://github.com/rauell1/safaricharge/commit/21e7e57c9e9a143bc1d91bd5b312eee38b61cb56) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | fix: replace placeholder stubs with real component content |
-| **Total commits** | 794 |
+| **Message** | restore: full PowerFlowVisualization.tsx (was stub from bad commit) |
+| **Total commits** | 798 |
 | **TypeScript files** | 166 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
