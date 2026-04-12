@@ -76,21 +76,6 @@ export function useDemoEnergySystem() {
 
     tick(timeOfDay, currentDate);
 
-    // Apply EV control overrides — user-set charge rates and on/off state.
-    // We read from getState() to avoid adding reactive deps to this callback.
-    const store = useEnergySystemStore.getState();
-    const { ev1: ev1Ctrl, ev2: ev2Ctrl } = store.evControls;
-    const ev1Soc = store.nodes.ev1.soc ?? 0;
-    const ev2Soc = store.nodes.ev2.soc ?? 0;
-    store.updateNode('ev1', {
-      powerKW: ev1Ctrl.isCharging && ev1Soc < 98 ? ev1Ctrl.chargeRateKW : 0,
-      status: ev1Ctrl.isCharging && ev1Soc < 98 ? 'charging' : 'idle',
-    });
-    store.updateNode('ev2', {
-      powerKW: ev2Ctrl.isCharging && ev2Soc < 98 ? ev2Ctrl.chargeRateKW : 0,
-      status: ev2Ctrl.isCharging && ev2Soc < 98 ? 'charging' : 'idle',
-    });
-
     const nextTimeOfDay = (timeOfDay + HOURS_PER_TICK) % 24;
     timeOfDayRef.current = nextTimeOfDay;
     tickCountRef.current += 1;

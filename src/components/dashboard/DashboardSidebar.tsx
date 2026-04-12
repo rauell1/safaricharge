@@ -1,162 +1,184 @@
 'use client';
-/**
- * DashboardSidebar
- * Updated to include "Scenarios" nav item.
- */
 
-import React from 'react';
+import React, { useMemo } from 'react';
+import {
+  LayoutDashboard,
+  FlaskConical,
+  SlidersHorizontal,
+  DollarSign,
+  Zap,
+  BookMarked,
+  Lightbulb,
+  Bot,
+} from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarHeader,
+  SidebarFooter,
+} from '@/components/ui/sidebar';
+import { cn } from '@/lib/utils';
 
 export type DashboardSection =
   | 'dashboard'
-  | 'energy'
-  | 'battery'
-  | 'forecast'
+  | 'simulation'
+  | 'configuration'
+  | 'financial'
   | 'scenarios'
-  | 'reports'
-  | 'settings'
-  | 'assistant';
+  | 'recommendation'
+  | 'ai-assistant';
 
-const NAV_ITEMS: Array<{ id: DashboardSection; label: string; icon: React.ReactNode }> = [
-  {
-    id: 'dashboard',
-    label: 'Overview',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="7" height="7" rx="1"/>
-        <rect x="14" y="3" width="7" height="7" rx="1"/>
-        <rect x="3" y="14" width="7" height="7" rx="1"/>
-        <rect x="14" y="14" width="7" height="7" rx="1"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'energy',
-    label: 'Energy',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'battery',
-    label: 'Battery',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="7" width="18" height="11" rx="2"/>
-        <path d="M22 11v3"/>
-        <line x1="7" y1="12" x2="7" y2="12.5"/>
-        <line x1="11" y1="12" x2="11" y2="12.5"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'forecast',
-    label: 'Forecast',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 3v18h18"/>
-        <path d="M7 16l4-4 4 4 4-4"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'scenarios',
-    label: 'Scenarios',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="18" y1="20" x2="18" y2="10"/>
-        <line x1="12" y1="20" x2="12" y2="4"/>
-        <line x1="6"  y1="20" x2="6"  y2="14"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'reports',
-    label: 'Reports',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-        <polyline points="14 2 14 8 20 8"/>
-        <line x1="16" y1="13" x2="8" y2="13"/>
-        <line x1="16" y1="17" x2="8" y2="17"/>
-        <polyline points="10 9 9 9 8 9"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'assistant',
-    label: 'AI Assistant',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-      </svg>
-    ),
-  },
-  {
-    id: 'settings',
-    label: 'Settings',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-      </svg>
-    ),
-  },
-];
-
-interface Props {
-  active: DashboardSection;
-  onNavigate: (section: DashboardSection) => void;
-  collapsed?: boolean;
+export interface SidebarContextMetric {
+  label: string;
+  value: string;
+  tone: 'solar' | 'battery' | 'grid' | 'ev' | 'neutral';
 }
 
-export function DashboardSidebar({ active, onNavigate, collapsed = false }: Props) {
-  return (
-    <nav
-      className={`flex flex-col h-full bg-[var(--color-surface)] border-r border-[var(--color-border)] transition-all ${
-        collapsed ? 'w-14' : 'w-56'
-      }`}
-    >
-      {/* Logo / wordmark */}
-      <div className={`flex items-center gap-2.5 px-4 h-14 border-b border-[var(--color-border)] flex-shrink-0 ${
-        collapsed ? 'justify-center' : ''
-      }`}>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="4" fill="#e8920a"/>
-          <line x1="12" y1="4"  x2="12" y2="6"  stroke="#e8920a" strokeWidth="2" strokeLinecap="round"/>
-          <line x1="12" y1="18" x2="12" y2="20" stroke="#e8920a" strokeWidth="2" strokeLinecap="round"/>
-          <line x1="4"  y1="12" x2="6"  y2="12" stroke="#e8920a" strokeWidth="2" strokeLinecap="round"/>
-          <line x1="18" y1="12" x2="20" y2="12" stroke="#e8920a" strokeWidth="2" strokeLinecap="round"/>
-        </svg>
-        {!collapsed && (
-          <span className="text-sm font-bold text-[var(--color-text)] tracking-tight">SafariCharge</span>
-        )}
-      </div>
+interface DashboardSidebarProps {
+  activeSection?: DashboardSection;
+  onSectionChange?: (section: DashboardSection) => void;
+  contextualMetrics?: SidebarContextMetric[];
+}
 
-      {/* Nav items */}
-      <ul role="list" className="flex-1 overflow-y-auto py-2 space-y-0.5 px-2">
-        {NAV_ITEMS.map(item => {
-          const isActive = item.id === active;
-          return (
-            <li key={item.id}>
-              <button
-                className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-[var(--color-primary-highlight)] text-[var(--color-primary)]'
-                    : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface-dynamic)] hover:text-[var(--color-text)]'
-                } ${collapsed ? 'justify-center' : ''}`}
-                onClick={() => onNavigate(item.id)}
-                title={collapsed ? item.label : undefined}
-                aria-current={isActive ? 'page' : undefined}
-              >
-                {item.icon}
-                {!collapsed && <span>{item.label}</span>}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+const toneClasses: Record<SidebarContextMetric['tone'], string> = {
+  solar: 'bg-[var(--solar-soft)] text-[var(--solar)] border-[var(--solar-soft)]',
+  battery: 'bg-[var(--battery-soft)] text-[var(--battery)] border-[var(--battery-soft)]',
+  grid: 'bg-[var(--grid-soft)] text-[var(--grid)] border-[var(--grid-soft)]',
+  ev: 'bg-[var(--ev-soft)] text-[var(--ev)] border-[var(--ev-soft)]',
+  neutral: 'bg-[var(--bg-card-muted)] text-[var(--text-secondary)] border-[var(--border)]',
+};
+
+export function DashboardSidebar({
+  activeSection = 'dashboard',
+  onSectionChange,
+  contextualMetrics = [],
+}: DashboardSidebarProps) {
+  const pathname = usePathname();
+  const resolvedActive: DashboardSection = useMemo(() => {
+    if (activeSection && activeSection !== 'dashboard') return activeSection;
+    if (!pathname) return 'dashboard';
+    if (pathname.startsWith('/scenarios'))                                        return 'scenarios';
+    if (pathname.startsWith('/demo/simulation') || pathname.includes('simulation')) return 'simulation';
+    if (pathname.includes('configuration'))                                       return 'configuration';
+    if (pathname.includes('financial'))                                           return 'financial';
+    if (pathname.includes('recommendation'))                                      return 'recommendation';
+    if (pathname.includes('ai-assistant'))                                        return 'ai-assistant';
+    return activeSection ?? 'dashboard';
+  }, [activeSection, pathname]);
+
+  const mainMenuItems: Array<{
+    id: DashboardSection;
+    label: string;
+    icon: React.ElementType;
+    href?: string;
+  }> = [
+    { id: 'dashboard',      label: 'Dashboard',         icon: LayoutDashboard },
+    { id: 'simulation',     label: 'Simulation',        icon: FlaskConical },
+    { id: 'configuration',  label: 'System Config',     icon: SlidersHorizontal },
+    { id: 'financial',      label: 'Financial Analysis',icon: DollarSign },
+    { id: 'scenarios',      label: 'Scenarios',         icon: BookMarked, href: '/scenarios' },
+    { id: 'recommendation', label: 'Get Recommendation',icon: Lightbulb },
+    { id: 'ai-assistant',   label: 'AI Assistant',      icon: Bot },
+  ];
+
+  return (
+    <Sidebar className="border-r border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-primary)] shadow-[10px_0_40px_rgba(0,0,0,0.22)]">
+      <SidebarHeader className="border-b border-[var(--border)] p-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-accent-solar to-accent-energy shadow-glow-solar">
+            <Zap className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-[var(--text-primary)]">SafariCharge</h1>
+            <p className="text-xs text-[var(--text-tertiary)]">Energy Management</p>
+          </div>
+        </div>
+      </SidebarHeader>
+
+      <SidebarContent className="px-3 py-4">
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-[var(--text-tertiary)] uppercase tracking-wider text-xs mb-2">
+            Navigation
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {mainMenuItems.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton
+                    asChild={!!item.href}
+                    isActive={
+                      resolvedActive === item.id ||
+                      (!!item.href && !!pathname?.startsWith(item.href))
+                    }
+                    onClick={() => !item.href && onSectionChange?.(item.id)}
+                    className="group relative rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] data-[active=true]:bg-[var(--bg-card)] data-[active=true]:shadow-[0_10px_30px_rgba(0,0,0,0.25)] data-[active=true]:text-[var(--text-primary)]"
+                  >
+                    {item.href ? (
+                      <Link href={item.href}>
+                        <item.icon className="h-4 w-4" />
+                        <span className="font-medium">{item.label}</span>
+                        {resolvedActive === item.id && (
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--solar)] rounded-r" />
+                        )}
+                      </Link>
+                    ) : (
+                      <>
+                        <item.icon className="h-4 w-4" />
+                        <span className="font-medium">{item.label}</span>
+                        {resolvedActive === item.id && (
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--solar)] rounded-r" />
+                        )}
+                      </>
+                    )}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup className="mt-4">
+          <SidebarGroupLabel className="text-[var(--text-tertiary)] uppercase tracking-wider text-xs mb-2">
+            Live Context
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <div className="space-y-2">
+              {contextualMetrics.map((metric) => (
+                <div
+                  key={metric.label}
+                  className={cn(
+                    'rounded-lg border px-3 py-2',
+                    toneClasses[metric.tone]
+                  )}
+                >
+                  <div className="text-[10px] uppercase tracking-wide opacity-80">{metric.label}</div>
+                  <div className="text-sm font-semibold mt-0.5">{metric.value}</div>
+                </div>
+              ))}
+            </div>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter className="border-t border-[var(--border)] p-4">
+        <div className="text-xs text-[var(--text-tertiary)]">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="h-2 w-2 rounded-full bg-[var(--battery)] status-online" />
+            <span>System Online</span>
+          </div>
+          <div className="text-[10px] text-[var(--text-tertiary)] opacity-70">
+            SafariCharge © 2026
+          </div>
+        </div>
+      </SidebarFooter>
+    </Sidebar>
   );
 }
