@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 40 | `rollback/refactor-remove-duplicate-recommendati-2026-04-12` | `babc9fa` | refactor: remove duplicate RecommendationComponents.tsx from simulation/ (canonical in energy/) | 2026-04-12 |
 | 39 | `rollback/refactor-remove-flat-recommendationcom-2026-04-12` | `f89ddb0` | refactor: remove flat RecommendationComponents.tsx (moved to energy/) | 2026-04-12 |
 | 38 | `rollback/refactor-remove-flat-loadconfigcompone-2026-04-12` | `78746d6` | refactor: remove flat LoadConfigComponents.tsx (moved to simulation/) | 2026-04-12 |
 | 37 | `rollback/refactor-remove-flat-financialdashboar-2026-04-12` | `c23231a` | refactor: remove flat FinancialDashboard.tsx (moved to dashboard/) | 2026-04-12 |
@@ -455,6 +456,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/refactor-remove-flat-recommendationcom-2026-04-12`
 - **Commit**: `f89ddb08574d28f01e8c137e8d803aed7d6ef26b`
 - **Subject**: refactor: remove flat RecommendationComponents.tsx (moved to energy/)
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #40 — `rollback/refactor-remove-duplicate-recommendati-2026-04-12`
+
+- **Branch**: `rollback/refactor-remove-duplicate-recommendati-2026-04-12`
+- **Commit**: `babc9fa2626c76d654f7c011cb450c2161a225a1`
+- **Subject**: refactor: remove duplicate RecommendationComponents.tsx from simulation/ (canonical in energy/)
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
