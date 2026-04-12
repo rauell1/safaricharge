@@ -1,0 +1,72 @@
+name: Update Rollback Snapshot
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'ROLLBACK.md'      # prevent infinite loop
+      - 'CODEBASE_MAP.md'
+      - 'README.md'
+
+jobs:
+  snapshot:
+    name: Create rollback branch + update ROLLBACK.md
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Collect metadata
+        id: meta
+        run: |
+          echo "sha=$(git log -1 --format='%H' main)" >> $GITHUB_OUTPUT
+          echo "sha_short=$(git log -1 --format='%h' main)" >> $GITHUB_OUTPUT
+          echo "date=$(git log -1 --format='%Y-%m-%d' main)" >> $GITHUB_OUTPUT
+          echo "subject=$(git log -1 --format='%s' main)" >> $GITHUB_OUTPUT
+          # Derive a slug from the commit subject (first 40 chars, lowercased, spaces→dashes)
+          SLUG=$(git log -1 --format='%s' main | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/-\+/-/g' | cut -c1-40 | sed 's/-$//')
+          echo "slug=${SLUG}" >> $GITHUB_OUTPUT
+          DATE=$(git log -1 --format='%Y-%m-%d' main)
+          echo "branch_name=rollback/${SLUG}-${DATE}" >> $GITHUB_OUTPUT
+
+      - name: Create rollback branch
+        env:
+          SHA: ${{ steps.meta.outputs.sha }}
+          BRANCH_NAME: ${{ steps.meta.outputs.branch_name }}
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          # Only create branch if it doesn't already exist
+          if git ls-remote --exit-code origin "refs/heads/${BRANCH_NAME}" > /dev/null 2>&1; then
+            echo "Branch ${BRANCH_NAME} already exists — skipping"
+          else
+            git branch "${BRANCH_NAME}" "${SHA}"
+            git push origin "${BRANCH_NAME}"
+            echo "Created rollback branch: ${BRANCH_NAME} @ ${SHA}"
+          fi
+
+      - name: Update ROLLBACK.md
+        env:
+          SHA: ${{ steps.meta.outputs.sha }}
+          SHA_SHORT: ${{ steps.meta.outputs.sha_short }}
+          DATE: ${{ steps.meta.outputs.date }}
+          SUBJECT: ${{ steps.meta.outputs.subject }}
+          BRANCH_NAME: ${{ steps.meta.outputs.branch_name }}
+        run: python3 .github/scripts/gen_rollback_entry.py
+
+      - name: Commit updated ROLLBACK.md
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add ROLLBACK.md
+          if git diff --cached --quiet; then
+            echo 'No changes to ROLLBACK.md — skipping commit'
+          else
+            git commit -m 'docs(auto): update ROLLBACK.md snapshot log [skip ci]'
+            git push
+          fi

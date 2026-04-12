@@ -1,0 +1,58 @@
+name: Update README
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'README.md'        # prevent infinite loop
+      - 'CODEBASE_MAP.md'
+      - 'ROLLBACK.md'
+
+jobs:
+  update-readme:
+    name: Regenerate README.md
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Collect metadata
+        id: meta
+        run: |
+          echo "last_commit=$(git log -1 --format='%H' main)" >> $GITHUB_OUTPUT
+          echo "last_commit_short=$(git log -1 --format='%h' main)" >> $GITHUB_OUTPUT
+          echo "last_author=$(git log -1 --format='%an' main)" >> $GITHUB_OUTPUT
+          echo "last_date=$(git log -1 --format='%ci' main)" >> $GITHUB_OUTPUT
+          echo "last_message=$(git log -1 --format='%s' main)" >> $GITHUB_OUTPUT
+          echo "total_commits=$(git rev-list --count main)" >> $GITHUB_OUTPUT
+          echo "total_ts=$(find src -name '*.ts' -o -name '*.tsx' 2>/dev/null | wc -l | tr -d ' ')" >> $GITHUB_OUTPUT
+          echo "branch=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Regenerate README.md
+        env:
+          LAST_COMMIT: ${{ steps.meta.outputs.last_commit }}
+          LAST_COMMIT_SHORT: ${{ steps.meta.outputs.last_commit_short }}
+          LAST_AUTHOR: ${{ steps.meta.outputs.last_author }}
+          LAST_DATE: ${{ steps.meta.outputs.last_date }}
+          LAST_MESSAGE: ${{ steps.meta.outputs.last_message }}
+          TOTAL_COMMITS: ${{ steps.meta.outputs.total_commits }}
+          TOTAL_TS: ${{ steps.meta.outputs.total_ts }}
+          REPO: rauell1/safaricharge
+        run: python3 .github/scripts/gen_readme.py
+
+      - name: Commit updated README
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add README.md
+          if git diff --cached --quiet; then
+            echo 'No changes to README.md — skipping commit'
+          else
+            git commit -m 'docs(auto): regenerate README.md [skip ci]'
+            git push
+          fi
