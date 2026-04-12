@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`3db17c9`](https://github.com/rauell1/safaricharge/commit/3db17c9fcdc8a3076e25719c634307e29aec7893) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`1d9f900`](https://github.com/rauell1/safaricharge/commit/1d9f9005d671a44899174b3eb6d2bccdd521ad56) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | refactor(slice-3): add energy/EnergyReportModal, simulation/LoadConfig, simulation/Recommendation |
-| **Total commits** | 677 |
-| **TypeScript files** | 151 |
+| **Message** | refactor: move flat components into subfolders + fix import paths |
+| **Total commits** | 681 |
+| **TypeScript files** | 152 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
