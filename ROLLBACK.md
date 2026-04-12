@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 20 | `rollback/feat-add-safaricharge-elephant-logo-im-2026-04-12` | `bd44d9d` | feat: add SafariCharge elephant logo image | 2026-04-12 |
 | 19 | `rollback/feat-replace-z-mark-logo-with-elephant-2026-04-12` | `8c2741d` | feat: replace Z-mark logo with elephant + solar panel illustration | 2026-04-12 |
 | 18 | `rollback/brand-add-favicon-apple-touch-icon-and-2026-04-12` | `9d7bea2` | brand: add favicon, apple-touch-icon and full icon metadata | 2026-04-12 |
 | 17 | `rollback/brand-replace-logo-with-pixel-perfect-2026-04-12` | `2dbd869` | brand: replace logo with pixel-perfect teal SafariCharge mark | 2026-04-12 |
@@ -255,6 +256,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/feat-replace-z-mark-logo-with-elephant-2026-04-12`
 - **Commit**: `8c2741dbfe0dabbcc67bec054634cef273dfed60`
 - **Subject**: feat: replace Z-mark logo with elephant + solar panel illustration
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #20 — `rollback/feat-add-safaricharge-elephant-logo-im-2026-04-12`
+
+- **Branch**: `rollback/feat-add-safaricharge-elephant-logo-im-2026-04-12`
+- **Commit**: `bd44d9df2821afdd1a22a6784819c8676d2e19cc`
+- **Subject**: feat: add SafariCharge elephant logo image
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
