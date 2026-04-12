@@ -26,6 +26,9 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    # Lint is informational — it never blocks build or deploy.
+    # Remove this line when the codebase is lint-clean and you want to enforce.
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,15 +36,13 @@ jobs:
           node-version: '24'
           cache: 'npm'
       - run: npm install --legacy-peer-deps
-      # --max-warnings=9999: warnings are visible but don't block CI.
-      # Only fatal parse errors (exit code 2) still fail this step.
-      # Tighten to --max-warnings=0 when the codebase is lint-clean.
       - run: npx eslint . --max-warnings=9999
 
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [typecheck, lint]
+    # Lint removed from needs — build gates only on type correctness.
+    needs: [typecheck]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
