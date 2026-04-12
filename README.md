@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`6515a03`](https://github.com/rauell1/safaricharge/commit/6515a030c2ecf21bfa9144c99c2c37792b5617a2) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`ab57eb7`](https://github.com/rauell1/safaricharge/commit/ab57eb7659c584c01a0bd1a7c1b15fec60840940) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | fix(ci): update-rollback — re-run gen script inside retry loop, drop fragile stash pattern |
-| **Total commits** | 568 |
+| **Message** | fix(lint): convert require() to ESM imports in gen script; fix setState-in-effect and Math.random purity violations |
+| **Total commits** | 572 |
 | **TypeScript files** | 137 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
