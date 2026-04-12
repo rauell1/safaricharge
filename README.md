@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`61d93a4`](https://github.com/rauell1/safaricharge/commit/61d93a49adefd61d32dd0046e10c6016f53863ac) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`dd9725c`](https://github.com/rauell1/safaricharge/commit/dd9725c200e66afea82eec4ecbd74d277a2d9af2) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | refactor(energy): move energy widget components to src/components/energy/ |
-| **Total commits** | 660 |
-| **TypeScript files** | 147 |
+| **Message** | refactor(energy): move DailyEnergyGraph + SolarComponentLibrary into energy/ slice 2 |
+| **Total commits** | 664 |
+| **TypeScript files** | 149 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
