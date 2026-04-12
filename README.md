@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`c077e41`](https://github.com/rauell1/safaricharge/commit/c077e41f0287d3760c21bbcd6226bb4f76ff1b96) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`23219ba`](https://github.com/rauell1/safaricharge/commit/23219ba1b07a4ff3d275587c38cc83cc0f9be406) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | fix(ai): correct malformed generic on useState line 60 |
-| **Total commits** | 786 |
-| **TypeScript files** | 163 |
+| **Message** | restore: add missing PowerFlowVisualization, SystemVisualization, FinancialDashboard to dashboard/ |
+| **Total commits** | 790 |
+| **TypeScript files** | 166 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
