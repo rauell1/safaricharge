@@ -18,12 +18,14 @@
  *   No external npm dependencies needed.
  */
 
-'use strict';
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
+import { fileURLToPath } from 'url';
 
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -171,7 +173,7 @@ function getGitInfo() {
   return { commit, branch, timestamp, changes, recentCommits };
 }
 
-function getHotspotHistory(filePath, topN = 10) {
+function getHotspotHistory(filePath) {
   // Count commits touching each file (approximate hotspot score)
   const rel = path.relative(REPO_ROOT, filePath);
   const count = parseInt(run(`git log --oneline --follow -- "${rel}" | wc -l`), 10) || 0;
