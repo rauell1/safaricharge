@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`3be3586`](https://github.com/rauell1/safaricharge/commit/3be35867e49ad15d7d92f37e7e93e906154ffb33) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`0d7c84a`](https://github.com/rauell1/safaricharge/commit/0d7c84aee4383fd664dfd1474b5af6cfc263f378) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | refactor: decompose dashboard/ into widgets/, financial/, reports/, ai/ per target structure |
-| **Total commits** | 704 |
-| **TypeScript files** | 158 |
+| **Message** | refactor: add reports/, ai/ stubs and dashboard/ re-export barrels for zero-breakage |
+| **Total commits** | 708 |
+| **TypeScript files** | 166 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
