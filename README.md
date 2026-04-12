@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`3de7152`](https://github.com/rauell1/safaricharge/commit/3de71526d17eacf852ac35725baa57e317c60cb4) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`8493403`](https://github.com/rauell1/safaricharge/commit/8493403b281a0eab5a588a09ef6b98f0f5975c36) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | refactor: delete dashboard/ shim folder — folder now empty |
-| **Total commits** | 756 |
-| **TypeScript files** | 151 |
+| **Message** | refactor: move AIAssistant → components/ai/AIAssistant, fix BatteryPredictionCard import path |
+| **Total commits** | 759 |
+| **TypeScript files** | 153 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
