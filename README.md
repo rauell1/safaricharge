@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`113e08c`](https://github.com/rauell1/safaricharge/commit/113e08c9c7c6695483bf9ecb9e02173d3efaea31) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`82cc47b`](https://github.com/rauell1/safaricharge/commit/82cc47b28972d9f31ef43a7606732429b5541c20) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | feat: add missing EnergyReportModal component to energy folder |
-| **Total commits** | 818 |
+| **Message** | refactor: consolidate DashboardSidebar — layout/ is canonical, dashboard/ re-exports |
+| **Total commits** | 822 |
 | **TypeScript files** | 168 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
