@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`0d66526`](https://github.com/rauell1/safaricharge/commit/0d665269bf068dccab8667663f744a2232f3ec96) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`6515a03`](https://github.com/rauell1/safaricharge/commit/6515a030c2ecf21bfa9144c99c2c37792b5617a2) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | fix(ci): replace next lint --max-warnings with npm run lint (eslint .) |
-| **Total commits** | 565 |
+| **Message** | fix(ci): update-rollback — re-run gen script inside retry loop, drop fragile stash pattern |
+| **Total commits** | 568 |
 | **TypeScript files** | 137 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
