@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`84062af`](https://github.com/rauell1/safaricharge/commit/84062af00cad2446fa5d8b7a452e99b2079355b3) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`48f05ce`](https://github.com/rauell1/safaricharge/commit/48f05ce951339fbddb1f6f5e2937bae6ecae6ede) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | logo |
-| **Total commits** | 632 |
+| **Message** | feat: use Google Drive hosted logo across all placements |
+| **Total commits** | 638 |
 | **TypeScript files** | 138 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
