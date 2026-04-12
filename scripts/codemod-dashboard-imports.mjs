@@ -1,15 +1,21 @@
 #!/usr/bin/env node
 /**
- * codemod-dashboard-imports.mjs  v2
+ * codemod-dashboard-imports.mjs  v3
  * ─────────────────────────────────────────────────────────────────────────────
  * Rewrites all @/components/dashboard/X imports to canonical domain paths.
  *
- * What’s new in v2:
- *   - Catches `import { type X }` inline-type syntax (TS 4.5+)
- *   - Barrel import splitter: groups components by domain and emits
- *     ready-to-paste replacement lines
- *   - Exits with code 1 when barrel imports still need manual resolution (CI-safe)
- *   - Richer summary: auto-fixed / barrel-manual / total counts
+ * What’s new in v3:
+ *   - Multiline import normalizer: collapses multiline import blocks into
+ *     single lines before pattern matching, then restores them. Handles:
+ *       import {          import { BatteryHealthCard,  // Battery widget
+ *         BatteryHealthCard,       AlertsList
+ *         // comment       } from '@/components/dashboard'
+ *         AlertsList
+ *       } from '@/components/dashboard'
+ *   - Comment-stripping inside import braces before specifier parsing
+ *   - Trailing comma tolerance
+ *   - Still preserves inline `type` modifiers (TS 4.5+)
+ *   - Barrel splitter + CI exit code from v2 unchanged
  *
  * Usage:
  *   node scripts/codemod-dashboard-imports.mjs            # dry run
@@ -23,8 +29,8 @@
  *   4. npm run lint
  *   5. npm run build
  *   6. git rm -r src/components/dashboard/
- *   7. Flip resurrection guard in eslint.config.mjs from 'warn' → 'error'
- *   8. npm run build && git commit
+ *   7. Flip resurrection guard: eslint.config.mjs warn → error, remove ignores block
+ *   8. npm run build && git commit -m "arch: activate resurrection guard"
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -33,6 +39,8 @@ import { glob } from 'glob';
 import path from 'path';
 
 // ── Canonical import map ────────────────────────────────────────────────────
+// Source of truth: COMPONENT_OWNERSHIP.md
+// Keep in sync whenever a component is added, moved, or deleted.
 const CANONICAL_MAP = {
   // layout/
   DashboardLayout:        '@/components/layout/DashboardLayout',
@@ -67,32 +75,96 @@ const DRY_RUN    = !process.argv.includes('--write');
 const dirFlag    = process.argv.indexOf('--dir');
 const TARGET_DIR = dirFlag !== -1 ? process.argv[dirFlag + 1] : 'src';
 
-// ── Regex patterns ────────────────────────────────────────────────────────────
+// ── v3: Multiline import normalizer ───────────────────────────────────────────
+//
+// Problem: regex patterns work on single lines. A multiline import like:
+//   import {
+//     BatteryHealthCard,
+//     // a comment
+//     AlertsList
+//   } from '@/components/dashboard'
+//
+// ...spans 5 lines and cannot be matched by a line-anchored pattern.
+//
+// Strategy:
+//   1. normalizeMultilineImports(): collapse every multiline import block into
+//      a single line, stripping inline comments and normalizing whitespace.
+//      Track original text ↔ collapsed text mapping for faithful restoration.
+//   2. Run all regex patterns against the normalized single-line form.
+//   3. restoreMultilineImports(): for any import that was NOT rewritten,
+//      restore the original multiline form so we only touch what we change.
 
-// Pattern 1: standard and `import type` forms
-//   import X from '...'
-//   import { X } from '...'
-//   import type { X } from '...'
-//   import * as X from '...'
+/**
+ * Collapse multiline import blocks to single lines.
+ * Returns { normalized: string, map: Map<collapsedLine, originalBlock> }
+ */
+function normalizeMultilineImports(source) {
+  const map = new Map();
+
+  // Match: import ... { ... (possibly multiline) ... } from '...';
+  // The opening brace may be on the same line as `import` or on the next.
+  const MULTILINE_IMPORT_RE =
+    /^(import\s+(?:type\s+)?)(\{[^}]*\n[^}]*\})(\s*from\s*['"][^'"]+['"];?)$/gm;
+
+  const normalized = source.replace(
+    // Use a broader match that catches the full block across newlines
+    /(import\s+(?:type\s+)?)\{([^}]*)\}(\s*from\s*['"][^'"]+['"];?)/gs,
+    (match, keyword, specifiers, fromClause) => {
+      // Only normalize if the block actually spans multiple lines
+      if (!match.includes('\n')) return match;
+
+      // Strip inline comments from specifiers
+      const cleanSpecifiers = specifiers
+        .replace(/\/\/[^\n]*/g, '')  // remove // comments
+        .replace(/\/\*[^*]*\*+([^/*][^*]*\*+)*\//g, '') // remove /* */ comments
+        .split('\n')
+        .map(s => s.trim())
+        .filter(Boolean)
+        .join(' ');
+
+      // Normalize whitespace and trailing commas in specifiers
+      const normalizedSpecifiers = cleanSpecifiers
+        .replace(/\s*,\s*/g, ', ')  // normalize comma spacing
+        .replace(/,\s*$/, '');      // remove trailing comma
+
+      const collapsed = `${keyword}{ ${normalizedSpecifiers} }${fromClause}`;
+
+      // Store the original block so we can restore it if we don't touch it
+      map.set(collapsed.trim(), match);
+      return collapsed;
+    }
+  );
+
+  return { normalized, map };
+}
+
+/**
+ * For lines that were NOT rewritten, restore their original multiline form.
+ * Lines that WERE rewritten stay in their new normalized (single-line) form.
+ */
+function restoreUnchangedMultilineImports(rewritten, map) {
+  let result = rewritten;
+  for (const [collapsed, original] of map.entries()) {
+    // If the collapsed form survived untouched in the rewritten output, restore it
+    if (result.includes(collapsed)) {
+      result = result.replace(collapsed, original);
+    }
+  }
+  return result;
+}
+
+// ── Regex patterns (operate on normalized single-line input) ─────────────────
+
+// Standard + `import type { X }` forms
 const STANDARD_RE =
   /^(import\s+(?:type\s+)?(?:[\w{}\s,*]+\s+from\s+)['"])(@\/components\/dashboard(?:\/([\w]+))?)['"];?$/gm;
 
-// Pattern 2: inline `type` modifier inside braces (TS 4.5+)
-//   import { type X } from '...'
-//   import { type X, Y, type Z } from '...'
-// We match the whole import statement to replace only the path portion.
+// Inline `type` modifier: import { type X, Y } from '...'
 const INLINE_TYPE_RE =
   /^(import\s+\{[^}]*\btype\s+\w[^}]*\}\s+from\s+['"])(@\/components\/dashboard(?:\/([\w]+))?)['"];?$/gm;
 
-// ── Barrel splitter ────────────────────────────────────────────────────────────
-// Given a barrel import like:
-//   import { BatteryHealthCard, AlertsList, type StatCardsProps } from '@/components/dashboard'
-// Returns a formatted multi-line suggestion grouped by domain:
-//   import { BatteryHealthCard } from '@/components/energy/BatteryHealthCard';
-//   import { AlertsList } from '@/components/widgets/AlertsList';
-//   import type { StatCardsProps } from '@/components/widgets/StatCards';
+// ── Barrel splitter ─────────────────────────────────────────────────────────────
 function suggestBarrelSplit(matchLine) {
-  // Extract named specifiers from the braces
   const specifiersMatch = matchLine.match(/import\s+(?:type\s+)?\{([^}]+)\}/);
   if (!specifiersMatch) return null;
 
@@ -101,22 +173,17 @@ function suggestBarrelSplit(matchLine) {
     .map(s => s.trim())
     .filter(Boolean);
 
-  // Group by canonical path
-  const byPath = new Map();
+  const byPath  = new Map();
   const unknown = [];
 
   for (const spec of rawSpecifiers) {
-    // Handle inline `type` modifier: `type X` or `type X as Y`
     const isInlineType = spec.startsWith('type ');
     const cleanSpec    = isInlineType ? spec.replace(/^type\s+/, '') : spec;
-    const localName    = cleanSpec.split(/\s+as\s+/)[0].trim(); // strip alias
+    const localName    = cleanSpec.split(/\s+as\s+/)[0].trim();
     const alias        = cleanSpec.includes(' as ') ? cleanSpec.split(/\s+as\s+/)[1].trim() : null;
+    const canonical    = CANONICAL_MAP[localName];
 
-    const canonical = CANONICAL_MAP[localName];
-    if (!canonical) {
-      unknown.push(spec);
-      continue;
-    }
+    if (!canonical) { unknown.push(spec); continue; }
 
     if (!byPath.has(canonical)) byPath.set(canonical, []);
     const specString = alias
@@ -129,78 +196,84 @@ function suggestBarrelSplit(matchLine) {
   for (const [canonicalPath, specs] of byPath.entries()) {
     const allTypes = specs.every(s => s.startsWith('type '));
     const specList = specs.map(s => s.replace(/^type /, '')).join(', ');
-    if (allTypes) {
-      lines.push(`import type { ${specList} } from '${canonicalPath}';`);
-    } else {
-      // Mix of type and value imports — keep inline type modifiers
-      lines.push(`import { ${specs.join(', ')} } from '${canonicalPath}';`);
-    }
+    lines.push(allTypes
+      ? `import type { ${specList} } from '${canonicalPath}';`
+      : `import { ${specs.join(', ')} } from '${canonicalPath}';`);
   }
 
   return { lines, unknown };
 }
 
 // ── Rewrite logic ─────────────────────────────────────────────────────────────
+function applyPattern(text, pattern, outputLog) {
+  let autoFixed = 0;
+  let barrelHits = 0;
+
+  const result = text.replace(
+    pattern,
+    (match, prefix, importPath, componentName) => {
+      if (componentName && CANONICAL_MAP[componentName]) {
+        const canonical = CANONICAL_MAP[componentName];
+        outputLog.push({ type: 'auto', from: importPath, to: canonical });
+        autoFixed++;
+        return match.replace(importPath, canonical);
+      }
+      if (!componentName) {
+        const suggestion = suggestBarrelSplit(match);
+        outputLog.push({ type: 'barrel', match, suggestion });
+        barrelHits++;
+        return match; // never auto-rewrite barrels
+      }
+      return match;
+    }
+  );
+  pattern.lastIndex = 0;
+  return { result, autoFixed, barrelHits };
+}
+
 function processFile(filePath) {
   const original = readFileSync(filePath, 'utf8');
-  let rewritten  = original;
-  let autoFixed  = 0;
-  let barrelHits = 0;
-  const output   = [];
   const rel      = path.relative(process.cwd(), filePath);
 
-  // ─ Pass 1: standard + import type { X } forms ────────────────────────────
+  // Step 1: normalize multiline imports
+  const { normalized, map: multilineMap } = normalizeMultilineImports(original);
+
+  let rewritten  = normalized;
+  let autoFixed  = 0;
+  let barrelHits = 0;
+  const outputLog = [];
+
+  // Step 2: apply both patterns against normalized form
   for (const pattern of [STANDARD_RE, INLINE_TYPE_RE]) {
-    rewritten = rewritten.replace(
-      pattern,
-      (match, prefix, importPath, componentName) => {
-        // Single-file import: @/components/dashboard/ComponentName
-        if (componentName && CANONICAL_MAP[componentName]) {
-          const canonical = CANONICAL_MAP[componentName];
-          output.push({ type: 'auto', from: importPath, to: canonical });
-          autoFixed++;
-          return match.replace(importPath, canonical);
-        }
-
-        // Barrel import: @/components/dashboard (no trailing component)
-        if (!componentName) {
-          const suggestion = suggestBarrelSplit(match);
-          output.push({ type: 'barrel', match, suggestion });
-          barrelHits++;
-          // Never auto-rewrite barrel imports
-          return match;
-        }
-
-        return match;
-      }
-    );
-    // Reset lastIndex for safety between patterns
-    pattern.lastIndex = 0;
+    const { result, autoFixed: af, barrelHits: bh } = applyPattern(rewritten, pattern, outputLog);
+    rewritten  = result;
+    autoFixed  += af;
+    barrelHits += bh;
   }
 
-  if (output.length === 0) return { autoFixed: 0, barrelHits: 0 };
+  if (outputLog.length === 0) return { autoFixed: 0, barrelHits: 0 };
 
-  // ─ Print results ──────────────────────────────────────────────────────────────
+  // Step 3: restore unchanged multiline blocks
+  if (!DRY_RUN && autoFixed > 0) {
+    // Only restore blocks we did NOT touch
+    rewritten = restoreUnchangedMultilineImports(rewritten, multilineMap);
+  }
+
+  // Print results
   console.log(`\n📄 ${rel}`);
-
-  for (const item of output) {
+  for (const item of outputLog) {
     if (item.type === 'auto') {
       console.log(`  ✅ ${item.from}`);
       console.log(`       → ${item.to}`);
     } else {
-      // Barrel import — show the original line + suggested replacement
       console.log(`  ⚠️  BARREL — requires manual split:`);
       console.log(`     Original:  ${item.match.trim()}`);
-      if (item.suggestion && item.suggestion.lines.length > 0) {
+      if (item.suggestion?.lines.length > 0) {
         console.log(`     Replace with:`);
-        for (const line of item.suggestion.lines) {
-          console.log(`       ${line}`);
-        }
+        item.suggestion.lines.forEach(l => console.log(`       ${l}`));
         if (item.suggestion.unknown.length > 0) {
           console.log(`     ❓ Unknown specifiers (add to CANONICAL_MAP): ${item.suggestion.unknown.join(', ')}`);
         }
-      } else {
-        console.log(`     (Could not parse specifiers — fix manually)`);
       }
     }
   }
@@ -217,16 +290,12 @@ function processFile(filePath) {
 
 // ── Main ─────────────────────────────────────────────────────────────────────
 async function main() {
-  console.log('\n🔍 safaricharge dashboard/ import codemod  v2');
+  console.log('\n🔍 safaricharge dashboard/ import codemod  v3');
   console.log(`   Mode:   ${DRY_RUN ? 'DRY RUN — pass --write to apply' : '✏️  WRITE MODE'}`);
   console.log(`   Target: ${TARGET_DIR}/**/*.{ts,tsx}\n`);
 
   const files = await glob(`${TARGET_DIR}/**/*.{ts,tsx}`, {
-    ignore: [
-      '**/node_modules/**',
-      '**/.next/**',
-      'src/components/dashboard/**', // skip shims themselves
-    ],
+    ignore: ['**/node_modules/**', '**/.next/**', 'src/components/dashboard/**'],
   });
 
   let totalAutoFixed  = 0;
@@ -242,7 +311,6 @@ async function main() {
     totalBarrelHits += barrelHits;
   }
 
-  // ─ Summary ──────────────────────────────────────────────────────────────
   console.log('\n─────────────────────────────────────────────────');
   console.log(`Scanned ${files.length} files, ${affectedFiles} affected.`);
   console.log(`  ✅ Auto-fixed:         ${totalAutoFixed} import(s)`);
@@ -251,14 +319,13 @@ async function main() {
   if (totalBarrelHits > 0) {
     console.log('\n⚠️  Barrel imports above need manual splitting. See suggested replacements.');
     console.log('   After fixing, re-run to confirm zero remaining dashboard imports.');
-    // Non-zero exit so CI can catch unresolved barrels
     if (!DRY_RUN) process.exit(1);
   }
 
   if (totalAutoFixed === 0 && totalBarrelHits === 0) {
     console.log('\n✅ Zero @/components/dashboard imports remain.');
     console.log('   Safe to delete: git rm -r src/components/dashboard/');
-    console.log('   Then flip the resurrection guard in eslint.config.mjs: warn → error');
+    console.log('   Then: flip resurrection guard warn → error in eslint.config.mjs');
   }
 
   if (DRY_RUN && affectedFiles > 0) {
@@ -269,7 +336,4 @@ async function main() {
   console.log('');
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+main().catch((err) => { console.error(err); process.exit(1); });
