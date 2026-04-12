@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`9ab9427`](https://github.com/rauell1/safaricharge/commit/9ab9427a21ec8ca655a895e445b3c1951196b74f) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`2dbd869`](https://github.com/rauell1/safaricharge/commit/2dbd869d0dd9ca8aba0af4b85958be9ae9317b0a) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | feat(nav): bottom tab bar on mobile + logo image throughout |
-| **Total commits** | 604 |
+| **Message** | brand: replace logo with pixel-perfect teal SafariCharge mark |
+| **Total commits** | 608 |
 | **TypeScript files** | 138 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
