@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`dd9725c`](https://github.com/rauell1/safaricharge/commit/dd9725c200e66afea82eec4ecbd74d277a2d9af2) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`148ab2d`](https://github.com/rauell1/safaricharge/commit/148ab2d196a759d8601698f650ec9b79d5fbee7d) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | refactor(energy): move DailyEnergyGraph + SolarComponentLibrary into energy/ slice 2 |
-| **Total commits** | 664 |
-| **TypeScript files** | 149 |
+| **Message** | refactor(energy): remove root DailyEnergyGraph.tsx — now lives in energy/ |
+| **Total commits** | 668 |
+| **TypeScript files** | 148 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
