@@ -14,4 +14,3 @@ export { InsightsBanner } from './InsightsBanner';
 export { Sparkline } from './Sparkline';
 export { BatteryHealthCard } from './BatteryHealthCard';
 export { BatteryPredictionCard } from './BatteryPredictionCard';
-export { EVChargingCard } from './EVChargingCard';

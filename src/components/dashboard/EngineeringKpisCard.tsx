@@ -115,9 +115,10 @@ export function EngineeringKpisCard() {
     );
 
     // Grid import from accumulators if available, else sum minuteData
-    const gridImportKWh = accumulators.gridImport != null
-      ? accumulators.gridImport
-      : minuteData.reduce((sum, d) => sum + (d.gridImportKWh ?? 0), 0);
+    const gridImportKWh =
+      (accumulators as Record<string, number>).gridImportKwh != null
+        ? (accumulators as Record<string, number>).gridImportKwh
+        : minuteData.reduce((sum, d) => sum + (d.gridImportKWh ?? 0), 0);
 
     return computeEngineeringKpis({
       totalSolarKWh:        accumulators.solar,

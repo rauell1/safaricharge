@@ -93,7 +93,7 @@ function isRateLimited(key: string, limit: number, windowMs: number): boolean {
   return false;
 }
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const rule = RATE_LIMIT_RULES.find((r) => r.pattern.test(pathname));
@@ -124,6 +124,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Only run the proxy on API routes.
+  // Only run the middleware on API routes.
   matcher: ['/api/:path*'],
 };

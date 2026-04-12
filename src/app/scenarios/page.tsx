@@ -494,7 +494,7 @@ export default function ScenariosPage() {
     const source = scenarios.find(s => s.id === id);
     if (!source) return;
     const newName = `${source.name} (copy)`;
-    saveScenario(newName, source.finance, source.location);
+    saveScenario(newName);
     toast({ title: 'Scenario duplicated', description: `"${newName}" created.` });
   }, [scenarios, saveScenario, toast]);
 
@@ -666,16 +666,6 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
   ];
 
   const radarData = normaliseRadarData(selectedScenarios);
-
-  // Recharts RadarChart needs data keyed by scenario label, not per-Radar
-  const radarChartData = RADAR_AXES.map(axis => {
-    const entry: Record<string, string | number> = { label: axis.label };
-    selectedScenarios.forEach(s => {
-      const norm = radarData.find(r => r.scenario === s.name);
-      entry[labelMap.get(s.id)!] = norm ? (norm[axis.key] as number) : 0;
-    });
-    return entry;
-  });
 
   return (
     <DashboardLayout activeSection="scenarios">
@@ -1097,17 +1087,24 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
                       All axes are normalised (10–90) so different units can be shown together. Higher = better on every axis (Payback is inverted).
                     </p>
                     <ResponsiveContainer width="100%" height={360}>
-                      <RadarChart data={radarChartData} margin={{ top: 16, right: 32, left: 32, bottom: 16 }}>
+                      <RadarChart data={RADAR_AXES} margin={{ top: 16, right: 32, left: 32, bottom: 16 }}>
                         <PolarGrid stroke="var(--border)" />
                         <PolarAngleAxis dataKey="label" tick={{ fill: 'var(--text-secondary)', fontSize: 11 }} />
                         <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: 'var(--text-tertiary)', fontSize: 9 }} />
                         {selectedScenarios.map((s, i) => {
+                          const normMap = new Map<string, number>();
+                          const normEntry = radarData.find(r => r.scenario === s.name);
+                          if (normEntry) {
+                            RADAR_AXES.forEach(a => { normMap.set(a.label, normEntry[a.key] as number); });
+                          }
+                          // Build per-axis data matching RADAR_AXES shape
                           const colour = SCENARIO_COLOURS[i % SCENARIO_COLOURS.length];
                           return (
                             <RechartsRadar
                               key={s.id}
                               name={labelMap.get(s.id)!}
-                              dataKey={labelMap.get(s.id)!}
+                              dataKey="value"
+                              data={RADAR_AXES.map(a => ({ label: a.label, value: normMap.get(a.label) ?? 0 }))}
                               stroke={colour}
                               fill={colour}
                               fillOpacity={0.12}
