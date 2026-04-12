@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`78746d6`](https://github.com/rauell1/safaricharge/commit/78746d6889ed79c8b3e5cf3d79e39d91aa74812a) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`f89ddb0`](https://github.com/rauell1/safaricharge/commit/f89ddb08574d28f01e8c137e8d803aed7d6ef26b) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | refactor: remove flat LoadConfigComponents.tsx (moved to simulation/) |
-| **Total commits** | 692 |
-| **TypeScript files** | 149 |
+| **Message** | refactor: remove flat RecommendationComponents.tsx (moved to energy/) |
+| **Total commits** | 696 |
+| **TypeScript files** | 148 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
