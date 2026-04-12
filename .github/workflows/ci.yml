@@ -10,6 +10,9 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   typecheck:
     name: Type-check
@@ -21,6 +24,9 @@ jobs:
           node-version: '24'
           cache: 'npm'
       - run: npm install --legacy-peer-deps
+      - run: npx prisma generate
+        env:
+          DATABASE_URL: 'file:./dev.db'
       - run: npx tsc --noEmit
 
   lint:
@@ -34,6 +40,9 @@ jobs:
           node-version: '24'
           cache: 'npm'
       - run: npm install --legacy-peer-deps
+      - run: npx prisma generate
+        env:
+          DATABASE_URL: 'file:./dev.db'
       - run: npx eslint . --max-warnings=9999
 
   build:
@@ -47,6 +56,9 @@ jobs:
           node-version: '24'
           cache: 'npm'
       - run: npm install --legacy-peer-deps
+      - run: npx prisma generate
+        env:
+          DATABASE_URL: 'file:./dev.db'
       - name: Next.js build
         run: npx next build
         env:
