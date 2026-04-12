@@ -338,50 +338,23 @@ export const EnergyReportModal = ({
                 </div>
               </div>
 
-              <div className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border)] mb-4 text-xs text-[var(--text-secondary)]">
-                <div className="font-bold mb-1">Data Includes:</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
-                  <span>• Solar generation</span>
-                  <span>• Home load</span>
-                  <span>• EV charging</span>
-                  <span>• Battery status</span>
-                  <span>• Grid import/export</span>
-                  <span>• Tariff rates</span>
-                  <span>• Savings (KES)</span>
-                  <span>• Peak/Off-peak</span>
-                  <span>• Energy totals</span>
-                </div>
-              </div>
-
               <button
                 onClick={async () => {
                   setIsExporting(true);
-                  try {
-                    await onExport();
-                  } finally {
-                    setIsExporting(false);
-                  }
+                  try { await onExport(); } finally { setIsExporting(false); }
                 }}
                 disabled={isExporting || totalDataPoints === 0}
                 className="w-full py-3 bg-[var(--consumption)] text-white font-bold rounded-lg hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isExporting ? (
-                  <>
-                    <Loader2 size={18} className="animate-spin" />
-                    Generating Report...
-                  </>
+                  <><Loader2 size={18} className="animate-spin" />Generating Report...</>
                 ) : (
-                  <>
-                    <Download size={18} />
-                    Download Excel Report ({(totalDataPoints * 0.5 / 1024).toFixed(1)} KB)
-                  </>
+                  <><Download size={18} />Download Excel Report ({(totalDataPoints * 0.5 / 1024).toFixed(1)} KB)</>
                 )}
               </button>
 
               {totalDataPoints === 0 && (
-                <p className="text-xs text-amber-600 mt-2 text-center">
-                  Start the simulation to collect data for export
-                </p>
+                <p className="text-xs text-amber-600 mt-2 text-center">Start the simulation to collect data for export</p>
               )}
             </div>
 
@@ -391,64 +364,28 @@ export const EnergyReportModal = ({
                   <ImageIcon size={24} className="text-[var(--solar)]" />
                   <div>
                     <h3 className="font-bold text-[var(--text-primary)] text-lg">Download Daily Charts</h3>
-                    <p className="text-xs text-[var(--text-secondary)]">
-                      ZIP archive containing one JPG energy chart per simulated day
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-[var(--bg-card)] p-4 rounded-lg border border-[var(--border)] mb-4">
-                  <h4 className="text-xs font-bold text-[var(--text-secondary)] mb-2 uppercase">What you get</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                    <div className="flex items-center gap-2 text-[var(--text-secondary)]">
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--solar)' }}></span>
-                      One JPG chart per day ({uniqueDays} charts)
-                    </div>
-                    <div className="flex items-center gap-2 text-[var(--text-secondary)]">
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--consumption)' }}></span>
-                      Solar generation + load + battery SOC
-                    </div>
-                    <div className="flex items-center gap-2 text-[var(--text-secondary)]">
-                      <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                      1640×680px (2× retina) images
-                    </div>
-                    <div className="flex items-center gap-2 text-[var(--text-secondary)]">
-                      <span className="w-2 h-2 bg-sky-500 rounded-full"></span>
-                      Packaged as SafariCharge_Charts_&lt;date&gt;.zip
-                    </div>
+                    <p className="text-xs text-[var(--text-secondary)]">ZIP archive containing one JPG energy chart per simulated day</p>
                   </div>
                 </div>
 
                 <button
                   onClick={async () => {
                     setIsDownloadingCharts(true);
-                    try {
-                      await onDownloadCharts();
-                    } finally {
-                      setIsDownloadingCharts(false);
-                    }
+                    try { await onDownloadCharts(); } finally { setIsDownloadingCharts(false); }
                   }}
                   disabled={isDownloadingCharts || totalDataPoints === 0}
                   className="w-full py-3 font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   style={{ backgroundColor: 'var(--solar)', color: '#000' }}
                 >
                   {isDownloadingCharts ? (
-                    <>
-                      <Loader2 size={18} className="animate-spin" />
-                      Building charts...
-                    </>
+                    <><Loader2 size={18} className="animate-spin" />Building charts...</>
                   ) : (
-                    <>
-                      <ImageIcon size={18} />
-                      Download Charts ZIP ({uniqueDays} day{uniqueDays !== 1 ? 's' : ''})
-                    </>
+                    <><ImageIcon size={18} />Download Charts ZIP ({uniqueDays} day{uniqueDays !== 1 ? 's' : ''})</>
                   )}
                 </button>
 
                 {totalDataPoints === 0 && (
-                  <p className="text-xs text-amber-600 mt-2 text-center">
-                    Start the simulation to generate charts
-                  </p>
+                  <p className="text-xs text-amber-600 mt-2 text-center">Start the simulation to generate charts</p>
                 )}
               </div>
             )}
@@ -462,63 +399,25 @@ export const EnergyReportModal = ({
                 </div>
               </div>
 
-              <div className="bg-slate-700/50 p-3 rounded-lg border border-slate-600 mb-4">
-                <h4 className="text-xs font-bold text-slate-300 mb-2 uppercase">Report Includes</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs text-slate-400">
-                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-sky-400 rounded-full inline-block"></span> Executive Summary</span>
-                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-green-400 rounded-full inline-block"></span> KPI Dashboard</span>
-                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-yellow-400 rounded-full inline-block"></span> Solar Analytics &amp; Charts</span>
-                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-purple-400 rounded-full inline-block"></span> Battery Storage Analysis</span>
-                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-orange-400 rounded-full inline-block"></span> Financial ROI &amp; Payback</span>
-                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-teal-400 rounded-full inline-block"></span> EV Charging &amp; V2G Data</span>
-                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-red-400 rounded-full inline-block"></span> Grid Interaction Analysis</span>
-                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-emerald-400 rounded-full inline-block"></span> Carbon Offset &amp; Impact</span>
-                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-amber-400 rounded-full inline-block"></span> Recommendations</span>
-                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-indigo-400 rounded-full inline-block"></span> Full Appendix</span>
-                </div>
-              </div>
-
               <button
                 onClick={async () => {
                   setIsGeneratingPDF(true);
-                  try {
-                    await onFormalReport();
-                  } finally {
-                    setIsGeneratingPDF(false);
-                  }
+                  try { await onFormalReport(); } finally { setIsGeneratingPDF(false); }
                 }}
                 disabled={isGeneratingPDF || totalDataPoints === 0}
                 className="w-full py-3 bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold rounded-lg hover:from-sky-600 hover:to-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-sky-500/25"
               >
                 {isGeneratingPDF ? (
-                  <>
-                    <Loader2 size={18} className="animate-spin" />
-                    Generating Report...
-                  </>
+                  <><Loader2 size={18} className="animate-spin" />Generating Report...</>
                 ) : (
-                  <>
-                    <FileText size={18} />
-                    Open PDF Report (New Tab)
-                  </>
+                  <><FileText size={18} />Open PDF Report (New Tab)</>
                 )}
               </button>
               {totalDataPoints === 0 ? (
-                <p className="text-xs text-amber-400 mt-2 text-center">
-                  Start the simulation to generate a report
-                </p>
+                <p className="text-xs text-amber-400 mt-2 text-center">Start the simulation to generate a report</p>
               ) : (
-                <p className="text-xs text-[var(--text-secondary)] mt-2 text-center">
-                  Opens in new tab: use browser Print (Ctrl+P) to save as PDF
-                </p>
+                <p className="text-xs text-[var(--text-secondary)] mt-2 text-center">Opens in new tab: use browser Print (Ctrl+P) to save as PDF</p>
               )}
-            </div>
-
-            <div className="bg-[rgba(251,191,36,0.1)] p-4 rounded-lg border border-[var(--solar)]">
-              <h4 className="text-xs font-bold text-[var(--solar)] mb-1">Data Retention</h4>
-              <p className="text-xs text-[var(--text-secondary)]">
-                All data from system start (January 1, 2026) is retained. The system can track up to 20+ years
-                of simulation data. Use high speed simulation (x1000) to quickly generate multi-year datasets.
-              </p>
             </div>
           </div>
           )}
