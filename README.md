@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`8a9d25d`](https://github.com/rauell1/safaricharge/commit/8a9d25d20c956428c60ca8e3b3f8c4581ab8b606) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`3db17c9`](https://github.com/rauell1/safaricharge/commit/3db17c9fcdc8a3076e25719c634307e29aec7893) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | refactor(dashboard): add dashboard/FinancialDashboard.tsx |
-| **Total commits** | 673 |
-| **TypeScript files** | 148 |
+| **Message** | refactor(slice-3): add energy/EnergyReportModal, simulation/LoadConfig, simulation/Recommendation |
+| **Total commits** | 677 |
+| **TypeScript files** | 151 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
