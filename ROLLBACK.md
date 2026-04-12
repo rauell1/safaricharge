@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 14 | `rollback/fix-ci-restore-rollback-md-after-reset-2026-04-12` | `2beb51b` | fix(ci): restore ROLLBACK.md after reset so rebase doesn't fail on retry | 2026-04-12 |
 | 13 | `rollback/ci-remove-lint-job-tsc-covers-correctn-2026-04-12` | `64d8c30` | ci: remove lint job — tsc covers correctness; eslint-plugin-react-hooks v5 rules are too noisy | 2026-04-12 |
 | 12 | `rollback/fix-lint-disable-react-hooks-v5-strict-2026-04-12` | `589c79f` | fix(lint): disable react-hooks v5 strict rules that fire on valid patterns | 2026-04-12 |
 | 11 | `rollback/fix-lint-use-uselayouteffect-for-carou-2026-04-12` | `a853cab` | fix(lint): use useLayoutEffect for carousel mount sync to satisfy react-hooks/no-direct-set-state-in-use-effect | 2026-04-12 |
@@ -195,6 +196,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/ci-remove-lint-job-tsc-covers-correctn-2026-04-12`
 - **Commit**: `64d8c3002d7f6b3bb4d02425a073bda4d924c25e`
 - **Subject**: ci: remove lint job — tsc covers correctness; eslint-plugin-react-hooks v5 rules are too noisy
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #14 — `rollback/fix-ci-restore-rollback-md-after-reset-2026-04-12`
+
+- **Branch**: `rollback/fix-ci-restore-rollback-md-after-reset-2026-04-12`
+- **Commit**: `2beb51b0ab4b6bb1407e52b166e1ef56b1acbc42`
+- **Subject**: fix(ci): restore ROLLBACK.md after reset so rebase doesn't fail on retry
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
