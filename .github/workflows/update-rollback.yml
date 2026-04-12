@@ -77,10 +77,15 @@ jobs:
           for i in 1 2 3 4 5; do
             echo "=== Attempt ${i} ==="
 
-            # Pull latest main first so the script runs against current ROLLBACK.md
+            # Discard any unstaged changes before rebasing (left over from a
+            # previous failed reset) so that `git pull --rebase` never aborts.
+            git restore ROLLBACK.md 2>/dev/null || true
+
+            # Pull latest main so the script runs against the current ROLLBACK.md
             git pull --rebase origin main
 
-            # Re-run the script on every attempt — it is idempotent (skips if branch already recorded)
+            # Re-run the script on every attempt — it is idempotent (skips if
+            # branch already recorded)
             python3 .github/scripts/gen_rollback_entry.py
 
             git add ROLLBACK.md
@@ -89,15 +94,13 @@ jobs:
               exit 0
             fi
 
-            # Amend or create commit
-            git diff HEAD -- ROLLBACK.md | grep -q '.' \
-              && git commit -m 'docs(auto): update ROLLBACK.md snapshot log [skip ci]' \
-              || git commit --allow-empty -m 'docs(auto): update ROLLBACK.md snapshot log [skip ci]'
+            git commit -m 'docs(auto): update ROLLBACK.md snapshot log [skip ci]'
 
             git push origin main && exit 0
 
-            # Push rejected — undo local commit and retry
+            # Push rejected — undo local commit, restore working tree, then retry
             git reset HEAD~1
+            git restore ROLLBACK.md
             echo "Push rejected — retrying in 3s"
             sleep 3
           done
