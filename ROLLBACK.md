@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 37 | `rollback/refactor-remove-flat-financialdashboar-2026-04-12` | `c23231a` | refactor: remove flat FinancialDashboard.tsx (moved to dashboard/) | 2026-04-12 |
 | 36 | `rollback/refactor-remove-flat-energyreportmodal-2026-04-12` | `23ef28a` | refactor: remove flat EnergyReportModal.tsx (moved to energy/) | 2026-04-12 |
 | 35 | `rollback/refactor-move-flat-components-into-sub-2026-04-12` | `1d9f900` | refactor: move flat components into subfolders + fix import paths | 2026-04-12 |
 | 34 | `rollback/refactor-slice-3-add-energy-energyrepo-2026-04-12` | `3db17c9` | refactor(slice-3): add energy/EnergyReportModal, simulation/LoadConfig, simulation/Recommendation | 2026-04-12 |
@@ -425,6 +426,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/refactor-remove-flat-energyreportmodal-2026-04-12`
 - **Commit**: `23ef28ab924a3eaeb20746e52e8af5a050d64ea4`
 - **Subject**: refactor: remove flat EnergyReportModal.tsx (moved to energy/)
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #37 — `rollback/refactor-remove-flat-financialdashboar-2026-04-12`
+
+- **Branch**: `rollback/refactor-remove-flat-financialdashboar-2026-04-12`
+- **Commit**: `c23231a1567a0318c2518ea3f353893205555243`
+- **Subject**: refactor: remove flat FinancialDashboard.tsx (moved to dashboard/)
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
