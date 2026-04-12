@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`d1e901b`](https://github.com/rauell1/safaricharge/commit/d1e901b89fd7ae66c0848b032fbfce43a5ca79ae) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`9c67b53`](https://github.com/rauell1/safaricharge/commit/9c67b53d7c46c5fb487f674d7c7e1d7da1492f4e) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | refactor: delete dashboard/ shim subfolders — dashboard/ is now empty |
-| **Total commits** | 770 |
+| **Message** | fix: correct @/components/dashboard → @/components/layout import paths in app/page.tsx and app/demo/page.tsx |
+| **Total commits** | 774 |
 | **TypeScript files** | 147 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
