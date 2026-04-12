@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`fa3eefb`](https://github.com/rauell1/safaricharge/commit/fa3eefb2b7c6b04259a5d1dfb2a37c42f38d1e25) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`15d14b2`](https://github.com/rauell1/safaricharge/commit/15d14b2e23082971db8fb1cbe1f7f5ff25d9af73) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-13 |
-| **Message** | arch: codemod v2 catches import { type X } syntax + post-deletion ESLint resurrection guard |
-| **Total commits** | 842 |
+| **Message** | arch: component ownership contract + no-barrel ESLint rule + codemod v3 multiline/comment-safe |
+| **Total commits** | 846 |
 | **TypeScript files** | 168 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
