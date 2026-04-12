@@ -38,6 +38,9 @@
   ],
   "exclude": [
     "node_modules",
-    "examples"
+    "examples",
+    "src/simulation",
+    "src/stores",
+    "src/store"
   ]
 }
