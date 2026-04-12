@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 55 | `rollback/fix-ai-correct-malformed-generic-on-us-2026-04-12` | `c077e41` | fix(ai): correct malformed generic on useState line 60 | 2026-04-12 |
 | 54 | `rollback/restore-reinstate-full-src-components-2026-04-12` | `047112d` | restore: reinstate full src/components/dashboard/ from commit 9ab9427 | 2026-04-12 |
 | 53 | `rollback/fix-restore-full-demo-page-tsx-body-fr-2026-04-12` | `473d4eb` | fix: restore full demo/page.tsx body from rollback snapshot, fix all import paths | 2026-04-12 |
 | 52 | `rollback/fix-correct-components-dashboard-compo-2026-04-12` | `9c67b53` | fix: correct @/components/dashboard → @/components/layout import paths in app/page.tsx and app/demo/page.tsx | 2026-04-12 |
@@ -605,6 +606,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/restore-reinstate-full-src-components-2026-04-12`
 - **Commit**: `047112dee6966a168b25daefe339880be06b8578`
 - **Subject**: restore: reinstate full src/components/dashboard/ from commit 9ab9427
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #55 — `rollback/fix-ai-correct-malformed-generic-on-us-2026-04-12`
+
+- **Branch**: `rollback/fix-ai-correct-malformed-generic-on-us-2026-04-12`
+- **Commit**: `c077e41f0287d3760c21bbcd6226bb4f76ff1b96`
+- **Subject**: fix(ai): correct malformed generic on useState line 60
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
