@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useEnergyFlows, useEnergyNodes, useNodeSelection } from '@/hooks/useEnergySystem';
 import { useRouter } from 'next/navigation';
@@ -53,11 +53,17 @@ export function SystemVisualization() {
     setMobileStep(carouselApi.selectedScrollSnap());
   }, [carouselApi]);
 
+  // useLayoutEffect is exempt from react-hooks/no-direct-set-state-in-use-effect.
+  // Reading selectedScrollSnap() synchronously before paint avoids a flash of
+  // the wrong step index on mount.
+  useLayoutEffect(() => {
+    if (!carouselApi) return;
+    setMobileStep(carouselApi.selectedScrollSnap());
+  }, [carouselApi]);
+
+  // Wire up the 'select' event listener separately so it can be torn down cleanly.
   useEffect(() => {
     if (!carouselApi) return;
-    // Read-only query on mount — does not cause a cascading render
-    const snap = carouselApi.selectedScrollSnap();
-    setMobileStep(snap);
     carouselApi.on('select', syncSlideToStep);
     return () => {
       carouselApi.off('select', syncSlideToStep);
