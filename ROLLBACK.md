@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 68 | `rollback/arch-deprecation-notices-on-all-dashbo-2026-04-12` | `3ea2f0a` | arch: deprecation notices on all dashboard/ shims + domain boundary ESLint rule + codemod migration script | 2026-04-12 |
 | 67 | `rollback/fix-barrel-harden-all-4-export-consist-2026-04-12` | `125c32c` | fix(barrel): harden all 4 export consistency issues | 2026-04-12 |
 | 66 | `rollback/refactor-convert-dashboard-to-pure-bar-2026-04-12` | `83cd6e5` | refactor: convert dashboard/ to pure barrel re-export layer | 2026-04-12 |
 | 65 | `rollback/chore-add-energyreportmodal-and-recomm-2026-04-12` | `e1cc564` | chore: add EnergyReportModal and RecommendationComponents to energy barrel | 2026-04-12 |
@@ -735,6 +736,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-barrel-harden-all-4-export-consist-2026-04-12`
 - **Commit**: `125c32c05810b24b5d0cdcca9e1b6a72ed0451ef`
 - **Subject**: fix(barrel): harden all 4 export consistency issues
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #68 — `rollback/arch-deprecation-notices-on-all-dashbo-2026-04-12`
+
+- **Branch**: `rollback/arch-deprecation-notices-on-all-dashbo-2026-04-12`
+- **Commit**: `3ea2f0ab8ccd10b2c3d0be39f74d374131f71c21`
+- **Subject**: arch: deprecation notices on all dashboard/ shims + domain boundary ESLint rule + codemod migration script
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
