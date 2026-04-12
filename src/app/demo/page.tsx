@@ -2,8 +2,8 @@
 
 import React, { useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import type { DashboardSection } from '@/components/dashboard/DashboardSidebar';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import type { DashboardSection } from '@/components/layout/DashboardSidebar';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { StatCards } from '@/components/dashboard/StatCards';
 import { PowerFlowVisualization } from '@/components/dashboard/PowerFlowVisualization';

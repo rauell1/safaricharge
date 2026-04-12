@@ -1,6 +1,6 @@
 'use client';
 
-import type { DashboardSection } from '@/components/dashboard/DashboardSidebar';
+import type { DashboardSection } from '@/components/layout/DashboardSidebar';
 import ModularDashboardDemo from './demo/page';
 
 export const dynamic = 'force-dynamic';
