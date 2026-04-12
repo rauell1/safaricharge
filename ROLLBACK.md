@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 44 | `rollback/refactor-replace-13-duplicate-dashboar-2026-04-12` | `0d861ed` | refactor: replace 13 duplicate dashboard/ flat files with canonical re-export shims | 2026-04-12 |
 | 43 | `rollback/refactor-replace-stub-ai-with-real-wir-2026-04-12` | `abfbc3c` | refactor: replace stub ai/ with real wiring; flesh out reports/ CSV export; add dashboard/ shims for duplicates | 2026-04-12 |
 | 42 | `rollback/refactor-add-reports-ai-stubs-and-dash-2026-04-12` | `0d7c84a` | refactor: add reports/, ai/ stubs and dashboard/ re-export barrels for zero-breakage | 2026-04-12 |
 | 41 | `rollback/refactor-decompose-dashboard-into-widg-2026-04-12` | `3be3586` | refactor: decompose dashboard/ into widgets/, financial/, reports/, ai/ per target structure | 2026-04-12 |
@@ -495,6 +496,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/refactor-replace-stub-ai-with-real-wir-2026-04-12`
 - **Commit**: `abfbc3c8579197fc0bc2e02e999f446d3bdf6544`
 - **Subject**: refactor: replace stub ai/ with real wiring; flesh out reports/ CSV export; add dashboard/ shims for duplicates
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #44 — `rollback/refactor-replace-13-duplicate-dashboar-2026-04-12`
+
+- **Branch**: `rollback/refactor-replace-13-duplicate-dashboar-2026-04-12`
+- **Commit**: `0d861edb796c958b526a17434397aa2c5b5b60de`
+- **Subject**: refactor: replace 13 duplicate dashboard/ flat files with canonical re-export shims
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
