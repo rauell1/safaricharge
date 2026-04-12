@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """Regenerates CODEBASE_MAP.md from the live filesystem.
 Called by .github/workflows/update-codebase-map.yml
+
+Defensive contract:
+- Never crashes if a watched directory does not exist (returns empty table).
+- Gracefully handles missing `tree` binary.
+- Idempotent: running twice produces the same file.
+- New files in dashboard/lib/stores dirs are listed as '—' automatically.
 """
 import os
 import subprocess
@@ -16,19 +22,30 @@ now      = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
 
 
 def tree_lines(path, depth=3):
+    """Return directory tree string; falls back gracefully if tree is missing."""
+    if not os.path.isdir(path):
+        return f'({path} not found)'
     try:
         r = subprocess.run(
             ['tree', path, '--dirsfirst', f'-L{depth}',
              '-I', 'node_modules|*.tsbuildinfo|*.lock|package-lock.json'],
-            capture_output=True, text=True
+            capture_output=True, text=True, check=False
         )
-        return r.stdout.strip()
-    except Exception:
-        return '(tree unavailable)'
+        return r.stdout.strip() or f'({path} empty)'
+    except FileNotFoundError:
+        # tree binary not installed — fall back to a simple ls-style listing
+        try:
+            entries = sorted(os.listdir(path))
+            return path + '/\n' + '\n'.join(f'  {e}' for e in entries[:60])
+        except Exception:
+            return '(directory listing unavailable)'
 
 
 def file_sizes(path):
+    """Return [(filename, size_kb)] for all files in path; empty list if missing."""
     rows = []
+    if not os.path.isdir(path):
+        return rows
     try:
         for f in sorted(os.listdir(path)):
             fp = os.path.join(path, f)
@@ -51,6 +68,7 @@ DASHBOARD_DESC = {
     'EnergyDetailShell.tsx':      'Shared card shell for energy detail views',
     'EngineeringKpisCard.tsx':    'IEC 61724-1 KPIs — Specific Yield, PR, CF, Battery Cycles + sparkline',
     'InsightsBanner.tsx':         'AI insights ribbon',
+    'MobileBottomNav.tsx':        'Mobile bottom navigation bar',
     'PanelStatusTable.tsx':       'Per-string/panel telemetry table',
     'PowerFlowVisualization.tsx': 'Animated Sankey-style power-flow diagram',
     'Sparkline.tsx':              'Reusable 48px area sparkline (Recharts)',
@@ -89,11 +107,16 @@ LIB_DESC = {
 
 
 def build_table(path, descriptions, extensions=('.tsx', '.ts')):
+    """Build a markdown table for files in path.
+    Unknown files are shown with description '—' instead of being silently skipped.
+    """
     rows = []
     for f, kb in file_sizes(path):
         if any(f.endswith(ext) for ext in extensions):
             desc = descriptions.get(f, '—')
             rows.append('| `{}` | {} | {} kB |'.format(f, desc, kb))
+    if not rows:
+        return '| *(no files found)* | — | — |'
     return '\n'.join(rows)
 
 
@@ -102,7 +125,7 @@ def build_stores_table():
     for f, kb in file_sizes('src/stores'):
         if f.endswith('.ts'):
             rows.append('| `{}` | {} kB |'.format(f, kb))
-    return '\n'.join(rows)
+    return '\n'.join(rows) if rows else '| *(no stores found)* | — |'
 
 
 def build_api_table():

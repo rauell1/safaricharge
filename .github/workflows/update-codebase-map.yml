@@ -5,6 +5,14 @@ on:
     branches: [main]
     paths-ignore:
       - 'CODEBASE_MAP.md'
+      - 'README.md'
+      - 'ROLLBACK.md'
+      - '.github/**'
+
+# One run at a time per branch; cancel any queued duplicate.
+concurrency:
+  group: update-codebase-map-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   update-map:
@@ -12,14 +20,14 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Install tree
         run: sudo apt-get install -y tree > /dev/null 2>&1
@@ -36,12 +44,12 @@ jobs:
 
       - name: Rebuild CODEBASE_MAP.md
         env:
-          TOTAL_TS: ${{ steps.meta.outputs.total_ts }}
-          TOTAL_PY: ${{ steps.meta.outputs.total_py }}
+          TOTAL_TS:    ${{ steps.meta.outputs.total_ts }}
+          TOTAL_PY:    ${{ steps.meta.outputs.total_py }}
           LAST_COMMIT: ${{ steps.meta.outputs.last_commit }}
           LAST_AUTHOR: ${{ steps.meta.outputs.last_author }}
-          LAST_DATE: ${{ steps.meta.outputs.last_date }}
-          BRANCH: ${{ steps.meta.outputs.branch }}
+          LAST_DATE:   ${{ steps.meta.outputs.last_date }}
+          BRANCH:      ${{ steps.meta.outputs.branch }}
         run: python3 .github/scripts/gen_codebase_map.py
 
       - name: Commit and push CODEBASE_MAP.md

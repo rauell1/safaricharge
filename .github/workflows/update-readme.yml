@@ -7,6 +7,12 @@ on:
       - 'README.md'
       - 'CODEBASE_MAP.md'
       - 'ROLLBACK.md'
+      - '.github/**'
+
+# One run at a time per branch; cancel any queued duplicate.
+concurrency:
+  group: update-readme-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   update-readme:
@@ -14,36 +20,36 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Collect metadata
         id: meta
         run: |
-          echo "last_commit=$(git log -1 --no-decorate --format='%H' HEAD)"           >> $GITHUB_OUTPUT
-          echo "last_commit_short=$(git log -1 --no-decorate --format='%h' HEAD)"     >> $GITHUB_OUTPUT
-          echo "last_author=$(git log -1 --no-decorate --format='%an' HEAD)"          >> $GITHUB_OUTPUT
-          echo "last_date=$(git log -1 --no-decorate --date=short --format='%ad' HEAD)" >> $GITHUB_OUTPUT
-          printf 'last_message=%s\n' "$(git log -1 --no-decorate --format='%s' HEAD)" >> $GITHUB_OUTPUT
-          echo "total_commits=$(git rev-list --count HEAD)"                           >> $GITHUB_OUTPUT
+          echo "last_commit=$(git log -1 --no-decorate --format='%H' HEAD)"              >> $GITHUB_OUTPUT
+          echo "last_commit_short=$(git log -1 --no-decorate --format='%h' HEAD)"        >> $GITHUB_OUTPUT
+          echo "last_author=$(git log -1 --no-decorate --format='%an' HEAD)"             >> $GITHUB_OUTPUT
+          echo "last_date=$(git log -1 --no-decorate --date=short --format='%ad' HEAD)"  >> $GITHUB_OUTPUT
+          printf 'last_message=%s\n' "$(git log -1 --no-decorate --format='%s' HEAD)"   >> $GITHUB_OUTPUT
+          echo "total_commits=$(git rev-list --count HEAD)"                              >> $GITHUB_OUTPUT
           echo "total_ts=$(find src -name '*.ts' -o -name '*.tsx' 2>/dev/null | wc -l | tr -d ' ')" >> $GITHUB_OUTPUT
 
       - name: Regenerate README.md
         env:
-          LAST_COMMIT: ${{ steps.meta.outputs.last_commit }}
+          LAST_COMMIT:       ${{ steps.meta.outputs.last_commit }}
           LAST_COMMIT_SHORT: ${{ steps.meta.outputs.last_commit_short }}
-          LAST_AUTHOR: ${{ steps.meta.outputs.last_author }}
-          LAST_DATE: ${{ steps.meta.outputs.last_date }}
-          LAST_MESSAGE: ${{ steps.meta.outputs.last_message }}
-          TOTAL_COMMITS: ${{ steps.meta.outputs.total_commits }}
-          TOTAL_TS: ${{ steps.meta.outputs.total_ts }}
-          REPO: rauell1/safaricharge
+          LAST_AUTHOR:       ${{ steps.meta.outputs.last_author }}
+          LAST_DATE:         ${{ steps.meta.outputs.last_date }}
+          LAST_MESSAGE:      ${{ steps.meta.outputs.last_message }}
+          TOTAL_COMMITS:     ${{ steps.meta.outputs.total_commits }}
+          TOTAL_TS:          ${{ steps.meta.outputs.total_ts }}
+          REPO:              rauell1/safaricharge
         run: python3 .github/scripts/gen_readme.py
 
       - name: Commit and push README.md
@@ -56,7 +62,6 @@ jobs:
             exit 0
           fi
           git commit -m 'docs(auto): regenerate README.md [skip ci]'
-          # Retry loop: rebase onto latest main then push; retry up to 5x on rejection
           for i in 1 2 3 4 5; do
             echo "Push attempt ${i}"
             git pull --rebase origin main

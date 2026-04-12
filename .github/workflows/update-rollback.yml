@@ -7,6 +7,12 @@ on:
       - 'ROLLBACK.md'
       - 'CODEBASE_MAP.md'
       - 'README.md'
+      - '.github/**'
+
+# One run at a time per branch; cancel any queued duplicate.
+concurrency:
+  group: update-rollback-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   snapshot:
@@ -14,14 +20,14 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Collect metadata
         id: meta
@@ -49,7 +55,7 @@ jobs:
 
       - name: Create rollback branch
         env:
-          SHA: ${{ steps.meta.outputs.sha }}
+          SHA:         ${{ steps.meta.outputs.sha }}
           BRANCH_NAME: ${{ steps.meta.outputs.branch_name }}
         run: |
           git config user.name  'github-actions[bot]'
@@ -65,10 +71,10 @@ jobs:
 
       - name: Commit and push ROLLBACK.md
         env:
-          SHA: ${{ steps.meta.outputs.sha }}
-          SHA_SHORT: ${{ steps.meta.outputs.sha_short }}
-          DATE: ${{ steps.meta.outputs.date }}
-          SUBJECT: ${{ steps.meta.outputs.subject }}
+          SHA:         ${{ steps.meta.outputs.sha }}
+          SHA_SHORT:   ${{ steps.meta.outputs.sha_short }}
+          DATE:        ${{ steps.meta.outputs.date }}
+          SUBJECT:     ${{ steps.meta.outputs.subject }}
           BRANCH_NAME: ${{ steps.meta.outputs.branch_name }}
         run: |
           git config user.name  'github-actions[bot]'
@@ -76,33 +82,19 @@ jobs:
 
           for i in 1 2 3 4 5; do
             echo "=== Attempt ${i} ==="
-
-            # Discard any unstaged changes before rebasing (left over from a
-            # previous failed reset) so that `git pull --rebase` never aborts.
             git restore ROLLBACK.md 2>/dev/null || true
-
-            # Pull latest main so the script runs against the current ROLLBACK.md
             git pull --rebase origin main
-
-            # Re-run the script on every attempt — it is idempotent (skips if
-            # branch already recorded)
             python3 .github/scripts/gen_rollback_entry.py
-
             git add ROLLBACK.md
             if git diff --cached --quiet; then
               echo 'No changes to ROLLBACK.md — already recorded, skipping'
               exit 0
             fi
-
             git commit -m 'docs(auto): update ROLLBACK.md snapshot log [skip ci]'
-
             git push origin main && exit 0
-
-            # Push rejected — undo local commit, restore working tree, then retry
             git reset HEAD~1
             git restore ROLLBACK.md
             echo "Push rejected — retrying in 3s"
             sleep 3
           done
-
           echo 'All push attempts failed' && exit 1

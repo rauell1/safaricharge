@@ -11,25 +11,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ───────────────────────────────────────────────
+  # ─────────────────────────────────────────────
   # 1. Type-check (tsc --noEmit)
-  # ───────────────────────────────────────────────
+  # ─────────────────────────────────────────────
   typecheck:
     name: Type-check
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Setup Node 24
         uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: 'npm'
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Install dependencies
         run: npm ci
@@ -37,26 +35,24 @@ jobs:
       - name: Run tsc
         run: npx tsc --noEmit
 
-  # ───────────────────────────────────────────────
+  # ─────────────────────────────────────────────
   # 2. Build — only after typecheck passes
-  # ───────────────────────────────────────────────
+  # ─────────────────────────────────────────────
   build:
     name: Build
     runs-on: ubuntu-latest
     needs: [typecheck]
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Setup Node 24
         uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: 'npm'
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Install dependencies
         run: npm ci
