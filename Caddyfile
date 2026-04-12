@@ -1,0 +1,36 @@
+# SafariCharge Caddy config
+# Replace `your-domain.com` with your actual domain.
+# Caddy auto-provisions TLS via Let's Encrypt.
+
+your-domain.com {
+  # Gzip / Brotli compression
+  encode zstd gzip
+
+  # Security headers
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Frame-Options SAMEORIGIN
+    X-Content-Type-Options nosniff
+    Referrer-Policy strict-origin-when-cross-origin
+    -Server
+  }
+
+  # Forecasting service
+  handle /api/forecast* {
+    reverse_proxy forecasting:8000
+  }
+
+  # IoT bridge status endpoint
+  handle /api/iot* {
+    reverse_proxy iot-bridge:4000
+  }
+
+  # All other traffic → Next.js
+  reverse_proxy app:3000
+}
+
+# Local / dev fallback (no TLS)
+:80 {
+  encode gzip
+  reverse_proxy app:3000
+}
