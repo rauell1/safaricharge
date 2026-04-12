@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`148ab2d`](https://github.com/rauell1/safaricharge/commit/148ab2d196a759d8601698f650ec9b79d5fbee7d) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`8a9d25d`](https://github.com/rauell1/safaricharge/commit/8a9d25d20c956428c60ca8e3b3f8c4581ab8b606) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | refactor(energy): remove root DailyEnergyGraph.tsx — now lives in energy/ |
-| **Total commits** | 668 |
+| **Message** | refactor(dashboard): add dashboard/FinancialDashboard.tsx |
+| **Total commits** | 673 |
 | **TypeScript files** | 148 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
