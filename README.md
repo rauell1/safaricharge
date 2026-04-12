@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`dcabfe3`](https://github.com/rauell1/safaricharge/commit/dcabfe393cc881879977a3b8d2fb5e8576d40bcb) by Roy Otieno | Energy & Mobility Systems |
-| **Date** | 2026-04-12 11:37:03 +0300 |
-| **Message** | feat(ci): add auto-update workflows for README and ROLLBACK.md |
-| **Total commits** | 541 |
+| **Last commit** | [`abce273`](https://github.com/rauell1/safaricharge/commit/abce273db3478396cc54b8b145a39051d18c5b72) by Roy Otieno | Energy & Mobility Systems |
+| **Date** | 2026-04-12 |
+| **Message** | fix(ci): replace single pull--rebase with 5-attempt push retry loop in all auto-update workflows |
+| **Total commits** | 553 |
 | **TypeScript files** | 137 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 SafariCharge is a **Next.js 16 + TypeScript** energy simulation and optimization dashboard for solar, battery storage, grid interaction, and EV charging.
