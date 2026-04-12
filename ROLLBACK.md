@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 23 | `rollback/feat-use-logo-png-with-full-elephant-w-2026-04-12` | `8c4563f` | feat: use logo.png with full elephant+wordmark display in sidebar | 2026-04-12 |
 | 22 | `rollback/logo-2026-04-12` | `60edb78` | Logo | 2026-04-12 |
 | 21 | `rollback/feat-replace-logo-with-uploaded-safari-2026-04-12` | `c513864` | feat: replace logo with uploaded SafariCharge elephant illustration (JPEG) | 2026-04-12 |
 | 20 | `rollback/feat-add-safaricharge-elephant-logo-im-2026-04-12` | `bd44d9d` | feat: add SafariCharge elephant logo image | 2026-04-12 |
@@ -285,6 +286,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/logo-2026-04-12`
 - **Commit**: `60edb78b875dc9e0896b0b76fae36071b85d12c6`
 - **Subject**: Logo
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #23 — `rollback/feat-use-logo-png-with-full-elephant-w-2026-04-12`
+
+- **Branch**: `rollback/feat-use-logo-png-with-full-elephant-w-2026-04-12`
+- **Commit**: `8c4563f700352f264220bbf5ddfd6263a7afa594`
+- **Subject**: feat: use logo.png with full elephant+wordmark display in sidebar
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
