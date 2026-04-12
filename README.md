@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`d9ea913`](https://github.com/rauell1/safaricharge/commit/d9ea913ef81349bfcb066266d6c02c29bf83d1f1) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`679415d`](https://github.com/rauell1/safaricharge/commit/679415d8ac131ff584c56914beb9eceed77ce27f) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
 | **Message** | refactor: delete dashboard/ shim folder |
-| **Total commits** | 732 |
-| **TypeScript files** | 166 |
+| **Total commits** | 740 |
+| **TypeScript files** | 159 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
