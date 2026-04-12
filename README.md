@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`ab57eb7`](https://github.com/rauell1/safaricharge/commit/ab57eb7659c584c01a0bd1a7c1b15fec60840940) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`780f2eb`](https://github.com/rauell1/safaricharge/commit/780f2eb1c98328e9bb5cb8272e2612aa591a5cd3) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | fix(lint): convert require() to ESM imports in gen script; fix setState-in-effect and Math.random purity violations |
-| **Total commits** | 572 |
+| **Message** | fix(lint): restore truncated SolarComponentLibrary; fix setState-in-effect in SystemVisualization; move Math.random to module scope in sidebar |
+| **Total commits** | 576 |
 | **TypeScript files** | 137 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
