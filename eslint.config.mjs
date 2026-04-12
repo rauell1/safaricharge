@@ -34,8 +34,6 @@ const eslintConfig = [
       // React rules
       "react-hooks/exhaustive-deps": "off",
       "react-hooks/rules-of-hooks": "off",
-      // react-hooks v5 strict rules — fire on valid patterns (e.g. carousel mount
-      // sync via useLayoutEffect, module-scope Math.random for stable skeleton widths)
       "react-hooks/no-direct-set-state-in-use-effect": "off",
       "react-hooks/no-direct-set-state-in-use-layout-effect": "off",
       "react/no-unescaped-entities": "off",
@@ -65,7 +63,6 @@ const eslintConfig = [
   },
 
   // ─── Domain Hard Boundaries (Option C) ───────────────────────────────────
-  // Enforce architectural ownership rules. Violations are errors, not warnings.
   // Rule: widgets/ cannot import from energy/ or dashboard/
   {
     files: ["src/components/widgets/**/*.{ts,tsx}"],
@@ -98,7 +95,7 @@ const eslintConfig = [
           {
             group: ["@/components/dashboard/*", "../dashboard/*", "../../dashboard/*"],
             message:
-              "[Domain boundary] energy/ must not import from dashboard/ (deprecated shim layer). " +
+              "[Domain boundary] energy/ cannot import from dashboard/ (deprecated shim layer). " +
               "Import from the canonical domain directly.",
           },
         ],
@@ -107,25 +104,64 @@ const eslintConfig = [
   },
 
   // Rule: dashboard/ shims must not contain implementation logic.
-  // They may only re-export from canonical domains.
-  // A shim file containing JSX, hooks, or state is a violation.
   {
     files: ["src/components/dashboard/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-syntax": ["error",
         {
-          // Catches: useState, useEffect, useReducer, useCallback, useMemo, useRef, useContext
           selector: "CallExpression[callee.name=/^use[A-Z]/]",
           message:
             "[Domain boundary] dashboard/ shims must not contain hooks. " +
-            "All implementation belongs in the canonical domain (energy/, widgets/, layout/, financial/).",
+            "All implementation belongs in the canonical domain folder.",
         },
         {
-          // Catches JSX elements: <div>, <Component />, etc.
           selector: "JSXElement",
           message:
             "[Domain boundary] dashboard/ shims must not render JSX. " +
             "Shims are re-export-only. Move implementation to the canonical domain folder.",
+        },
+      ],
+    },
+  },
+
+  // ─── Post-Deletion Resurrection Guard ────────────────────────────────────
+  //
+  // CURRENT STATE: 'warn'
+  // This rule is intentionally set to 'warn' while dashboard/ shims still exist.
+  // They are excluded from the domain boundary rules above, but this global rule
+  // would fire on the shims themselves if set to 'error' now.
+  //
+  // ACTION REQUIRED after migration:
+  //   1. Run: git rm -r src/components/dashboard/
+  //   2. Change 'warn' → 'error' in this block
+  //   3. Run: npm run lint && npm run build
+  //   4. Commit with message: "arch: activate resurrection guard after dashboard/ deletion"
+  //
+  // What this prevents permanently:
+  //   - No developer can ever re-introduce @/components/dashboard/* imports
+  //   - CI will fail immediately if the old path appears anywhere in the codebase
+  //   - Protects the domain-driven architecture from architectural drift
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: [
+      // While shims exist, exclude them from this global rule to avoid self-referential errors.
+      // Remove this ignore block after deleting src/components/dashboard/.
+      "src/components/dashboard/**",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        // ↓↓↓ FLIP THIS TO 'error' AFTER DELETING src/components/dashboard/ ↓↓↓
+        "warn",
+        {
+          patterns: [
+            {
+              group: ["@/components/dashboard", "@/components/dashboard/*"],
+              message:
+                "[Resurrection guard] @/components/dashboard/ has been deleted. " +
+                "Import from the canonical domain: energy/, widgets/, layout/, or financial/. " +
+                "See CODEBASE_MAP.md for the full component-to-domain map.",
+            },
+          ],
         },
       ],
     },
