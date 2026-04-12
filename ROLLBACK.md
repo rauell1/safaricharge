@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 19 | `rollback/feat-replace-z-mark-logo-with-elephant-2026-04-12` | `8c2741d` | feat: replace Z-mark logo with elephant + solar panel illustration | 2026-04-12 |
 | 18 | `rollback/brand-add-favicon-apple-touch-icon-and-2026-04-12` | `9d7bea2` | brand: add favicon, apple-touch-icon and full icon metadata | 2026-04-12 |
 | 17 | `rollback/brand-replace-logo-with-pixel-perfect-2026-04-12` | `2dbd869` | brand: replace logo with pixel-perfect teal SafariCharge mark | 2026-04-12 |
 | 16 | `rollback/feat-nav-bottom-tab-bar-on-mobile-logo-2026-04-12` | `9ab9427` | feat(nav): bottom tab bar on mobile + logo image throughout | 2026-04-12 |
@@ -245,6 +246,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/brand-add-favicon-apple-touch-icon-and-2026-04-12`
 - **Commit**: `9d7bea2b19d22770f08889a98bf65568a4dfef52`
 - **Subject**: brand: add favicon, apple-touch-icon and full icon metadata
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #19 — `rollback/feat-replace-z-mark-logo-with-elephant-2026-04-12`
+
+- **Branch**: `rollback/feat-replace-z-mark-logo-with-elephant-2026-04-12`
+- **Commit**: `8c2741dbfe0dabbcc67bec054634cef273dfed60`
+- **Subject**: feat: replace Z-mark logo with elephant + solar panel illustration
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
