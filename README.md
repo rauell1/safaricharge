@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`2abc94d`](https://github.com/rauell1/safaricharge/commit/2abc94d010e7b9629e3e07479fe6d29ef44fb899) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`2beb51b`](https://github.com/rauell1/safaricharge/commit/2beb51b0ab4b6bb1407e52b166e1ef56b1acbc42) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | refactor: codebase cleanup — dead code, constant consolidation, font fix (#176) |
-| **Total commits** | 593 |
+| **Message** | fix(ci): restore ROLLBACK.md after reset so rebase doesn't fail on retry |
+| **Total commits** | 596 |
 | **TypeScript files** | 137 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
