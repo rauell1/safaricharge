@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 61 | `rollback/restore-exact-original-powerflowvisual-2026-04-12` | `18807ae` | restore: exact original PowerFlowVisualization from pre-deletion commit 9ab9427 | 2026-04-12 |
 | 60 | `rollback/restore-full-financialdashboard-tsx-wa-2026-04-12` | `626f811` | restore: full FinancialDashboard.tsx (was stub from bad commit) | 2026-04-12 |
 | 59 | `rollback/restore-full-systemvisualization-tsx-w-2026-04-12` | `ea5c418` | restore: full SystemVisualization.tsx (was stub from bad commit) | 2026-04-12 |
 | 58 | `rollback/restore-full-powerflowvisualization-ts-2026-04-12` | `21e7e57` | restore: full PowerFlowVisualization.tsx (was stub from bad commit) | 2026-04-12 |
@@ -665,6 +666,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/restore-full-financialdashboard-tsx-wa-2026-04-12`
 - **Commit**: `626f8116e8b1d3e6636950e4b9e9facffdcc7101`
 - **Subject**: restore: full FinancialDashboard.tsx (was stub from bad commit)
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #61 — `rollback/restore-exact-original-powerflowvisual-2026-04-12`
+
+- **Branch**: `rollback/restore-exact-original-powerflowvisual-2026-04-12`
+- **Commit**: `18807aed8706c46852ddd11f0a6bd934850cff40`
+- **Subject**: restore: exact original PowerFlowVisualization from pre-deletion commit 9ab9427
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
