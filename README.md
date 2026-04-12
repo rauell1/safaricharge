@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`0d7c84a`](https://github.com/rauell1/safaricharge/commit/0d7c84aee4383fd664dfd1474b5af6cfc263f378) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`abfbc3c`](https://github.com/rauell1/safaricharge/commit/abfbc3c8579197fc0bc2e02e999f446d3bdf6544) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | refactor: add reports/, ai/ stubs and dashboard/ re-export barrels for zero-breakage |
-| **Total commits** | 708 |
+| **Message** | refactor: replace stub ai/ with real wiring; flesh out reports/ CSV export; add dashboard/ shims for duplicates |
+| **Total commits** | 712 |
 | **TypeScript files** | 166 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
