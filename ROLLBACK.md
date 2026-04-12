@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 70 | `rollback/arch-component-ownership-contract-no-b-2026-04-13` | `15d14b2` | arch: component ownership contract + no-barrel ESLint rule + codemod v3 multiline/comment-safe | 2026-04-13 |
 | 69 | `rollback/arch-codemod-v2-catches-import-type-x-2026-04-13` | `fa3eefb` | arch: codemod v2 catches import { type X } syntax + post-deletion ESLint resurrection guard | 2026-04-13 |
 | 68 | `rollback/arch-deprecation-notices-on-all-dashbo-2026-04-12` | `3ea2f0a` | arch: deprecation notices on all dashboard/ shims + domain boundary ESLint rule + codemod migration script | 2026-04-12 |
 | 67 | `rollback/fix-barrel-harden-all-4-export-consist-2026-04-12` | `125c32c` | fix(barrel): harden all 4 export consistency issues | 2026-04-12 |
@@ -755,6 +756,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/arch-codemod-v2-catches-import-type-x-2026-04-13`
 - **Commit**: `fa3eefb2b7c6b04259a5d1dfb2a37c42f38d1e25`
 - **Subject**: arch: codemod v2 catches import { type X } syntax + post-deletion ESLint resurrection guard
+- **Date**: 2026-04-13
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #70 — `rollback/arch-component-ownership-contract-no-b-2026-04-13`
+
+- **Branch**: `rollback/arch-component-ownership-contract-no-b-2026-04-13`
+- **Commit**: `15d14b2e23082971db8fb1cbe1f7f5ff25d9af73`
+- **Subject**: arch: component ownership contract + no-barrel ESLint rule + codemod v3 multiline/comment-safe
 - **Date**: 2026-04-13
 - **Auto-generated**: yes (by update-rollback.yml)
 
