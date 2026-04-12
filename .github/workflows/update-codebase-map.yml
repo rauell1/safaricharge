@@ -18,6 +18,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Install tree
         run: sudo apt-get install -y tree > /dev/null 2>&1
@@ -27,9 +29,9 @@ jobs:
         run: |
           echo "total_ts=$(find src -name '*.ts' -o -name '*.tsx' | wc -l | tr -d ' ')" >> $GITHUB_OUTPUT
           echo "total_py=$(find . -name '*.py' ! -path '*/node_modules/*' | wc -l | tr -d ' ')" >> $GITHUB_OUTPUT
-          echo "last_commit=$(git log -1 --format='%H' main)" >> $GITHUB_OUTPUT
-          echo "last_author=$(git log -1 --format='%an' main)" >> $GITHUB_OUTPUT
-          echo "last_date=$(git log -1 --format='%ci' main)" >> $GITHUB_OUTPUT
+          echo "last_commit=$(git log -1 --no-decorate --format='%H' HEAD)" >> $GITHUB_OUTPUT
+          echo "last_author=$(git log -1 --no-decorate --format='%an' HEAD)" >> $GITHUB_OUTPUT
+          echo "last_date=$(git log -1 --no-decorate --date=short --format='%ad' HEAD)" >> $GITHUB_OUTPUT
           echo "branch=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_OUTPUT
 
       - name: Rebuild CODEBASE_MAP.md
@@ -51,5 +53,6 @@ jobs:
             echo 'No changes to CODEBASE_MAP.md — skipping commit'
           else
             git commit -m 'docs(auto): regenerate CODEBASE_MAP.md [skip ci]'
+            git pull --rebase origin main
             git push
           fi
