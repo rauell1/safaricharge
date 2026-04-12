@@ -105,6 +105,11 @@ export const EnergyReportModal = ({
   const { totalSolarGenerated, totalGridImportKWh, totalGridExportKWh, totalSavings,
           uniqueDays, uniqueWeeks, uniqueMonths, uniqueYears } = reportStats;
 
+  // Derive the first simulated date for the charts ZIP label
+  const firstSimDate = minuteData.length > 0
+    ? Array.from(new Set(minuteData.map(d => d.date))).sort()[0]
+    : null;
+
   // Get date range
   const dateRange = totalDataPoints > 0
     ? `${minuteData[0]?.date || 'N/A'} to ${minuteData[totalDataPoints - 1]?.date || 'N/A'}`
@@ -399,7 +404,7 @@ export const EnergyReportModal = ({
                   <div>
                     <h3 className="font-bold text-[var(--text-primary)] text-lg">Download Daily Charts</h3>
                     <p className="text-xs text-[var(--text-secondary)]">
-                      ZIP archive containing one JPG energy chart per simulated day
+                      ZIP archive containing the energy chart for the first simulated day
                     </p>
                   </div>
                 </div>
@@ -409,7 +414,7 @@ export const EnergyReportModal = ({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                       <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--solar)' }}></span>
-                      One JPG chart per day ({uniqueDays} charts)
+                      1 JPG chart — first simulated day{firstSimDate ? ` (${firstSimDate})` : ''}
                     </div>
                     <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                       <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--consumption)' }}></span>
@@ -417,7 +422,7 @@ export const EnergyReportModal = ({
                     </div>
                     <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                       <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                      1640×680px (2× retina) images
+                      1640×680px (2× retina) image
                     </div>
                     <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                       <span className="w-2 h-2 bg-sky-500 rounded-full"></span>
@@ -442,12 +447,12 @@ export const EnergyReportModal = ({
                   {isDownloadingCharts ? (
                     <>
                       <Loader2 size={18} className="animate-spin" />
-                      Building charts...
+                      Building chart...
                     </>
                   ) : (
                     <>
                       <ImageIcon size={18} />
-                      Download Charts ZIP ({uniqueDays} day{uniqueDays !== 1 ? 's' : ''})
+                      Download Charts ZIP (Day 1 only)
                     </>
                   )}
                 </button>

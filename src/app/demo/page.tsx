@@ -486,30 +486,30 @@ export default function ModularDashboardDemo({
     }
 
     try {
-      // Group minuteData by date
-      const byDate = new Map<string, typeof minuteData>();
-      for (const d of minuteData) {
-        if (!byDate.has(d.date)) byDate.set(d.date, []);
-        byDate.get(d.date)!.push(d);
+      // Collect all unique dates sorted ascending and take only the first day
+      const allDates = Array.from(new Set(minuteData.map(d => d.date))).sort();
+      const firstDate = allDates[0];
+      const firstDayData = minuteData.filter(d => d.date === firstDate);
+
+      const graphPoints = resampleTo5MinBuckets(firstDayData);
+      if (graphPoints.length === 0) {
+        alert('No data points available for the first simulated day.');
+        return;
       }
+
+      const svgStr  = buildGraphSVG(graphPoints, firstDate);
+      const jpgBlob = await buildJPGBlob(svgStr, 820, 340);
 
       const JSZip = (await import('jszip')).default;
       const zip = new JSZip();
       const chartsFolder = zip.folder('SafariCharge_Charts')!;
-
-      for (const [date, dayData] of Array.from(byDate.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
-        const graphPoints = resampleTo5MinBuckets(dayData);
-        if (graphPoints.length === 0) continue;
-        const svgStr = buildGraphSVG(graphPoints, date);
-        const jpgBlob = await buildJPGBlob(svgStr, 820, 340);
-        chartsFolder.file(`SafariCharge_${date}.jpg`, jpgBlob);
-      }
+      chartsFolder.file(`SafariCharge_${firstDate}.jpg`, jpgBlob);
 
       const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `SafariCharge_Charts_${new Date().toISOString().slice(0, 10)}.zip`;
+      a.download = `SafariCharge_Charts_${firstDate}.zip`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
