@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`5b330db`](https://github.com/rauell1/safaricharge/commit/5b330dbe7cd54e6bb9cc0b9c582c5f4a771cf649) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`9ab9427`](https://github.com/rauell1/safaricharge/commit/9ab9427a21ec8ca655a895e445b3c1951196b74f) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | fix(scenarios): drawer backdrop no longer blocks sidebar nav |
-| **Total commits** | 600 |
-| **TypeScript files** | 137 |
+| **Message** | feat(nav): bottom tab bar on mobile + logo image throughout |
+| **Total commits** | 604 |
+| **TypeScript files** | 138 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
