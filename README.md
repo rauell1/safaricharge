@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`da5aaa2`](https://github.com/rauell1/safaricharge/commit/da5aaa20a24500eb40017ab11a4096c6f7eb939d) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`0cec915`](https://github.com/rauell1/safaricharge/commit/0cec915630ff6d44669c35f3b397e9518339281e) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | refactor: complete structure — move to recommendation/ & reports/, scaffold LoadConfigComponents, nuke dashboard/ shims |
-| **Total commits** | 720 |
-| **TypeScript files** | 169 |
+| **Message** | refactor: remove energy/RecommendationComponents.tsx (moved to recommendation/) |
+| **Total commits** | 724 |
+| **TypeScript files** | 168 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
