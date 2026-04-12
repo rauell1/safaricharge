@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 11 | `rollback/fix-lint-use-uselayouteffect-for-carou-2026-04-12` | `a853cab` | fix(lint): use useLayoutEffect for carousel mount sync to satisfy react-hooks/no-direct-set-state-in-use-effect | 2026-04-12 |
 | 10 | `rollback/fix-lint-restore-truncated-solarcompon-2026-04-12` | `780f2eb` | fix(lint): restore truncated SolarComponentLibrary; fix setState-in-effect in SystemVisualization; move Math.random to module scope in sidebar | 2026-04-12 |
 | 9 | `rollback/fix-lint-convert-require-to-esm-import-2026-04-12` | `ab57eb7` | fix(lint): convert require() to ESM imports in gen script; fix setState-in-effect and Math.random purity violations | 2026-04-12 |
 | 8 | `rollback/fix-ci-update-rollback-re-run-gen-scri-2026-04-12` | `6515a03` | fix(ci): update-rollback — re-run gen script inside retry loop, drop fragile stash pattern | 2026-04-12 |
@@ -165,6 +166,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-lint-restore-truncated-solarcompon-2026-04-12`
 - **Commit**: `780f2eb1c98328e9bb5cb8272e2612aa591a5cd3`
 - **Subject**: fix(lint): restore truncated SolarComponentLibrary; fix setState-in-effect in SystemVisualization; move Math.random to module scope in sidebar
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #11 — `rollback/fix-lint-use-uselayouteffect-for-carou-2026-04-12`
+
+- **Branch**: `rollback/fix-lint-use-uselayouteffect-for-carou-2026-04-12`
+- **Commit**: `a853cabec9e933c0a966e35d1251c5f18c9909ef`
+- **Subject**: fix(lint): use useLayoutEffect for carousel mount sync to satisfy react-hooks/no-direct-set-state-in-use-effect
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
