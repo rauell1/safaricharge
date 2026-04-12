@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`15d14b2`](https://github.com/rauell1/safaricharge/commit/15d14b2e23082971db8fb1cbe1f7f5ff25d9af73) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`4c26e8f`](https://github.com/rauell1/safaricharge/commit/4c26e8f9552cb3f96a574b955a147adcb895dd5b) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-13 |
-| **Message** | arch: component ownership contract + no-barrel ESLint rule + codemod v3 multiline/comment-safe |
-| **Total commits** | 846 |
-| **TypeScript files** | 168 |
+| **Message** | fix: repair two broken imports crashing the build |
+| **Total commits** | 850 |
+| **TypeScript files** | 169 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
