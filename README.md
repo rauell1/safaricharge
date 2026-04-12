@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`780f2eb`](https://github.com/rauell1/safaricharge/commit/780f2eb1c98328e9bb5cb8272e2612aa591a5cd3) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`a853cab`](https://github.com/rauell1/safaricharge/commit/a853cabec9e933c0a966e35d1251c5f18c9909ef) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | fix(lint): restore truncated SolarComponentLibrary; fix setState-in-effect in SystemVisualization; move Math.random to module scope in sidebar |
-| **Total commits** | 576 |
+| **Message** | fix(lint): use useLayoutEffect for carousel mount sync to satisfy react-hooks/no-direct-set-state-in-use-effect |
+| **Total commits** | 581 |
 | **TypeScript files** | 137 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
