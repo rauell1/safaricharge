@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 41 | `rollback/refactor-decompose-dashboard-into-widg-2026-04-12` | `3be3586` | refactor: decompose dashboard/ into widgets/, financial/, reports/, ai/ per target structure | 2026-04-12 |
 | 40 | `rollback/refactor-remove-duplicate-recommendati-2026-04-12` | `babc9fa` | refactor: remove duplicate RecommendationComponents.tsx from simulation/ (canonical in energy/) | 2026-04-12 |
 | 39 | `rollback/refactor-remove-flat-recommendationcom-2026-04-12` | `f89ddb0` | refactor: remove flat RecommendationComponents.tsx (moved to energy/) | 2026-04-12 |
 | 38 | `rollback/refactor-remove-flat-loadconfigcompone-2026-04-12` | `78746d6` | refactor: remove flat LoadConfigComponents.tsx (moved to simulation/) | 2026-04-12 |
@@ -465,6 +466,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/refactor-remove-duplicate-recommendati-2026-04-12`
 - **Commit**: `babc9fa2626c76d654f7c011cb450c2161a225a1`
 - **Subject**: refactor: remove duplicate RecommendationComponents.tsx from simulation/ (canonical in energy/)
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #41 — `rollback/refactor-decompose-dashboard-into-widg-2026-04-12`
+
+- **Branch**: `rollback/refactor-decompose-dashboard-into-widg-2026-04-12`
+- **Commit**: `3be35867e49ad15d7d92f37e7e93e906154ffb33`
+- **Subject**: refactor: decompose dashboard/ into widgets/, financial/, reports/, ai/ per target structure
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
