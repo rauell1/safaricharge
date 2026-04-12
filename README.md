@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`626f811`](https://github.com/rauell1/safaricharge/commit/626f8116e8b1d3e6636950e4b9e9facffdcc7101) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`18807ae`](https://github.com/rauell1/safaricharge/commit/18807aed8706c46852ddd11f0a6bd934850cff40) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | restore: full FinancialDashboard.tsx (was stub from bad commit) |
-| **Total commits** | 806 |
+| **Message** | restore: exact original PowerFlowVisualization from pre-deletion commit 9ab9427 |
+| **Total commits** | 810 |
 | **TypeScript files** | 166 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
