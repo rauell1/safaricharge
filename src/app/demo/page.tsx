@@ -75,6 +75,11 @@ const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct
 const FALLBACK_GEN  = [65, 70, 78, 85, 90, 95, 88, 92, 80, 75, 68, 62] as const;
 const FALLBACK_CONS = [55, 58, 60, 62, 65, 68, 70, 69, 65, 60, 57, 54] as const;
 
+// How many day-charts to render concurrently inside handleDownloadCharts.
+// 10 keeps canvas memory pressure manageable across all browsers while still
+// being ~10× faster than sequential rendering for large simulations.
+const CHART_BATCH_SIZE = 10;
+
 // ─── Location picker data ────────────────────────────────────────────────────
 interface LocationOption {
   name: string;
@@ -479,6 +484,10 @@ export default function ModularDashboardDemo({
     }
   }, [minuteData, financialSnapshot]);
 
+  // ─── Download all day-charts as a ZIP ────────────────────────────────────
+  // Charts are rendered in concurrent batches of CHART_BATCH_SIZE to avoid
+  // blocking the main thread for large simulations (30–365+ days) while
+  // still being significantly faster than sequential rendering.
   const handleDownloadCharts = useCallback(async () => {
     if (!minuteData || minuteData.length === 0) {
       alert('No data to chart. Please wait for the simulation to generate data.');
@@ -493,19 +502,65 @@ export default function ModularDashboardDemo({
         byDate.get(d.date)!.push(d);
       }
 
+      const sortedDates = Array.from(byDate.keys()).sort((a, b) => a.localeCompare(b));
+      const total = sortedDates.length;
+
       const JSZip = (await import('jszip')).default;
       const zip = new JSZip();
       const chartsFolder = zip.folder('SafariCharge_Charts')!;
 
-      for (const [date, dayData] of Array.from(byDate.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
-        const graphPoints = resampleTo5MinBuckets(dayData);
-        if (graphPoints.length === 0) continue;
-        const svgStr = buildGraphSVG(graphPoints, date);
-        const jpgBlob = await buildJPGBlob(svgStr, 820, 340);
-        chartsFolder.file(`SafariCharge_${date}.jpg`, jpgBlob);
+      // Show initial progress toast
+      toast({
+        title: 'Building charts ZIP…',
+        description: `Rendering 0 / ${total} charts`,
+      });
+
+      let rendered = 0;
+
+      // Process in parallel batches
+      for (let i = 0; i < total; i += CHART_BATCH_SIZE) {
+        const batch = sortedDates.slice(i, i + CHART_BATCH_SIZE);
+
+        // Build all SVGs synchronously (no I/O), then render JPGs concurrently
+        const batchResults = await Promise.all(
+          batch.map(async (date) => {
+            const dayData = byDate.get(date)!;
+            const graphPoints = resampleTo5MinBuckets(dayData);
+            if (graphPoints.length === 0) return null;
+            const svgStr = buildGraphSVG(graphPoints, date);
+            const jpgBlob = await buildJPGBlob(svgStr, 820, 340);
+            return { date, jpgBlob };
+          })
+        );
+
+        for (const result of batchResults) {
+          if (result) {
+            chartsFolder.file(`SafariCharge_${result.date}.jpg`, result.jpgBlob);
+          }
+        }
+
+        rendered += batch.length;
+
+        // Update progress toast every batch
+        if (rendered < total) {
+          toast({
+            title: 'Building charts ZIP…',
+            description: `Rendering ${rendered} / ${total} charts`,
+          });
+        }
       }
 
-      const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+      toast({
+        title: 'Compressing ZIP…',
+        description: `Packaging ${total} charts`,
+      });
+
+      const zipBlob = await zip.generateAsync({
+        type: 'blob',
+        compression: 'DEFLATE',
+        compressionOptions: { level: 6 },
+      });
+
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
       a.href = url;
@@ -513,12 +568,19 @@ export default function ModularDashboardDemo({
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 500);
+      // 30 s revoke window — large ZIPs on slow connections need time to flush
+      setTimeout(() => URL.revokeObjectURL(url), 30_000);
+
+      toast({
+        title: 'Download started',
+        description: `ZIP contains ${total} daily chart${total !== 1 ? 's' : ''}.`,
+      });
     } catch (err) {
       console.error('Charts ZIP error:', err);
       alert(`Failed to build charts ZIP: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
-  }, [minuteData]);
+  }, [minuteData, toast]);
+  // ─────────────────────────────────────────────────────────────────────────
 
   const flowDirection = useMemo(() => ({
     solarToHome:    flows.some((f) => f.from === 'solar'   && f.to === 'home'    && f.active),
