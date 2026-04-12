@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`f89ddb0`](https://github.com/rauell1/safaricharge/commit/f89ddb08574d28f01e8c137e8d803aed7d6ef26b) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`babc9fa`](https://github.com/rauell1/safaricharge/commit/babc9fa2626c76d654f7c011cb450c2161a225a1) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | refactor: remove flat RecommendationComponents.tsx (moved to energy/) |
-| **Total commits** | 696 |
-| **TypeScript files** | 148 |
+| **Message** | refactor: remove duplicate RecommendationComponents.tsx from simulation/ (canonical in energy/) |
+| **Total commits** | 700 |
+| **TypeScript files** | 147 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
