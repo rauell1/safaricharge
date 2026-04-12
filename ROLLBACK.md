@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 56 | `rollback/restore-add-missing-powerflowvisualiza-2026-04-12` | `23219ba` | restore: add missing PowerFlowVisualization, SystemVisualization, FinancialDashboard to dashboard/ | 2026-04-12 |
 | 55 | `rollback/fix-ai-correct-malformed-generic-on-us-2026-04-12` | `c077e41` | fix(ai): correct malformed generic on useState line 60 | 2026-04-12 |
 | 54 | `rollback/restore-reinstate-full-src-components-2026-04-12` | `047112d` | restore: reinstate full src/components/dashboard/ from commit 9ab9427 | 2026-04-12 |
 | 53 | `rollback/fix-restore-full-demo-page-tsx-body-fr-2026-04-12` | `473d4eb` | fix: restore full demo/page.tsx body from rollback snapshot, fix all import paths | 2026-04-12 |
@@ -615,6 +616,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-ai-correct-malformed-generic-on-us-2026-04-12`
 - **Commit**: `c077e41f0287d3760c21bbcd6226bb4f76ff1b96`
 - **Subject**: fix(ai): correct malformed generic on useState line 60
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #56 — `rollback/restore-add-missing-powerflowvisualiza-2026-04-12`
+
+- **Branch**: `rollback/restore-add-missing-powerflowvisualiza-2026-04-12`
+- **Commit**: `23219ba1b07a4ff3d275587c38cc83cc0f9be406`
+- **Subject**: restore: add missing PowerFlowVisualization, SystemVisualization, FinancialDashboard to dashboard/
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
