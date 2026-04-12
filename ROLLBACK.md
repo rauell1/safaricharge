@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 48 | `rollback/refactor-delete-dashboard-shim-folder-2026-04-12` | `49f110d` | refactor: delete dashboard/ shim folder | 2026-04-12 |
 | 47 | `rollback/refactor-remove-energy-energyreportmod-2026-04-12` | `fd9e8c6` | refactor: remove energy/EnergyReportModal.tsx (moved to reports/) | 2026-04-12 |
 | 46 | `rollback/refactor-remove-energy-recommendationc-2026-04-12` | `0cec915` | refactor: remove energy/RecommendationComponents.tsx (moved to recommendation/) | 2026-04-12 |
 | 45 | `rollback/refactor-complete-structure-move-to-re-2026-04-12` | `da5aaa2` | refactor: complete structure — move to recommendation/ & reports/, scaffold LoadConfigComponents, nuke dashboard/ shims | 2026-04-12 |
@@ -535,6 +536,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/refactor-remove-energy-energyreportmod-2026-04-12`
 - **Commit**: `fd9e8c6245ecb56578a94274a12faff148211006`
 - **Subject**: refactor: remove energy/EnergyReportModal.tsx (moved to reports/)
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #48 — `rollback/refactor-delete-dashboard-shim-folder-2026-04-12`
+
+- **Branch**: `rollback/refactor-delete-dashboard-shim-folder-2026-04-12`
+- **Commit**: `49f110d49aea332550f9909dbdb3f95523788221`
+- **Subject**: refactor: delete dashboard/ shim folder
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
