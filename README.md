@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`0cec915`](https://github.com/rauell1/safaricharge/commit/0cec915630ff6d44669c35f3b397e9518339281e) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`fd9e8c6`](https://github.com/rauell1/safaricharge/commit/fd9e8c6245ecb56578a94274a12faff148211006) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | refactor: remove energy/RecommendationComponents.tsx (moved to recommendation/) |
-| **Total commits** | 724 |
-| **TypeScript files** | 168 |
+| **Message** | refactor: remove energy/EnergyReportModal.tsx (moved to reports/) |
+| **Total commits** | 728 |
+| **TypeScript files** | 167 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
