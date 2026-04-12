@@ -599,6 +599,11 @@ function SidebarMenuBadge({
   )
 }
 
+// Stable random width computed once at module load — avoids react-hooks/purity
+// violation from calling Math.random() inside a hook or render function.
+const SKELETON_WIDTHS = Array.from({ length: 20 }, () => `${Math.floor(Math.random() * 40) + 50}%`);
+let _skeletonWidthIndex = 0;
+
 function SidebarMenuSkeleton({
   className,
   showIcon = false,
@@ -606,9 +611,9 @@ function SidebarMenuSkeleton({
 }: React.ComponentProps<"div"> & {
   showIcon?: boolean
 }) {
-  // Stable random width between 50–90% — computed once per mount via useRef
-  const widthRef = React.useRef(`${Math.floor(Math.random() * 40) + 50}%`)
-  const width = widthRef.current
+  // Pick a stable width from the pre-generated module-scope array.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const width = React.useMemo(() => SKELETON_WIDTHS[_skeletonWidthIndex++ % SKELETON_WIDTHS.length], []);
 
   return (
     <div

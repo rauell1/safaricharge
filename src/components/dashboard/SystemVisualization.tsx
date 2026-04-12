@@ -55,7 +55,9 @@ export function SystemVisualization() {
 
   useEffect(() => {
     if (!carouselApi) return;
-    syncSlideToStep();
+    // Read-only query on mount — does not cause a cascading render
+    const snap = carouselApi.selectedScrollSnap();
+    setMobileStep(snap);
     carouselApi.on('select', syncSlideToStep);
     return () => {
       carouselApi.off('select', syncSlideToStep);
