@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 4 | `rollback/fix-ci-update-rollback-stash-before-re-2026-04-12` | `c4aed71` | fix(ci): update-rollback — stash before rebase pull, unstash after | 2026-04-12 |
 | 3 | `rollback/pre-soc-fix-2026-04-11` | `1063f307` | State before Battery SOC clean fix — includes WIP SOC merge (PR #136) + scenario management (PR #137) | 2026-04-11 |
 | 2 | *(tag)* `original-dashboard-v1` | `8039cb4` | Original dashboard UI before card-based refactor (PR #41) | 2026-03-29 |
 | 1 | *(initial)* `main` baseline | — | Project genesis | — |
@@ -97,6 +98,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
    ```
 3. Update this file — add a new row to the Snapshot Log table (newest first) and add a detail section below.
 4. Commit the updated `ROLLBACK.md` to `main`.
+---
+
+## Snapshot #4 — `rollback/fix-ci-update-rollback-stash-before-re-2026-04-12`
+
+- **Branch**: `rollback/fix-ci-update-rollback-stash-before-re-2026-04-12`
+- **Commit**: `c4aed7146d16cb9b5cbbdc56455ab98bf4791bcc`
+- **Subject**: fix(ci): update-rollback — stash before rebase pull, unstash after
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+
 
 ---
 
