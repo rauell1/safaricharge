@@ -57,6 +57,10 @@ const toneClasses: Record<SidebarContextMetric['tone'], string> = {
   neutral: 'bg-[var(--bg-card-muted)] text-[var(--text-secondary)] border-[var(--border)]',
 };
 
+// Google Drive-hosted logo — shared publicly via drive.google.com
+const LOGO_URL =
+  'https://drive.google.com/uc?export=view&id=17VYQ0H4enZMSZGs9SeH5xTPaOsnQjdrM';
+
 export function DashboardSidebar({
   activeSection = 'dashboard',
   onSectionChange,
@@ -93,14 +97,15 @@ export function DashboardSidebar({
   return (
     <Sidebar className="border-r border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-primary)] shadow-[10px_0_40px_rgba(0,0,0,0.22)]">
       <SidebarHeader className="border-b border-[var(--border)] px-4 py-5">
-        {/* Full SafariCharge logo — elephant + wordmark */}
+        {/* Full SafariCharge logo — served from Google Drive */}
         <div className="flex items-center justify-center">
           <Image
-            src="/logo.png"
+            src={LOGO_URL}
             alt="SafariCharge"
             width={180}
             height={72}
             priority
+            unoptimized
             className="object-contain w-full max-w-[180px] h-auto"
           />
         </div>
