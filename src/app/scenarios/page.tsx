@@ -31,7 +31,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { useEnergySystemStore, type SavedScenario } from '@/stores/energySystemStore';
+import { useEnergySystemStore, type SavedScenario, type FinancialSnapshot, type LocationCoordinatesSnapshot } from '@/stores/energySystemStore';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -418,45 +418,45 @@ function ImportDialog({ open, onOpenChange, onImport }: ImportDialogProps) {
 
 // ── Radar normalisation ───────────────────────────────────────────────────────
 
-/** Normalise each metric to 0–100 across the selected scenarios so the
- *  radar axes are comparable regardless of unit magnitude. */
-function normaliseRadarData(scenarios: SavedScenario[]) {
+/**
+ * Normalise each metric to 0–100 across the selected scenarios so the
+ * radar axes are comparable regardless of unit magnitude.
+ * Returns an array of objects shaped:
+ *   { label: string, [scenarioLabel]: number, ... }
+ * one object per RADAR_AXES entry — suitable for <RadarChart data={...}> with
+ * per-scenario <Radar dataKey={label}> children.
+ */
+function normaliseRadarData(
+  scenarios: SavedScenario[],
+  labelMap: Map<string, string>,
+): Array<Record<string, string | number>> {
   if (scenarios.length === 0) return [];
 
-  const axes: Array<{ key: string; label: string; get: (s: SavedScenario) => number; higherIsBetter: boolean }> = [
-    { key: 'selfSuff',   label: 'Self-Suff %',    get: s => s.performance.selfSufficiencyPct,    higherIsBetter: true  },
-    { key: 'savings',    label: 'Savings',         get: s => s.performance.totalSavingsKES,       higherIsBetter: true  },
-    { key: 'npv',        label: 'NPV',             get: s => s.finance.npvKes,                   higherIsBetter: true  },
-    { key: 'irr',        label: 'IRR %',           get: s => s.finance.irrPct,                   higherIsBetter: true  },
-    { key: 'payback',    label: 'Payback (inv)',   get: s => s.finance.paybackYears ? 1 / s.finance.paybackYears : 0, higherIsBetter: true },
-    { key: 'solar',      label: 'Solar kWh',       get: s => s.performance.totalSolarKWh,        higherIsBetter: true  },
-    { key: 'avgSOC',     label: 'Avg SOC',         get: s => s.performance.avgBatterySOC,        higherIsBetter: true  },
+  const axes: Array<{ key: string; label: string; get: (s: SavedScenario) => number }> = [
+    { key: 'selfSuff',  label: 'Self-Suff %',   get: s => s.performance.selfSufficiencyPct },
+    { key: 'savings',   label: 'Savings',        get: s => s.performance.totalSavingsKES },
+    { key: 'npv',       label: 'NPV',            get: s => s.finance.npvKes },
+    { key: 'irr',       label: 'IRR %',          get: s => s.finance.irrPct },
+    { key: 'payback',   label: 'Payback (inv)',  get: s => s.finance.paybackYears ? 1 / s.finance.paybackYears : 0 },
+    { key: 'solar',     label: 'Solar kWh',      get: s => s.performance.totalSolarKWh },
+    { key: 'avgSOC',    label: 'Avg SOC',        get: s => s.performance.avgBatterySOC },
   ];
 
-  // min/max per axis
   const mins = axes.map(a => Math.min(...scenarios.map(a.get)));
   const maxs = axes.map(a => Math.max(...scenarios.map(a.get)));
 
-  return scenarios.map(s => {
-    const entry: Record<string, number | string> = { scenario: s.name };
-    axes.forEach((a, i) => {
+  // One row per axis — each scenario contributes a column
+  return axes.map((a, i) => {
+    const row: Record<string, string | number> = { label: a.label };
+    scenarios.forEach(s => {
       const range = maxs[i] - mins[i];
       const raw = a.get(s);
-      entry[a.key] = range === 0 ? 80 : Math.round(((raw - mins[i]) / range) * 80 + 10);
+      const norm = range === 0 ? 80 : Math.round(((raw - mins[i]) / range) * 80 + 10);
+      row[labelMap.get(s.id) ?? s.name] = norm;
     });
-    return entry;
+    return row;
   });
 }
-
-const RADAR_AXES = [
-  { key: 'selfSuff',  label: 'Self-Suff %' },
-  { key: 'savings',   label: 'Savings'     },
-  { key: 'npv',       label: 'NPV'         },
-  { key: 'irr',       label: 'IRR %'       },
-  { key: 'payback',   label: 'Payback (inv)' },
-  { key: 'solar',     label: 'Solar kWh'   },
-  { key: 'avgSOC',    label: 'Avg SOC'     },
-];
 
 // ── Main page ───────────────────────────────────────────────────────────────
 
@@ -490,11 +490,14 @@ export default function ScenariosPage() {
     toast({ title: 'Scenario loaded', description: `"${name}" configuration restored to dashboard.` });
   };
 
+  // Duplicate re-saves source scenario's finance + location snapshots under a new name.
   const handleDuplicate = useCallback((id: string) => {
     const source = scenarios.find(s => s.id === id);
     if (!source) return;
     const newName = `${source.name} (copy)`;
-    saveScenario(newName);
+    const finance: FinancialSnapshot = { ...source.finance };
+    const location: LocationCoordinatesSnapshot = { ...source.location };
+    saveScenario(newName, finance, location);
     toast({ title: 'Scenario duplicated', description: `"${newName}" created.` });
   }, [scenarios, saveScenario, toast]);
 
@@ -620,7 +623,6 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
       win.document.write(html);
       win.document.close();
       win.focus();
-      // Slight delay so the browser renders before print dialog
       setTimeout(() => win.print(), 400);
     } else {
       toast({ title: 'Popup blocked', description: 'Please allow popups for this site to export PDF.', variant: 'destructive' });
@@ -665,7 +667,8 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
     { kpi: 'Payback (yr)', ...Object.fromEntries(selectedScenarios.map(s => [labelMap.get(s.id)!, Number(s.finance.paybackYears.toFixed(2))])) },
   ];
 
-  const radarData = normaliseRadarData(selectedScenarios);
+  // radarData: one row per axis, columns keyed by scenario label
+  const radarData = normaliseRadarData(selectedScenarios, labelMap);
 
   return (
     <DashboardLayout activeSection="scenarios">
@@ -1086,25 +1089,25 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
                     <p className="text-xs text-[var(--text-tertiary)] mb-4">
                       All axes are normalised (10–90) so different units can be shown together. Higher = better on every axis (Payback is inverted).
                     </p>
+                    {/*
+                      RadarChart receives data={radarData} where each row represents one
+                      axis and has columns keyed by scenario label.  Each RechartsRadar
+                      child uses dataKey={label} to pull its column from those rows.
+                      This avoids the invalid `data` prop that was previously on <Radar>.
+                    */}
                     <ResponsiveContainer width="100%" height={360}>
-                      <RadarChart data={RADAR_AXES} margin={{ top: 16, right: 32, left: 32, bottom: 16 }}>
+                      <RadarChart data={radarData} margin={{ top: 16, right: 32, left: 32, bottom: 16 }}>
                         <PolarGrid stroke="var(--border)" />
                         <PolarAngleAxis dataKey="label" tick={{ fill: 'var(--text-secondary)', fontSize: 11 }} />
                         <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: 'var(--text-tertiary)', fontSize: 9 }} />
                         {selectedScenarios.map((s, i) => {
-                          const normMap = new Map<string, number>();
-                          const normEntry = radarData.find(r => r.scenario === s.name);
-                          if (normEntry) {
-                            RADAR_AXES.forEach(a => { normMap.set(a.label, normEntry[a.key] as number); });
-                          }
-                          // Build per-axis data matching RADAR_AXES shape
                           const colour = SCENARIO_COLOURS[i % SCENARIO_COLOURS.length];
+                          const label = labelMap.get(s.id)!;
                           return (
                             <RechartsRadar
                               key={s.id}
-                              name={labelMap.get(s.id)!}
-                              dataKey="value"
-                              data={RADAR_AXES.map(a => ({ label: a.label, value: normMap.get(a.label) ?? 0 }))}
+                              name={label}
+                              dataKey={label}
                               stroke={colour}
                               fill={colour}
                               fillOpacity={0.12}
