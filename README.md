@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`589c79f`](https://github.com/rauell1/safaricharge/commit/589c79f4a5c22b821be040c50040efc37e02dd01) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`64d8c30`](https://github.com/rauell1/safaricharge/commit/64d8c3002d7f6b3bb4d02425a073bda4d924c25e) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | fix(lint): disable react-hooks v5 strict rules that fire on valid patterns |
-| **Total commits** | 585 |
+| **Message** | ci: remove lint job — tsc covers correctness; eslint-plugin-react-hooks v5 rules are too noisy |
+| **Total commits** | 589 |
 | **TypeScript files** | 137 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
