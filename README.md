@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`5c02e4f`](https://github.com/rauell1/safaricharge/commit/5c02e4f49312c1b4e20b6a6d311f0c939a1b9553) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`113e08c`](https://github.com/rauell1/safaricharge/commit/113e08c9c7c6695483bf9ecb9e02173d3efaea31) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | restore: add missing EngineeringKpisCard component |
-| **Total commits** | 814 |
-| **TypeScript files** | 167 |
+| **Message** | feat: add missing EnergyReportModal component to energy folder |
+| **Total commits** | 818 |
+| **TypeScript files** | 168 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
