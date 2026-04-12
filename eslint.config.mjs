@@ -34,6 +34,10 @@ const eslintConfig = [
       // React rules
       "react-hooks/exhaustive-deps": "off",
       "react-hooks/rules-of-hooks": "off",
+      // react-hooks v5 strict rules — fire on valid patterns (e.g. carousel mount
+      // sync via useLayoutEffect, module-scope Math.random for stable skeleton widths)
+      "react-hooks/no-direct-set-state-in-use-effect": "off",
+      "react-hooks/no-direct-set-state-in-use-layout-effect": "off",
       "react/no-unescaped-entities": "off",
       "react/display-name": "off",
       "react/prop-types": "off",
