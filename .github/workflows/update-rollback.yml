@@ -63,35 +63,43 @@ jobs:
             echo "Created rollback branch: ${BRANCH_NAME} @ ${SHA}"
           fi
 
-      - name: Update ROLLBACK.md
+      - name: Commit and push ROLLBACK.md
         env:
           SHA: ${{ steps.meta.outputs.sha }}
           SHA_SHORT: ${{ steps.meta.outputs.sha_short }}
           DATE: ${{ steps.meta.outputs.date }}
           SUBJECT: ${{ steps.meta.outputs.subject }}
           BRANCH_NAME: ${{ steps.meta.outputs.branch_name }}
-        run: python3 .github/scripts/gen_rollback_entry.py
-
-      - name: Commit and push ROLLBACK.md
         run: |
           git config user.name  'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          # Stash script-generated changes so rebase pull has a clean tree
-          git stash push --include-untracked -- ROLLBACK.md
+
           for i in 1 2 3 4 5; do
-            echo "Push attempt ${i}"
+            echo "=== Attempt ${i} ==="
+
+            # Pull latest main first so the script runs against current ROLLBACK.md
             git pull --rebase origin main
-            git stash pop
+
+            # Re-run the script on every attempt — it is idempotent (skips if branch already recorded)
+            python3 .github/scripts/gen_rollback_entry.py
+
             git add ROLLBACK.md
             if git diff --cached --quiet; then
-              echo 'No changes — skipping'
+              echo 'No changes to ROLLBACK.md — already recorded, skipping'
               exit 0
             fi
-            git commit -m 'docs(auto): update ROLLBACK.md snapshot log [skip ci]' || true
+
+            # Amend or create commit
+            git diff HEAD -- ROLLBACK.md | grep -q '.' \
+              && git commit -m 'docs(auto): update ROLLBACK.md snapshot log [skip ci]' \
+              || git commit --allow-empty -m 'docs(auto): update ROLLBACK.md snapshot log [skip ci]'
+
             git push origin main && exit 0
-            # Push failed — re-stash and retry
-            git stash push --include-untracked -- ROLLBACK.md 2>/dev/null || true
+
+            # Push rejected — undo local commit and retry
+            git reset HEAD~1
             echo "Push rejected — retrying in 3s"
             sleep 3
           done
+
           echo 'All push attempts failed' && exit 1
