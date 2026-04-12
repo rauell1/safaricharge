@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`2dbd869`](https://github.com/rauell1/safaricharge/commit/2dbd869d0dd9ca8aba0af4b85958be9ae9317b0a) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`9d7bea2`](https://github.com/rauell1/safaricharge/commit/9d7bea2b19d22770f08889a98bf65568a4dfef52) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | brand: replace logo with pixel-perfect teal SafariCharge mark |
-| **Total commits** | 608 |
+| **Message** | brand: add favicon, apple-touch-icon and full icon metadata |
+| **Total commits** | 612 |
 | **TypeScript files** | 138 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
