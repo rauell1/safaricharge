@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 12 | `rollback/fix-lint-disable-react-hooks-v5-strict-2026-04-12` | `589c79f` | fix(lint): disable react-hooks v5 strict rules that fire on valid patterns | 2026-04-12 |
 | 11 | `rollback/fix-lint-use-uselayouteffect-for-carou-2026-04-12` | `a853cab` | fix(lint): use useLayoutEffect for carousel mount sync to satisfy react-hooks/no-direct-set-state-in-use-effect | 2026-04-12 |
 | 10 | `rollback/fix-lint-restore-truncated-solarcompon-2026-04-12` | `780f2eb` | fix(lint): restore truncated SolarComponentLibrary; fix setState-in-effect in SystemVisualization; move Math.random to module scope in sidebar | 2026-04-12 |
 | 9 | `rollback/fix-lint-convert-require-to-esm-import-2026-04-12` | `ab57eb7` | fix(lint): convert require() to ESM imports in gen script; fix setState-in-effect and Math.random purity violations | 2026-04-12 |
@@ -175,6 +176,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-lint-use-uselayouteffect-for-carou-2026-04-12`
 - **Commit**: `a853cabec9e933c0a966e35d1251c5f18c9909ef`
 - **Subject**: fix(lint): use useLayoutEffect for carousel mount sync to satisfy react-hooks/no-direct-set-state-in-use-effect
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #12 — `rollback/fix-lint-disable-react-hooks-v5-strict-2026-04-12`
+
+- **Branch**: `rollback/fix-lint-disable-react-hooks-v5-strict-2026-04-12`
+- **Commit**: `589c79f4a5c22b821be040c50040efc37e02dd01`
+- **Subject**: fix(lint): disable react-hooks v5 strict rules that fire on valid patterns
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
