@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`23ef28a`](https://github.com/rauell1/safaricharge/commit/23ef28ab924a3eaeb20746e52e8af5a050d64ea4) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`c23231a`](https://github.com/rauell1/safaricharge/commit/c23231a1567a0318c2518ea3f353893205555243) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | refactor: remove flat EnergyReportModal.tsx (moved to energy/) |
-| **Total commits** | 685 |
-| **TypeScript files** | 151 |
+| **Message** | refactor: remove flat FinancialDashboard.tsx (moved to dashboard/) |
+| **Total commits** | 689 |
+| **TypeScript files** | 150 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
