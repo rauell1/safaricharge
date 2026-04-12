@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 34 | `rollback/refactor-slice-3-add-energy-energyrepo-2026-04-12` | `3db17c9` | refactor(slice-3): add energy/EnergyReportModal, simulation/LoadConfig, simulation/Recommendation | 2026-04-12 |
 | 33 | `rollback/refactor-dashboard-add-dashboard-finan-2026-04-12` | `8a9d25d` | refactor(dashboard): add dashboard/FinancialDashboard.tsx | 2026-04-12 |
 | 32 | `rollback/refactor-energy-remove-root-solarcompo-2026-04-12` | `25aebf9` | refactor(energy): remove root SolarComponentLibrary.tsx — now lives in energy/ | 2026-04-12 |
 | 31 | `rollback/refactor-energy-move-dailyenergygraph-2026-04-12` | `dd9725c` | refactor(energy): move DailyEnergyGraph + SolarComponentLibrary into energy/ slice 2 | 2026-04-12 |
@@ -395,6 +396,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/refactor-dashboard-add-dashboard-finan-2026-04-12`
 - **Commit**: `8a9d25d20c956428c60ca8e3b3f8c4581ab8b606`
 - **Subject**: refactor(dashboard): add dashboard/FinancialDashboard.tsx
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #34 — `rollback/refactor-slice-3-add-energy-energyrepo-2026-04-12`
+
+- **Branch**: `rollback/refactor-slice-3-add-energy-energyrepo-2026-04-12`
+- **Commit**: `3db17c9fcdc8a3076e25719c634307e29aec7893`
+- **Subject**: refactor(slice-3): add energy/EnergyReportModal, simulation/LoadConfig, simulation/Recommendation
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
