@@ -7,4 +7,5 @@ export type { BatteryPrediction } from './BatteryPredictionCard';
 export { PanelStatusTable } from './PanelStatusTable';
 export { PowerFlowVisualization } from './PowerFlowVisualization';
 export { EnergyReportModal } from './EnergyReportModal';
-export { RecommendationComponents } from './RecommendationComponents';
+// RecommendationComponents lives in src/components/recommendation/ — not energy/
+export { RecommendationComponents } from '@/components/recommendation/RecommendationComponents';
