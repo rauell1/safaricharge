@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`23219ba`](https://github.com/rauell1/safaricharge/commit/23219ba1b07a4ff3d275587c38cc83cc0f9be406) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`3da49ee`](https://github.com/rauell1/safaricharge/commit/3da49ee1525241a40f7dda68bd9a716f8b78fac3) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | restore: add missing PowerFlowVisualization, SystemVisualization, FinancialDashboard to dashboard/ |
-| **Total commits** | 790 |
+| **Message** | fix: replace placeholder stubs with real component content |
+| **Total commits** | 794 |
 | **TypeScript files** | 166 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
