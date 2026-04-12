@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`e1cc564`](https://github.com/rauell1/safaricharge/commit/e1cc564bc96d8d128dd079500a9e2ac28d626fdb) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`83cd6e5`](https://github.com/rauell1/safaricharge/commit/83cd6e540f4a084a735f1e8245526c1e7c0127df) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | chore: add EnergyReportModal and RecommendationComponents to energy barrel |
-| **Total commits** | 826 |
+| **Message** | refactor: convert dashboard/ to pure barrel re-export layer |
+| **Total commits** | 830 |
 | **TypeScript files** | 168 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
