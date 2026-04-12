@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 65 | `rollback/chore-add-energyreportmodal-and-recomm-2026-04-12` | `e1cc564` | chore: add EnergyReportModal and RecommendationComponents to energy barrel | 2026-04-12 |
 | 64 | `rollback/refactor-consolidate-dashboardsidebar-2026-04-12` | `82cc47b` | refactor: consolidate DashboardSidebar — layout/ is canonical, dashboard/ re-exports | 2026-04-12 |
 | 63 | `rollback/feat-add-missing-energyreportmodal-com-2026-04-12` | `113e08c` | feat: add missing EnergyReportModal component to energy folder | 2026-04-12 |
 | 62 | `rollback/restore-add-missing-engineeringkpiscar-2026-04-12` | `5c02e4f` | restore: add missing EngineeringKpisCard component | 2026-04-12 |
@@ -705,6 +706,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/refactor-consolidate-dashboardsidebar-2026-04-12`
 - **Commit**: `82cc47b28972d9f31ef43a7606732429b5541c20`
 - **Subject**: refactor: consolidate DashboardSidebar — layout/ is canonical, dashboard/ re-exports
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #65 — `rollback/chore-add-energyreportmodal-and-recomm-2026-04-12`
+
+- **Branch**: `rollback/chore-add-energyreportmodal-and-recomm-2026-04-12`
+- **Commit**: `e1cc564bc96d8d128dd079500a9e2ac28d626fdb`
+- **Subject**: chore: add EnergyReportModal and RecommendationComponents to energy barrel
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
