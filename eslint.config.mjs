@@ -1,12 +1,29 @@
 import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 import nextTypescript from "eslint-config-next/typescript";
-import { dirname } from "path";
-import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// ─── Global ignores (must come first in flat config) ──────────────────────────────────────
+const ignores = {
+  ignores: [
+    "node_modules/**",
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+    "examples/**",
+    "skills/**",
+    "iot-bridge/**",
+    "scripts/**",
+    // Zustand/Immer stores — mutation patterns fail Next.js ESLint rules
+    "src/store/**",
+    "src/stores/**",
+    // Simulation / computation utilities — not Next.js-idiomatic code
+    "src/simulation/**",
+    // Non-Next.js files
+    "src/proxy.ts",
+  ],
+};
 
-// Rule overrides — placed LAST so they win over core-web-vitals re-assertions.
+// ─── Rule overrides (placed LAST — highest specificity in flat config) ──────────────
 const overrides = {
   files: ["**/*.{ts,tsx,js,jsx,mjs}"],
   rules: {
@@ -26,7 +43,7 @@ const overrides = {
     "react/prop-types": "off",
     "react-compiler/react-compiler": "off",
 
-    // Next.js — all off; we use Link correctly but don't want CI broken by edge cases
+    // Next.js
     "@next/next/no-img-element": "off",
     "@next/next/no-html-link-for-pages": "off",
 
@@ -52,26 +69,12 @@ const overrides = {
 };
 
 const eslintConfig = [
-  // Next.js base configs first
+  // 1. Global ignores first
+  ignores,
+  // 2. Next.js base configs
   ...nextCoreWebVitals,
   ...nextTypescript,
-  // Ignores
-  {
-    ignores: [
-      "node_modules/**",
-      ".next/**",
-      "out/**",
-      "build/**",
-      "next-env.d.ts",
-      "examples/**",
-      "skills",
-      "iot-bridge/**",
-      "scripts/**",
-      "src/store/**",
-      "src/proxy.ts",
-    ],
-  },
-  // Our overrides LAST — highest specificity in flat config
+  // 3. Our overrides last — wins over any core-web-vitals re-assertions
   overrides,
 ];
 
