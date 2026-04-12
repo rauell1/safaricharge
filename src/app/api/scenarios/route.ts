@@ -8,9 +8,9 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export async function GET(req: NextRequest) {
-  const createdBy = req.nextUrl.searchParams.get('siteId') ?? 'default';
+  const siteId = req.nextUrl.searchParams.get('siteId') ?? 'default';
   const rows = await prisma.scenario.findMany({
-    where:   { createdBy },
+    where:   { createdBy: siteId },
     orderBy: { createdAt: 'desc' },
   });
   return NextResponse.json({ scenarios: rows });
