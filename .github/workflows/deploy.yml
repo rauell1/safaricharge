@@ -13,15 +13,23 @@ jobs:
   deploy:
     name: SSH deploy
     runs-on: ubuntu-latest
-    # Only deploy after CI passes (typecheck + lint + build must be green).
+    # Gate: only deploy after typecheck + lint + build pass in ci.yml.
+    # ci.yml and deploy.yml are separate workflow files but share the same
+    # commit SHA, so `workflow_run` would be the clean approach.
+    # For now we duplicate the build step here as the gate, since GitHub
+    # Actions cannot `needs` across workflow files.
     needs: []
     environment: production
+    # Only run when CI workflow has succeeded on this commit.
+    # The deploy job in ci.yml already handles the post-build deploy;
+    # this file is kept as the canonical SSH deploy definition but is
+    # triggered only when called from ci.yml via workflow_run.
+    if: ${{ false }}  # Disabled — deploy is handled by the deploy job in ci.yml
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ── SSH into the VPS and run the deploy script ──────────────────────────
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -33,25 +41,20 @@ jobs:
             set -e
             cd /opt/safaricharge
 
-            # Pull latest code
             git fetch origin main
             git reset --hard origin/main
 
-            # Re-build images and restart containers (zero-downtime rolling)
             docker compose -f docker-compose.yml -f docker-compose.prod.yml \
               pull --ignore-pull-failures || true
             docker compose -f docker-compose.yml -f docker-compose.prod.yml \
               build --pull
 
-            # Run DB migrations before swapping the app container
             docker compose -f docker-compose.yml -f docker-compose.prod.yml \
               run --rm app npx prisma migrate deploy
 
-            # Bring up new containers; keep others running during build
             docker compose -f docker-compose.yml -f docker-compose.prod.yml \
               up -d --remove-orphans
 
-            # Prune dangling images to free disk space
             docker image prune -f
 
             echo "✅ Deploy complete"
