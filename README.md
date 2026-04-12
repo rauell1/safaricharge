@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`0d07242`](https://github.com/rauell1/safaricharge/commit/0d07242a70cd83bb00564da48347d8ad48ca5f52) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`d1e901b`](https://github.com/rauell1/safaricharge/commit/d1e901b89fd7ae66c0848b032fbfce43a5ca79ae) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-12 |
-| **Message** | refactor: delete dashboard/AIAssistant (moved to ai/AIAssistant) |
-| **Total commits** | 763 |
-| **TypeScript files** | 152 |
+| **Message** | refactor: delete dashboard/ shim subfolders — dashboard/ is now empty |
+| **Total commits** | 770 |
+| **TypeScript files** | 147 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
