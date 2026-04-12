@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 9 | `rollback/fix-lint-convert-require-to-esm-import-2026-04-12` | `ab57eb7` | fix(lint): convert require() to ESM imports in gen script; fix setState-in-effect and Math.random purity violations | 2026-04-12 |
 | 8 | `rollback/fix-ci-update-rollback-re-run-gen-scri-2026-04-12` | `6515a03` | fix(ci): update-rollback — re-run gen script inside retry loop, drop fragile stash pattern | 2026-04-12 |
 | 7 | `rollback/fix-ts-ts2554-handleduplicate-uses-sou-2026-04-12` | `480cab5` | fix(ts): TS2554 handleDuplicate uses source.finance+location; TS2769 radar restructured to RadarChart data=radarData with per-scenario dataKey columns | 2026-04-12 |
 | 6 | `rollback/fix-ci-resolve-all-5-type-check-errors-2026-04-12` | `037d751` | fix(ci): resolve all 5 type-check errors and lint flag error | 2026-04-12 |
@@ -145,6 +146,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-ci-update-rollback-re-run-gen-scri-2026-04-12`
 - **Commit**: `6515a030c2ecf21bfa9144c99c2c37792b5617a2`
 - **Subject**: fix(ci): update-rollback — re-run gen script inside retry loop, drop fragile stash pattern
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #9 — `rollback/fix-lint-convert-require-to-esm-import-2026-04-12`
+
+- **Branch**: `rollback/fix-lint-convert-require-to-esm-import-2026-04-12`
+- **Commit**: `ab57eb7659c584c01a0bd1a7c1b15fec60840940`
+- **Subject**: fix(lint): convert require() to ESM imports in gen script; fix setState-in-effect and Math.random purity violations
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
