@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 17 | `rollback/brand-replace-logo-with-pixel-perfect-2026-04-12` | `2dbd869` | brand: replace logo with pixel-perfect teal SafariCharge mark | 2026-04-12 |
 | 16 | `rollback/feat-nav-bottom-tab-bar-on-mobile-logo-2026-04-12` | `9ab9427` | feat(nav): bottom tab bar on mobile + logo image throughout | 2026-04-12 |
 | 15 | `rollback/fix-scenarios-drawer-backdrop-no-longe-2026-04-12` | `5b330db` | fix(scenarios): drawer backdrop no longer blocks sidebar nav | 2026-04-12 |
 | 14 | `rollback/fix-ci-restore-rollback-md-after-reset-2026-04-12` | `2beb51b` | fix(ci): restore ROLLBACK.md after reset so rebase doesn't fail on retry | 2026-04-12 |
@@ -225,6 +226,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/feat-nav-bottom-tab-bar-on-mobile-logo-2026-04-12`
 - **Commit**: `9ab9427a21ec8ca655a895e445b3c1951196b74f`
 - **Subject**: feat(nav): bottom tab bar on mobile + logo image throughout
+- **Date**: 2026-04-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #17 — `rollback/brand-replace-logo-with-pixel-perfect-2026-04-12`
+
+- **Branch**: `rollback/brand-replace-logo-with-pixel-perfect-2026-04-12`
+- **Commit**: `2dbd869d0dd9ca8aba0af4b85958be9ae9317b0a`
+- **Subject**: brand: replace logo with pixel-perfect teal SafariCharge mark
 - **Date**: 2026-04-12
 - **Auto-generated**: yes (by update-rollback.yml)
 
