@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`95f1c25`](https://github.com/rauell1/safaricharge/commit/95f1c25645973311c89fb846565abd01f1e13959) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`13aea37`](https://github.com/rauell1/safaricharge/commit/13aea37c77a84d54f081f53c2943bb89072209f6) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-13 |
-| **Message** | Merge pull request #179 from rauell1/copilot/regenerate-package-lock-json |
-| **Total commits** | 876 |
+| **Message** | fix(store): cast fresh to SavedScenario[] to resolve TS spread type error |
+| **Total commits** | 880 |
 | **TypeScript files** | 172 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
