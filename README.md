@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`3384d38`](https://github.com/rauell1/safaricharge/commit/3384d3890e51a8d65ed228753710343081be6388) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`35bd2d7`](https://github.com/rauell1/safaricharge/commit/35bd2d7ee5e41f0c7781e30ac434a0fe39740d62) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-13 |
-| **Message** | fix: make PowerFlowVisualization responsive on small devices |
-| **Total commits** | 888 |
+| **Message** | fix: preserve desktop tree layout on mobile with horizontal scroll |
+| **Total commits** | 892 |
 | **TypeScript files** | 172 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
