@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 80 | `rollback/fix-preserve-desktop-tree-layout-on-mo-2026-04-13` | `35bd2d7` | fix: preserve desktop tree layout on mobile with horizontal scroll | 2026-04-13 |
 | 79 | `rollback/fix-make-powerflowvisualization-respon-2026-04-13` | `3384d38` | fix: make PowerFlowVisualization responsive on small devices | 2026-04-13 |
 | 78 | `rollback/fix-deps-force-undici-7-24-0-and-deval-2026-04-13` | `3574f25` | fix(deps): force undici>=7.24.0 and devalue>=5.3.2 via overrides (closes Dependabot #28-35) | 2026-04-13 |
 | 77 | `rollback/fix-store-cast-fresh-to-savedscenario-2026-04-13` | `13aea37` | fix(store): cast fresh to SavedScenario[] to resolve TS spread type error | 2026-04-13 |
@@ -855,6 +856,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-make-powerflowvisualization-respon-2026-04-13`
 - **Commit**: `3384d3890e51a8d65ed228753710343081be6388`
 - **Subject**: fix: make PowerFlowVisualization responsive on small devices
+- **Date**: 2026-04-13
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #80 — `rollback/fix-preserve-desktop-tree-layout-on-mo-2026-04-13`
+
+- **Branch**: `rollback/fix-preserve-desktop-tree-layout-on-mo-2026-04-13`
+- **Commit**: `35bd2d7ee5e41f0c7781e30ac434a0fe39740d62`
+- **Subject**: fix: preserve desktop tree layout on mobile with horizontal scroll
 - **Date**: 2026-04-13
 - **Auto-generated**: yes (by update-rollback.yml)
 
