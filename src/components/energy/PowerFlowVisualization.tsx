@@ -46,7 +46,8 @@ function EnergyNode({ icon: Icon, label, valueLine, subLabel, accent, tint, badg
   const handleClick = () => { if (onClick) onClick(nodeType); };
   return (
     <div
-      className="flex min-w-[80px] sm:min-w-[96px] md:min-w-[108px] flex-col items-center gap-3 cursor-pointer group"
+      className="flex flex-col items-center gap-3 cursor-pointer group"
+      style={{ minWidth: '96px' }}
       onClick={handleClick}
       role="button"
       tabIndex={0}
@@ -54,22 +55,43 @@ function EnergyNode({ icon: Icon, label, valueLine, subLabel, accent, tint, badg
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClick(); }}
     >
       <div className="relative flex items-center justify-center">
-        <div className={`absolute inset-[-10px] rounded-full border border-dashed opacity-60 animate-[spin_12s_linear_infinite] ${isSelected ? 'opacity-100 border-solid' : ''}`} style={{ borderColor: accent }} />
-        <div className="absolute inset-[-4px] rounded-full blur-xl opacity-30 group-hover:opacity-50 transition-opacity" style={{ background: accent }} />
         <div
-          className={`relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full border-2 transition-all duration-300 hover:scale-110 ${isSelected ? 'scale-105 ring-2 ring-offset-2 ring-offset-[var(--bg-card)]' : ''}`}
-          style={{ backgroundColor: tint, borderColor: accent, boxShadow: isSelected ? `0 15px 40px ${accent}66` : '0 10px 30px rgba(0,0,0,0.28)', borderWidth: isSelected ? '3px' : '2px' }}
+          className={`absolute inset-[-10px] rounded-full border border-dashed opacity-60 animate-[spin_12s_linear_infinite] ${isSelected ? 'opacity-100 border-solid' : ''}`}
+          style={{ borderColor: accent }}
+        />
+        <div
+          className="absolute inset-[-4px] rounded-full blur-xl opacity-30 group-hover:opacity-50 transition-opacity"
+          style={{ background: accent }}
+        />
+        <div
+          className={`relative flex h-20 w-20 items-center justify-center rounded-full border-2 transition-all duration-300 hover:scale-110 ${
+            isSelected ? 'scale-105 ring-2 ring-offset-2 ring-offset-[var(--bg-card)]' : ''
+          }`}
+          style={{
+            backgroundColor: tint,
+            borderColor: accent,
+            boxShadow: isSelected ? `0 15px 40px ${accent}66` : '0 10px 30px rgba(0,0,0,0.28)',
+            borderWidth: isSelected ? '3px' : '2px',
+          }}
         >
-          <Icon className="h-7 w-7 sm:h-9 sm:w-9" style={{ color: accent }} />
+          <Icon className="h-9 w-9" style={{ color: accent }} />
           {badgeContent && (
-            <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border text-[10px] font-bold" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--battery)' }}>
+            <div
+              className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border text-[10px] font-bold"
+              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--battery)' }}
+            >
               {badgeContent}
             </div>
           )}
         </div>
         {isSelected && (
           <div className="absolute -top-2 left-1/2 -translate-x-1/2">
-            <div className="text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ backgroundColor: accent, color: 'white' }}>Selected</div>
+            <div
+              className="text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: accent, color: 'white' }}
+            >
+              Selected
+            </div>
           </div>
         )}
       </div>
@@ -100,7 +122,10 @@ function FlowPath({ active, vertical = false, accent, tint, reversed = false, po
     ? (reversed ? 'flow-up' : 'flow-down')
     : (reversed ? 'flow-right-to-left' : 'flow-left-to-right');
   return (
-    <div className={`${base} relative overflow-hidden rounded-full`} style={{ backgroundColor: tint, ...(vertical ? { width: thickness } : { height: thickness }) }}>
+    <div
+      className={`${base} relative overflow-hidden rounded-full`}
+      style={{ backgroundColor: tint, ...(vertical ? { width: thickness } : { height: thickness }) }}
+    >
       <div
         className="absolute rounded-full"
         style={{
@@ -109,8 +134,7 @@ function FlowPath({ active, vertical = false, accent, tint, reversed = false, po
             : `linear-gradient(${reversed ? '270deg' : '90deg'}, transparent, ${accent})`,
           ...(vertical
             ? { width: '100%', height: '40%', animation: `${particleAnimation} ${1.2 / speedFactor}s linear infinite` }
-            : { height: '100%', width: '40%', animation: `${particleAnimation} ${1.2 / speedFactor}s linear infinite` }
-          )
+            : { height: '100%', width: '40%', animation: `${particleAnimation} ${1.2 / speedFactor}s linear infinite` }),
         }}
       />
     </div>
@@ -151,9 +175,9 @@ export function PowerFlowVisualization({
               <Skeleton className="h-4 w-4 rounded-full" />
               <Skeleton className="h-20 w-20 rounded-full" />
             </div>
-            <div className="flex flex-col md:flex-row items-center md:items-start justify-center w-full max-w-4xl gap-4 md:gap-6 mt-1">
-              <div className="flex md:flex-1 flex-col items-center gap-2"><Skeleton className="h-20 w-0.5" /><Skeleton className="h-20 w-20 rounded-full" /></div>
-              <div className="flex md:flex-1 flex-col items-center gap-2">
+            <div className="flex items-start justify-center w-full max-w-4xl gap-6">
+              <div className="flex flex-col items-center gap-2"><Skeleton className="h-20 w-0.5" /><Skeleton className="h-20 w-20 rounded-full" /></div>
+              <div className="flex flex-col items-center gap-2">
                 <Skeleton className="h-20 w-0.5" />
                 <div className="flex flex-wrap justify-center gap-4 max-w-md">
                   <Skeleton className="h-20 w-20 rounded-full" />
@@ -162,7 +186,7 @@ export function PowerFlowVisualization({
                   <Skeleton className="h-20 w-20 rounded-full" />
                 </div>
               </div>
-              <div className="flex md:flex-1 flex-col items-center gap-2"><Skeleton className="h-20 w-0.5" /><Skeleton className="h-20 w-20 rounded-full" /></div>
+              <div className="flex flex-col items-center gap-2"><Skeleton className="h-20 w-0.5" /><Skeleton className="h-20 w-20 rounded-full" /></div>
             </div>
           </div>
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 rounded-xl border p-4 bg-[var(--bg-secondary)] border-[var(--border)]">
@@ -194,10 +218,12 @@ export function PowerFlowVisualization({
         <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
           <Zap className="h-5 w-5 text-[var(--battery)]" />
           Energy Flow
-          <span className="text-xs text-[var(--text-tertiary)] font-normal ml-2">(Click nodes for details)</span>
+          <span className="text-xs text-[var(--text-tertiary)] font-normal ml-2">(Tap nodes for details)</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0 space-y-6">
+
+        {/* ── Stats row ───────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] px-4 py-3">
             <p className="text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">Solar</p>
@@ -217,86 +243,189 @@ export function PowerFlowVisualization({
           </div>
         </div>
 
-        {/* ── Responsive diagram wrapper ──────────────────────────────────────────
-            On screens smaller than `sm` (< 640px) we scale the tree diagram
-            down proportionally so the Solar → hub → nodes hierarchy is always
-            fully visible without horizontal scrolling.
-            The negative bottom margin compensates for the empty space that CSS
-            scale() leaves behind (the element still occupies its pre-scale
-            dimensions in the document flow).
-        ──────────────────────────────────────────────────────────────────────── */}
-        <div className="w-full overflow-hidden">
+        {/*
+          ── Energy flow diagram ─────────────────────────────────────────────
+          Strategy: the tree is ALWAYS rendered in the desktop horizontal
+          layout (Solar on top → hub → Battery | Loads | Grid side-by-side).
+          On mobile we wrap it in a horizontally-scrollable container so the
+          full diagram is reachable by swiping — no stacking, no shrinking,
+          no layout shift.  A subtle "swipe" hint fades in on small screens.
+          Desktop is completely unaffected: overflow-x-auto is invisible when
+          the content fits the container width.
+        ──────────────────────────────────────────────────────────────────── */}
+        <div className="relative">
+          {/* Swipe hint — only visible on touch screens where the diagram overflows */}
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[var(--bg-card)] to-transparent z-10 sm:hidden rounded-r-[24px]" />
+
           <div
-            className="rounded-[24px] border border-[var(--border)] bg-[var(--bg-secondary)]/60 p-4 sm:p-6
-                       origin-top
-                       scale-[0.52] -mb-[42%]
-                       xs:scale-[0.62] xs:-mb-[34%]
-                       sm:scale-100 sm:mb-0"
+            className="overflow-x-auto pb-2 sm:pb-0 -mx-1 px-1"
+            style={{ WebkitOverflowScrolling: 'touch' }}
           >
-            <div className="flex flex-col items-center gap-5 py-2">
-              <EnergyNode icon={Sun} label="Solar" valueLine={`${solarPower.toFixed(2)} kW`} subLabel="Generation" accent="var(--solar)" tint="var(--solar-soft)" nodeType="solar" onClick={handleNodeClick} isSelected={isSelected('solar')} />
-              <div className="flex justify-center py-1">
-                <FlowPath active={flowDirection.solarToHome || flowDirection.solarToBattery || flowDirection.solarToGrid} vertical accent="var(--solar)" tint="var(--solar-soft)" powerKw={solarPower} />
-              </div>
-              <div className="flex items-center justify-center w-full max-w-2xl gap-4 sm:gap-6 px-1 sm:px-0">
-                <div className="flex-1 flex justify-end"><FlowPath active={flowDirection.solarToBattery} accent="var(--battery)" tint="var(--battery-soft)" powerKw={Math.max(0, batteryPower)} /></div>
-                <div className="h-4 w-4 shrink-0 rounded-full border-2 shadow-[0_0_0_6px_rgba(245,158,11,0.1)]" style={{ backgroundColor: 'var(--solar)', borderColor: 'var(--solar)' }} />
-                <div className="flex-1 flex justify-start"><FlowPath active={flowDirection.solarToGrid} accent="var(--grid)" tint="var(--grid-soft)" reversed powerKw={Math.max(0, -gridPower)} /></div>
-              </div>
-              <div className="flex flex-col md:flex-row items-center md:items-start justify-center w-full max-w-5xl gap-3 sm:gap-4 md:gap-8 lg:gap-10 mt-1">
-                <div className="flex md:flex-1 min-w-0 flex-col items-center gap-2">
-                  <FlowPath active={flowDirection.solarToBattery || flowDirection.batteryToHome} vertical accent="var(--battery)" tint="var(--battery-soft)" powerKw={Math.abs(batteryPower)} />
-                  <EnergyNode icon={Battery} label="Battery" valueLine={`${Math.abs(batteryPower).toFixed(1)} kW`} subLabel={batteryPower >= 0 ? 'Charging' : 'Discharging'} accent="var(--battery)" tint="var(--battery-soft)" badgeContent={`${Math.round(batteryLevel)}%`} nodeType="battery" onClick={handleNodeClick} isSelected={isSelected('battery')} />
+            {/* min-w forces the inner diagram to keep its full desktop width
+                even on narrow viewports, triggering the horizontal scroll */}
+            <div className="min-w-[640px] rounded-[24px] border border-[var(--border)] bg-[var(--bg-secondary)]/60 p-6">
+              <div className="flex flex-col items-center gap-5 py-2">
+
+                {/* Solar node */}
+                <EnergyNode
+                  icon={Sun} label="Solar" valueLine={`${solarPower.toFixed(2)} kW`}
+                  subLabel="Generation" accent="var(--solar)" tint="var(--solar-soft)"
+                  nodeType="solar" onClick={handleNodeClick} isSelected={isSelected('solar')}
+                />
+
+                {/* Vertical connector: Solar → hub */}
+                <div className="flex justify-center py-1">
+                  <FlowPath
+                    active={flowDirection.solarToHome || flowDirection.solarToBattery || flowDirection.solarToGrid}
+                    vertical accent="var(--solar)" tint="var(--solar-soft)" powerKw={solarPower}
+                  />
                 </div>
-                <div className="flex md:flex-1 flex-col items-center gap-2 w-full md:w-auto">
-                  <FlowPath active={flowDirection.solarToHome} vertical accent="var(--solar)" tint="var(--solar-soft)" powerKw={siteLoad} />
-                  <div className="flex w-full flex-wrap items-start justify-center gap-x-4 gap-y-5 px-2 sm:gap-x-6 md:gap-x-8 max-w-md md:max-w-none">
-                    <EnergyNode icon={Home} label="Residential" valueLine={`${residentialKw.toFixed(2)} kW`} subLabel="Household" accent="var(--consumption)" tint="var(--consumption-soft)" nodeType="home" onClick={handleNodeClick} isSelected={isSelected('home')} />
-                    <EnergyNode icon={Building2} label="Commercial" valueLine={`${commercialKw.toFixed(2)} kW`} subLabel="Business" accent="var(--grid)" tint="var(--grid-soft)" nodeType="home" onClick={handleNodeClick} isSelected={false} />
-                    <EnergyNode icon={Factory} label="Industrial" valueLine={`${industrialKw.toFixed(2)} kW`} subLabel="Facility" accent="var(--alert)" tint="rgba(239,68,68,0.12)" nodeType="home" onClick={handleNodeClick} isSelected={false} />
-                    <EnergyNode icon={Car} label="EVs" valueLine={`${evKw.toFixed(2)} kW`} subLabel="Charging" accent="var(--battery)" tint="var(--battery-soft)" nodeType="ev1" onClick={handleNodeClick} isSelected={isSelected('ev1') || isSelected('ev2')} />
+
+                {/* Hub row: horizontal connectors to Battery (left) and Grid (right) */}
+                <div className="flex items-center justify-center w-full gap-6 px-4">
+                  <div className="flex-1 flex justify-end">
+                    <FlowPath active={flowDirection.solarToBattery} accent="var(--battery)" tint="var(--battery-soft)" powerKw={Math.max(0, batteryPower)} />
+                  </div>
+                  <div
+                    className="h-4 w-4 shrink-0 rounded-full border-2 shadow-[0_0_0_6px_rgba(245,158,11,0.1)]"
+                    style={{ backgroundColor: 'var(--solar)', borderColor: 'var(--solar)' }}
+                  />
+                  <div className="flex-1 flex justify-start">
+                    <FlowPath active={flowDirection.solarToGrid} accent="var(--grid)" tint="var(--grid-soft)" reversed powerKw={Math.max(0, -gridPower)} />
                   </div>
                 </div>
-                <div className="flex md:flex-1 flex-col items-center gap-2">
-                  <FlowPath active={flowDirection.solarToGrid || flowDirection.gridToHome} vertical accent="var(--grid)" tint="var(--grid-soft)" />
-                  <EnergyNode icon={UtilityPole} label="Grid" valueLine={`${Math.abs(gridPower).toFixed(2)} kW`} subLabel={gridPower > 0 ? 'Importing' : gridPower < 0 ? 'Exporting' : 'Standby'} accent="var(--grid)" tint="var(--grid-soft)" nodeType="grid" onClick={handleNodeClick} isSelected={isSelected('grid')} />
+
+                {/* Bottom row: Battery | Loads (Residential/Commercial/Industrial/EVs) | Grid
+                    flex-row at ALL screen sizes — this is the key change. */}
+                <div className="flex flex-row items-start justify-center w-full gap-6 lg:gap-10 mt-1">
+
+                  {/* Battery */}
+                  <div className="flex flex-col items-center gap-2">
+                    <FlowPath
+                      active={flowDirection.solarToBattery || flowDirection.batteryToHome}
+                      vertical accent="var(--battery)" tint="var(--battery-soft)"
+                      powerKw={Math.abs(batteryPower)}
+                    />
+                    <EnergyNode
+                      icon={Battery} label="Battery" valueLine={`${Math.abs(batteryPower).toFixed(1)} kW`}
+                      subLabel={batteryPower >= 0 ? 'Charging' : 'Discharging'}
+                      accent="var(--battery)" tint="var(--battery-soft)"
+                      badgeContent={`${Math.round(batteryLevel)}%`}
+                      nodeType="battery" onClick={handleNodeClick} isSelected={isSelected('battery')}
+                    />
+                  </div>
+
+                  {/* Centre loads column */}
+                  <div className="flex flex-col items-center gap-2">
+                    <FlowPath
+                      active={flowDirection.solarToHome}
+                      vertical accent="var(--solar)" tint="var(--solar-soft)" powerKw={siteLoad}
+                    />
+                    <div className="flex flex-row items-start justify-center gap-5">
+                      <EnergyNode
+                        icon={Home} label="Residential" valueLine={`${residentialKw.toFixed(2)} kW`}
+                        subLabel="Household" accent="var(--consumption)" tint="var(--consumption-soft)"
+                        nodeType="home" onClick={handleNodeClick} isSelected={isSelected('home')}
+                      />
+                      <EnergyNode
+                        icon={Building2} label="Commercial" valueLine={`${commercialKw.toFixed(2)} kW`}
+                        subLabel="Business" accent="var(--grid)" tint="var(--grid-soft)"
+                        nodeType="home" onClick={handleNodeClick} isSelected={false}
+                      />
+                      <EnergyNode
+                        icon={Factory} label="Industrial" valueLine={`${industrialKw.toFixed(2)} kW`}
+                        subLabel="Facility" accent="var(--alert)" tint="rgba(239,68,68,0.12)"
+                        nodeType="home" onClick={handleNodeClick} isSelected={false}
+                      />
+                      <EnergyNode
+                        icon={Car} label="EVs" valueLine={`${evKw.toFixed(2)} kW`}
+                        subLabel="Charging" accent="var(--battery)" tint="var(--battery-soft)"
+                        nodeType="ev1" onClick={handleNodeClick} isSelected={isSelected('ev1') || isSelected('ev2')}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Grid */}
+                  <div className="flex flex-col items-center gap-2">
+                    <FlowPath
+                      active={flowDirection.solarToGrid || flowDirection.gridToHome}
+                      vertical accent="var(--grid)" tint="var(--grid-soft)"
+                    />
+                    <EnergyNode
+                      icon={UtilityPole} label="Grid" valueLine={`${Math.abs(gridPower).toFixed(2)} kW`}
+                      subLabel={gridPower > 0 ? 'Importing' : gridPower < 0 ? 'Exporting' : 'Standby'}
+                      accent="var(--grid)" tint="var(--grid-soft)"
+                      nodeType="grid" onClick={handleNodeClick} isSelected={isSelected('grid')}
+                    />
+                  </div>
+
                 </div>
               </div>
             </div>
           </div>
         </div>
 
+        {/* ── Summary stats ──────────────────────────────────────────────── */}
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 rounded-2xl border p-4 bg-[var(--bg-secondary)] border-[var(--border)]">
-            <div className="text-center"><div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Solar</div><div className="text-base font-bold" style={{ color: 'var(--solar)' }}>{solarPower.toFixed(2)} kW</div></div>
+            <div className="text-center">
+              <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Solar</div>
+              <div className="text-base font-bold" style={{ color: 'var(--solar)' }}>{solarPower.toFixed(2)} kW</div>
+            </div>
             <div className="text-center space-y-1 sm:space-y-2 sm:border-l sm:border-r" style={{ borderColor: 'var(--border)' }}>
               <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Site Load</div>
               <div className="text-base font-bold" style={{ color: 'var(--consumption)' }}>{siteLoad.toFixed(2)} kW</div>
               <div className="text-[9px] text-[var(--text-tertiary)]">R {residentialKw.toFixed(1)} / C {commercialKw.toFixed(1)} / I {industrialKw.toFixed(1)} / EV {evKw.toFixed(1)}</div>
             </div>
-            <div className="text-center"><div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Net Grid</div><div className="text-base font-bold" style={{ color: gridPower > 0 ? 'var(--alert)' : 'var(--battery)' }}>{gridPower > 0 ? '+' : ''}{gridPower.toFixed(2)} kW</div></div>
+            <div className="text-center">
+              <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-1">Net Grid</div>
+              <div className="text-base font-bold" style={{ color: gridPower > 0 ? 'var(--alert)' : 'var(--battery)' }}>
+                {gridPower > 0 ? '+' : ''}{gridPower.toFixed(2)} kW
+              </div>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             <div className="rounded-2xl border p-4 bg-[var(--bg-secondary)] border-[var(--border)]">
               <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-2">System Efficiency</div>
               <div className="flex items-baseline gap-2 mb-2">
-                <div className="text-2xl font-bold" style={{ color: systemEfficiency >= 80 ? 'var(--battery)' : systemEfficiency >= 60 ? 'var(--solar)' : 'var(--alert)' }}>{systemEfficiency.toFixed(0)}%</div>
+                <div
+                  className="text-2xl font-bold"
+                  style={{ color: systemEfficiency >= 80 ? 'var(--battery)' : systemEfficiency >= 60 ? 'var(--solar)' : 'var(--alert)' }}
+                >
+                  {systemEfficiency.toFixed(0)}%
+                </div>
                 <div className="text-xs text-[var(--text-tertiary)]">Solar → Usable</div>
               </div>
               <div className="w-full bg-[var(--bg-card-muted)] rounded-full h-2">
-                <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${systemEfficiency}%`, background: systemEfficiency >= 80 ? 'var(--battery)' : systemEfficiency >= 60 ? 'var(--solar)' : 'var(--alert)' }} />
+                <div
+                  className="h-2 rounded-full transition-all duration-500"
+                  style={{
+                    width: `${systemEfficiency}%`,
+                    background: systemEfficiency >= 80 ? 'var(--battery)' : systemEfficiency >= 60 ? 'var(--solar)' : 'var(--alert)',
+                  }}
+                />
               </div>
             </div>
             <div className="rounded-2xl border p-4 bg-[var(--bg-secondary)] border-[var(--border)]">
               <div className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-wide mb-2">Flow Distribution</div>
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs"><div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--consumption)' }} /><span className="text-[var(--text-secondary)]">To Loads</span></div><span className="font-bold text-[var(--text-primary)]">{solarToHomePercent.toFixed(0)}%</span></div>
-                <div className="flex items-center justify-between text-xs"><div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--battery)' }} /><span className="text-[var(--text-secondary)]">To Battery</span></div><span className="font-bold text-[var(--text-primary)]">{solarToBatteryPercent.toFixed(0)}%</span></div>
-                <div className="flex items-center justify-between text-xs"><div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--grid)' }} /><span className="text-[var(--text-secondary)]">To Grid</span></div><span className="font-bold text-[var(--text-primary)]">{solarToGridPercent.toFixed(0)}%</span></div>
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--consumption)' }} /><span className="text-[var(--text-secondary)]">To Loads</span></div>
+                  <span className="font-bold text-[var(--text-primary)]">{solarToHomePercent.toFixed(0)}%</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--battery)' }} /><span className="text-[var(--text-secondary)]">To Battery</span></div>
+                  <span className="font-bold text-[var(--text-primary)]">{solarToBatteryPercent.toFixed(0)}%</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--grid)' }} /><span className="text-[var(--text-secondary)]">To Grid</span></div>
+                  <span className="font-bold text-[var(--text-primary)]">{solarToGridPercent.toFixed(0)}%</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
+
       </CardContent>
     </Card>
   );
