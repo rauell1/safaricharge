@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`3574f25`](https://github.com/rauell1/safaricharge/commit/3574f257dfc92acdad0c4e113529dcf8401cc7d8) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`3384d38`](https://github.com/rauell1/safaricharge/commit/3384d3890e51a8d65ed228753710343081be6388) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-13 |
-| **Message** | fix(deps): force undici>=7.24.0 and devalue>=5.3.2 via overrides (closes Dependabot #28-35) |
-| **Total commits** | 884 |
+| **Message** | fix: make PowerFlowVisualization responsive on small devices |
+| **Total commits** | 888 |
 | **TypeScript files** | 172 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
