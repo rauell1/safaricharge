@@ -515,12 +515,12 @@ export const useEnergySystemStore = create<EnergySystemState>()(
     }
 
     const existingIds = new Set(get().scenarios.map((s) => s.id));
-    const fresh = valid.filter((s) => !existingIds.has(s.id));
+    const fresh = valid.filter((s) => !existingIds.has(s.id)) as SavedScenario[];
     const skipped = valid.length - fresh.length;
 
     if (fresh.length > 0) {
       set((state) => {
-        const merged = [...state.scenarios, ...fresh];
+        const merged: SavedScenario[] = [...state.scenarios, ...fresh];
         return {
           scenarios:
             merged.length > MAX_SCENARIOS
