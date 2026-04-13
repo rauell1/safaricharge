@@ -100,6 +100,116 @@
       "source": "vercel/workflow",
       "sourceType": "github",
       "computedHash": "f47d53836ef081a53e814ae7ffdf0470bebf57c4065829f92d069fea70c41545"
+    },
+    "ai-gateway": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "27067ea14df78203d032d214948b898ba0d0ffb4f1e2e3a9fe5db77106302ca7"
+    },
+    "ai-sdk": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "255c0f4bd83a3a6092b31b887e7f42026eed1aee14bf9d8cf63083d0058bd116"
+    },
+    "auth": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "b6b9c4b0c9c214f718eef37246e0416a44e52f9fbba11c777892e90af3300f8f"
+    },
+    "bootstrap": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "ed2f91dbec2cb2be24f41466407a5f9b52caf69d18a5f63064bfa937156b7828"
+    },
+    "chat-sdk": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "82d66d41af16dcc12085bdd4573fe6358bc9f4033972738e9e753a239ba103f1"
+    },
+    "deployments-cicd": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "a0d6c92265015d028f8f42f35c28fde880e01cdd43d0109f9788c1b373a721bd"
+    },
+    "env-vars": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "ba0bdb4db224e04d1aebb60cacb0c6d7242a1a75a832b7c9b39fbe6773f8df61"
+    },
+    "knowledge-update": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "b807fa96f88e27ed968120cac6ff8d4797dd2c25cba9aeecaf04ea3f144e60ca"
+    },
+    "marketplace": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "8bb6dfd5c819cedda0c1d39bd806a108fcb71204bf7cd05144c7c88ce4eda3cc"
+    },
+    "next-forge": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "97fcefaa3f0a5174cceefeaea30e92aa7ec5f34d67730649eecad373ef0849d3"
+    },
+    "nextjs": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "a84d03ab8e78050515656d94984d98b37bd30d57b9e290a6b5071053dda5023f"
+    },
+    "react-best-practices": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "1f5a862b4c60fbf157dc98931606a41485223e616840393a00d0a9f053f10f28"
+    },
+    "routing-middleware": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "b582ee4551d744adfa6f9428fa4268a84c5c83fc042d633df8aaeb8c1c00619d"
+    },
+    "runtime-cache": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "22fb4be9b3b2e39ed5514467c44f5a809a0ccfccc4ebaac64273e8918b47a1c2"
+    },
+    "turbopack": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "8ef65187c42680aae178288baa02ee8328ad72995cfa7ead960e12389297ef1c"
+    },
+    "vercel-agent": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "c7ddcf740e60690490156e04332d7ed36928811f17b2391af9816258e3e06e96"
+    },
+    "vercel-cli": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "348861db178d0869c15d670876f80401eea50b660ec7c42b249880085f4dd489"
+    },
+    "vercel-functions": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "93af96fe50d3b9ef9c7ca4ee2fdcf669e242e3ae6ffdd2866b6cb956a1a7d432"
+    },
+    "vercel-sandbox": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "8a80453de690fb076d74fa62057fb1e3ba97435a127a71c7b6c645bf8b4790ae"
+    },
+    "vercel-storage": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "9365181d819522cb1b206f08fa3261b0f0481382b8518f5a9349c7837d0123cc"
+    },
+    "verification": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "1c9cdb2b04c479a94ada1994d4ef1c216acacba5fcee4959b40eca11a05e8070"
+    },
+    "workflow": {
+      "source": "vercel/vercel-plugin",
+      "sourceType": "github",
+      "computedHash": "1548cd59fd9ab30c304949227dd41adf53b517ce408b430b987227da5b77c9ce"
     }
   }
 }
