@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`c0fec2b`](https://github.com/rauell1/safaricharge/commit/c0fec2bf828d4ea90d6ed494e0099b38bcbb119e) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`c5596e8`](https://github.com/rauell1/safaricharge/commit/c5596e88bc5b084da7eb74d5b38b9f7c8c885598) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-13 |
-| **Message** | feat: vertical flow layout for mobile, desktop tree unchanged |
-| **Total commits** | 896 |
+| **Message** | fix: replace CSS flex connectors with SVG tree on mobile — no hanging lines |
+| **Total commits** | 900 |
 | **TypeScript files** | 172 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
