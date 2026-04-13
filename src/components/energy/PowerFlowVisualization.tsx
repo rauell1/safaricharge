@@ -217,34 +217,50 @@ export function PowerFlowVisualization({
           </div>
         </div>
 
-        <div className="rounded-[24px] border border-[var(--border)] bg-[var(--bg-secondary)]/60 p-4 sm:p-6">
-          <div className="flex flex-col items-center gap-5 py-2">
-            <EnergyNode icon={Sun} label="Solar" valueLine={`${solarPower.toFixed(2)} kW`} subLabel="Generation" accent="var(--solar)" tint="var(--solar-soft)" nodeType="solar" onClick={handleNodeClick} isSelected={isSelected('solar')} />
-            <div className="flex justify-center py-1">
-              <FlowPath active={flowDirection.solarToHome || flowDirection.solarToBattery || flowDirection.solarToGrid} vertical accent="var(--solar)" tint="var(--solar-soft)" powerKw={solarPower} />
-            </div>
-            <div className="flex items-center justify-center w-full max-w-2xl gap-4 sm:gap-6 px-1 sm:px-0">
-              <div className="flex-1 flex justify-end"><FlowPath active={flowDirection.solarToBattery} accent="var(--battery)" tint="var(--battery-soft)" powerKw={Math.max(0, batteryPower)} /></div>
-              <div className="h-4 w-4 shrink-0 rounded-full border-2 shadow-[0_0_0_6px_rgba(245,158,11,0.1)]" style={{ backgroundColor: 'var(--solar)', borderColor: 'var(--solar)' }} />
-              <div className="flex-1 flex justify-start"><FlowPath active={flowDirection.solarToGrid} accent="var(--grid)" tint="var(--grid-soft)" reversed powerKw={Math.max(0, -gridPower)} /></div>
-            </div>
-            <div className="flex flex-col md:flex-row items-center md:items-start justify-center w-full max-w-5xl gap-3 sm:gap-4 md:gap-8 lg:gap-10 mt-1">
-              <div className="flex md:flex-1 min-w-0 flex-col items-center gap-2">
-                <FlowPath active={flowDirection.solarToBattery || flowDirection.batteryToHome} vertical accent="var(--battery)" tint="var(--battery-soft)" powerKw={Math.abs(batteryPower)} />
-                <EnergyNode icon={Battery} label="Battery" valueLine={`${Math.abs(batteryPower).toFixed(1)} kW`} subLabel={batteryPower >= 0 ? 'Charging' : 'Discharging'} accent="var(--battery)" tint="var(--battery-soft)" badgeContent={`${Math.round(batteryLevel)}%`} nodeType="battery" onClick={handleNodeClick} isSelected={isSelected('battery')} />
+        {/* ── Responsive diagram wrapper ──────────────────────────────────────────
+            On screens smaller than `sm` (< 640px) we scale the tree diagram
+            down proportionally so the Solar → hub → nodes hierarchy is always
+            fully visible without horizontal scrolling.
+            The negative bottom margin compensates for the empty space that CSS
+            scale() leaves behind (the element still occupies its pre-scale
+            dimensions in the document flow).
+        ──────────────────────────────────────────────────────────────────────── */}
+        <div className="w-full overflow-hidden">
+          <div
+            className="rounded-[24px] border border-[var(--border)] bg-[var(--bg-secondary)]/60 p-4 sm:p-6
+                       origin-top
+                       scale-[0.52] -mb-[42%]
+                       xs:scale-[0.62] xs:-mb-[34%]
+                       sm:scale-100 sm:mb-0"
+          >
+            <div className="flex flex-col items-center gap-5 py-2">
+              <EnergyNode icon={Sun} label="Solar" valueLine={`${solarPower.toFixed(2)} kW`} subLabel="Generation" accent="var(--solar)" tint="var(--solar-soft)" nodeType="solar" onClick={handleNodeClick} isSelected={isSelected('solar')} />
+              <div className="flex justify-center py-1">
+                <FlowPath active={flowDirection.solarToHome || flowDirection.solarToBattery || flowDirection.solarToGrid} vertical accent="var(--solar)" tint="var(--solar-soft)" powerKw={solarPower} />
               </div>
-              <div className="flex md:flex-1 flex-col items-center gap-2 w-full md:w-auto">
-                <FlowPath active={flowDirection.solarToHome} vertical accent="var(--solar)" tint="var(--solar-soft)" powerKw={siteLoad} />
-                <div className="flex w-full flex-wrap items-start justify-center gap-x-4 gap-y-5 px-2 sm:gap-x-6 md:gap-x-8 max-w-md md:max-w-none">
-                  <EnergyNode icon={Home} label="Residential" valueLine={`${residentialKw.toFixed(2)} kW`} subLabel="Household" accent="var(--consumption)" tint="var(--consumption-soft)" nodeType="home" onClick={handleNodeClick} isSelected={isSelected('home')} />
-                  <EnergyNode icon={Building2} label="Commercial" valueLine={`${commercialKw.toFixed(2)} kW`} subLabel="Business" accent="var(--grid)" tint="var(--grid-soft)" nodeType="home" onClick={handleNodeClick} isSelected={false} />
-                  <EnergyNode icon={Factory} label="Industrial" valueLine={`${industrialKw.toFixed(2)} kW`} subLabel="Facility" accent="var(--alert)" tint="rgba(239,68,68,0.12)" nodeType="home" onClick={handleNodeClick} isSelected={false} />
-                  <EnergyNode icon={Car} label="EVs" valueLine={`${evKw.toFixed(2)} kW`} subLabel="Charging" accent="var(--battery)" tint="var(--battery-soft)" nodeType="ev1" onClick={handleNodeClick} isSelected={isSelected('ev1') || isSelected('ev2')} />
+              <div className="flex items-center justify-center w-full max-w-2xl gap-4 sm:gap-6 px-1 sm:px-0">
+                <div className="flex-1 flex justify-end"><FlowPath active={flowDirection.solarToBattery} accent="var(--battery)" tint="var(--battery-soft)" powerKw={Math.max(0, batteryPower)} /></div>
+                <div className="h-4 w-4 shrink-0 rounded-full border-2 shadow-[0_0_0_6px_rgba(245,158,11,0.1)]" style={{ backgroundColor: 'var(--solar)', borderColor: 'var(--solar)' }} />
+                <div className="flex-1 flex justify-start"><FlowPath active={flowDirection.solarToGrid} accent="var(--grid)" tint="var(--grid-soft)" reversed powerKw={Math.max(0, -gridPower)} /></div>
+              </div>
+              <div className="flex flex-col md:flex-row items-center md:items-start justify-center w-full max-w-5xl gap-3 sm:gap-4 md:gap-8 lg:gap-10 mt-1">
+                <div className="flex md:flex-1 min-w-0 flex-col items-center gap-2">
+                  <FlowPath active={flowDirection.solarToBattery || flowDirection.batteryToHome} vertical accent="var(--battery)" tint="var(--battery-soft)" powerKw={Math.abs(batteryPower)} />
+                  <EnergyNode icon={Battery} label="Battery" valueLine={`${Math.abs(batteryPower).toFixed(1)} kW`} subLabel={batteryPower >= 0 ? 'Charging' : 'Discharging'} accent="var(--battery)" tint="var(--battery-soft)" badgeContent={`${Math.round(batteryLevel)}%`} nodeType="battery" onClick={handleNodeClick} isSelected={isSelected('battery')} />
                 </div>
-              </div>
-              <div className="flex md:flex-1 flex-col items-center gap-2">
-                <FlowPath active={flowDirection.solarToGrid || flowDirection.gridToHome} vertical accent="var(--grid)" tint="var(--grid-soft)" />
-                <EnergyNode icon={UtilityPole} label="Grid" valueLine={`${Math.abs(gridPower).toFixed(2)} kW`} subLabel={gridPower > 0 ? 'Importing' : gridPower < 0 ? 'Exporting' : 'Standby'} accent="var(--grid)" tint="var(--grid-soft)" nodeType="grid" onClick={handleNodeClick} isSelected={isSelected('grid')} />
+                <div className="flex md:flex-1 flex-col items-center gap-2 w-full md:w-auto">
+                  <FlowPath active={flowDirection.solarToHome} vertical accent="var(--solar)" tint="var(--solar-soft)" powerKw={siteLoad} />
+                  <div className="flex w-full flex-wrap items-start justify-center gap-x-4 gap-y-5 px-2 sm:gap-x-6 md:gap-x-8 max-w-md md:max-w-none">
+                    <EnergyNode icon={Home} label="Residential" valueLine={`${residentialKw.toFixed(2)} kW`} subLabel="Household" accent="var(--consumption)" tint="var(--consumption-soft)" nodeType="home" onClick={handleNodeClick} isSelected={isSelected('home')} />
+                    <EnergyNode icon={Building2} label="Commercial" valueLine={`${commercialKw.toFixed(2)} kW`} subLabel="Business" accent="var(--grid)" tint="var(--grid-soft)" nodeType="home" onClick={handleNodeClick} isSelected={false} />
+                    <EnergyNode icon={Factory} label="Industrial" valueLine={`${industrialKw.toFixed(2)} kW`} subLabel="Facility" accent="var(--alert)" tint="rgba(239,68,68,0.12)" nodeType="home" onClick={handleNodeClick} isSelected={false} />
+                    <EnergyNode icon={Car} label="EVs" valueLine={`${evKw.toFixed(2)} kW`} subLabel="Charging" accent="var(--battery)" tint="var(--battery-soft)" nodeType="ev1" onClick={handleNodeClick} isSelected={isSelected('ev1') || isSelected('ev2')} />
+                  </div>
+                </div>
+                <div className="flex md:flex-1 flex-col items-center gap-2">
+                  <FlowPath active={flowDirection.solarToGrid || flowDirection.gridToHome} vertical accent="var(--grid)" tint="var(--grid-soft)" />
+                  <EnergyNode icon={UtilityPole} label="Grid" valueLine={`${Math.abs(gridPower).toFixed(2)} kW`} subLabel={gridPower > 0 ? 'Importing' : gridPower < 0 ? 'Exporting' : 'Standby'} accent="var(--grid)" tint="var(--grid-soft)" nodeType="grid" onClick={handleNodeClick} isSelected={isSelected('grid')} />
+                </div>
               </div>
             </div>
           </div>
