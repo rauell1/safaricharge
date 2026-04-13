@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 77 | `rollback/fix-store-cast-fresh-to-savedscenario-2026-04-13` | `13aea37` | fix(store): cast fresh to SavedScenario[] to resolve TS spread type error | 2026-04-13 |
 | 76 | `rollback/merge-pull-request-179-from-rauell1-co-2026-04-13` | `95f1c25` | Merge pull request #179 from rauell1/copilot/regenerate-package-lock-json | 2026-04-13 |
 | 75 | `rollback/merge-pull-request-178-from-rauell1-co-2026-04-13` | `12cd4a9` | Merge pull request #178 from rauell1/copilot/add-vercel-plugin | 2026-04-13 |
 | 74 | `rollback/merge-pull-request-177-from-rauell1-co-2026-04-13` | `d10c35c` | Merge pull request #177 from rauell1/copilot/add-user-signup-functionality | 2026-04-13 |
@@ -825,6 +826,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/merge-pull-request-179-from-rauell1-co-2026-04-13`
 - **Commit**: `95f1c25645973311c89fb846565abd01f1e13959`
 - **Subject**: Merge pull request #179 from rauell1/copilot/regenerate-package-lock-json
+- **Date**: 2026-04-13
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #77 — `rollback/fix-store-cast-fresh-to-savedscenario-2026-04-13`
+
+- **Branch**: `rollback/fix-store-cast-fresh-to-savedscenario-2026-04-13`
+- **Commit**: `13aea37c77a84d54f081f53c2943bb89072209f6`
+- **Subject**: fix(store): cast fresh to SavedScenario[] to resolve TS spread type error
 - **Date**: 2026-04-13
 - **Auto-generated**: yes (by update-rollback.yml)
 
