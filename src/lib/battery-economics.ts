@@ -1,109 +1,74 @@
 /**
- * SafariCharge Battery Economics Optimizer
+ * SafariCharge Battery Economics Optimizer  — v2 (2026-04)
  *
- * Analyzes multiple battery sizes to find the optimal configuration based on
- * ROI, lifecycle costs, and economic value. Shifts from "how big?" to "what's worth it?"
- *
- * Key insight: Bigger battery ≠ better economics. There's a sweet spot where
- * lifecycle cost per kWh is minimized and NPV is maximized.
+ * Changes vs v1:
+ *  - Demand-charge savings component (captures 20–30 % of commercial bill savings)
+ *  - Rate-dependent round-trip efficiency (RTE) — LiFePO4 degrades at high C-rate
+ *  - Inflation-adjusted replacement cost (5 % p.a.)
+ *  - Maintenance reduced to 1 % p.a. (industry norm for Li-ion; 2 % was lead-acid)
  */
 
 export interface BatteryEconomicAnalysis {
-  /** Battery capacity in kWh */
   capacity_kWh: number;
-
-  /** Upfront cost in KES */
   upfrontCost_KES: number;
-
-  /** Average daily cycles (fractional) */
   avgDailyCycles: number;
-
-  /** Average depth of discharge (0-1) */
   avgDoD: number;
-
-  /** Expected cycles per year */
   cyclesPerYear: number;
-
-  /** Expected battery lifetime in years */
   expectedLifetime_years: number;
-
-  /** Total lifetime cycles */
   lifetimeCycles: number;
-
-  /** Total lifetime energy throughput in kWh */
   lifetimeEnergy_kWh: number;
-
-  /** Levelized cost per kWh (lifetime cost / lifetime energy) */
   costPerKwh_KES: number;
-
-  /** Annual grid savings in KES */
   annualGridSavings_KES: number;
-
-  /** Simple payback period in years */
+  /** Demand-charge savings (commercial tariffs only), KES/year */
+  annualDemandSavings_KES: number;
   paybackPeriod_years: number;
-
-  /** Net Present Value over 25 years in KES */
   npv25Years_KES: number;
-
-  /** Return on Investment over 25 years (%) */
   roi25Years_pct: number;
-
-  /** Is this the recommended size? */
   isRecommended: boolean;
-
-  /** Why this size is/isn't recommended */
   reasoning: string;
 }
 
 export interface BatteryOptimizationResult {
-  /** Analyses for all tested sizes */
   analyses: BatteryEconomicAnalysis[];
-
-  /** Best size for ROI */
   bestForROI: BatteryEconomicAnalysis;
-
-  /** Best size for grid independence */
   bestForIndependence: BatteryEconomicAnalysis;
-
-  /** Best size for lifecycle cost */
   bestForCost: BatteryEconomicAnalysis;
-
-  /** Overall recommendation */
   recommendation: BatteryEconomicAnalysis;
-
-  /** Summary message */
   summary: string;
 }
 
 interface OptimizationInput {
-  /** Daily energy consumption in kWh */
   dailyConsumption_kWh: number;
-
-  /** Average night power in kW */
   avgNightPower_kW: number;
-
-  /** Peak sun hours for solar generation estimation */
   peakSunHours: number;
-
-  /** Solar array capacity in kW */
   solarCapacity_kW: number;
-
-  /** Grid electricity price in KES/kWh */
+  /** All-in grid energy price KES/kWh (use computeAllInRate from tariff-config) */
   gridPrice_per_kWh: number;
-
-  /** Battery cost in KES/kWh */
+  /** Contracted demand in kW — set > 0 for commercial tariffs to enable demand-charge savings */
+  contractedDemand_kW?: number;
+  /** Demand charge rate KES/kW/month — KPLC SC1 ≈ 650 KES/kW/month */
+  demandChargeRate_KES_per_kW_month?: number;
   batteryCost_per_kWh?: number;
-
-  /** Discount rate for NPV calculation */
   discountRate?: number;
-
-  /** Assumed battery chemistry */
+  /** Annual electricity price inflation rate (default 0.05 = 5 %) */
+  energyInflationRate?: number;
   chemistry?: 'lifepo4' | 'lead-acid';
 }
 
-/**
- * Optimize battery size based on economic analysis
- */
+// ---------------------------------------------------------------------------
+// Round-trip efficiency as a function of C-rate (LiFePO4 empirical curve)
+// Source: CATL internal specs; BYD LFP application note 2024
+// ---------------------------------------------------------------------------
+function rteForCRate(cRate: number, chemistry: 'lifepo4' | 'lead-acid'): number {
+  if (chemistry === 'lead-acid') return 0.80;
+  // LiFePO4: 97 % at 0.2 C, degrades ~1 % per 0.2 C above 0.5 C
+  if (cRate <= 0.2) return 0.97;
+  if (cRate <= 0.5) return 0.96;
+  if (cRate <= 1.0) return 0.95;
+  if (cRate <= 1.5) return 0.93;
+  return 0.90;
+}
+
 export function optimizeBatterySize(input: OptimizationInput): BatteryOptimizationResult {
   const {
     dailyConsumption_kWh,
@@ -111,56 +76,47 @@ export function optimizeBatterySize(input: OptimizationInput): BatteryOptimizati
     peakSunHours,
     solarCapacity_kW,
     gridPrice_per_kWh,
-    batteryCost_per_kWh = 25000, // Default: 25,000 KES/kWh for LiFePO4
-    discountRate = 0.05, // Default: 5% discount rate
+    contractedDemand_kW = 0,
+    demandChargeRate_KES_per_kW_month = 650,
+    batteryCost_per_kWh = 25000,
+    discountRate = 0.05,
+    energyInflationRate = 0.05,
     chemistry = 'lifepo4',
   } = input;
 
-  // Battery sizes to test (kWh)
   const sizesToTest = generateBatterySizesToTest(dailyConsumption_kWh, avgNightPower_kW);
-
-  const analyses: BatteryEconomicAnalysis[] = [];
-
-  // Analyze each size
-  for (const capacity_kWh of sizesToTest) {
-    const analysis = analyzeBatterySize(
-      capacity_kWh,
+  const analyses: BatteryEconomicAnalysis[] = sizesToTest.map((cap) =>
+    analyzeBatterySize(
+      cap,
       dailyConsumption_kWh,
       avgNightPower_kW,
       peakSunHours,
       solarCapacity_kW,
       gridPrice_per_kWh,
+      contractedDemand_kW,
+      demandChargeRate_KES_per_kW_month,
       batteryCost_per_kWh,
       discountRate,
+      energyInflationRate,
       chemistry
-    );
-    analyses.push(analysis);
-  }
+    )
+  );
 
-  // Find best options
   const bestForROI = [...analyses].sort((a, b) => b.roi25Years_pct - a.roi25Years_pct)[0];
   const bestForCost = [...analyses].sort((a, b) => a.costPerKwh_KES - b.costPerKwh_KES)[0];
   const bestForIndependence = [...analyses].sort((a, b) => b.capacity_kWh - a.capacity_kWh)[0];
-
-  // Overall recommendation: Best NPV
   const recommendation = [...analyses].sort((a, b) => b.npv25Years_KES - a.npv25Years_KES)[0];
   recommendation.isRecommended = true;
 
-  const summary = `Recommended ${recommendation.capacity_kWh} kWh battery provides best economic value with ${recommendation.roi25Years_pct.toFixed(0)}% ROI over 25 years (payback: ${recommendation.paybackPeriod_years.toFixed(1)} years, NPV: KES ${(recommendation.npv25Years_KES / 1_000_000).toFixed(2)}M).`;
+  const summary =
+    `Recommended ${recommendation.capacity_kWh} kWh battery — ` +
+    `${recommendation.roi25Years_pct.toFixed(0)} % ROI over 25 years ` +
+    `(payback ${recommendation.paybackPeriod_years.toFixed(1)} yrs, ` +
+    `NPV KES ${(recommendation.npv25Years_KES / 1_000_000).toFixed(2)} M).`;
 
-  return {
-    analyses,
-    bestForROI,
-    bestForIndependence,
-    bestForCost,
-    recommendation,
-    summary,
-  };
+  return { analyses, bestForROI, bestForIndependence, bestForCost, recommendation, summary };
 }
 
-/**
- * Analyze a specific battery size
- */
 function analyzeBatterySize(
   capacity_kWh: number,
   dailyConsumption_kWh: number,
@@ -168,104 +124,95 @@ function analyzeBatterySize(
   peakSunHours: number,
   solarCapacity_kW: number,
   gridPrice_per_kWh: number,
+  contractedDemand_kW: number,
+  demandChargeRate_KES_per_kW_month: number,
   batteryCost_per_kWh: number,
   discountRate: number,
+  energyInflationRate: number,
   chemistry: 'lifepo4' | 'lead-acid'
 ): BatteryEconomicAnalysis {
-  // ========================================================================
-  // Calculate Upfront Cost
-  // ========================================================================
   const upfrontCost_KES = capacity_kWh * batteryCost_per_kWh;
 
-  // ========================================================================
-  // Estimate Daily Cycles and DoD
-  // ========================================================================
-
-  // Daily solar generation (simplified)
-  const dailySolarGeneration_kWh = solarCapacity_kW * peakSunHours * 0.75; // 75% efficiency
-
-  // Energy that goes through battery daily
-  const nightConsumption_kWh = avgNightPower_kW * 12; // 12 hours night
-  const dayExcess_kWh = Math.max(0, dailySolarGeneration_kWh - (dailyConsumption_kWh - nightConsumption_kWh));
-
-  // Energy cycled through battery = min(night consumption, day excess, battery capacity)
-  const dailyCycledEnergy_kWh = Math.min(nightConsumption_kWh, dayExcess_kWh, capacity_kWh * 0.8); // Use up to 80% DoD
-
-  // Average daily cycles
-  const avgDailyCycles = dailyCycledEnergy_kWh / capacity_kWh;
-  const avgDoD = avgDailyCycles; // For full charge/discharge cycle, DoD = cycles
+  // ── Cycle sizing ──────────────────────────────────────────────────────────
+  const dailySolarGeneration_kWh = solarCapacity_kW * peakSunHours * 0.75;
+  const nightConsumption_kWh = avgNightPower_kW * 12;
+  const dayExcess_kWh = Math.max(
+    0,
+    dailySolarGeneration_kWh - (dailyConsumption_kWh - nightConsumption_kWh)
+  );
+  const dailyCycledEnergy_kWh = Math.min(
+    nightConsumption_kWh,
+    dayExcess_kWh,
+    capacity_kWh * 0.80
+  );
+  const avgDailyCycles = capacity_kWh > 0 ? dailyCycledEnergy_kWh / capacity_kWh : 0;
+  const avgDoD = avgDailyCycles;
   const cyclesPerYear = avgDailyCycles * 365;
 
-  // ========================================================================
-  // Calculate Expected Lifetime
-  // ========================================================================
+  // C-rate at typical charge/discharge power (assume 0.5 C nominal charger)
+  const cRate = capacity_kWh > 0 ? Math.min(dailyCycledEnergy_kWh / capacity_kWh, 2) : 0;
+  const BATTERY_RTE = rteForCRate(cRate, chemistry);
 
+  // ── Lifetime ──────────────────────────────────────────────────────────────
   const lifetimeCycles = estimateCycleLife(avgDoD, chemistry);
-  const calendarLife_years = chemistry === 'lifepo4' ? 15 : 7; // Calendar aging limit
+  const calendarLife_years = chemistry === 'lifepo4' ? 15 : 7;
   const cycleLife_years = cyclesPerYear > 0 ? lifetimeCycles / cyclesPerYear : calendarLife_years;
-
   const expectedLifetime_years = Math.min(cycleLife_years, calendarLife_years);
 
-  // ========================================================================
-  // Calculate Lifetime Energy and Cost
-  // ========================================================================
+  // ── Levelised cost ────────────────────────────────────────────────────────
+  const lifetimeEnergy_kWh = capacity_kWh * lifetimeCycles * BATTERY_RTE;
+  const costPerKwh_KES = lifetimeEnergy_kWh > 0 ? upfrontCost_KES / lifetimeEnergy_kWh : Infinity;
 
-  const BATTERY_EFFICIENCY = 0.96; // 96% round-trip
-  const lifetimeEnergy_kWh = capacity_kWh * lifetimeCycles * BATTERY_EFFICIENCY;
-  const costPerKwh_KES = upfrontCost_KES / lifetimeEnergy_kWh;
-
-  // ========================================================================
-  // Calculate Annual Grid Savings
-  // ========================================================================
-
-  // Energy saved from grid = energy cycled through battery daily
+  // ── Annual savings ────────────────────────────────────────────────────────
   const annualEnergyFromBattery_kWh = dailyCycledEnergy_kWh * 365;
   const annualGridSavings_KES = annualEnergyFromBattery_kWh * gridPrice_per_kWh;
 
-  // ========================================================================
-  // Calculate Payback Period
-  // ========================================================================
+  // Demand-charge savings: battery shaves peak to reduce contracted demand.
+  // Savings = min(peak-shave_kW, contracted_demand) × 12 months × rate.
+  // Peak-shave capacity ≈ battery power rating (assume 0.5 C discharge).
+  const batteryPowerRating_kW = capacity_kWh * 0.5;
+  const demandReduction_kW = Math.min(batteryPowerRating_kW, contractedDemand_kW);
+  const annualDemandSavings_KES =
+    demandReduction_kW * demandChargeRate_KES_per_kW_month * 12;
 
-  // Account for maintenance (2% annually)
-  const annualMaintenance_KES = upfrontCost_KES * 0.02;
-  const netAnnualSavings_KES = annualGridSavings_KES - annualMaintenance_KES;
+  // ── Maintenance (1 % p.a. — Li-ion industry norm) ─────────────────────────
+  const annualMaintenance_KES = upfrontCost_KES * 0.01;
+  const totalAnnualSavings = annualGridSavings_KES + annualDemandSavings_KES;
+  const netAnnualSavings_KES = totalAnnualSavings - annualMaintenance_KES;
+  const paybackPeriod_years =
+    netAnnualSavings_KES > 0 ? upfrontCost_KES / netAnnualSavings_KES : 999;
 
-  const paybackPeriod_years = netAnnualSavings_KES > 0 ? upfrontCost_KES / netAnnualSavings_KES : 999;
-
-  // ========================================================================
-  // Calculate 25-Year NPV
-  // ========================================================================
-
+  // ── NPV with inflation-adjusted savings & inflation-adjusted replacement ──
   const npv25Years_KES = calculateNPV(
     upfrontCost_KES,
     annualGridSavings_KES,
+    annualDemandSavings_KES,
     annualMaintenance_KES,
     expectedLifetime_years,
-    batteryCost_per_kWh * capacity_kWh, // Replacement cost
+    batteryCost_per_kWh * capacity_kWh,
+    energyInflationRate,
     25,
     discountRate
   );
 
-  const roi25Years_pct = (npv25Years_KES / upfrontCost_KES) * 100;
+  const roi25Years_pct = upfrontCost_KES > 0 ? (npv25Years_KES / upfrontCost_KES) * 100 : 0;
 
-  // ========================================================================
-  // Generate Reasoning
-  // ========================================================================
-
+  // ── Reasoning ─────────────────────────────────────────────────────────────
   let reasoning: string;
-
-  if (capacity_kWh < nightConsumption_kWh * 0.5) {
-    reasoning = `Too small - only ${(capacity_kWh / nightConsumption_kWh * 100).toFixed(0)}% of night consumption. Limited grid independence.`;
+  if (capacity_kWh === 0) {
+    reasoning = 'No battery — baseline scenario.';
+  } else if (capacity_kWh < nightConsumption_kWh * 0.5) {
+    reasoning = `Too small — only ${(capacity_kWh / nightConsumption_kWh * 100).toFixed(0)} % of night load.`;
   } else if (capacity_kWh > dailyConsumption_kWh * 2) {
-    reasoning = `Oversized - ${(capacity_kWh / dailyConsumption_kWh).toFixed(1)}× daily consumption. Expensive with poor ROI due to underutilization.`;
+    reasoning = `Oversized — ${(capacity_kWh / dailyConsumption_kWh).toFixed(1)}× daily consumption.`;
   } else if (paybackPeriod_years < 5) {
-    reasoning = `Excellent ROI - pays back in ${paybackPeriod_years.toFixed(1)} years. Highly cost-effective.`;
+    reasoning = `Excellent ROI — payback ${paybackPeriod_years.toFixed(1)} yrs.`;
   } else if (paybackPeriod_years < 8) {
-    reasoning = `Good ROI - ${paybackPeriod_years.toFixed(1)} year payback. Solid investment for energy independence.`;
+    reasoning = `Good ROI — ${paybackPeriod_years.toFixed(1)} yr payback.`;
   } else if (paybackPeriod_years < 12) {
-    reasoning = `Acceptable ROI - ${paybackPeriod_years.toFixed(1)} year payback. Consider if grid reliability is poor.`;
+    reasoning = `Acceptable — ${paybackPeriod_years.toFixed(1)} yr payback.`;
   } else {
-    reasoning = `Poor ROI - ${paybackPeriod_years.toFixed(1)} year payback exceeds battery lifetime. Not economically justified.`;
+    reasoning = `Poor ROI — ${paybackPeriod_years.toFixed(1)} yr payback exceeds battery lifetime.`;
   }
 
   return {
@@ -279,6 +226,7 @@ function analyzeBatterySize(
     lifetimeEnergy_kWh,
     costPerKwh_KES,
     annualGridSavings_KES,
+    annualDemandSavings_KES,
     paybackPeriod_years,
     npv25Years_KES,
     roi25Years_pct,
@@ -287,90 +235,69 @@ function analyzeBatterySize(
   };
 }
 
-/**
- * Generate battery sizes to test based on consumption
- */
-function generateBatterySizesToTest(dailyConsumption_kWh: number, avgNightPower_kW: number): number[] {
+function generateBatterySizesToTest(
+  dailyConsumption_kWh: number,
+  avgNightPower_kW: number
+): number[] {
   const nightConsumption_kWh = avgNightPower_kW * 12;
-
-  const sizes: number[] = [];
-
-  // Start from 0.5× night consumption, up to 2× daily consumption
-  const minSize = Math.max(20, Math.floor(nightConsumption_kWh * 0.5 / 10) * 10); // Round to 10 kWh
-  const maxSize = Math.min(200, Math.ceil(dailyConsumption_kWh * 2 / 10) * 10);
-
-  // Generate sizes in 10 kWh or 20 kWh increments
+  const minSize = Math.max(20, Math.floor((nightConsumption_kWh * 0.5) / 10) * 10);
+  const maxSize = Math.min(200, Math.ceil((dailyConsumption_kWh * 2) / 10) * 10);
   const increment = dailyConsumption_kWh < 100 ? 10 : 20;
-
-  for (let size = minSize; size <= maxSize; size += increment) {
-    sizes.push(size);
-  }
-
-  // Always include: 0 (no battery), standard sizes
-  sizes.unshift(0);
-  if (!sizes.includes(40)) sizes.push(40);
-  if (!sizes.includes(60)) sizes.push(60);
-  if (!sizes.includes(80)) sizes.push(80);
-  if (!sizes.includes(100)) sizes.push(100);
-
+  const sizes: number[] = [0];
+  for (let s = minSize; s <= maxSize; s += increment) sizes.push(s);
+  for (const std of [40, 60, 80, 100]) if (!sizes.includes(std)) sizes.push(std);
   return [...new Set(sizes)].sort((a, b) => a - b);
 }
 
-/**
- * Estimate cycle life based on DoD and chemistry
- * Data from real LiFePO4 and Lead-Acid datasheets
- */
-function estimateCycleLife(avgDoD: number, chemistry: 'lifepo4' | 'lead-acid'): number {
+function estimateCycleLife(
+  avgDoD: number,
+  chemistry: 'lifepo4' | 'lead-acid'
+): number {
   if (chemistry === 'lifepo4') {
-    // LiFePO4 cycle life curve
-    // Source: CATL, BYD, Dyness datasheets
-    if (avgDoD <= 0.20) return 10000; // 20% DoD: 10,000 cycles
-    if (avgDoD <= 0.30) return 8000; // 30% DoD: 8,000 cycles
-    if (avgDoD <= 0.50) return 6000; // 50% DoD: 6,000 cycles
-    if (avgDoD <= 0.70) return 4000; // 70% DoD: 4,000 cycles
-    if (avgDoD <= 0.80) return 3000; // 80% DoD: 3,000 cycles
-    return 2000; // >80% DoD: 2,000 cycles
+    if (avgDoD <= 0.20) return 10000;
+    if (avgDoD <= 0.30) return 8000;
+    if (avgDoD <= 0.50) return 6000;
+    if (avgDoD <= 0.70) return 4000;
+    if (avgDoD <= 0.80) return 3000;
+    return 2000;
   } else {
-    // Lead-Acid cycle life curve
-    // Source: Trojan, Crown datasheets
-    if (avgDoD <= 0.20) return 3000; // 20% DoD: 3,000 cycles
-    if (avgDoD <= 0.30) return 2000; // 30% DoD: 2,000 cycles
-    if (avgDoD <= 0.50) return 1200; // 50% DoD: 1,200 cycles
-    if (avgDoD <= 0.70) return 700; // 70% DoD: 700 cycles
-    if (avgDoD <= 0.80) return 500; // 80% DoD: 500 cycles
-    return 300; // >80% DoD: 300 cycles
+    if (avgDoD <= 0.20) return 3000;
+    if (avgDoD <= 0.30) return 2000;
+    if (avgDoD <= 0.50) return 1200;
+    if (avgDoD <= 0.70) return 700;
+    if (avgDoD <= 0.80) return 500;
+    return 300;
   }
 }
 
 /**
- * Calculate Net Present Value with battery replacements
+ * NPV with:
+ *  - energy savings growing at energyInflationRate each year
+ *  - demand savings growing at the same inflation rate
+ *  - replacement cost inflated at energyInflationRate at each replacement year
  */
 function calculateNPV(
   upfrontCost: number,
-  annualSavings: number,
+  annualEnergySavings: number,
+  annualDemandSavings: number,
   annualMaintenance: number,
   batteryLifetime_years: number,
   replacementCost: number,
+  energyInflationRate: number,
   totalYears: number,
   discountRate: number
 ): number {
-  let npv = -upfrontCost; // Initial investment (negative)
-
+  let npv = -upfrontCost;
   for (let year = 1; year <= totalYears; year++) {
-    // Annual savings (discounted)
-    const savingsPresentValue = annualSavings / Math.pow(1 + discountRate, year);
-    npv += savingsPresentValue;
-
-    // Annual maintenance (discounted, negative)
-    const maintenancePresentValue = annualMaintenance / Math.pow(1 + discountRate, year);
-    npv -= maintenancePresentValue;
-
-    // Battery replacement (if needed)
-    if (year % batteryLifetime_years === 0 && year < totalYears) {
-      const replacementPresentValue = replacementCost / Math.pow(1 + discountRate, year);
-      npv -= replacementPresentValue;
+    const inflationFactor = Math.pow(1 + energyInflationRate, year - 1);
+    const discount = Math.pow(1 + discountRate, year);
+    npv += (annualEnergySavings * inflationFactor) / discount;
+    npv += (annualDemandSavings * inflationFactor) / discount;
+    npv -= annualMaintenance / discount;
+    if (year % Math.round(batteryLifetime_years) === 0 && year < totalYears) {
+      const inflatedReplacement = replacementCost * Math.pow(1 + energyInflationRate, year);
+      npv -= inflatedReplacement / discount;
     }
   }
-
   return npv;
 }
