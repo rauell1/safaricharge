@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`a4d5e0c`](https://github.com/rauell1/safaricharge/commit/a4d5e0c96f335bacfca3c5997c4a5934b6bb4fa4) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`f66c895`](https://github.com/rauell1/safaricharge/commit/f66c895cffb3fd02f072fed108334dfc2fb30355) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-14 |
-| **Message** | fix(physics): EPRA 2025/26 tariff rates, demand-charge savings, RTE, NOCT wind term, Nairobi TMY, V2G dead-band, seasonal naive forecast, vitest CI |
-| **Total commits** | 912 |
-| **TypeScript files** | 174 |
+| **Message** | feat: landing page + magic-link login via Resend (#183) |
+| **Total commits** | 916 |
+| **TypeScript files** | 179 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
