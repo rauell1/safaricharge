@@ -7,7 +7,6 @@ import {
   FlaskConical,
   SlidersHorizontal,
   DollarSign,
-  Zap,
   BookMarked,
   Lightbulb,
   Bot,
@@ -49,15 +48,14 @@ interface DashboardSidebarProps {
   contextualMetrics?: SidebarContextMetric[];
 }
 
-const toneClasses: Record<SidebarContextMetric['tone'], string> = {
-  solar: 'bg-[var(--solar-soft)] text-[var(--solar)] border-[var(--solar-soft)]',
-  battery: 'bg-[var(--battery-soft)] text-[var(--battery)] border-[var(--battery-soft)]',
-  grid: 'bg-[var(--grid-soft)] text-[var(--grid)] border-[var(--grid-soft)]',
-  ev: 'bg-[var(--ev-soft)] text-[var(--ev)] border-[var(--ev-soft)]',
-  neutral: 'bg-[var(--bg-card-muted)] text-[var(--text-secondary)] border-[var(--border)]',
+const TONE: Record<SidebarContextMetric['tone'], { dot: string; bg: string; text: string }> = {
+  solar:   { dot: 'bg-[var(--solar)]',    bg: 'bg-[var(--solar-soft)]',       text: 'text-[var(--solar)]' },
+  battery: { dot: 'bg-[var(--battery)]',  bg: 'bg-[var(--battery-soft)]',     text: 'text-[var(--battery)]' },
+  grid:    { dot: 'bg-[var(--grid)]',     bg: 'bg-[var(--grid-soft)]',        text: 'text-[var(--grid)]' },
+  ev:      { dot: 'bg-[var(--ev)]',       bg: 'bg-[var(--ev-soft)]',          text: 'text-[var(--ev)]' },
+  neutral: { dot: 'bg-[var(--text-muted)]', bg: 'bg-[var(--bg-card-muted)]', text: 'text-[var(--text-secondary)]' },
 };
 
-// Google Drive-hosted logo — shared publicly via drive.google.com
 const LOGO_URL =
   'https://drive.google.com/uc?export=view&id=17VYQ0H4enZMSZGs9SeH5xTPaOsnQjdrM';
 
@@ -67,19 +65,20 @@ export function DashboardSidebar({
   contextualMetrics = [],
 }: DashboardSidebarProps) {
   const pathname = usePathname();
+
   const resolvedActive: DashboardSection = useMemo(() => {
     if (activeSection && activeSection !== 'dashboard') return activeSection;
     if (!pathname) return 'dashboard';
-    if (pathname.startsWith('/scenarios'))                                         return 'scenarios';
+    if (pathname.startsWith('/scenarios'))                                          return 'scenarios';
     if (pathname.startsWith('/demo/simulation') || pathname.includes('simulation')) return 'simulation';
-    if (pathname.includes('configuration'))                                        return 'configuration';
-    if (pathname.includes('financial'))                                            return 'financial';
-    if (pathname.includes('recommendation'))                                       return 'recommendation';
-    if (pathname.includes('ai-assistant'))                                         return 'ai-assistant';
+    if (pathname.includes('configuration'))                                         return 'configuration';
+    if (pathname.includes('financial'))                                             return 'financial';
+    if (pathname.includes('recommendation'))                                        return 'recommendation';
+    if (pathname.includes('ai-assistant'))                                          return 'ai-assistant';
     return activeSection ?? 'dashboard';
   }, [activeSection, pathname]);
 
-  const mainMenuItems: Array<{
+  const navItems: Array<{
     id: DashboardSection;
     label: string;
     icon: React.ElementType;
@@ -88,103 +87,162 @@ export function DashboardSidebar({
     { id: 'dashboard',      label: 'Dashboard',          icon: LayoutDashboard },
     { id: 'simulation',     label: 'Simulation',         icon: FlaskConical },
     { id: 'configuration',  label: 'System Config',      icon: SlidersHorizontal },
-    { id: 'financial',      label: 'Financial Analysis', icon: DollarSign },
+    { id: 'financial',      label: 'Financial',          icon: DollarSign },
     { id: 'scenarios',      label: 'Scenarios',          icon: BookMarked, href: '/scenarios' },
-    { id: 'recommendation', label: 'Get Recommendation', icon: Lightbulb },
+    { id: 'recommendation', label: 'Recommendations',    icon: Lightbulb },
     { id: 'ai-assistant',   label: 'AI Assistant',       icon: Bot },
   ];
 
   return (
-    <Sidebar className="border-r border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-primary)] shadow-[10px_0_40px_rgba(0,0,0,0.22)]">
-      <SidebarHeader className="border-b border-[var(--border)] px-4 py-5">
-        {/* Full SafariCharge logo — served from Google Drive */}
+    <Sidebar
+      className="border-r text-[var(--text-primary)]"
+      style={{
+        background: 'var(--bg-secondary)',
+        borderColor: 'var(--border)',
+        boxShadow: '8px 0 32px rgba(0,0,0,0.28)',
+      }}
+    >
+      {/* Logo */}
+      <SidebarHeader
+        className="px-4 py-5"
+        style={{ borderBottom: '1px solid var(--border)' }}
+      >
         <div className="flex items-center justify-center">
           <Image
             src={LOGO_URL}
             alt="SafariCharge"
-            width={180}
-            height={72}
+            width={176}
+            height={68}
             priority
             unoptimized
-            className="object-contain w-full max-w-[180px] h-auto"
+            className="object-contain w-full max-w-[176px] h-auto"
           />
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-3 py-4">
+      <SidebarContent className="px-2 py-4">
+        {/* Nav */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-[var(--text-tertiary)] uppercase tracking-wider text-xs mb-2">
+          <SidebarGroupLabel
+            className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-widest"
+            style={{ color: 'var(--text-muted)' }}
+          >
             Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {mainMenuItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    asChild={!!item.href}
-                    isActive={
-                      resolvedActive === item.id ||
-                      (!!item.href && !!pathname?.startsWith(item.href))
-                    }
-                    onClick={() => !item.href && onSectionChange?.(item.id)}
-                    className="group relative rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] data-[active=true]:bg-[var(--bg-card)] data-[active=true]:shadow-[0_10px_30px_rgba(0,0,0,0.25)] data-[active=true]:text-[var(--text-primary)]"
-                  >
-                    {item.href ? (
-                      <Link href={item.href}>
-                        <item.icon className="h-4 w-4" />
-                        <span className="font-medium">{item.label}</span>
-                        {resolvedActive === item.id && (
-                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--solar)] rounded-r" />
-                        )}
-                      </Link>
-                    ) : (
-                      <>
-                        <item.icon className="h-4 w-4" />
-                        <span className="font-medium">{item.label}</span>
-                        {resolvedActive === item.id && (
-                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--solar)] rounded-r" />
-                        )}
-                      </>
+            <SidebarMenu className="space-y-0.5">
+              {navItems.map((item) => {
+                const isActive =
+                  resolvedActive === item.id ||
+                  (!!item.href && !!pathname?.startsWith(item.href));
+
+                const inner = (
+                  <span className="flex items-center gap-3 w-full">
+                    <item.icon
+                      className="h-4 w-4 shrink-0"
+                      style={{ color: isActive ? 'var(--battery)' : 'var(--text-tertiary)' }}
+                    />
+                    <span
+                      className="text-sm font-medium truncate"
+                      style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}
+                    >
+                      {item.label}
+                    </span>
+                    {isActive && (
+                      <span
+                        className="ml-auto w-1.5 h-1.5 rounded-full shrink-0"
+                        style={{ background: 'var(--battery)' }}
+                      />
                     )}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+                  </span>
+                );
+
+                return (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      asChild={!!item.href}
+                      isActive={isActive}
+                      onClick={() => !item.href && onSectionChange?.(item.id)}
+                      className={cn(
+                        'group relative rounded-lg px-3 py-2.5 transition-all duration-150',
+                        isActive
+                          ? 'bg-[var(--bg-card)] shadow-sm'
+                          : 'hover:bg-[var(--bg-card-muted)]'
+                      )}
+                    >
+                      {item.href ? (
+                        <Link href={item.href} className="w-full">
+                          {inner}
+                        </Link>
+                      ) : (
+                        inner
+                      )}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup className="mt-4">
-          <SidebarGroupLabel className="text-[var(--text-tertiary)] uppercase tracking-wider text-xs mb-2">
-            Live Context
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <div className="space-y-2">
-              {contextualMetrics.map((metric) => (
-                <div
-                  key={metric.label}
-                  className={cn(
-                    'rounded-lg border px-3 py-2',
-                    toneClasses[metric.tone]
-                  )}
-                >
-                  <div className="text-[10px] uppercase tracking-wide opacity-80">{metric.label}</div>
-                  <div className="text-sm font-semibold mt-0.5">{metric.value}</div>
-                </div>
-              ))}
-            </div>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {/* Live context metrics */}
+        {contextualMetrics.length > 0 && (
+          <SidebarGroup className="mt-5">
+            <SidebarGroupLabel
+              className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-widest"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Live Context
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <div className="space-y-1.5 px-1">
+                {contextualMetrics.map((m) => (
+                  <div
+                    key={m.label}
+                    className={cn(
+                      'rounded-lg px-3 py-2.5 flex items-center justify-between',
+                      TONE[m.tone].bg
+                    )}
+                    style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+                  >
+                    <span
+                      className="text-[10px] font-semibold uppercase tracking-wide"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      {m.label}
+                    </span>
+                    <span
+                      className={cn('text-sm font-bold tabular-nums', TONE[m.tone].text)}
+                    >
+                      {m.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-[var(--border)] p-4">
-        <div className="text-xs text-[var(--text-tertiary)]">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="h-2 w-2 rounded-full bg-[var(--battery)] status-online" />
-            <span>System Online</span>
-          </div>
-          <div className="text-[10px] text-[var(--text-tertiary)] opacity-70">
-            SafariCharge © 2026
-          </div>
+      {/* Footer */}
+      <SidebarFooter
+        className="px-4 py-4"
+        style={{ borderTop: '1px solid var(--border)' }}
+      >
+        <div className="flex items-center gap-2.5">
+          <span
+            className="h-2 w-2 rounded-full shrink-0 status-online"
+            style={{ background: 'var(--battery)' }}
+          />
+          <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            System Online
+          </span>
+          <span
+            className="ml-auto text-[10px]"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            &copy; 2026
+          </span>
         </div>
       </SidebarFooter>
     </Sidebar>
