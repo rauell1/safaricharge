@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`c21763d`](https://github.com/rauell1/safaricharge/commit/c21763d74ec91c8b2bb0e8915748c661df053fa9) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`6e12cb6`](https://github.com/rauell1/safaricharge/commit/6e12cb620c0429f1e3c3b5223ff3ad2e728004c1) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-14 |
-| **Message** | fix: rewrite middleware.ts with explicit function export (Next.js 16) (#186) |
-| **Total commits** | 932 |
+| **Message** | feat: Pyomo MILP dispatch optimizer + UI full overhaul (#187) |
+| **Total commits** | 936 |
 | **TypeScript files** | 182 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
