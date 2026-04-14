@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 89 | `rollback/fix-rewrite-middleware-ts-with-explici-2026-04-14-c21763d` | `c21763d` | fix: rewrite middleware.ts with explicit function export (Next.js 16) (#186) | 2026-04-14 |
 | 88 | `rollback/fix-bump-nodemailer-to-7-0-7-add-npmrc-2026-04-14-e059532` | `e059532` | fix: bump nodemailer to ^7.0.7 + add .npmrc legacy-peer-deps (#185) | 2026-04-14 |
 | 87 | `rollback/fix-resolve-4-vercel-build-errors-184-2026-04-14-afc963a` | `afc963a` | fix: resolve 4 Vercel build errors (#184) | 2026-04-14 |
 | 86 | `rollback/chore-add-nextauth-tables-to-prisma-sc-2026-04-14-d4a6249` | `d4a6249` | chore: add NextAuth tables to Prisma schema (Account, Session, VerificationToken) | 2026-04-14 |
@@ -945,6 +946,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-bump-nodemailer-to-7-0-7-add-npmrc-2026-04-14-e059532`
 - **Commit**: `e0595320d0be4e277891ad7420a171feaafe1854`
 - **Subject**: fix: bump nodemailer to ^7.0.7 + add .npmrc legacy-peer-deps (#185)
+- **Date**: 2026-04-14
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #89 — `rollback/fix-rewrite-middleware-ts-with-explici-2026-04-14-c21763d`
+
+- **Branch**: `rollback/fix-rewrite-middleware-ts-with-explici-2026-04-14-c21763d`
+- **Commit**: `c21763d74ec91c8b2bb0e8915748c661df053fa9`
+- **Subject**: fix: rewrite middleware.ts with explicit function export (Next.js 16) (#186)
 - **Date**: 2026-04-14
 - **Auto-generated**: yes (by update-rollback.yml)
 
