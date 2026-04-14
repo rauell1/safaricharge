@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`6e12cb6`](https://github.com/rauell1/safaricharge/commit/6e12cb620c0429f1e3c3b5223ff3ad2e728004c1) by Roy Otieno | Energy & Mobility Systems |
-| **Date** | 2026-04-14 |
-| **Message** | feat: Pyomo MILP dispatch optimizer + UI full overhaul (#187) |
-| **Total commits** | 936 |
-| **TypeScript files** | 182 |
+| **Last commit** | [`d0464dc`](https://github.com/rauell1/safaricharge/commit/d0464dcf4fc526f6b728d3087c7284a99f56e6fe) by Roy Otieno | Energy & Mobility Systems |
+| **Date** | 2026-04-15 |
+| **Message** | feat: Supabase SSR client helpers (#188) |
+| **Total commits** | 940 |
+| **TypeScript files** | 185 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
