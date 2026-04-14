@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`e059532`](https://github.com/rauell1/safaricharge/commit/e0595320d0be4e277891ad7420a171feaafe1854) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`c21763d`](https://github.com/rauell1/safaricharge/commit/c21763d74ec91c8b2bb0e8915748c661df053fa9) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-14 |
-| **Message** | fix: bump nodemailer to ^7.0.7 + add .npmrc legacy-peer-deps (#185) |
-| **Total commits** | 928 |
+| **Message** | fix: rewrite middleware.ts with explicit function export (Next.js 16) (#186) |
+| **Total commits** | 932 |
 | **TypeScript files** | 182 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
