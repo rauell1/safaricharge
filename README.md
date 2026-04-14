@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`c5596e8`](https://github.com/rauell1/safaricharge/commit/c5596e88bc5b084da7eb74d5b38b9f7c8c885598) by Roy Otieno | Energy & Mobility Systems |
-| **Date** | 2026-04-13 |
-| **Message** | fix: replace CSS flex connectors with SVG tree on mobile — no hanging lines |
-| **Total commits** | 900 |
-| **TypeScript files** | 172 |
+| **Last commit** | [`19f65ec`](https://github.com/rauell1/safaricharge/commit/19f65ec45cd9e2df3aae5a720ef332b8fa27120f) by Roy Otieno | Energy & Mobility Systems |
+| **Date** | 2026-04-14 |
+| **Message** | feat: wire Pyomo MILP dispatch optimizer + block-structured simulation refactor (#182) |
+| **Total commits** | 908 |
+| **TypeScript files** | 174 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
