@@ -22,6 +22,7 @@ jobs:
       contents: write
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
 
     steps:
       - name: Checkout
@@ -42,7 +43,7 @@ jobs:
             | sed 's/--*/-/g' \
             | cut -c1-38 \
             | sed 's/-$//')
-          BRANCH_NAME="rollback/${SLUG}-${DATE}"
+          BRANCH_NAME="rollback/${SLUG}-${DATE}-${SHA_SHORT}"
           echo "sha=${SHA}"                 >> $GITHUB_OUTPUT
           echo "sha_short=${SHA_SHORT}"     >> $GITHUB_OUTPUT
           echo "date=${DATE}"               >> $GITHUB_OUTPUT
@@ -83,7 +84,7 @@ jobs:
           for i in 1 2 3 4 5; do
             echo "=== Attempt ${i} ==="
             git restore ROLLBACK.md 2>/dev/null || true
-            git pull --rebase origin main
+            git pull --rebase origin "$DEFAULT_BRANCH"
             python3 .github/scripts/gen_rollback_entry.py
             git add ROLLBACK.md
             if git diff --cached --quiet; then
@@ -91,7 +92,7 @@ jobs:
               exit 0
             fi
             git commit -m 'docs(auto): update ROLLBACK.md snapshot log [skip ci]'
-            git push origin main && exit 0
+            git push origin "$DEFAULT_BRANCH" && exit 0
             git reset HEAD~1
             git restore ROLLBACK.md
             echo "Push rejected — retrying in 3s"

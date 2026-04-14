@@ -11,7 +11,7 @@ Defensive contract:
 import os
 import re
 
-repo          = os.environ.get('REPO', 'rauell1/safaricharge')
+repo          = os.environ.get('GITHUB_REPOSITORY', os.environ.get('REPO', 'rauell1/safaricharge'))
 last_commit   = os.environ.get('LAST_COMMIT', '')
 last_short    = os.environ.get('LAST_COMMIT_SHORT', last_commit[:8] if last_commit else 'unknown')
 last_author   = os.environ.get('LAST_AUTHOR', 'unknown')
