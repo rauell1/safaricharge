@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 85 | `rollback/feat-landing-page-magic-link-login-via-2026-04-14-f66c895` | `f66c895` | feat: landing page + magic-link login via Resend (#183) | 2026-04-14 |
 | 84 | `rollback/fix-physics-epra-2025-26-tariff-rates-2026-04-14-a4d5e0c` | `a4d5e0c` | fix(physics): EPRA 2025/26 tariff rates, demand-charge savings, RTE, NOCT wind term, Nairobi TMY, V2G dead-band, seasonal naive forecast, vitest CI | 2026-04-14 |
 | 83 | `rollback/feat-wire-pyomo-milp-dispatch-optimize-2026-04-14-19f65ec` | `19f65ec` | feat: wire Pyomo MILP dispatch optimizer + block-structured simulation refactor (#182) | 2026-04-14 |
 | 82 | `rollback/fix-replace-css-flex-connectors-with-s-2026-04-13` | `c5596e8` | fix: replace CSS flex connectors with SVG tree on mobile — no hanging lines | 2026-04-13 |
@@ -905,6 +906,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-physics-epra-2025-26-tariff-rates-2026-04-14-a4d5e0c`
 - **Commit**: `a4d5e0c96f335bacfca3c5997c4a5934b6bb4fa4`
 - **Subject**: fix(physics): EPRA 2025/26 tariff rates, demand-charge savings, RTE, NOCT wind term, Nairobi TMY, V2G dead-band, seasonal naive forecast, vitest CI
+- **Date**: 2026-04-14
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #85 — `rollback/feat-landing-page-magic-link-login-via-2026-04-14-f66c895`
+
+- **Branch**: `rollback/feat-landing-page-magic-link-login-via-2026-04-14-f66c895`
+- **Commit**: `f66c895cffb3fd02f072fed108334dfc2fb30355`
+- **Subject**: feat: landing page + magic-link login via Resend (#183)
 - **Date**: 2026-04-14
 - **Auto-generated**: yes (by update-rollback.yml)
 
