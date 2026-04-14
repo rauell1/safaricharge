@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pyomo>=6.7
+numpy
+pandas
+pydantic>=2.0
+# CBC is the default open-source MILP solver.
+# On Debian/Ubuntu: apt-get install coinor-cbc coinor-libcbc-dev
+# On macOS: brew install coin-or-tools
+# glpk is a lighter fallback: apt-get install glpk-utils
