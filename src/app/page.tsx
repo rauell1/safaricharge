@@ -1,20 +1,11 @@
-'use client';
+import { redirect } from 'next/navigation';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 
-import type { DashboardSection } from '@/components/layout/DashboardSidebar';
-import ModularDashboardDemo from './demo/page';
-
-export const dynamic = 'force-dynamic';
-
-type SafariChargeDashboardAppProps = {
-  initialSection?: DashboardSection;
-};
-
-export function SafariChargeDashboardApp({
-  initialSection = 'dashboard',
-}: SafariChargeDashboardAppProps) {
-  return <ModularDashboardDemo initialSection={initialSection} />;
-}
-
-export default function HomePage() {
-  return <SafariChargeDashboardApp />;
+export default async function RootPage() {
+  const session = await getServerSession(authOptions);
+  if (session) {
+    redirect('/demo');
+  }
+  redirect('/landing');
 }
