@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`d4a6249`](https://github.com/rauell1/safaricharge/commit/d4a62493b17c7010b40d48cc4aaf204d2a64d6f1) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`afc963a`](https://github.com/rauell1/safaricharge/commit/afc963a4b008a8b82109f174ba5aeebcb11df273) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-14 |
-| **Message** | chore: add NextAuth tables to Prisma schema (Account, Session, VerificationToken) |
-| **Total commits** | 920 |
-| **TypeScript files** | 179 |
+| **Message** | fix: resolve 4 Vercel build errors (#184) |
+| **Total commits** | 924 |
+| **TypeScript files** | 182 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
