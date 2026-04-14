@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`19f65ec`](https://github.com/rauell1/safaricharge/commit/19f65ec45cd9e2df3aae5a720ef332b8fa27120f) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`a4d5e0c`](https://github.com/rauell1/safaricharge/commit/a4d5e0c96f335bacfca3c5997c4a5934b6bb4fa4) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-14 |
-| **Message** | feat: wire Pyomo MILP dispatch optimizer + block-structured simulation refactor (#182) |
-| **Total commits** | 908 |
+| **Message** | fix(physics): EPRA 2025/26 tariff rates, demand-charge savings, RTE, NOCT wind term, Nairobi TMY, V2G dead-band, seasonal naive forecast, vitest CI |
+| **Total commits** | 912 |
 | **TypeScript files** | 174 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
