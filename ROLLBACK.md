@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 87 | `rollback/fix-resolve-4-vercel-build-errors-184-2026-04-14-afc963a` | `afc963a` | fix: resolve 4 Vercel build errors (#184) | 2026-04-14 |
 | 86 | `rollback/chore-add-nextauth-tables-to-prisma-sc-2026-04-14-d4a6249` | `d4a6249` | chore: add NextAuth tables to Prisma schema (Account, Session, VerificationToken) | 2026-04-14 |
 | 85 | `rollback/feat-landing-page-magic-link-login-via-2026-04-14-f66c895` | `f66c895` | feat: landing page + magic-link login via Resend (#183) | 2026-04-14 |
 | 84 | `rollback/fix-physics-epra-2025-26-tariff-rates-2026-04-14-a4d5e0c` | `a4d5e0c` | fix(physics): EPRA 2025/26 tariff rates, demand-charge savings, RTE, NOCT wind term, Nairobi TMY, V2G dead-band, seasonal naive forecast, vitest CI | 2026-04-14 |
@@ -925,6 +926,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/chore-add-nextauth-tables-to-prisma-sc-2026-04-14-d4a6249`
 - **Commit**: `d4a62493b17c7010b40d48cc4aaf204d2a64d6f1`
 - **Subject**: chore: add NextAuth tables to Prisma schema (Account, Session, VerificationToken)
+- **Date**: 2026-04-14
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #87 — `rollback/fix-resolve-4-vercel-build-errors-184-2026-04-14-afc963a`
+
+- **Branch**: `rollback/fix-resolve-4-vercel-build-errors-184-2026-04-14-afc963a`
+- **Commit**: `afc963a4b008a8b82109f174ba5aeebcb11df273`
+- **Subject**: fix: resolve 4 Vercel build errors (#184)
 - **Date**: 2026-04-14
 - **Auto-generated**: yes (by update-rollback.yml)
 
