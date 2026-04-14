@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 91 | `rollback/feat-supabase-ssr-client-helpers-188-2026-04-15-d0464dc` | `d0464dc` | feat: Supabase SSR client helpers (#188) | 2026-04-15 |
 | 90 | `rollback/feat-pyomo-milp-dispatch-optimizer-ui-2026-04-14-6e12cb6` | `6e12cb6` | feat: Pyomo MILP dispatch optimizer + UI full overhaul (#187) | 2026-04-14 |
 | 89 | `rollback/fix-rewrite-middleware-ts-with-explici-2026-04-14-c21763d` | `c21763d` | fix: rewrite middleware.ts with explicit function export (Next.js 16) (#186) | 2026-04-14 |
 | 88 | `rollback/fix-bump-nodemailer-to-7-0-7-add-npmrc-2026-04-14-e059532` | `e059532` | fix: bump nodemailer to ^7.0.7 + add .npmrc legacy-peer-deps (#185) | 2026-04-14 |
@@ -966,6 +967,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Commit**: `6e12cb620c0429f1e3c3b5223ff3ad2e728004c1`
 - **Subject**: feat: Pyomo MILP dispatch optimizer + UI full overhaul (#187)
 - **Date**: 2026-04-14
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #91 — `rollback/feat-supabase-ssr-client-helpers-188-2026-04-15-d0464dc`
+
+- **Branch**: `rollback/feat-supabase-ssr-client-helpers-188-2026-04-15-d0464dc`
+- **Commit**: `d0464dcf4fc526f6b728d3087c7284a99f56e6fe`
+- **Subject**: feat: Supabase SSR client helpers (#188)
+- **Date**: 2026-04-15
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
