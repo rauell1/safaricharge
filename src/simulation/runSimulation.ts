@@ -54,6 +54,26 @@ const getEVTaperedRate = (soc: number, maxRate: number): number => {
 const DC_CABLE_LOSS_FRACTION = 0.015; // 1.5% DC wiring loss
 const AC_CABLE_LOSS_FRACTION = 0.01;  // 1% AC bus loss
 
+/**
+ * Dead-band threshold in kW.
+ *
+ * Prevents floating-point artefacts from triggering unnecessary battery
+ * micro-cycles when solar ≈ load (net power < ±50 W).
+ * This mirrors the dead-band used in commercial grid-tie inverter firmware
+ * (e.g. SMA, Fronius, Sungrow all use 50–100 W dead-band).
+ */
+const POWER_DEAD_BAND_KW = 0.05;
+
+/**
+ * Assumed V2G bidirectional charger round-trip efficiency.
+ *
+ * V2G discharge goes EV battery → bidirectional EVSE → AC bus.
+ * It does NOT pass through the PV inverter, so the inverter
+ * efficiency curve must NOT be applied to v2gKw.
+ * Typical CHAdeMO / ISO 15118 V2G efficiency: 92–94%.
+ */
+const V2G_CHARGER_EFF = 0.92;
+
 export const runSolarSimulation = (
   t: number,
   prevBatKwh: number,
@@ -71,7 +91,6 @@ export const runSolarSimulation = (
   const rawSolar = simulateSolar(t, scenario, systemConfig, cloudNoise, scenario.solarData);
 
   // Constrain solar power to inverter capacity
-  // The inverter is the bottleneck - can't convert more DC power than its rating
   const solarConstrainedByInverter = Math.min(rawSolar, systemConfig.inverterKw);
 
   const hIdx = Math.floor(t);
@@ -80,12 +99,10 @@ export const runSolarSimulation = (
   let residentialLoad = 0;
   if (systemConfig.homeLoadEnabled) {
     const profileLoad = scenario.houseLoadProfile[hIdx % 24] * Math.max(0.5, 1 + gaussianRandom(0, 0.08));
-    // Scale the profile load to match the configured homeLoadKw
     const profileAvg = scenario.houseLoadProfile.reduce((a, b) => a + b, 0) / scenario.houseLoadProfile.length;
     residentialLoad = (profileLoad / profileAvg) * systemConfig.homeLoadKw;
   }
 
-  // Add commercial load if enabled (constant throughout the day)
   const commercialLoad = systemConfig.commercialLoadEnabled
     ? systemConfig.commercialLoadKw * Math.max(0.9, 1 + gaussianRandom(0, 0.05))
     : 0;
@@ -167,39 +184,44 @@ export const runSolarSimulation = (
   let gridExport = 0;
   let newBatKwh = prevBatKwh;
 
-  let v2gKw = 0;
+  // -------------------------------------------------------------------------
+  // V2G: EV-to-grid / EV-to-home discharge during peak time
+  //
+  // FIX: V2G power is added to the AC bus AFTER effectiveSolar, NOT to the
+  // DC side before the PV inverter. It passes through the bidirectional EVSE
+  // (V2G_CHARGER_EFF) — not the string inverter — so inverterEff must NOT
+  // be applied to v2gKw.
+  // -------------------------------------------------------------------------
+  let v2gAcKw = 0;
   let ev1V2g = false;
   let ev2V2g = false;
   if (isPeakTime) {
     const batSocPct = (newBatKwh / effectiveCapacity) * 100;
     if (ev1IsHome && prevEv1Soc > 50 && batSocPct < 30) {
-      const rate = Math.min(5, evSpecs.ev1.onboard);
-      v2gKw += rate;
+      const dcRate = Math.min(5, evSpecs.ev1.onboard);
+      v2gAcKw += dcRate * V2G_CHARGER_EFF; // convert to AC-equivalent
       ev1V2g = true;
-      prevEv1Soc = Math.max(20, prevEv1Soc - (rate * actualTimeStep / evSpecs.ev1.cap * 100));
+      prevEv1Soc = Math.max(20, prevEv1Soc - (dcRate * actualTimeStep / evSpecs.ev1.cap * 100));
     }
     if (ev2IsHome && prevEv2Soc > 50 && batSocPct < 30) {
-      const rate = Math.min(5, evSpecs.ev2.onboard);
-      v2gKw += rate;
+      const dcRate = Math.min(5, evSpecs.ev2.onboard);
+      v2gAcKw += dcRate * V2G_CHARGER_EFF;
       ev2V2g = true;
-      prevEv2Soc = Math.max(20, prevEv2Soc - (rate * actualTimeStep / evSpecs.ev2.cap * 100));
+      prevEv2Soc = Math.max(20, prevEv2Soc - (dcRate * actualTimeStep / evSpecs.ev2.cap * 100));
     }
   }
-  const augmentedSolar = effectiveSolar + v2gKw;
 
-  if (augmentedSolar >= totalLoad) {
-    let excess = augmentedSolar - totalLoad;
+  // V2G adds directly to AC bus — NOT routed through PV inverter path
+  const totalAcSupply = effectiveSolar + v2gAcKw;
+  const netPower = totalAcSupply - totalLoad; // positive = surplus, negative = deficit
+
+  if (netPower > POWER_DEAD_BAND_KW) {
+    // Surplus path
+    let excess = netPower;
 
     if (priorityMode === 'battery') {
-      // Battery-first (priorityMode === 'battery'): store surplus energy for later EV/load use, then export remainder.
       if (newBatKwh < effectiveCapacity) {
         const capRem = effectiveCapacity - newBatKwh;
-        // Realistic battery charging physics:
-        // - Constrained by maxChargeKw (inverter/charger limit)
-        // - Constrained by available excess solar power
-        // - Constrained by remaining battery capacity
-        // Result: Larger batteries take longer to charge with same solar array
-        //         More panels charge battery faster (more excess power)
         const chargeFraction = Math.min(excess, systemConfig.maxChargeKw) / systemConfig.maxChargeKw;
         const batEff = getBatteryEfficiency(chargeFraction);
         batCharge = Math.min(excess, systemConfig.maxChargeKw, (capRem / batEff) / actualTimeStep);
@@ -208,18 +230,13 @@ export const runSolarSimulation = (
       }
       gridExport = excess;
     } else {
-      // Export-first: sell surplus to the grid immediately (maximises feed-in tariff revenue).
-      // Battery is not charged from solar in this mode; it will still discharge to cover deficits.
       gridExport = excess;
     }
-  } else {
-    let deficit = totalLoad - augmentedSolar;
+  } else if (netPower < -POWER_DEAD_BAND_KW) {
+    // Deficit path
+    let deficit = -netPower;
     if (newBatKwh > effectiveReserve) {
       const enAvail = newBatKwh - effectiveReserve;
-      // Realistic battery discharge physics:
-      // - Constrained by maxDischargeKw (inverter limit)
-      // - Constrained by load deficit (demand)
-      // - Constrained by available battery energy (minus reserve)
       const dischargeFraction = Math.min(deficit, systemConfig.maxDischargeKw) / systemConfig.maxDischargeKw;
       const batEff = getBatteryEfficiency(dischargeFraction);
       batDischarge = Math.min(deficit, systemConfig.maxDischargeKw, (enAvail * batEff) / actualTimeStep);
@@ -228,6 +245,7 @@ export const runSolarSimulation = (
     }
     gridImport = deficit;
   }
+  // else: within dead-band — no battery action, no grid action
 
   return {
     solar: effectiveSolar,
