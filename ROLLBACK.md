@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 83 | `rollback/feat-wire-pyomo-milp-dispatch-optimize-2026-04-14-19f65ec` | `19f65ec` | feat: wire Pyomo MILP dispatch optimizer + block-structured simulation refactor (#182) | 2026-04-14 |
 | 82 | `rollback/fix-replace-css-flex-connectors-with-s-2026-04-13` | `c5596e8` | fix: replace CSS flex connectors with SVG tree on mobile — no hanging lines | 2026-04-13 |
 | 81 | `rollback/feat-vertical-flow-layout-for-mobile-d-2026-04-13` | `c0fec2b` | feat: vertical flow layout for mobile, desktop tree unchanged | 2026-04-13 |
 | 80 | `rollback/fix-preserve-desktop-tree-layout-on-mo-2026-04-13` | `35bd2d7` | fix: preserve desktop tree layout on mobile with horizontal scroll | 2026-04-13 |
@@ -886,6 +887,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Commit**: `c5596e88bc5b084da7eb74d5b38b9f7c8c885598`
 - **Subject**: fix: replace CSS flex connectors with SVG tree on mobile — no hanging lines
 - **Date**: 2026-04-13
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #83 — `rollback/feat-wire-pyomo-milp-dispatch-optimize-2026-04-14-19f65ec`
+
+- **Branch**: `rollback/feat-wire-pyomo-milp-dispatch-optimize-2026-04-14-19f65ec`
+- **Commit**: `19f65ec45cd9e2df3aae5a720ef332b8fa27120f`
+- **Subject**: feat: wire Pyomo MILP dispatch optimizer + block-structured simulation refactor (#182)
+- **Date**: 2026-04-14
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
