@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 88 | `rollback/fix-bump-nodemailer-to-7-0-7-add-npmrc-2026-04-14-e059532` | `e059532` | fix: bump nodemailer to ^7.0.7 + add .npmrc legacy-peer-deps (#185) | 2026-04-14 |
 | 87 | `rollback/fix-resolve-4-vercel-build-errors-184-2026-04-14-afc963a` | `afc963a` | fix: resolve 4 Vercel build errors (#184) | 2026-04-14 |
 | 86 | `rollback/chore-add-nextauth-tables-to-prisma-sc-2026-04-14-d4a6249` | `d4a6249` | chore: add NextAuth tables to Prisma schema (Account, Session, VerificationToken) | 2026-04-14 |
 | 85 | `rollback/feat-landing-page-magic-link-login-via-2026-04-14-f66c895` | `f66c895` | feat: landing page + magic-link login via Resend (#183) | 2026-04-14 |
@@ -935,6 +936,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-resolve-4-vercel-build-errors-184-2026-04-14-afc963a`
 - **Commit**: `afc963a4b008a8b82109f174ba5aeebcb11df273`
 - **Subject**: fix: resolve 4 Vercel build errors (#184)
+- **Date**: 2026-04-14
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #88 — `rollback/fix-bump-nodemailer-to-7-0-7-add-npmrc-2026-04-14-e059532`
+
+- **Branch**: `rollback/fix-bump-nodemailer-to-7-0-7-add-npmrc-2026-04-14-e059532`
+- **Commit**: `e0595320d0be4e277891ad7420a171feaafe1854`
+- **Subject**: fix: bump nodemailer to ^7.0.7 + add .npmrc legacy-peer-deps (#185)
 - **Date**: 2026-04-14
 - **Auto-generated**: yes (by update-rollback.yml)
 
