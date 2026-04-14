@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`afc963a`](https://github.com/rauell1/safaricharge/commit/afc963a4b008a8b82109f174ba5aeebcb11df273) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`e059532`](https://github.com/rauell1/safaricharge/commit/e0595320d0be4e277891ad7420a171feaafe1854) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-14 |
-| **Message** | fix: resolve 4 Vercel build errors (#184) |
-| **Total commits** | 924 |
+| **Message** | fix: bump nodemailer to ^7.0.7 + add .npmrc legacy-peer-deps (#185) |
+| **Total commits** | 928 |
 | **TypeScript files** | 182 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
