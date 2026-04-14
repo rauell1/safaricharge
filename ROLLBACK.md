@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 86 | `rollback/chore-add-nextauth-tables-to-prisma-sc-2026-04-14-d4a6249` | `d4a6249` | chore: add NextAuth tables to Prisma schema (Account, Session, VerificationToken) | 2026-04-14 |
 | 85 | `rollback/feat-landing-page-magic-link-login-via-2026-04-14-f66c895` | `f66c895` | feat: landing page + magic-link login via Resend (#183) | 2026-04-14 |
 | 84 | `rollback/fix-physics-epra-2025-26-tariff-rates-2026-04-14-a4d5e0c` | `a4d5e0c` | fix(physics): EPRA 2025/26 tariff rates, demand-charge savings, RTE, NOCT wind term, Nairobi TMY, V2G dead-band, seasonal naive forecast, vitest CI | 2026-04-14 |
 | 83 | `rollback/feat-wire-pyomo-milp-dispatch-optimize-2026-04-14-19f65ec` | `19f65ec` | feat: wire Pyomo MILP dispatch optimizer + block-structured simulation refactor (#182) | 2026-04-14 |
@@ -915,6 +916,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/feat-landing-page-magic-link-login-via-2026-04-14-f66c895`
 - **Commit**: `f66c895cffb3fd02f072fed108334dfc2fb30355`
 - **Subject**: feat: landing page + magic-link login via Resend (#183)
+- **Date**: 2026-04-14
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #86 — `rollback/chore-add-nextauth-tables-to-prisma-sc-2026-04-14-d4a6249`
+
+- **Branch**: `rollback/chore-add-nextauth-tables-to-prisma-sc-2026-04-14-d4a6249`
+- **Commit**: `d4a62493b17c7010b40d48cc4aaf204d2a64d6f1`
+- **Subject**: chore: add NextAuth tables to Prisma schema (Account, Session, VerificationToken)
 - **Date**: 2026-04-14
 - **Auto-generated**: yes (by update-rollback.yml)
 
