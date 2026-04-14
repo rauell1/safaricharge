@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 90 | `rollback/feat-pyomo-milp-dispatch-optimizer-ui-2026-04-14-6e12cb6` | `6e12cb6` | feat: Pyomo MILP dispatch optimizer + UI full overhaul (#187) | 2026-04-14 |
 | 89 | `rollback/fix-rewrite-middleware-ts-with-explici-2026-04-14-c21763d` | `c21763d` | fix: rewrite middleware.ts with explicit function export (Next.js 16) (#186) | 2026-04-14 |
 | 88 | `rollback/fix-bump-nodemailer-to-7-0-7-add-npmrc-2026-04-14-e059532` | `e059532` | fix: bump nodemailer to ^7.0.7 + add .npmrc legacy-peer-deps (#185) | 2026-04-14 |
 | 87 | `rollback/fix-resolve-4-vercel-build-errors-184-2026-04-14-afc963a` | `afc963a` | fix: resolve 4 Vercel build errors (#184) | 2026-04-14 |
@@ -955,6 +956,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-rewrite-middleware-ts-with-explici-2026-04-14-c21763d`
 - **Commit**: `c21763d74ec91c8b2bb0e8915748c661df053fa9`
 - **Subject**: fix: rewrite middleware.ts with explicit function export (Next.js 16) (#186)
+- **Date**: 2026-04-14
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #90 — `rollback/feat-pyomo-milp-dispatch-optimizer-ui-2026-04-14-6e12cb6`
+
+- **Branch**: `rollback/feat-pyomo-milp-dispatch-optimizer-ui-2026-04-14-6e12cb6`
+- **Commit**: `6e12cb620c0429f1e3c3b5223ff3ad2e728004c1`
+- **Subject**: feat: Pyomo MILP dispatch optimizer + UI full overhaul (#187)
 - **Date**: 2026-04-14
 - **Auto-generated**: yes (by update-rollback.yml)
 
