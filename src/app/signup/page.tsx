@@ -11,6 +11,14 @@ export default function SignUpPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = 'var(--battery)';
+    e.currentTarget.style.boxShadow = '0 0 0 3px var(--battery-soft)';
+  };
+  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = 'var(--border)';
+    e.currentTarget.style.boxShadow = 'none';
+  };
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -79,14 +87,8 @@ export default function SignUpPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = 'var(--battery)';
-                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(16,185,129,0.15)';
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
             />
           </div>
           <div className="space-y-1.5">
@@ -102,14 +104,8 @@ export default function SignUpPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = 'var(--battery)';
-                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(16,185,129,0.15)';
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
             />
           </div>
           <div className="space-y-1.5">
@@ -125,14 +121,8 @@ export default function SignUpPage() {
               required
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = 'var(--battery)';
-                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(16,185,129,0.15)';
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
             />
           </div>
           {error && <p className="text-sm" style={{ color: 'var(--alert)' }}>{error}</p>}
