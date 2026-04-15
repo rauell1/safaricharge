@@ -1,14 +1,10 @@
+'use client';
+
 import Link from 'next/link';
 import {
   Sun, Zap, BarChart3, Battery, ArrowRight, Shield,
   Globe, TrendingDown, Check, Activity, ChevronRight, Cpu, Leaf,
 } from 'lucide-react';
-
-export const metadata = {
-  title: 'SafariCharge — AI-Optimised Solar EMS for Kenya',
-  description:
-    'Real-time solar monitoring, Pyomo MILP dispatch optimisation, and KPLC TOU tariff intelligence for Kenyan C&I sites.',
-};
 
 const features = [
   {
