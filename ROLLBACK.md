@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 92 | `rollback/merge-pull-request-189-from-rauell1-co-2026-04-15-4971c1e` | `4971c1e` | Merge pull request #189 from rauell1/copilot/safaricharge-landing-page-login-form | 2026-04-15 |
 | 91 | `rollback/feat-supabase-ssr-client-helpers-188-2026-04-15-d0464dc` | `d0464dc` | feat: Supabase SSR client helpers (#188) | 2026-04-15 |
 | 90 | `rollback/feat-pyomo-milp-dispatch-optimizer-ui-2026-04-14-6e12cb6` | `6e12cb6` | feat: Pyomo MILP dispatch optimizer + UI full overhaul (#187) | 2026-04-14 |
 | 89 | `rollback/fix-rewrite-middleware-ts-with-explici-2026-04-14-c21763d` | `c21763d` | fix: rewrite middleware.ts with explicit function export (Next.js 16) (#186) | 2026-04-14 |
@@ -975,6 +976,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/feat-supabase-ssr-client-helpers-188-2026-04-15-d0464dc`
 - **Commit**: `d0464dcf4fc526f6b728d3087c7284a99f56e6fe`
 - **Subject**: feat: Supabase SSR client helpers (#188)
+- **Date**: 2026-04-15
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #92 — `rollback/merge-pull-request-189-from-rauell1-co-2026-04-15-4971c1e`
+
+- **Branch**: `rollback/merge-pull-request-189-from-rauell1-co-2026-04-15-4971c1e`
+- **Commit**: `4971c1ee4f0a6961c17c306d5a78d46d813d98dd`
+- **Subject**: Merge pull request #189 from rauell1/copilot/safaricharge-landing-page-login-form
 - **Date**: 2026-04-15
 - **Auto-generated**: yes (by update-rollback.yml)
 
