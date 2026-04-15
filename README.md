@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`745d012`](https://github.com/rauell1/safaricharge/commit/745d0127b05a48f647ec9a208055f110a6835608) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`85832a5`](https://github.com/rauell1/safaricharge/commit/85832a5f79a6c9796515bce279a5a0295dd90956) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-15 |
-| **Message** | disable sign-in form on login page |
-| **Total commits** | 990 |
+| **Message** | bypass auth for /demo; redesign landing + login pages |
+| **Total commits** | 994 |
 | **TypeScript files** | 197 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
