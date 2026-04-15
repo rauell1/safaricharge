@@ -7,7 +7,6 @@
 
 import type { BatteryPrediction } from '@/components/dashboard/BatteryPredictionCard';
 import type { DerivedSystemConfig, SimulationMinuteRecord } from '@/types/simulation-core';
-import type { AiSystemData } from '@/types/dashboard';
 
 // ---------------------------------------------------------------------------
 // Power-flow direction enums
@@ -122,18 +121,6 @@ export type DerivedVisualizationLayout = {
 // AI Assistant types
 // ---------------------------------------------------------------------------
 
-export type AssistantProps = {
-  isOpen: boolean;
-  onClose: () => void;
-  data: AiSystemData;
-  timeOfDay: number;
-  weather: string;
-  currentDate: Date;
-  isAutoMode: boolean;
-  minuteData: SimulationMinuteRecord[];
-  systemConfig: DerivedSystemConfig;
-};
-
 export type AiSystemData = {
   solar: {
     production_kw: number;
@@ -170,6 +157,18 @@ export type AiSystemData = {
     };
     prediction?: BatteryPrediction;
   };
+};
+
+export type AssistantProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  data: AiSystemData;
+  timeOfDay: number;
+  weather: string;
+  currentDate: Date;
+  isAutoMode: boolean;
+  minuteData: SimulationMinuteRecord[];
+  systemConfig: DerivedSystemConfig;
 };
 
 export type DashboardAlert = {
