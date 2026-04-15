@@ -117,7 +117,7 @@ export function AlertsList({ isLoading }: AlertsListProps) {
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <CheckCircle className="h-12 w-12 text-[var(--battery)] mb-3" />
               <p className="text-sm font-medium text-[var(--text-primary)] mb-1">All Systems Normal</p>
-              <p className="text-xs text-[var(--text-secondary)]">No active alerts. All nodes are operating within expected parameters.</p>
+              <p className="text-base text-[var(--text-secondary)] leading-relaxed prose-comfortable">No active alerts. All nodes are operating within expected parameters.</p>
             </div>
           ) : (
             alerts.map((alert) => (
@@ -136,7 +136,7 @@ export function AlertsList({ isLoading }: AlertsListProps) {
                     <h4 className="text-sm font-semibold text-[var(--text-primary)]">{alert.title}</h4>
                     <AlertTypeBadge type={alert.type} />
                   </div>
-                  <p className="text-xs text-[var(--text-secondary)] mb-2 leading-relaxed">{alert.message}</p>
+                  <p className="text-base text-[var(--text-secondary)] mb-2 leading-relaxed prose-comfortable">{alert.message}</p>
                   <span className="text-[10px] text-[var(--text-tertiary)]">{formatTimestamp(alert.timestamp)}</span>
                 </div>
               </div>

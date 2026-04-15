@@ -124,8 +124,8 @@ export function DashboardSidebar({
         {/* Nav */}
         <SidebarGroup>
           <SidebarGroupLabel
-            className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-widest"
-            style={{ color: 'var(--text-muted)' }}
+            className="mb-1.5 px-2 text-xs font-semibold uppercase tracking-wider"
+            style={{ color: 'var(--text-tertiary)' }}
           >
             Navigation
           </SidebarGroupLabel>
@@ -143,7 +143,7 @@ export function DashboardSidebar({
                       style={{ color: isActive ? 'var(--battery)' : 'var(--text-tertiary)' }}
                     />
                     <span
-                      className="text-sm font-medium truncate"
+                      className={cn('text-sm truncate', isActive ? 'font-medium' : 'font-normal')}
                       style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}
                     >
                       {item.label}
@@ -189,8 +189,8 @@ export function DashboardSidebar({
         {contextualMetrics.length > 0 && (
           <SidebarGroup className="mt-5">
             <SidebarGroupLabel
-              className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-widest"
-              style={{ color: 'var(--text-muted)' }}
+              className="mb-1.5 px-2 text-xs font-semibold uppercase tracking-wider"
+              style={{ color: 'var(--text-tertiary)' }}
             >
               Live Context
             </SidebarGroupLabel>
@@ -206,8 +206,8 @@ export function DashboardSidebar({
                     style={{ border: '1px solid rgba(255,255,255,0.06)' }}
                   >
                     <span
-                      className="text-[10px] font-semibold uppercase tracking-wide"
-                      style={{ color: 'var(--text-muted)' }}
+                      className="text-xs font-semibold uppercase tracking-wider"
+                      style={{ color: 'var(--text-tertiary)' }}
                     >
                       {m.label}
                     </span>
@@ -238,8 +238,8 @@ export function DashboardSidebar({
             System Online
           </span>
           <span
-            className="ml-auto text-[10px]"
-            style={{ color: 'var(--text-muted)' }}
+            className="ml-auto text-xs"
+            style={{ color: 'var(--text-tertiary)' }}
           >
             &copy; 2026
           </span>
