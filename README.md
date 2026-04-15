@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`3dcc31b`](https://github.com/rauell1/safaricharge/commit/3dcc31b80323c1274edc60f6bb6f857252abd464) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`48a84b5`](https://github.com/rauell1/safaricharge/commit/48a84b548d93432417cf1506bd3cb6ccffe5c014) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-15 |
-| **Message** | fix: set royokola3@gmail.com as default Resend from/admin address in auth |
-| **Total commits** | 971 |
+| **Message** | fix: set royokola3@gmail.com as default Resend from address in forgot-password |
+| **Total commits** | 975 |
 | **TypeScript files** | 197 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
