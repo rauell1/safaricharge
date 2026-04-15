@@ -15,8 +15,7 @@
  */
 
 import type { SystemConfiguration } from './system-config';
-import type { MinuteDataPoint, EnergyNode } from '@/stores/energySystemStore';
-import type { NodeType } from '@/stores/energySystemStore';
+import type { MinuteDataPoint, EnergyNode, NodeType } from '@/stores/energySystemStore';
 import {
   calculateInstantPhysics,
   generateDayScenario,
@@ -168,9 +167,18 @@ export function tickPhysicsEngine(params: TickPhysicsParams) {
         : 'online',
   });
 
-  // Update EV nodes from physics result evStates
+  // Update EV nodes from physics result evStates.
+  // Note: ev1/ev2 are legacy store node names mapping to the first two EV load IDs.
+  // A maximum of 2 EVs are reflected in the store; additional EVs are tracked in
+  // state.evSocs but not surfaced as separate store nodes until the store supports
+  // dynamic EV node registration.
   const evIds = Object.keys(result.evStates);
-  // Map first EV id → ev1, second → ev2 (legacy store node names)
+  if (evIds.length > 2) {
+    console.warn(
+      `[physics-engine-bridge] ${evIds.length} EVs detected but only ev1/ev2 store nodes exist. ` +
+      `EVs beyond the first two will not update the UI.`
+    );
+  }
   if (evIds[0]) {
     const ev = result.evStates[evIds[0]];
     updateNode('ev1', {

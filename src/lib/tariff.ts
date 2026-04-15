@@ -1,4 +1,9 @@
 import { TARIFF_PROFILES, type TariffProfileType } from './tariff-config';
+import {
+  GRID_EMISSION_FACTOR_KG_CO2_PER_KWH,
+  TREE_CO2_ABSORPTION_KG_PER_YEAR,
+  AVG_FOSSIL_CAR_EMISSION_KG_CO2_PER_KM,
+} from './config';
 
 const activeProfile = TARIFF_PROFILES.ev;
 
@@ -54,6 +59,8 @@ export const KPLC_TARIFF = {
 };
 
 // --- EMISSION & SUSTAINABILITY CONSTANTS ---
-export const GRID_EMISSION_FACTOR = 0.47; // kgCO2/kWh
-export const TREE_CO2_KG_PER_YEAR = 21.77; // kg CO₂ absorbed per tree per year (UNFAO estimate)
-export const AVG_CAR_EMISSION_KG_PER_KM = 0.21; // kg CO₂ per km for average petrol car
+// These are the canonical values from config.ts, re-exported here for
+// backward compatibility with existing callers of tariff.ts.
+export const GRID_EMISSION_FACTOR = GRID_EMISSION_FACTOR_KG_CO2_PER_KWH;
+export const TREE_CO2_KG_PER_YEAR = TREE_CO2_ABSORPTION_KG_PER_YEAR;
+export const AVG_CAR_EMISSION_KG_PER_KM = AVG_FOSSIL_CAR_EMISSION_KG_CO2_PER_KM;
