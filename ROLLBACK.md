@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 95 | `rollback/merge-pull-request-192-from-rauell1-co-2026-04-15-5122ec6` | `5122ec6` | Merge pull request #192 from rauell1/copilot/upgrade-safaricharge-dashboard | 2026-04-15 |
 | 94 | `rollback/merge-pull-request-191-from-rauell1-co-2026-04-15-0e7df88` | `0e7df88` | Merge pull request #191 from rauell1/copilot/ui-typography-improvements | 2026-04-15 |
 | 93 | `rollback/merge-pull-request-190-from-rauell1-co-2026-04-15-89a3747` | `89a3747` | Merge pull request #190 from rauell1/copilot/fix-invalid-lockfile-warning | 2026-04-15 |
 | 92 | `rollback/merge-pull-request-189-from-rauell1-co-2026-04-15-4971c1e` | `4971c1e` | Merge pull request #189 from rauell1/copilot/safaricharge-landing-page-login-form | 2026-04-15 |
@@ -1005,6 +1006,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/merge-pull-request-191-from-rauell1-co-2026-04-15-0e7df88`
 - **Commit**: `0e7df8810bd7d42b6669e8eb4e128c5cd45962d6`
 - **Subject**: Merge pull request #191 from rauell1/copilot/ui-typography-improvements
+- **Date**: 2026-04-15
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #95 — `rollback/merge-pull-request-192-from-rauell1-co-2026-04-15-5122ec6`
+
+- **Branch**: `rollback/merge-pull-request-192-from-rauell1-co-2026-04-15-5122ec6`
+- **Commit**: `5122ec689b462ea03e658adb9bd2698b59f9b392`
+- **Subject**: Merge pull request #192 from rauell1/copilot/upgrade-safaricharge-dashboard
 - **Date**: 2026-04-15
 - **Auto-generated**: yes (by update-rollback.yml)
 
