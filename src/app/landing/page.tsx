@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import {
   Sun, Zap, BarChart3, Battery, ArrowRight, Shield,
-  Globe, TrendingDown, Check, Activity, ChevronRight,
+  Globe, TrendingDown, Check, Activity, ChevronRight, Cpu, Leaf,
 } from 'lucide-react';
 
 export const metadata = {
@@ -17,7 +17,6 @@ const features = [
     description:
       'Goes beyond rule-based dispatch. Our MILP engine finds the globally optimal BESS charge/discharge schedule against KPLC peak and off-peak windows.',
     accent: '#10b981',
-    soft: 'rgba(16,185,129,0.08)',
   },
   {
     icon: BarChart3,
@@ -25,7 +24,6 @@ const features = [
     description:
       'Live AC output, irradiance correlation, inverter limit tracking, and curtailment detection — all in a single dashboard.',
     accent: '#f59e0b',
-    soft: 'rgba(245,158,11,0.08)',
   },
   {
     icon: Battery,
@@ -33,7 +31,6 @@ const features = [
     description:
       'SoC bounds enforcement, binary charge/discharge mutex, and battery health KPIs surfaced without a proprietary BMS integration.',
     accent: '#3b82f6',
-    soft: 'rgba(59,130,246,0.08)',
   },
   {
     icon: Globe,
@@ -41,7 +38,6 @@ const features = [
     description:
       'Full all-in pricing — base rate, fuel surcharge, FERFA, INFA, ERC, WRA, and VAT — for EV, domestic, and small-commercial profiles.',
     accent: '#a855f7',
-    soft: 'rgba(168,85,247,0.08)',
   },
   {
     icon: TrendingDown,
@@ -49,7 +45,6 @@ const features = [
     description:
       'Per-cycle cost savings, grid displacement percentage, CO₂ avoided, and peak demand shaving — exportable to CSV or PDF.',
     accent: '#06b6d4',
-    soft: 'rgba(6,182,212,0.08)',
   },
   {
     icon: Shield,
@@ -57,15 +52,14 @@ const features = [
     description:
       'Add gensets, EV smart charging, or thermal loads as new optimiser blocks without modifying existing simulation logic.',
     accent: '#10b981',
-    soft: 'rgba(16,185,129,0.08)',
   },
 ];
 
 const stats = [
-  { value: '40%', label: 'Average peak demand reduction', sublabel: 'vs. unoptimised baseline' },
-  { value: 'KES 0', label: 'Licence fee', sublabel: 'Open-core model' },
-  { value: '5 min', label: 'Dispatch re-optimisation', sublabel: 'Rolling horizon cycle' },
-  { value: '99.2%', label: 'Energy balance accuracy', sublabel: 'Validated on live sites' },
+  { value: '40%', label: 'Peak demand reduction', sub: 'vs. unoptimised baseline' },
+  { value: 'KES 0', label: 'Licence fee', sub: 'Open-core model' },
+  { value: '5 min', label: 'Re-optimisation cycle', sub: 'Rolling horizon dispatch' },
+  { value: '99.2%', label: 'Energy balance accuracy', sub: 'Validated on live sites' },
 ];
 
 const plans = [
@@ -123,16 +117,25 @@ export default function LandingPage() {
   return (
     <div
       className="min-h-screen text-white antialiased"
-      style={{ background: '#050911', fontFamily: "'Inter', system-ui, sans-serif" }}
+      style={{ background: '#03070f', fontFamily: "'Inter', system-ui, sans-serif" }}
     >
-      {/* ── Noise texture overlay ── */}
+      {/* ── Subtle grid bg ── */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 z-0 opacity-[0.025]"
+        className="pointer-events-none fixed inset-0 z-0"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-          backgroundRepeat: 'repeat',
-          backgroundSize: '200px 200px',
+          backgroundImage:
+            'linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px)',
+          backgroundSize: '80px 80px',
+        }}
+      />
+      {/* Top glow */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-x-0 top-0 z-0"
+        style={{
+          height: '50vh',
+          background: 'radial-gradient(ellipse 60% 40% at 50% -5%, rgba(16,185,129,0.18) 0%, transparent 70%)',
         }}
       />
 
@@ -140,25 +143,22 @@ export default function LandingPage() {
       <header
         className="fixed top-0 inset-x-0 z-50"
         style={{
-          background: 'rgba(5,9,17,0.75)',
-          backdropFilter: 'blur(20px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-          borderBottom: '1px solid rgba(255,255,255,0.055)',
+          background: 'rgba(3,7,15,0.8)',
+          backdropFilter: 'blur(24px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+          borderBottom: '1px solid rgba(255,255,255,0.05)',
         }}
       >
-        <div className="mx-auto max-w-7xl px-5 sm:px-8 h-16 flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/landing" className="flex items-center gap-2.5 group">
-            <span
-              className="grid place-items-center w-8 h-8 rounded-lg transition-all group-hover:scale-105"
-              style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.25)' }}
-            >
-              <Sun className="w-4 h-4" style={{ color: '#10b981' }} strokeWidth={2.5} />
-            </span>
-            <span className="font-semibold tracking-tight text-white text-sm">SafariCharge</span>
+        <div className="mx-auto max-w-7xl px-6 sm:px-10 h-16 flex items-center justify-between">
+          <Link href="/landing" className="flex items-center gap-2.5">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-label="SafariCharge logo">
+              <circle cx="14" cy="14" r="13" stroke="rgba(16,185,129,0.35)" strokeWidth="1"/>
+              <path d="M14 7 L17.5 13 L21 13 L14 21 L16 15 L12 15 Z" fill="#10b981" opacity="0.9"/>
+              <circle cx="14" cy="14" r="2" fill="#10b981"/>
+            </svg>
+            <span className="font-semibold text-sm tracking-tight" style={{ color: '#e2e8f0' }}>SafariCharge</span>
           </Link>
 
-          {/* Nav links */}
           <nav className="hidden md:flex items-center gap-1">
             {[
               { label: 'Features', href: '#features' },
@@ -171,14 +171,14 @@ export default function LandingPage() {
                 href={item.href}
                 target={item.external ? '_blank' : undefined}
                 rel={item.external ? 'noopener noreferrer' : undefined}
-                className="text-sm px-3.5 py-2 rounded-lg transition-all"
-                style={{ color: 'rgba(255,255,255,0.5)' }}
+                className="text-sm px-3.5 py-2 rounded-lg"
+                style={{ color: 'rgba(255,255,255,0.45)', transition: 'color 150ms, background 150ms' }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.9)';
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)';
+                  (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.85)';
+                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)';
+                  (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.45)';
                   (e.currentTarget as HTMLElement).style.background = 'transparent';
                 }}
               >
@@ -187,107 +187,95 @@ export default function LandingPage() {
             ))}
           </nav>
 
-          {/* CTAs */}
           <div className="flex items-center gap-2">
             <Link
               href="/demo"
-              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium px-3.5 py-2 rounded-lg transition-all"
-              style={{ color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.1)' }}
+              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-lg"
+              style={{
+                color: 'rgba(255,255,255,0.55)',
+                border: '1px solid rgba(255,255,255,0.09)',
+                transition: 'color 150ms, border-color 150ms',
+              }}
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.9)';
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.2)';
+                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.18)';
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)';
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
+                (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)';
+                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.09)';
               }}
             >
               <Activity className="w-3.5 h-3.5" />
-              Live dashboard
+              Dashboard
             </Link>
             <Link
               href="/demo"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg transition-all"
-              style={{ background: '#10b981', color: '#fff' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#34d399'; }}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-1.5 rounded-lg"
+              style={{
+                background: '#10b981',
+                color: '#fff',
+                transition: 'background 150ms',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#059669'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#10b981'; }}
             >
-              Open app
-              <ArrowRight className="w-3.5 h-3.5" />
+              Open app <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>
       </header>
 
       {/* ── Hero ── */}
-      <section className="relative pt-40 pb-28 px-5 sm:px-8 overflow-hidden">
-        {/* Radial glow top */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0"
-          style={{
-            height: '600px',
-            background: 'radial-gradient(ellipse 70% 55% at 50% -10%, rgba(16,185,129,0.22) 0%, transparent 70%)',
-          }}
-        />
-        {/* Grid pattern */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.035]"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(255,255,255,0.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.7) 1px, transparent 1px)',
-            backgroundSize: '64px 64px',
-          }}
-        />
-
-        <div className="relative mx-auto max-w-5xl text-center">
-          {/* Live badge */}
-          <div className="inline-flex items-center gap-2.5 mb-8">
+      <section className="relative pt-44 pb-32 px-6 sm:px-10 overflow-hidden">
+        <div className="relative mx-auto max-w-5xl">
+          {/* Live pill */}
+          <div className="flex justify-center mb-9">
             <span
-              className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full"
+              className="inline-flex items-center gap-2 text-xs font-semibold px-3.5 py-1.5 rounded-full"
               style={{
-                background: 'rgba(16,185,129,0.1)',
-                border: '1px solid rgba(16,185,129,0.25)',
-                color: '#10b981',
+                background: 'rgba(16,185,129,0.08)',
+                border: '1px solid rgba(16,185,129,0.22)',
+                color: '#34d399',
               }}
             >
               <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ background: '#10b981', boxShadow: '0 0 6px #10b981' }}
+                className="w-1.5 h-1.5 rounded-full animate-pulse"
+                style={{ background: '#10b981', boxShadow: '0 0 8px #10b981' }}
               />
               Pyomo MILP optimizer · Live
             </span>
           </div>
 
+          {/* Headline */}
           <h1
-            className="font-bold tracking-tight leading-[1.08] mb-7"
+            className="text-center font-bold leading-[1.06] mb-8"
             style={{
-              fontSize: 'clamp(2.5rem, 6vw, 5rem)',
-              color: '#f1f5f9',
-              letterSpacing: '-0.03em',
+              fontSize: 'clamp(2.8rem, 7vw, 5.5rem)',
+              letterSpacing: '-0.04em',
+              color: '#f0fdf8',
             }}
           >
-            AI-Optimised Solar EMS
+            Solar intelligence
+            <br />
             <span
-              className="block"
               style={{
-                background: 'linear-gradient(135deg, #10b981 0%, #34d399 50%, #6ee7b7 100%)',
+                background: 'linear-gradient(90deg, #10b981 10%, #6ee7b7 55%, #a7f3d0 100%)',
                 WebkitBackgroundClip: 'text',
                 backgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
               }}
             >
-              Built for Kenya
+              built for Kenya
             </span>
           </h1>
 
           <p
-            className="mx-auto mb-10 leading-relaxed"
+            className="text-center mx-auto mb-12"
             style={{
-              fontSize: 'clamp(1rem, 2vw, 1.2rem)',
-              color: 'rgba(255,255,255,0.5)',
+              fontSize: 'clamp(1rem, 2vw, 1.15rem)',
+              color: 'rgba(255,255,255,0.45)',
               maxWidth: '52ch',
+              lineHeight: 1.75,
             }}
           >
             SafariCharge turns your PV + BESS site into an optimised asset. Our MILP dispatch
@@ -295,37 +283,43 @@ export default function LandingPage() {
             visibility into every kilowatt-hour.
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-14">
             <Link
               href="/demo"
-              className="inline-flex items-center gap-2 font-semibold text-sm px-6 py-3.5 rounded-xl transition-all"
-              style={{ background: '#10b981', color: '#fff', boxShadow: '0 0 32px rgba(16,185,129,0.35)' }}
+              className="inline-flex items-center gap-2 font-semibold text-sm px-7 py-3.5 rounded-xl"
+              style={{
+                background: '#10b981',
+                color: '#fff',
+                boxShadow: '0 0 40px rgba(16,185,129,0.3)',
+                transition: 'background 150ms, box-shadow 150ms',
+              }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background = '#34d399';
-                (e.currentTarget as HTMLElement).style.boxShadow = '0 0 48px rgba(16,185,129,0.5)';
+                (e.currentTarget as HTMLElement).style.background = '#059669';
+                (e.currentTarget as HTMLElement).style.boxShadow = '0 0 56px rgba(16,185,129,0.45)';
               }}
               onMouseLeave={(e) => {
                 (e.currentTarget as HTMLElement).style.background = '#10b981';
-                (e.currentTarget as HTMLElement).style.boxShadow = '0 0 32px rgba(16,185,129,0.35)';
+                (e.currentTarget as HTMLElement).style.boxShadow = '0 0 40px rgba(16,185,129,0.3)';
               }}
             >
               Open dashboard <ArrowRight className="w-4 h-4" />
             </Link>
             <a
               href="#features"
-              className="inline-flex items-center gap-2 text-sm px-6 py-3.5 rounded-xl transition-all"
+              className="inline-flex items-center gap-2 text-sm px-6 py-3.5 rounded-xl"
               style={{
-                color: 'rgba(255,255,255,0.6)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                color: 'rgba(255,255,255,0.55)',
+                border: '1px solid rgba(255,255,255,0.09)',
+                transition: 'color 150ms, border-color 150ms, background 150ms',
               }}
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.9)';
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.22)';
-                (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
+                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.18)';
+                (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)';
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)';
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
+                (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)';
+                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.09)';
                 (e.currentTarget as HTMLElement).style.background = 'transparent';
               }}
             >
@@ -333,37 +327,41 @@ export default function LandingPage() {
             </a>
           </div>
 
-          {/* Trusted by line */}
-          <p className="mt-10 text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
+          {/* Trust line */}
+          <p className="text-center text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>
             Built for Nairobi&rsquo;s C&amp;I solar sites · KPLC TOU-aware · Open source
           </p>
         </div>
       </section>
 
-      {/* ── Stats bar ── */}
+      {/* ── Stats ── */}
       <section
         id="stats"
-        style={{ borderTop: '1px solid rgba(255,255,255,0.055)', borderBottom: '1px solid rgba(255,255,255,0.055)' }}
+        style={{ borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
       >
-        <div className="mx-auto max-w-7xl px-5 sm:px-8 py-0">
-          <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0" style={{ '--tw-divide-opacity': '0.06' } as React.CSSProperties}>
+        <div className="mx-auto max-w-7xl">
+          <div
+            className="grid grid-cols-2 md:grid-cols-4"
+            style={{ borderLeft: '1px solid rgba(255,255,255,0.05)' }}
+          >
             {stats.map((s) => (
-              <div key={s.label} className="py-10 px-6 text-center">
+              <div
+                key={s.label}
+                className="py-12 px-8 text-center"
+                style={{ borderRight: '1px solid rgba(255,255,255,0.05)' }}
+              >
                 <div
-                  className="font-bold tabular-nums mb-1"
+                  className="font-black tabular-nums mb-1"
                   style={{
-                    fontSize: 'clamp(1.8rem, 3.5vw, 2.5rem)',
-                    background: 'linear-gradient(135deg, #10b981, #34d399)',
-                    WebkitBackgroundClip: 'text',
-                    backgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    letterSpacing: '-0.03em',
+                    fontSize: 'clamp(2rem, 4vw, 2.8rem)',
+                    color: '#10b981',
+                    letterSpacing: '-0.04em',
                   }}
                 >
                   {s.value}
                 </div>
-                <div className="text-sm font-medium mb-0.5" style={{ color: 'rgba(255,255,255,0.7)' }}>{s.label}</div>
-                <div className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{s.sublabel}</div>
+                <div className="text-sm font-medium mb-1" style={{ color: 'rgba(255,255,255,0.65)' }}>{s.label}</div>
+                <div className="text-xs" style={{ color: 'rgba(255,255,255,0.28)' }}>{s.sub}</div>
               </div>
             ))}
           </div>
@@ -371,51 +369,45 @@ export default function LandingPage() {
       </section>
 
       {/* ── Features ── */}
-      <section id="features" className="py-28 px-5 sm:px-8">
+      <section id="features" className="py-32 px-6 sm:px-10">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-16 max-w-xl">
-            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#10b981' }}>Platform capabilities</p>
+          <div className="mb-20">
+            <div
+              className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full mb-5"
+              style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.18)', color: '#34d399' }}
+            >
+              <Cpu className="w-3 h-3" /> Platform capabilities
+            </div>
             <h2
               className="font-bold tracking-tight mb-4"
-              style={{ fontSize: 'clamp(1.75rem, 4vw, 2.75rem)', color: '#f1f5f9', letterSpacing: '-0.03em' }}
+              style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', color: '#f0fdf8', letterSpacing: '-0.04em' }}
             >
               Everything your site needs
             </h2>
-            <p style={{ color: 'rgba(255,255,255,0.45)', lineHeight: 1.7 }}>
+            <p style={{ color: 'rgba(255,255,255,0.4)', lineHeight: 1.75, maxWidth: '44ch' }}>
               From raw inverter telemetry to globally-optimal dispatch schedules — all in one platform.
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-px" style={{ background: 'rgba(255,255,255,0.05)' }}>
             {features.map((f) => {
               const Icon = f.icon;
               return (
                 <div
                   key={f.title}
-                  className="group rounded-2xl p-6 transition-all cursor-default"
-                  style={{
-                    background: 'rgba(255,255,255,0.025)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
-                    (e.currentTarget as HTMLElement).style.borderColor = `${f.accent}33`;
-                    (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.025)';
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)';
-                    (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-                  }}
+                  className="p-8 group"
+                  style={{ background: '#03070f', transition: 'background 200ms' }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#06100a'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#03070f'; }}
                 >
                   <div
-                    className="w-10 h-10 rounded-xl grid place-items-center mb-4"
-                    style={{ background: f.soft }}
+                    className="w-10 h-10 rounded-xl grid place-items-center mb-5"
+                    style={{ background: `${f.accent}12`, border: `1px solid ${f.accent}20` }}
                   >
                     <Icon className="w-5 h-5" style={{ color: f.accent }} strokeWidth={1.8} />
                   </div>
-                  <h3 className="font-semibold mb-2 text-white">{f.title}</h3>
-                  <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.42)' }}>
+                  <h3 className="font-semibold mb-3" style={{ color: '#e2e8f0', fontSize: '0.95rem' }}>{f.title}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.38)' }}>
                     {f.description}
                   </p>
                 </div>
@@ -425,34 +417,48 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Dashboard preview band ── */}
+      {/* ── CTA band ── */}
       <section
-        className="py-20 px-5 sm:px-8"
-        style={{ borderTop: '1px solid rgba(255,255,255,0.055)', background: 'rgba(16,185,129,0.03)' }}
+        className="py-24 px-6 sm:px-10 relative overflow-hidden"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(16,185,129,0.025)' }}
       >
-        <div className="mx-auto max-w-4xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#10b981' }}>Live preview</p>
+        <div
+          aria-hidden
+          className="absolute inset-x-0 top-0 pointer-events-none"
+          style={{
+            height: '100%',
+            background: 'radial-gradient(ellipse 50% 70% at 50% 50%, rgba(16,185,129,0.07) 0%, transparent 70%)',
+          }}
+        />
+        <div className="relative mx-auto max-w-3xl text-center">
+          <Leaf className="w-10 h-10 mx-auto mb-6" style={{ color: '#10b981', opacity: 0.6 }} />
           <h2
             className="font-bold tracking-tight mb-5"
-            style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.4rem)', color: '#f1f5f9', letterSpacing: '-0.03em' }}
+            style={{ fontSize: 'clamp(1.7rem, 3.5vw, 2.5rem)', color: '#f0fdf8', letterSpacing: '-0.04em' }}
           >
             Your dashboard is ready
           </h2>
-          <p className="mb-8 mx-auto" style={{ color: 'rgba(255,255,255,0.45)', maxWidth: '46ch', lineHeight: 1.7 }}>
+          <p className="mb-10 mx-auto" style={{ color: 'rgba(255,255,255,0.42)', maxWidth: '46ch', lineHeight: 1.75 }}>
             No sign-in required. Explore real-time solar analytics, BESS dispatch, and
             KPLC cost modelling right now.
           </p>
           <Link
             href="/demo"
-            className="inline-flex items-center gap-2 font-semibold text-sm px-7 py-3.5 rounded-xl transition-all"
-            style={{ background: '#10b981', color: '#fff', boxShadow: '0 0 28px rgba(16,185,129,0.3)' }}
+            className="inline-flex items-center gap-2 font-semibold text-sm px-8 py-4 rounded-xl"
+            style={{
+              background: '#10b981',
+              color: '#fff',
+              boxShadow: '0 0 40px rgba(16,185,129,0.28)',
+              transition: 'background 150ms, box-shadow 150ms',
+              fontSize: '0.95rem',
+            }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = '#34d399';
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 0 40px rgba(16,185,129,0.45)';
+              (e.currentTarget as HTMLElement).style.background = '#059669';
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 0 56px rgba(16,185,129,0.42)';
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLElement).style.background = '#10b981';
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 0 28px rgba(16,185,129,0.3)';
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 0 40px rgba(16,185,129,0.28)';
             }}
           >
             Open dashboard <ArrowRight className="w-4 h-4" />
@@ -461,49 +467,52 @@ export default function LandingPage() {
       </section>
 
       {/* ── Pricing ── */}
-      <section id="pricing" className="py-28 px-5 sm:px-8" style={{ borderTop: '1px solid rgba(255,255,255,0.055)' }}>
+      <section id="pricing" className="py-32 px-6 sm:px-10" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div className="mx-auto max-w-7xl">
-          <div className="text-center mb-16">
-            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: '#10b981' }}>Pricing</p>
+          <div className="text-center mb-20">
+            <div
+              className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full mb-5"
+              style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.18)', color: '#34d399' }}
+            >
+              Pricing
+            </div>
             <h2
               className="font-bold tracking-tight mb-4"
-              style={{ fontSize: 'clamp(1.75rem, 4vw, 2.75rem)', color: '#f1f5f9', letterSpacing: '-0.03em' }}
+              style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', color: '#f0fdf8', letterSpacing: '-0.04em' }}
             >
               Simple, transparent pricing
             </h2>
-            <p style={{ color: 'rgba(255,255,255,0.42)' }}>Open-core. Start free, scale when ready.</p>
+            <p style={{ color: 'rgba(255,255,255,0.4)' }}>Open-core. Start free, scale when ready.</p>
           </div>
 
           <div className="grid sm:grid-cols-3 gap-4 items-start">
             {plans.map((plan) => (
               <div
                 key={plan.name}
-                className="rounded-2xl p-7 transition-all"
+                className="rounded-2xl p-7"
                 style={{
-                  background: plan.highlight ? 'rgba(16,185,129,0.07)' : 'rgba(255,255,255,0.025)',
-                  border: plan.highlight
-                    ? '1px solid rgba(16,185,129,0.35)'
-                    : '1px solid rgba(255,255,255,0.07)',
-                  boxShadow: plan.highlight ? '0 0 48px rgba(16,185,129,0.12)' : 'none',
+                  background: plan.highlight ? 'rgba(16,185,129,0.06)' : 'rgba(255,255,255,0.02)',
+                  border: plan.highlight ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.06)',
+                  boxShadow: plan.highlight ? '0 0 60px rgba(16,185,129,0.1)' : 'none',
                 }}
               >
                 {plan.highlight && (
                   <span
                     className="inline-flex text-xs font-semibold px-2.5 py-0.5 rounded-full mb-4"
-                    style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.25)' }}
+                    style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}
                   >
                     Most popular
                   </span>
                 )}
-                <h3 className="font-semibold text-white text-lg mb-1">{plan.name}</h3>
+                <h3 className="font-semibold text-lg mb-1" style={{ color: '#e2e8f0' }}>{plan.name}</h3>
                 <div className="flex items-baseline gap-1 mb-2">
-                  <span className="text-3xl font-bold text-white" style={{ letterSpacing: '-0.03em' }}>{plan.price}</span>
-                  {plan.period && <span className="text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>{plan.period}</span>}
+                  <span className="text-3xl font-bold" style={{ color: '#f0fdf8', letterSpacing: '-0.04em' }}>{plan.price}</span>
+                  {plan.period && <span className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>{plan.period}</span>}
                 </div>
-                <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.42)' }}>{plan.description}</p>
-                <ul className="space-y-2.5 mb-8">
+                <p className="text-sm mb-7" style={{ color: 'rgba(255,255,255,0.4)' }}>{plan.description}</p>
+                <ul className="space-y-2.5 mb-9">
                   {plan.features.map((feat) => (
-                    <li key={feat} className="flex items-start gap-2.5 text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                    <li key={feat} className="flex items-start gap-2.5 text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>
                       <Check className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#10b981' }} />
                       {feat}
                     </li>
@@ -511,17 +520,18 @@ export default function LandingPage() {
                 </ul>
                 <Link
                   href={plan.href}
-                  className="block w-full text-center text-sm font-semibold py-2.5 rounded-xl transition-all"
+                  className="block w-full text-center text-sm font-semibold py-2.5 rounded-xl"
                   style={{
                     background: plan.highlight ? '#10b981' : 'transparent',
-                    color: plan.highlight ? '#fff' : 'rgba(255,255,255,0.65)',
-                    border: plan.highlight ? 'none' : '1px solid rgba(255,255,255,0.12)',
+                    color: plan.highlight ? '#fff' : 'rgba(255,255,255,0.6)',
+                    border: plan.highlight ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                    transition: 'background 150ms, border-color 150ms, color 150ms',
                   }}
                   onMouseEnter={(e) => {
                     if (plan.highlight) {
-                      (e.currentTarget as HTMLElement).style.background = '#34d399';
+                      (e.currentTarget as HTMLElement).style.background = '#059669';
                     } else {
-                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.25)';
+                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.22)';
                       (e.currentTarget as HTMLElement).style.color = '#fff';
                     }
                   }}
@@ -529,8 +539,8 @@ export default function LandingPage() {
                     if (plan.highlight) {
                       (e.currentTarget as HTMLElement).style.background = '#10b981';
                     } else {
-                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.12)';
-                      (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.65)';
+                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
+                      (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)';
                     }
                   }}
                 >
@@ -543,29 +553,38 @@ export default function LandingPage() {
       </section>
 
       {/* ── Final CTA ── */}
-      <section className="py-28 px-5 sm:px-8" style={{ borderTop: '1px solid rgba(255,255,255,0.055)' }}>
+      <section className="py-32 px-6 sm:px-10" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div className="mx-auto max-w-3xl text-center">
           <h2
             className="font-bold tracking-tight mb-5"
-            style={{ fontSize: 'clamp(1.75rem, 4vw, 2.75rem)', color: '#f1f5f9', letterSpacing: '-0.03em' }}
+            style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', color: '#f0fdf8', letterSpacing: '-0.04em' }}
           >
             Ready to optimise your site?
           </h2>
-          <p className="mb-8 mx-auto" style={{ color: 'rgba(255,255,255,0.45)', maxWidth: '46ch', lineHeight: 1.7, fontSize: '1.05rem' }}>
+          <p
+            className="mb-10 mx-auto"
+            style={{ color: 'rgba(255,255,255,0.42)', maxWidth: '46ch', lineHeight: 1.75, fontSize: '1.05rem' }}
+          >
             Join energy managers across Kenya already using SafariCharge to cut KPLC bills and
             maximise solar yield.
           </p>
           <Link
             href="/demo"
-            className="inline-flex items-center gap-2 font-semibold text-sm px-8 py-4 rounded-xl transition-all"
-            style={{ background: '#10b981', color: '#fff', boxShadow: '0 0 40px rgba(16,185,129,0.3)', fontSize: '0.95rem' }}
+            className="inline-flex items-center gap-2 font-semibold px-9 py-4 rounded-xl"
+            style={{
+              background: '#10b981',
+              color: '#fff',
+              boxShadow: '0 0 48px rgba(16,185,129,0.3)',
+              fontSize: '0.95rem',
+              transition: 'background 150ms, box-shadow 150ms',
+            }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = '#34d399';
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 0 56px rgba(16,185,129,0.45)';
+              (e.currentTarget as HTMLElement).style.background = '#059669';
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 0 64px rgba(16,185,129,0.44)';
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLElement).style.background = '#10b981';
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 0 40px rgba(16,185,129,0.3)';
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 0 48px rgba(16,185,129,0.3)';
             }}
           >
             Open dashboard <ArrowRight className="w-4 h-4" />
@@ -574,16 +593,38 @@ export default function LandingPage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.055)' }} className="py-10 px-5 sm:px-8">
-        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4 text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>
+      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }} className="py-10 px-6 sm:px-10">
+        <div
+          className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4 text-sm"
+          style={{ color: 'rgba(255,255,255,0.22)' }}
+        >
           <div className="flex items-center gap-2.5">
-            <Sun className="w-4 h-4" style={{ color: 'rgba(16,185,129,0.6)' }} />
+            <svg width="16" height="16" viewBox="0 0 28 28" fill="none">
+              <path d="M14 7 L17.5 13 L21 13 L14 21 L16 15 L12 15 Z" fill="rgba(16,185,129,0.6)"/>
+            </svg>
             <span>© {new Date().getFullYear()} SafariCharge · Nairobi, Kenya</span>
           </div>
           <div className="flex items-center gap-6">
-            <Link href="/demo" className="transition-colors" onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)'; }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.25)'; }}>Dashboard</Link>
-            <a href="https://github.com/rauell1/safaricharge" target="_blank" rel="noopener noreferrer" className="transition-colors" onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)'; }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.25)'; }}>GitHub</a>
-            <a href="mailto:hello@safaricharge.ke" className="transition-colors" onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)'; }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.25)'; }}>Contact</a>
+            <Link
+              href="/demo"
+              style={{ transition: 'color 150ms' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.22)'; }}
+            >Dashboard</Link>
+            <a
+              href="https://github.com/rauell1/safaricharge"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ transition: 'color 150ms' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.22)'; }}
+            >GitHub</a>
+            <a
+              href="mailto:hello@safaricharge.ke"
+              style={{ transition: 'color 150ms' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.22)'; }}
+            >Contact</a>
           </div>
         </div>
       </footer>

@@ -14,6 +14,7 @@ import {
   Mail,
   Lock,
   Activity,
+  LayoutDashboard,
 } from 'lucide-react';
 
 type State = 'idle' | 'loading' | 'sent' | 'error';
@@ -75,82 +76,74 @@ export default function LoginPage() {
   return (
     <div
       className="min-h-screen flex"
-      style={{ background: '#050911', fontFamily: "'Inter', system-ui, sans-serif" }}
+      style={{ background: '#03070f', fontFamily: "'Inter', system-ui, sans-serif" }}
     >
-      {/* Noise texture */}
+      {/* Grid bg */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 z-0 opacity-[0.025]"
+        className="pointer-events-none fixed inset-0 z-0"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-          backgroundRepeat: 'repeat',
-          backgroundSize: '200px 200px',
+          backgroundImage:
+            'linear-gradient(rgba(16,185,129,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.025) 1px, transparent 1px)',
+          backgroundSize: '64px 64px',
+        }}
+      />
+      {/* Glow */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-0"
+        style={{
+          background: 'radial-gradient(ellipse 55% 45% at 25% 50%, rgba(16,185,129,0.1) 0%, transparent 65%)',
         }}
       />
 
       {/* ── Left brand panel ── */}
       <aside
         aria-hidden="true"
-        className="hidden lg:flex lg:w-[52%] xl:w-[55%] flex-col relative overflow-hidden"
-        style={{ background: 'linear-gradient(160deg, #060d1a 0%, #071810 60%, #050911 100%)' }}
+        className="hidden lg:flex lg:w-[50%] xl:w-[52%] flex-col relative overflow-hidden"
+        style={{ borderRight: '1px solid rgba(255,255,255,0.05)' }}
       >
-        {/* Grid */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(255,255,255,0.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.7) 1px, transparent 1px)',
-            backgroundSize: '56px 56px',
-          }}
-        />
-        {/* Radial glow */}
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full pointer-events-none"
-          style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.1) 0%, transparent 65%)' }}
-        />
-        {/* Corner accent */}
-        <div
-          className="absolute bottom-0 right-0 w-80 h-80 pointer-events-none"
-          style={{ background: 'radial-gradient(circle at bottom right, rgba(16,185,129,0.06) 0%, transparent 70%)' }}
-        />
-
         {/* Logo */}
         <header className="relative z-10 flex items-center gap-3 px-12 pt-12">
-          <span
-            className="grid place-items-center w-9 h-9 rounded-xl"
-            style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.25)' }}
-          >
-            <Sun className="w-5 h-5" style={{ color: '#10b981' }} strokeWidth={2} />
-          </span>
-          <span className="text-base font-semibold tracking-tight" style={{ color: '#f1f5f9' }}>
-            SafariCharge
-          </span>
+          <svg width="32" height="32" viewBox="0 0 28 28" fill="none" aria-label="SafariCharge logo">
+            <circle cx="14" cy="14" r="13" stroke="rgba(16,185,129,0.3)" strokeWidth="1"/>
+            <path d="M14 7 L17.5 13 L21 13 L14 21 L16 15 L12 15 Z" fill="#10b981" opacity="0.9"/>
+            <circle cx="14" cy="14" r="2" fill="#10b981"/>
+          </svg>
+          <span className="text-base font-semibold tracking-tight" style={{ color: '#e2e8f0' }}>SafariCharge</span>
         </header>
 
         {/* Hero copy */}
         <div className="relative z-10 flex-1 flex flex-col justify-center px-12 pb-16">
-          <p className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: '#10b981' }}>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-6" style={{ color: '#10b981' }}>
             Solar Energy Intelligence
           </p>
           <h1
-            className="font-bold leading-[1.1] mb-6"
+            className="font-bold leading-[1.08] mb-6"
             style={{
-              fontSize: 'clamp(2rem, 3.5vw, 3rem)',
-              color: '#f1f5f9',
-              letterSpacing: '-0.03em',
+              fontSize: 'clamp(2rem, 3.2vw, 3rem)',
+              color: '#f0fdf8',
+              letterSpacing: '-0.04em',
             }}
           >
-            Optimise every<br />kilowatt-hour
+            Optimise every<br />
+            <span
+              style={{
+                background: 'linear-gradient(90deg, #10b981, #6ee7b7)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              kilowatt-hour
+            </span>
           </h1>
-          <p
-            className="leading-relaxed max-w-xs text-sm"
-            style={{ color: 'rgba(255,255,255,0.45)' }}
-          >
+          <p className="leading-relaxed max-w-xs text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
             Real-time monitoring, Pyomo dispatch optimisation, and AI-driven
             recommendations — built for Nairobi's solar professionals.
           </p>
 
-          {/* Metric row */}
+          {/* Metrics */}
           <div className="grid grid-cols-2 gap-3 mt-10 max-w-xs">
             {[
               { value: '40%', label: 'Peak demand saved' },
@@ -161,25 +154,25 @@ export default function LoginPage() {
               <div
                 key={m.label}
                 className="rounded-xl p-4"
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.05)' }}
               >
-                <div className="font-bold text-lg mb-0.5" style={{ color: '#10b981', letterSpacing: '-0.03em' }}>{m.value}</div>
-                <div className="text-xs" style={{ color: 'rgba(255,255,255,0.38)' }}>{m.label}</div>
+                <div className="font-bold text-lg mb-0.5" style={{ color: '#10b981', letterSpacing: '-0.04em' }}>{m.value}</div>
+                <div className="text-xs" style={{ color: 'rgba(255,255,255,0.32)' }}>{m.label}</div>
               </div>
             ))}
           </div>
 
-          {/* Feature pills */}
+          {/* Pills */}
           <div className="flex flex-wrap gap-2 mt-8">
             {[
-              { icon: Sun,     label: 'PV Monitoring',      color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
-              { icon: Battery, label: 'BESS Optimisation',  color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
-              { icon: Zap,     label: 'Grid Analytics',     color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
+              { icon: Sun,     label: 'PV Monitoring',      color: '#f59e0b', bg: 'rgba(245,158,11,0.08)' },
+              { icon: Battery, label: 'BESS Optimisation',  color: '#10b981', bg: 'rgba(16,185,129,0.08)' },
+              { icon: Zap,     label: 'Grid Analytics',     color: '#3b82f6', bg: 'rgba(59,130,246,0.08)' },
             ].map(({ icon: Icon, label, color, bg }) => (
               <span
                 key={label}
                 className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
-                style={{ background: bg, color, border: `1px solid ${color}22` }}
+                style={{ background: bg, color, border: `1px solid ${color}18` }}
               >
                 <Icon className="w-3 h-3" strokeWidth={2} />
                 {label}
@@ -190,135 +183,139 @@ export default function LoginPage() {
 
         <footer
           className="relative z-10 px-12 py-6 text-xs"
-          style={{ color: 'rgba(255,255,255,0.22)', borderTop: '1px solid rgba(255,255,255,0.055)' }}
+          style={{ color: 'rgba(255,255,255,0.18)', borderTop: '1px solid rgba(255,255,255,0.05)' }}
         >
           SafariCharge © 2026 · Nairobi, Kenya
         </footer>
       </aside>
 
-      {/* ── Right auth panel ── */}
+      {/* ── Right panel ── */}
       <main className="flex-1 flex flex-col relative z-10">
         <header
           className="flex items-center justify-between px-7 py-5 lg:px-12 lg:py-6"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
         >
-          <Link href="/landing" className="flex items-center gap-2.5 group">
-            <span
-              className="grid place-items-center w-8 h-8 rounded-lg transition-all group-hover:scale-105"
-              style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)' }}
-            >
-              <Sun className="w-4 h-4" style={{ color: '#10b981' }} strokeWidth={2.5} />
-            </span>
-            <span className="font-semibold tracking-tight text-sm" style={{ color: '#f1f5f9' }}>
-              SafariCharge
-            </span>
+          <Link href="/landing" className="flex items-center gap-2.5">
+            <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
+              <circle cx="14" cy="14" r="13" stroke="rgba(16,185,129,0.3)" strokeWidth="1"/>
+              <path d="M14 7 L17.5 13 L21 13 L14 21 L16 15 L12 15 Z" fill="#10b981" opacity="0.9"/>
+            </svg>
+            <span className="font-semibold tracking-tight text-sm" style={{ color: '#e2e8f0' }}>SafariCharge</span>
           </Link>
           <Link
             href="/landing"
-            className="text-sm transition-colors"
-            style={{ color: 'rgba(255,255,255,0.35)' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.7)'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)'; }}
+            className="text-sm"
+            style={{ color: 'rgba(255,255,255,0.3)', transition: 'color 150ms' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.65)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)'; }}
           >
             ← Back to home
           </Link>
         </header>
 
         <div className="flex-1 flex items-center justify-center px-7 py-14">
-          <div className="w-full max-w-[390px]">
+          <div className="w-full max-w-[400px]">
 
             {!SIGN_IN_ENABLED ? (
-              /* ── Disabled state ── */
-              <>
-                {/* Notice card */}
-                <div
-                  className="rounded-2xl px-7 py-8 mb-6 text-center"
-                  style={{
-                    background: 'rgba(255,255,255,0.025)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                  }}
-                >
+              /* ── Disabled / bypass state ── */
+              <div className="space-y-4">
+                {/* Header */}
+                <div className="text-center mb-8">
                   <div
                     className="mx-auto w-14 h-14 rounded-2xl grid place-items-center mb-5"
-                    style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}
+                    style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.18)' }}
                   >
-                    <Lock className="w-7 h-7" style={{ color: '#10b981' }} />
+                    <Lock className="w-6 h-6" style={{ color: '#10b981' }} strokeWidth={1.8} />
                   </div>
                   <h1
                     className="text-xl font-bold mb-2"
-                    style={{ color: '#f1f5f9', letterSpacing: '-0.02em' }}
+                    style={{ color: '#f0fdf8', letterSpacing: '-0.03em' }}
                   >
-                    Sign-in temporarily disabled
+                    Sign-in paused
                   </h1>
-                  <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                    Account creation and sign-in are currently paused.
-                    You can still access the dashboard directly.
+                  <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                    Authentication is temporarily disabled. Access the full dashboard directly below — no account needed.
                   </p>
                 </div>
 
-                {/* Dashboard CTA */}
+                {/* Primary CTA — go to dashboard */}
                 <Link
                   href="/demo"
-                  className="flex items-center justify-between w-full rounded-2xl px-5 py-4 mb-4 transition-all group"
+                  className="group flex items-center justify-between w-full rounded-2xl px-5 py-5"
                   style={{
-                    background: 'rgba(16,185,129,0.08)',
-                    border: '1px solid rgba(16,185,129,0.25)',
+                    background: 'rgba(16,185,129,0.06)',
+                    border: '1px solid rgba(16,185,129,0.22)',
+                    transition: 'background 150ms, border-color 150ms',
                   }}
                   onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.background = 'rgba(16,185,129,0.13)';
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(16,185,129,0.4)';
+                    (e.currentTarget as HTMLElement).style.background = 'rgba(16,185,129,0.11)';
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(16,185,129,0.38)';
                   }}
                   onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.background = 'rgba(16,185,129,0.08)';
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(16,185,129,0.25)';
+                    (e.currentTarget as HTMLElement).style.background = 'rgba(16,185,129,0.06)';
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(16,185,129,0.22)';
                   }}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-4">
                     <div
-                      className="w-9 h-9 rounded-xl grid place-items-center"
-                      style={{ background: 'rgba(16,185,129,0.15)' }}
+                      className="w-10 h-10 rounded-xl grid place-items-center shrink-0"
+                      style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)' }}
                     >
-                      <Activity className="w-4 h-4" style={{ color: '#10b981' }} />
+                      <LayoutDashboard className="w-5 h-5" style={{ color: '#10b981' }} strokeWidth={1.8} />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold" style={{ color: '#f1f5f9' }}>Open Dashboard</p>
-                      <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>Real-time solar · BESS · KPLC analytics</p>
+                      <p className="text-sm font-semibold" style={{ color: '#e2e8f0' }}>Open Dashboard</p>
+                      <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>Real-time solar · BESS dispatch · KPLC analytics</p>
                     </div>
                   </div>
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" style={{ color: '#10b981' }} />
+                  <ArrowRight
+                    className="w-4 h-4 shrink-0"
+                    style={{ color: '#10b981', transition: 'transform 150ms' }}
+                    onMouseEnter={(e) => { (e.currentTarget as SVGElement).style.transform = 'translateX(3px)'; }}
+                    onMouseLeave={(e) => { (e.currentTarget as SVGElement).style.transform = 'translateX(0)'; }}
+                  />
                 </Link>
 
-                <p className="text-center text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
-                  No account needed · Full access · Live data
-                </p>
-              </>
+                {/* Activity feed preview pill */}
+                <div
+                  className="flex items-center gap-3 rounded-xl px-4 py-3"
+                  style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}
+                >
+                  <Activity className="w-4 h-4 shrink-0" style={{ color: 'rgba(16,185,129,0.6)' }} />
+                  <span className="text-xs" style={{ color: 'rgba(255,255,255,0.32)' }}>
+                    No account needed · Full feature access · Live data
+                  </span>
+                </div>
+              </div>
             ) : state === 'sent' ? (
               /* ── Sent state ── */
               <div
                 className="text-center rounded-2xl px-6 py-8"
                 style={{
-                  border: '1px solid rgba(16,185,129,0.2)',
-                  background: 'rgba(16,185,129,0.05)',
+                  border: '1px solid rgba(16,185,129,0.18)',
+                  background: 'rgba(16,185,129,0.04)',
                 }}
               >
                 <div
                   className="mx-auto w-14 h-14 rounded-2xl grid place-items-center mb-5"
-                  style={{ background: 'rgba(16,185,129,0.12)' }}
+                  style={{ background: 'rgba(16,185,129,0.1)' }}
                 >
                   <CheckCircle2 className="w-7 h-7" style={{ color: '#10b981' }} />
                 </div>
-                <h1 className="text-xl font-bold mb-2" style={{ color: '#f1f5f9', letterSpacing: '-0.02em' }}>
+                <h1 className="text-xl font-bold mb-2" style={{ color: '#f0fdf8', letterSpacing: '-0.03em' }}>
                   Check your inbox
                 </h1>
-                <p className="text-sm leading-relaxed mb-8" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                <p className="text-sm leading-relaxed mb-8" style={{ color: 'rgba(255,255,255,0.42)' }}>
                   We sent a magic link to{' '}
-                  <span style={{ color: '#f1f5f9', fontWeight: 600 }}>{email}</span>.
+                  <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{email}</span>.
                   Click the link to sign in — it expires in&nbsp;10&nbsp;minutes.
                 </p>
                 <button
                   onClick={() => setState('idle')}
-                  className="text-sm font-medium transition-colors"
-                  style={{ color: '#10b981' }}
+                  className="text-sm font-medium"
+                  style={{ color: '#10b981', transition: 'opacity 150ms' }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0.7'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
                 >
                   Didn&rsquo;t receive it? Try again
                 </button>
@@ -329,21 +326,20 @@ export default function LoginPage() {
                 <div className="mb-8">
                   <div
                     className="w-12 h-12 rounded-2xl grid place-items-center mb-5"
-                    style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}
+                    style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.18)' }}
                   >
-                    <Mail className="w-6 h-6" style={{ color: '#10b981' }} />
+                    <Mail className="w-5 h-5" style={{ color: '#10b981' }} strokeWidth={1.8} />
                   </div>
-                  <h1 className="text-2xl font-bold mb-1.5" style={{ color: '#f1f5f9', letterSpacing: '-0.03em' }}>Sign in</h1>
-                  <p className="text-sm" style={{ color: 'rgba(255,255,255,0.42)' }}>
+                  <h1 className="text-2xl font-bold mb-1.5" style={{ color: '#f0fdf8', letterSpacing: '-0.04em' }}>Sign in</h1>
+                  <p className="text-sm" style={{ color: 'rgba(255,255,255,0.38)' }}>
                     Sign in with password, or receive a magic link via Resend.
                   </p>
                 </div>
 
-                {/* Password form */}
-                <p className="mb-3 text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.7)' }}>Password</p>
+                <p className="mb-3 text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.6)' }}>Password</p>
                 <form onSubmit={handlePasswordSignIn} className="space-y-4 mb-6">
                   <div className="space-y-1.5">
-                    <label htmlFor="password-email" className="block text-xs font-semibold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.3)' }}>Email</label>
+                    <label htmlFor="password-email" className="block text-xs font-semibold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.28)' }}>Email</label>
                     <input
                       id="password-email"
                       type="email"
@@ -354,14 +350,23 @@ export default function LoginPage() {
                       disabled={passwordState === 'loading'}
                       className="w-full rounded-xl px-4 py-3 text-sm outline-none disabled:opacity-50"
                       style={{
-                        background: 'rgba(255,255,255,0.04)',
-                        border: '1px solid rgba(255,255,255,0.09)',
-                        color: '#f1f5f9',
+                        background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid rgba(255,255,255,0.07)',
+                        color: '#e2e8f0',
+                        transition: 'border-color 150ms, box-shadow 150ms',
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = 'rgba(16,185,129,0.45)';
+                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(16,185,129,0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)';
+                        e.currentTarget.style.boxShadow = 'none';
                       }}
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.3)' }}>Password</label>
+                    <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.28)' }}>Password</label>
                     <input
                       id="password"
                       type="password"
@@ -372,23 +377,32 @@ export default function LoginPage() {
                       disabled={passwordState === 'loading'}
                       className="w-full rounded-xl px-4 py-3 text-sm outline-none disabled:opacity-50"
                       style={{
-                        background: 'rgba(255,255,255,0.04)',
-                        border: '1px solid rgba(255,255,255,0.09)',
-                        color: '#f1f5f9',
+                        background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid rgba(255,255,255,0.07)',
+                        color: '#e2e8f0',
+                        transition: 'border-color 150ms, box-shadow 150ms',
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = 'rgba(16,185,129,0.45)';
+                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(16,185,129,0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)';
+                        e.currentTarget.style.boxShadow = 'none';
                       }}
                     />
                   </div>
                   {passwordState === 'error' && (
-                    <div className="flex items-center gap-2.5 rounded-xl px-4 py-3 text-sm" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
+                    <div className="flex items-center gap-2.5 rounded-xl px-4 py-3 text-sm" style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.18)', color: '#f87171' }}>
                       <AlertCircle className="w-4 h-4 shrink-0" />{passwordErrorMsg}
                     </div>
                   )}
                   <button
                     type="submit"
                     disabled={passwordState === 'loading' || !passwordEmail.trim() || !password}
-                    className="w-full flex items-center justify-center gap-2 font-semibold text-sm px-4 py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ background: '#10b981', color: '#fff' }}
-                    onMouseEnter={(e) => { if (!(e.currentTarget as HTMLButtonElement).disabled) (e.currentTarget as HTMLElement).style.background = '#34d399'; }}
+                    className="w-full flex items-center justify-center gap-2 font-semibold text-sm px-4 py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ background: '#10b981', color: '#fff', transition: 'background 150ms' }}
+                    onMouseEnter={(e) => { if (!(e.currentTarget as HTMLButtonElement).disabled) (e.currentTarget as HTMLElement).style.background = '#059669'; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#10b981'; }}
                   >
                     {passwordState === 'loading'
@@ -397,17 +411,15 @@ export default function LoginPage() {
                   </button>
                 </form>
 
-                {/* Divider */}
-                <div className="flex items-center gap-3 my-5" style={{ color: 'rgba(255,255,255,0.2)' }}>
-                  <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
+                <div className="flex items-center gap-3 my-5" style={{ color: 'rgba(255,255,255,0.18)' }}>
+                  <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
                   <span className="text-xs font-semibold tracking-wider">or magic link</span>
-                  <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
+                  <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
                 </div>
 
-                {/* Magic-link form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-1.5">
-                    <label htmlFor="email" className="block text-xs font-semibold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.3)' }}>Email address</label>
+                    <label htmlFor="email" className="block text-xs font-semibold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.28)' }}>Email address</label>
                     <input
                       id="email"
                       type="email"
@@ -419,32 +431,32 @@ export default function LoginPage() {
                       disabled={state === 'loading'}
                       className="w-full rounded-xl px-4 py-3 text-sm outline-none disabled:opacity-50"
                       style={{
-                        background: 'rgba(255,255,255,0.04)',
-                        border: '1px solid rgba(255,255,255,0.09)',
-                        color: '#f1f5f9',
-                        transition: 'border-color 180ms ease, box-shadow 180ms ease',
+                        background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid rgba(255,255,255,0.07)',
+                        color: '#e2e8f0',
+                        transition: 'border-color 150ms, box-shadow 150ms',
                       }}
                       onFocus={(e) => {
-                        e.currentTarget.style.borderColor = 'rgba(16,185,129,0.5)';
-                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(16,185,129,0.12)';
+                        e.currentTarget.style.borderColor = 'rgba(16,185,129,0.45)';
+                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(16,185,129,0.1)';
                       }}
                       onBlur={(e) => {
-                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)';
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)';
                         e.currentTarget.style.boxShadow = 'none';
                       }}
                     />
                   </div>
                   {state === 'error' && (
-                    <div className="flex items-center gap-2.5 rounded-xl px-4 py-3 text-sm" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
+                    <div className="flex items-center gap-2.5 rounded-xl px-4 py-3 text-sm" style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.18)', color: '#f87171' }}>
                       <AlertCircle className="w-4 h-4 shrink-0" />{errorMsg}
                     </div>
                   )}
                   <button
                     type="submit"
                     disabled={state === 'loading' || !email.trim()}
-                    className="w-full flex items-center justify-center gap-2 font-semibold text-sm px-4 py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ background: '#10b981', color: '#fff' }}
-                    onMouseEnter={(e) => { if (!(e.currentTarget as HTMLButtonElement).disabled) (e.currentTarget as HTMLElement).style.background = '#34d399'; }}
+                    className="w-full flex items-center justify-center gap-2 font-semibold text-sm px-4 py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ background: '#10b981', color: '#fff', transition: 'background 150ms' }}
+                    onMouseEnter={(e) => { if (!(e.currentTarget as HTMLButtonElement).disabled) (e.currentTarget as HTMLElement).style.background = '#059669'; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#10b981'; }}
                   >
                     {state === 'loading'
@@ -453,16 +465,16 @@ export default function LoginPage() {
                   </button>
                 </form>
 
-                <div className="mt-6 text-sm text-center" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                  New here?{' '}<Link href="/signup" className="underline underline-offset-2" style={{ color: 'rgba(255,255,255,0.6)' }}>Create an account</Link>
+                <div className="mt-6 text-sm text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                  New here?{' '}<Link href="/signup" className="underline underline-offset-2" style={{ color: 'rgba(255,255,255,0.55)' }}>Create an account</Link>
                   {' · '}
-                  <Link href="/forgot-password" className="underline underline-offset-2" style={{ color: 'rgba(255,255,255,0.6)' }}>Forgot password?</Link>
+                  <Link href="/forgot-password" className="underline underline-offset-2" style={{ color: 'rgba(255,255,255,0.55)' }}>Forgot password?</Link>
                 </div>
 
-                <p className="mt-8 text-center text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.2)' }}>
+                <p className="mt-8 text-center text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.18)' }}>
                   By signing in you agree to our{' '}
-                  <Link href="/landing" className="underline underline-offset-2" style={{ color: 'rgba(255,255,255,0.2)' }}>Terms</Link>{' '}and{' '}
-                  <Link href="/landing" className="underline underline-offset-2" style={{ color: 'rgba(255,255,255,0.2)' }}>Privacy Policy</Link>.
+                  <Link href="/landing" className="underline underline-offset-2">Terms</Link>{' '}and{' '}
+                  <Link href="/landing" className="underline underline-offset-2">Privacy Policy</Link>.
                 </p>
               </>
             )}
