@@ -107,6 +107,8 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
+  // JWT sessions are required because middleware uses `getToken` for route protection.
+  // Deploying this change invalidates existing database-backed sessions.
   session: { strategy: 'jwt' },
   pages: {
     signIn: '/login',

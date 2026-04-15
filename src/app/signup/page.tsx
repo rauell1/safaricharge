@@ -19,6 +19,10 @@ export default function SignUpPage() {
       setError('Passwords do not match.');
       return;
     }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long.');
+      return;
+    }
 
     setLoading(true);
     const res = await fetch('/api/auth/register', {

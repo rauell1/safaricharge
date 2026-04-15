@@ -269,7 +269,7 @@ export default function LoginPage() {
                     Sign in
                   </h1>
                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                    Sign in with password, or request a Resend magic link.
+                    Sign in with password, or request a resend magic link.
                    </p>
                  </div>
 

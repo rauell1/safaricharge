@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { createPasswordResetToken } from '@/lib/password';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+const PASSWORD_RESET_EXPIRY_MS = 60 * 60 * 1000;
 const forgotSchema = z.object({
   email: z.string().email(),
 });
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
 
     if (user) {
       const { rawToken, tokenHash } = createPasswordResetToken();
-      const expires = new Date(Date.now() + 60 * 60 * 1000);
+      const expires = new Date(Date.now() + PASSWORD_RESET_EXPIRY_MS);
 
       await prisma.user.update({
         where: { id: user.id },

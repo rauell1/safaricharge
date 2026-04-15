@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     if (existing) {
       await prisma.user.update({
         where: { id: existing.id },
-        data: { passwordHash, emailVerified: existing.emailVerified ?? new Date() },
+        data: { passwordHash, emailVerified: new Date() },
       });
     } else {
       await prisma.user.create({
