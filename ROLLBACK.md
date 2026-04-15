@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 101 | `rollback/bypass-auth-for-demo-redesign-landing-2026-04-15-85832a5` | `85832a5` | bypass auth for /demo; redesign landing + login pages | 2026-04-15 |
 | 100 | `rollback/disable-sign-in-form-on-login-page-2026-04-15-745d012` | `745d012` | disable sign-in form on login page | 2026-04-15 |
 | 99 | `rollback/fix-surface-auth-env-health-checks-and-2026-04-15-3ea6fe6` | `3ea6fe6` | fix: surface auth env health checks and fail fast on Resend errors | 2026-04-15 |
 | 98 | `rollback/merge-pull-request-193-from-rauell1-co-2026-04-15-63fda6a` | `63fda6a` | Merge pull request #193 from rauell1/copilot/fix-signup-page-visual-issues | 2026-04-15 |
@@ -1065,6 +1066,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/disable-sign-in-form-on-login-page-2026-04-15-745d012`
 - **Commit**: `745d0127b05a48f647ec9a208055f110a6835608`
 - **Subject**: disable sign-in form on login page
+- **Date**: 2026-04-15
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #101 — `rollback/bypass-auth-for-demo-redesign-landing-2026-04-15-85832a5`
+
+- **Branch**: `rollback/bypass-auth-for-demo-redesign-landing-2026-04-15-85832a5`
+- **Commit**: `85832a5f79a6c9796515bce279a5a0295dd90956`
+- **Subject**: bypass auth for /demo; redesign landing + login pages
 - **Date**: 2026-04-15
 - **Auto-generated**: yes (by update-rollback.yml)
 
