@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 97 | `rollback/fix-set-royokola3-gmail-com-as-default-2026-04-15-48a84b5` | `48a84b5` | fix: set royokola3@gmail.com as default Resend from address in forgot-password | 2026-04-15 |
 | 96 | `rollback/fix-set-royokola3-gmail-com-as-default-2026-04-15-3dcc31b` | `3dcc31b` | fix: set royokola3@gmail.com as default Resend from/admin address in auth | 2026-04-15 |
 | 95 | `rollback/merge-pull-request-192-from-rauell1-co-2026-04-15-5122ec6` | `5122ec6` | Merge pull request #192 from rauell1/copilot/upgrade-safaricharge-dashboard | 2026-04-15 |
 | 94 | `rollback/merge-pull-request-191-from-rauell1-co-2026-04-15-0e7df88` | `0e7df88` | Merge pull request #191 from rauell1/copilot/ui-typography-improvements | 2026-04-15 |
@@ -1025,6 +1026,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-set-royokola3-gmail-com-as-default-2026-04-15-3dcc31b`
 - **Commit**: `3dcc31b80323c1274edc60f6bb6f857252abd464`
 - **Subject**: fix: set royokola3@gmail.com as default Resend from/admin address in auth
+- **Date**: 2026-04-15
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #97 — `rollback/fix-set-royokola3-gmail-com-as-default-2026-04-15-48a84b5`
+
+- **Branch**: `rollback/fix-set-royokola3-gmail-com-as-default-2026-04-15-48a84b5`
+- **Commit**: `48a84b548d93432417cf1506bd3cb6ccffe5c014`
+- **Subject**: fix: set royokola3@gmail.com as default Resend from address in forgot-password
 - **Date**: 2026-04-15
 - **Auto-generated**: yes (by update-rollback.yml)
 
