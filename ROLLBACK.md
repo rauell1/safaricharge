@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 100 | `rollback/disable-sign-in-form-on-login-page-2026-04-15-745d012` | `745d012` | disable sign-in form on login page | 2026-04-15 |
 | 99 | `rollback/fix-surface-auth-env-health-checks-and-2026-04-15-3ea6fe6` | `3ea6fe6` | fix: surface auth env health checks and fail fast on Resend errors | 2026-04-15 |
 | 98 | `rollback/merge-pull-request-193-from-rauell1-co-2026-04-15-63fda6a` | `63fda6a` | Merge pull request #193 from rauell1/copilot/fix-signup-page-visual-issues | 2026-04-15 |
 | 97 | `rollback/fix-set-royokola3-gmail-com-as-default-2026-04-15-48a84b5` | `48a84b5` | fix: set royokola3@gmail.com as default Resend from address in forgot-password | 2026-04-15 |
@@ -1055,6 +1056,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-surface-auth-env-health-checks-and-2026-04-15-3ea6fe6`
 - **Commit**: `3ea6fe6a7d28a6e0ed28564883339420822a7ef4`
 - **Subject**: fix: surface auth env health checks and fail fast on Resend errors
+- **Date**: 2026-04-15
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #100 — `rollback/disable-sign-in-form-on-login-page-2026-04-15-745d012`
+
+- **Branch**: `rollback/disable-sign-in-form-on-login-page-2026-04-15-745d012`
+- **Commit**: `745d0127b05a48f647ec9a208055f110a6835608`
+- **Subject**: disable sign-in form on login page
 - **Date**: 2026-04-15
 - **Auto-generated**: yes (by update-rollback.yml)
 
