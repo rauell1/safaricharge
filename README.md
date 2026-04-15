@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`3ea6fe6`](https://github.com/rauell1/safaricharge/commit/3ea6fe6a7d28a6e0ed28564883339420822a7ef4) by Roy Okola Otieno |
+| **Last commit** | [`745d012`](https://github.com/rauell1/safaricharge/commit/745d0127b05a48f647ec9a208055f110a6835608) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-15 |
-| **Message** | fix: surface auth env health checks and fail fast on Resend errors |
-| **Total commits** | 986 |
+| **Message** | disable sign-in form on login page |
+| **Total commits** | 990 |
 | **TypeScript files** | 197 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
