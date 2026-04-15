@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 103 | `rollback/fix-add-use-client-to-landing-page-to-2026-04-15-bfc0481` | `bfc0481` | fix: add 'use client' to landing page to allow event handlers | 2026-04-15 |
 | 102 | `rollback/redesign-new-landing-page-login-page-b-2026-04-15-992fa0d` | `992fa0d` | redesign: new landing page, login page, bypass auth → /demo access | 2026-04-15 |
 | 101 | `rollback/bypass-auth-for-demo-redesign-landing-2026-04-15-85832a5` | `85832a5` | bypass auth for /demo; redesign landing + login pages | 2026-04-15 |
 | 100 | `rollback/disable-sign-in-form-on-login-page-2026-04-15-745d012` | `745d012` | disable sign-in form on login page | 2026-04-15 |
@@ -1085,6 +1086,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/redesign-new-landing-page-login-page-b-2026-04-15-992fa0d`
 - **Commit**: `992fa0db90517648084145812f9965ceba1f98eb`
 - **Subject**: redesign: new landing page, login page, bypass auth → /demo access
+- **Date**: 2026-04-15
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #103 — `rollback/fix-add-use-client-to-landing-page-to-2026-04-15-bfc0481`
+
+- **Branch**: `rollback/fix-add-use-client-to-landing-page-to-2026-04-15-bfc0481`
+- **Commit**: `bfc04814b8fd8330fb87ac30f0f683bd61022a89`
+- **Subject**: fix: add 'use client' to landing page to allow event handlers
 - **Date**: 2026-04-15
 - **Auto-generated**: yes (by update-rollback.yml)
 
