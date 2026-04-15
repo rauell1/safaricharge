@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 102 | `rollback/redesign-new-landing-page-login-page-b-2026-04-15-992fa0d` | `992fa0d` | redesign: new landing page, login page, bypass auth → /demo access | 2026-04-15 |
 | 101 | `rollback/bypass-auth-for-demo-redesign-landing-2026-04-15-85832a5` | `85832a5` | bypass auth for /demo; redesign landing + login pages | 2026-04-15 |
 | 100 | `rollback/disable-sign-in-form-on-login-page-2026-04-15-745d012` | `745d012` | disable sign-in form on login page | 2026-04-15 |
 | 99 | `rollback/fix-surface-auth-env-health-checks-and-2026-04-15-3ea6fe6` | `3ea6fe6` | fix: surface auth env health checks and fail fast on Resend errors | 2026-04-15 |
@@ -1075,6 +1076,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/bypass-auth-for-demo-redesign-landing-2026-04-15-85832a5`
 - **Commit**: `85832a5f79a6c9796515bce279a5a0295dd90956`
 - **Subject**: bypass auth for /demo; redesign landing + login pages
+- **Date**: 2026-04-15
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #102 — `rollback/redesign-new-landing-page-login-page-b-2026-04-15-992fa0d`
+
+- **Branch**: `rollback/redesign-new-landing-page-login-page-b-2026-04-15-992fa0d`
+- **Commit**: `992fa0db90517648084145812f9965ceba1f98eb`
+- **Subject**: redesign: new landing page, login page, bypass auth → /demo access
 - **Date**: 2026-04-15
 - **Auto-generated**: yes (by update-rollback.yml)
 
