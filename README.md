@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`48a84b5`](https://github.com/rauell1/safaricharge/commit/48a84b548d93432417cf1506bd3cb6ccffe5c014) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`63fda6a`](https://github.com/rauell1/safaricharge/commit/63fda6addafdd06abb61eea9477524e6502666a0) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-15 |
-| **Message** | fix: set royokola3@gmail.com as default Resend from address in forgot-password |
-| **Total commits** | 975 |
+| **Message** | Merge pull request #193 from rauell1/copilot/fix-signup-page-visual-issues |
+| **Total commits** | 982 |
 | **TypeScript files** | 197 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
