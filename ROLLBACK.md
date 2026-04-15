@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 94 | `rollback/merge-pull-request-191-from-rauell1-co-2026-04-15-0e7df88` | `0e7df88` | Merge pull request #191 from rauell1/copilot/ui-typography-improvements | 2026-04-15 |
 | 93 | `rollback/merge-pull-request-190-from-rauell1-co-2026-04-15-89a3747` | `89a3747` | Merge pull request #190 from rauell1/copilot/fix-invalid-lockfile-warning | 2026-04-15 |
 | 92 | `rollback/merge-pull-request-189-from-rauell1-co-2026-04-15-4971c1e` | `4971c1e` | Merge pull request #189 from rauell1/copilot/safaricharge-landing-page-login-form | 2026-04-15 |
 | 91 | `rollback/feat-supabase-ssr-client-helpers-188-2026-04-15-d0464dc` | `d0464dc` | feat: Supabase SSR client helpers (#188) | 2026-04-15 |
@@ -995,6 +996,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/merge-pull-request-190-from-rauell1-co-2026-04-15-89a3747`
 - **Commit**: `89a374712232239e79c37ef40d295abfbb278465`
 - **Subject**: Merge pull request #190 from rauell1/copilot/fix-invalid-lockfile-warning
+- **Date**: 2026-04-15
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #94 — `rollback/merge-pull-request-191-from-rauell1-co-2026-04-15-0e7df88`
+
+- **Branch**: `rollback/merge-pull-request-191-from-rauell1-co-2026-04-15-0e7df88`
+- **Commit**: `0e7df8810bd7d42b6669e8eb4e128c5cd45962d6`
+- **Subject**: Merge pull request #191 from rauell1/copilot/ui-typography-improvements
 - **Date**: 2026-04-15
 - **Auto-generated**: yes (by update-rollback.yml)
 
