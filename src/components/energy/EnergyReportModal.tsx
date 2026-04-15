@@ -290,19 +290,19 @@ export const EnergyReportModal = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border)]">
                   <div className="text-[var(--text-tertiary)] mb-1">Total Solar Generated</div>
-                  <div className="text-xl font-black text-[var(--consumption)]">{totalSolarGenerated.toFixed(1)} kWh</div>
+                  <div className="text-2xl font-black text-[var(--consumption)]">{totalSolarGenerated.toFixed(1)} kWh</div>
                 </div>
                 <div className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border)]">
                   <div className="text-[var(--text-tertiary)] mb-1">Grid Import</div>
-                  <div className="text-xl font-black text-[var(--alert)]">{totalGridImportKWh.toFixed(1)} kWh</div>
+                  <div className="text-2xl font-black text-[var(--alert)]">{totalGridImportKWh.toFixed(1)} kWh</div>
                 </div>
                 <div className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border)]">
                   <div className="text-[var(--text-tertiary)] mb-1">Grid Export (Surplus)</div>
-                  <div className="text-xl font-black text-[var(--battery)]">{totalGridExportKWh.toFixed(1)} kWh</div>
+                  <div className="text-2xl font-black text-[var(--battery)]">{totalGridExportKWh.toFixed(1)} kWh</div>
                 </div>
                 <div className="bg-[var(--bg-card)] p-3 rounded-lg border border-[var(--border)]">
                   <div className="text-[var(--text-tertiary)] mb-1">Solar Self-Consumption</div>
-                  <div className="text-xl font-black text-[var(--consumption)]">
+                  <div className="text-2xl font-black text-[var(--consumption)]">
                     {totalSolarGenerated > 0 ? (((totalSolarGenerated - totalGridExportKWh) / totalSolarGenerated) * 100).toFixed(1) : '0.0'}%
                   </div>
                 </div>

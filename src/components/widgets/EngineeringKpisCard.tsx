@@ -80,7 +80,7 @@ export function EngineeringKpisCard() {
   return (
     <Card className="bg-[var(--bg-card)] border-[var(--border)] shadow-card">
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide flex items-center gap-2">
+        <CardTitle className="text-base font-semibold text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-2">
           <Activity className="h-4 w-4 text-[var(--solar)]" />
           Engineering KPIs
           {kpis.prIsEstimated && (

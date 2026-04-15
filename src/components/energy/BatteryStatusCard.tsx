@@ -38,7 +38,7 @@ export function BatteryStatusCard({
     return (
       <Card className="dashboard-card">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-[var(--text-primary)] text-sm">
+          <CardTitle className="flex items-center gap-2 text-[var(--text-primary)] text-base font-semibold">
             <BatteryCharging className="h-4 w-4" style={{ color: 'var(--battery)' }} />
             Battery Status
           </CardTitle>
@@ -74,7 +74,7 @@ export function BatteryStatusCard({
   return (
     <Card className="dashboard-card">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-[var(--text-primary)] text-sm">
+          <CardTitle className="flex items-center gap-2 text-[var(--text-primary)] text-base font-semibold">
           {isCharging ? (
             <BatteryCharging className="h-4 w-4" style={{ color: 'var(--battery)' }} />
           ) : (
@@ -87,7 +87,7 @@ export function BatteryStatusCard({
         <div className="flex items-center justify-between mb-3">
           <div>
             <span className="text-3xl font-bold" style={{ color: colors.text }}>{formattedLevel}%</span>
-            <span className="text-xs text-[var(--text-secondary)] ml-2">{storedKwh} / {capacity} kWh</span>
+            <span className="text-sm text-[var(--text-secondary)] ml-2">{storedKwh} / {capacity} kWh</span>
           </div>
           <div
             className="flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold"
@@ -108,16 +108,16 @@ export function BatteryStatusCard({
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <div className="rounded-lg p-2 text-center border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
-            <div className="text-xs font-semibold text-[var(--text-primary)]">{batteryPower.toFixed(1)} kW</div>
-            <div className="text-[9px] text-[var(--text-tertiary)] mt-0.5">Power</div>
+            <div className="text-sm font-semibold text-[var(--text-primary)]">{batteryPower.toFixed(1)} kW</div>
+            <div className="text-sm text-[var(--text-tertiary)] mt-0.5">Power</div>
           </div>
           <div className="rounded-lg p-2 text-center border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
-            <div className="text-xs font-semibold text-[var(--text-primary)]">{voltage} V</div>
-            <div className="text-[9px] text-[var(--text-tertiary)] mt-0.5">Voltage</div>
+            <div className="text-sm font-semibold text-[var(--text-primary)]">{voltage} V</div>
+            <div className="text-sm text-[var(--text-tertiary)] mt-0.5">Voltage</div>
           </div>
           <div className="rounded-lg p-2 text-center border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
-            <div className="text-xs font-semibold text-[var(--text-primary)]">{temperature}°C</div>
-            <div className="text-[9px] text-[var(--text-tertiary)] mt-0.5">Temp</div>
+            <div className="text-sm font-semibold text-[var(--text-primary)]">{temperature}°C</div>
+            <div className="text-sm text-[var(--text-tertiary)] mt-0.5">Temp</div>
           </div>
         </div>
       </CardContent>

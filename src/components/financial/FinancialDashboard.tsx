@@ -50,7 +50,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
           </div>
           <div>
             <h2 className="text-lg md:text-xl font-bold text-[var(--text-primary)]">Investor Dashboard</h2>
-            <p className="text-xs md:text-sm text-justify text-[var(--text-secondary)] [text-align-last:left]">Live financial layer wired to your SafariCharge simulation</p>
+            <p className="text-sm md:text-base text-justify text-[var(--text-secondary)] [text-align-last:left] prose-comfortable">Live financial layer wired to your SafariCharge simulation</p>
           </div>
         </div>
 
@@ -63,7 +63,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
                 </div>
                 <div className="space-y-2 w-full max-w-none">
                   <h3 className="max-w-xl text-2xl font-bold leading-tight text-[var(--text-primary)] sm:text-[2rem]">No Simulation Data Available</h3>
-                  <p className="max-w-xl text-sm leading-relaxed text-justify text-[var(--text-secondary)] [text-align-last:left]">Run the simulation to generate live financial insights, including revenue projections, payback period, IRR, NPV, and sensitivity scenarios.</p>
+                  <p className="max-w-xl text-base leading-relaxed text-justify text-[var(--text-secondary)] [text-align-last:left] prose-comfortable">Run the simulation to generate live financial insights, including revenue projections, payback period, IRR, NPV, and sensitivity scenarios.</p>
                 </div>
                 {onRunSimulation && (
                   <button onClick={onRunSimulation} className="inline-flex items-center gap-2 rounded-full bg-[var(--battery)] px-6 py-3 font-semibold text-white shadow-lg shadow-[rgba(16,185,129,0.18)] transition-colors hover:opacity-90">
@@ -80,7 +80,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
               <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-hover)] p-4 relative overflow-hidden">
                 <div className="absolute inset-x-0 top-0 h-1 bg-[var(--battery)]" />
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-[var(--battery)]">Revenue / Month</span>
+                    <span className="text-sm font-semibold text-[var(--battery)]">Revenue / Month</span>
                   <DollarSign className="text-[var(--battery)]" size={18} />
                 </div>
                 <div className="mt-2 text-2xl font-bold text-[var(--text-primary)]">{formatCurrency(snapshot.revenueMonthly)}</div>
@@ -89,7 +89,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
               <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-hover)] p-4 relative overflow-hidden">
                 <div className="absolute inset-x-0 top-0 h-1 bg-[var(--grid)]" />
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-[var(--grid)]">Net Profit / Month</span>
+                    <span className="text-sm font-semibold text-[var(--grid)]">Net Profit / Month</span>
                   <TrendingUp className="text-[var(--grid)]" size={18} />
                 </div>
                 <div className="mt-2 text-2xl font-bold text-[var(--text-primary)]">{formatCurrency(snapshot.netMonthly)}</div>
@@ -98,7 +98,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
               <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-hover)] p-4 relative overflow-hidden">
                 <div className="absolute inset-x-0 top-0 h-1 bg-[var(--solar)]" />
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-[var(--solar)]">Payback Progress</span>
+                    <span className="text-sm font-semibold text-[var(--solar)]">Payback Progress</span>
                   <Gauge className="text-[var(--solar)]" size={18} />
                 </div>
                 <div className="mt-2 text-2xl font-bold text-[var(--text-primary)]">{formatNumber(snapshot.paybackProgressPct, 1)}%</div>
@@ -108,7 +108,7 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
               <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-hover)] p-4 relative overflow-hidden">
                 <div className="absolute inset-x-0 top-0 h-1 bg-[var(--consumption)]" />
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-[var(--consumption)]">LCOE</span>
+                    <span className="text-sm font-semibold text-[var(--consumption)]">LCOE</span>
                   <LineChart className="text-[var(--consumption)]" size={18} />
                 </div>
                 <div className="mt-2 text-2xl font-bold text-[var(--text-primary)]">{formatCurrency(snapshot.lcoeKesPerKwh, 2)} / kWh</div>
@@ -147,21 +147,21 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="rounded-xl bg-[var(--bg-card-hover)] border border-[var(--border)] p-3">
                     <p className="text-[11px] text-[var(--text-tertiary)]">Scenario revenue / month</p>
-                    <div className="text-xl font-semibold text-[var(--text-primary)]">{formatCurrency(scenarioResult.revenueMonthly)}</div>
+                    <div className="text-2xl font-semibold text-[var(--text-primary)]">{formatCurrency(scenarioResult.revenueMonthly)}</div>
                     <p className="text-[11px] text-[var(--battery)]">Δ vs base {formatCurrency(scenarioResult.revenueMonthly - snapshot.revenueMonthly)}</p>
                   </div>
                   <div className="rounded-xl bg-[var(--bg-card-hover)] border border-[var(--border)] p-3">
                     <p className="text-[11px] text-[var(--text-tertiary)]">Scenario net / month</p>
-                    <div className="text-xl font-semibold text-[var(--text-primary)]">{formatCurrency(scenarioResult.netMonthly)}</div>
+                    <div className="text-2xl font-semibold text-[var(--text-primary)]">{formatCurrency(scenarioResult.netMonthly)}</div>
                     <p className="text-[11px] text-[var(--battery)]">Payback {scenarioResult.paybackYears ? `${formatNumber(scenarioResult.paybackYears, 1)} yrs` : 'N/A'}</p>
                   </div>
                   <div className="rounded-xl bg-[var(--bg-card-hover)] border border-[var(--border)] p-3">
                     <p className="text-[11px] text-[var(--text-tertiary)]">Scenario IRR</p>
-                    <div className="text-xl font-semibold text-[var(--text-primary)]">{formatNumber(scenarioResult.irrPct, 1)}%</div>
+                    <div className="text-2xl font-semibold text-[var(--text-primary)]">{formatNumber(scenarioResult.irrPct, 1)}%</div>
                   </div>
                   <div className="rounded-xl bg-[var(--bg-card-hover)] border border-[var(--border)] p-3">
                     <p className="text-[11px] text-[var(--text-tertiary)]">Scenario NPV</p>
-                    <div className="text-xl font-semibold text-[var(--text-primary)]">{formatCurrency(scenarioResult.npvKes)}</div>
+                    <div className="text-2xl font-semibold text-[var(--text-primary)]">{formatCurrency(scenarioResult.npvKes)}</div>
                   </div>
                 </div>
               </div>

@@ -125,7 +125,7 @@ export default function LoginPage() {
         {/* Hero copy */}
         <div className="relative z-10 flex-1 flex flex-col justify-center px-10 pb-16">
           <p
-            className="text-xs font-semibold uppercase tracking-widest mb-4"
+            className="text-xs font-semibold uppercase tracking-wider mb-4"
             style={{ color: 'var(--battery)' }}
           >
             Solar Energy Intelligence
@@ -166,7 +166,7 @@ export default function LoginPage() {
         {/* Bottom bar */}
         <footer
           className="relative z-10 px-10 py-6 text-xs"
-          style={{ color: 'var(--text-muted)', borderTop: '1px solid var(--border)' }}
+          style={{ color: 'var(--text-tertiary)', borderTop: '1px solid var(--border)' }}
         >
           SafariCharge &copy; 2026 &mdash; Nairobi, Kenya
         </footer>
@@ -196,12 +196,12 @@ export default function LoginPage() {
           <Link
             href="/landing"
             className="text-sm transition-colors"
-            style={{ color: 'var(--text-muted)' }}
+            style={{ color: 'var(--text-tertiary)' }}
             onMouseEnter={(e) =>
               ((e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)')
             }
             onMouseLeave={(e) =>
-              ((e.currentTarget as HTMLElement).style.color = 'var(--text-muted)')
+              ((e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)')
             }
           >
             Back to home
@@ -214,7 +214,13 @@ export default function LoginPage() {
 
             {state === 'sent' ? (
               /* ── Sent state ── */
-              <div className="text-center">
+              <div
+                className="text-center rounded-2xl px-6 py-8"
+                style={{
+                  border: '1px solid var(--battery-soft)',
+                  background: 'rgba(16,185,129,0.05)',
+                }}
+              >
                 <div
                   className="mx-auto w-16 h-16 rounded-2xl grid place-items-center mb-6"
                   style={{ background: 'var(--battery-soft)' }}
@@ -269,11 +275,14 @@ export default function LoginPage() {
                     Sign in
                   </h1>
                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                    Sign in with password, or request a resend magic link.
+                    Sign in with password, or receive a magic link via Resend.
                    </p>
                  </div>
 
                 {/* Password sign-in */}
+                <p className="mb-3 text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  Sign in with password
+                </p>
                 <form onSubmit={handlePasswordSignIn} className="space-y-4 mb-6">
                   <div className="space-y-1.5">
                     <label
@@ -353,7 +362,26 @@ export default function LoginPage() {
                   </button>
                 </form>
 
+                {/* Divider */}
+                <div
+                  className="flex items-center gap-3 my-6"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  <div
+                    className="flex-1 h-px"
+                    style={{ background: 'var(--border)' }}
+                  />
+                  <span className="text-xs font-semibold tracking-wider">or sign in with a magic link</span>
+                  <div
+                    className="flex-1 h-px"
+                    style={{ background: 'var(--border)' }}
+                  />
+                </div>
+
                 {/* Magic-link form */}
+                <p className="mb-3 text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  Or get a magic link
+                </p>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-1.5">
                     <label
@@ -428,22 +456,6 @@ export default function LoginPage() {
                   </button>
                 </form>
 
-                {/* Divider */}
-                <div
-                  className="flex items-center gap-3 my-6"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  <div
-                    className="flex-1 h-px"
-                    style={{ background: 'var(--border)' }}
-                  />
-                  <span className="text-xs">or continue with</span>
-                  <div
-                    className="flex-1 h-px"
-                    style={{ background: 'var(--border)' }}
-                  />
-                </div>
-
                 <div className="text-sm text-center" style={{ color: 'var(--text-secondary)' }}>
                   New here? <Link href="/signup" className="underline underline-offset-2">Create an account</Link>
                   {' · '}
@@ -453,7 +465,7 @@ export default function LoginPage() {
                 {/* Footer */}
                 <p
                   className="mt-8 text-center text-xs leading-relaxed"
-                  style={{ color: 'var(--text-muted)' }}
+                  style={{ color: 'var(--text-tertiary)' }}
                 >
                   By signing in you agree to our{' '}
                   <Link

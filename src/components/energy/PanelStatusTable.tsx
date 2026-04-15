@@ -63,7 +63,7 @@ function EfficiencyBar({ value }: { value: number }) {
           <div className="h-full transition-all duration-500" style={{ width: `${value}%`, backgroundColor: getColor(value) }} />
         </div>
       </div>
-      <span className="text-xs font-medium text-[var(--text-secondary)] w-10 text-right">{value}%</span>
+      <span className="text-sm font-medium text-[var(--text-secondary)] w-10 text-right leading-relaxed">{value}%</span>
     </div>
   );
 }
@@ -121,7 +121,7 @@ export function PanelStatusTable({ panels = defaultPanels, isLoading }: PanelSta
             <Activity className="h-5 w-5 text-[var(--consumption)]" />
             Panel Status Monitor
           </CardTitle>
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-2 text-sm">
             <div className="flex items-center gap-1">
               <div className="h-2 w-2 rounded-full bg-[var(--battery)] status-online" />
               <span className="text-[var(--text-secondary)]">{onlineCount} Online</span>

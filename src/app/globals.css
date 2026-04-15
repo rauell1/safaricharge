@@ -92,6 +92,21 @@ html, body {
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
+/* ─── Typography utilities ───────────────────────────────────── */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+h1, h2, h3, h4 {
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.prose-comfortable {
+  max-width: 60ch;
+  line-height: 1.7;
+}
+
 /* ─── Card surface ───────────────────────────────────────────── */
 .dashboard-card {
   background: var(--bg-card);

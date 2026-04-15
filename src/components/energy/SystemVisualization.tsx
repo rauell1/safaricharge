@@ -156,7 +156,7 @@ export function SystemVisualization() {
                     <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: node.tint, color: node.accent }}>{data.status}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <div className="text-xl font-bold" style={{ color: node.accent }}>{data.powerKW.toFixed(1)} kW</div>
+                    <div className="text-2xl font-bold" style={{ color: node.accent }}>{data.powerKW.toFixed(1)} kW</div>
                     {data.soc !== undefined && <span className="text-xs text-[var(--text-secondary)]">SOC {data.soc.toFixed(0)}%</span>}
                   </div>
                 </button>

@@ -64,7 +64,7 @@ export function MobileBottomNav({
             />
             <span
               className={cn(
-                'text-[10px] font-medium leading-none transition-colors',
+                'text-sm leading-none transition-colors',
                 isActive ? 'text-[var(--solar)]' : 'text-[var(--text-tertiary)]'
               )}
             >

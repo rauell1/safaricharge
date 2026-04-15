@@ -85,12 +85,12 @@ function StatCard({ title, value, unit, subtitle, icon, trend, trendValue, accen
               )}
             </div>
             {subtitle && (
-              <p className="text-xs text-[var(--text-tertiary)] mt-2 leading-relaxed">
+              <p className="text-base text-[var(--text-secondary)] mt-2 leading-relaxed prose-comfortable">
                 {subtitle}
               </p>
             )}
             {comparisonText && (
-              <p className="text-xs text-[var(--text-secondary)] mt-2.5 font-medium">
+              <p className="text-sm text-[var(--text-secondary)] mt-2.5 font-medium leading-relaxed">
                 {comparisonText}
               </p>
             )}
