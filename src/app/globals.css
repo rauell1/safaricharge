@@ -1,9 +1,6 @@
 @import "tailwindcss";
 @config "../../tailwind.config.ts";
 
-/* ─── Google Fonts ─────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=Inter+Display:wght@600..800&display=swap');
-
 /* ─── Design tokens ─────────────────────────────────────────── */
 :root {
   /* Surfaces */
@@ -78,8 +75,8 @@
   --radius-2xl: 1.5rem;
 
   /* Type */
-  --font-sans:    'Inter', 'Inter Display', system-ui, -apple-system, sans-serif;
-  --font-display: 'Inter Display', 'Inter', system-ui, sans-serif;
+  --font-sans:    var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-inter), system-ui, sans-serif;
 }
 
 /* ─── Base ───────────────────────────────────────────────────── */

@@ -109,7 +109,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[#0d1117] text-white font-sans antialiased">
       {/* ── Nav ── */}
       <header className="fixed top-0 inset-x-0 z-50 border-b border-white/[0.06] bg-[#0d1117]/80 backdrop-blur-md">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/landing" className="flex items-center gap-2.5">
             <span className="grid place-items-center w-8 h-8 rounded-lg bg-emerald-500/15">
               <Sun className="w-4 h-4 text-emerald-400" strokeWidth={2.5} />
@@ -150,7 +150,7 @@ export default function LandingPage() {
               'radial-gradient(ellipse 80% 50% at 50% -20%, rgba(16,185,129,0.18) 0%, transparent 70%)',
           }}
         />
-        <div className="relative mx-auto max-w-3xl text-center">
+        <div className="relative mx-auto max-w-6xl text-center">
           <span className="inline-flex items-center gap-2 text-xs font-medium text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-3 py-1 rounded-full mb-6">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             Pyomo MILP optimizer now live
@@ -159,7 +159,7 @@ export default function LandingPage() {
             AI-Optimised Solar EMS
             <span className="block text-emerald-400">Built for Kenya</span>
           </h1>
-          <p className="text-lg text-white/55 max-w-2xl mx-auto mb-10 leading-relaxed">
+          <p className="text-lg sm:text-xl text-white/60 mx-auto mb-10 leading-relaxed max-w-4xl">
             SafariCharge turns your PV + BESS site into an optimised asset. Our MILP dispatch
             engine cuts KPLC peak charges, maximises self-consumption, and gives you real-time
             visibility into every kilowatt-hour.
@@ -183,7 +183,7 @@ export default function LandingPage() {
 
       {/* ── Stats ── */}
       <section id="stats" className="py-16 px-4 sm:px-6 border-y border-white/[0.06]">
-        <div className="mx-auto max-w-6xl grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="mx-auto max-w-7xl grid grid-cols-2 md:grid-cols-4 gap-8">
           {stats.map((s) => (
             <div key={s.label} className="text-center">
               <div className="text-3xl md:text-4xl font-bold text-emerald-400 tabular-nums mb-1">
@@ -197,10 +197,10 @@ export default function LandingPage() {
 
       {/* ── Features ── */}
       <section id="features" className="py-24 px-4 sm:px-6">
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto max-w-7xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Everything your site needs</h2>
-            <p className="text-white/45 max-w-xl mx-auto">
+            <p className="text-white/50 max-w-3xl mx-auto">
               From raw inverter telemetry to globally-optimal dispatch schedules — all in one platform.
             </p>
           </div>
@@ -226,10 +226,10 @@ export default function LandingPage() {
 
       {/* ── Pricing ── */}
       <section id="pricing" className="py-24 px-4 sm:px-6 border-t border-white/[0.06]">
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto max-w-7xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Simple pricing</h2>
-            <p className="text-white/45 max-w-md mx-auto">Open-core. Start free, scale when ready.</p>
+            <p className="text-white/50 max-w-2xl mx-auto">Open-core. Start free, scale when ready.</p>
           </div>
           <div className="grid sm:grid-cols-3 gap-5 items-start">
             {plans.map((plan) => (
@@ -278,11 +278,11 @@ export default function LandingPage() {
 
       {/* ── CTA ── */}
       <section className="py-24 px-4 sm:px-6">
-        <div className="mx-auto max-w-2xl text-center">
+        <div className="mx-auto max-w-4xl text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-5">
             Ready to optimise your site?
           </h2>
-          <p className="text-white/45 mb-8">
+          <p className="text-white/55 mb-8 text-lg max-w-3xl mx-auto">
             Join energy managers across Kenya already using SafariCharge to cut KPLC bills and
             maximise solar yield.
           </p>
@@ -297,7 +297,7 @@ export default function LandingPage() {
 
       {/* ── Footer ── */}
       <footer className="border-t border-white/[0.06] py-10 px-4 sm:px-6">
-        <div className="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-white/30">
+        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-white/30">
           <div className="flex items-center gap-2">
             <Sun className="w-4 h-4 text-emerald-500/60" />
             <span>© {new Date().getFullYear()} SafariCharge. All rights reserved.</span>
