@@ -13,6 +13,9 @@ const PUBLIC_PATHS = [
   '/_next',
   '/favicon.ico',
   '/public',
+  '/demo',        // dashboard accessible without sign-in
+  '/scenarios',
+  '/simulation',
 ];
 
 export async function middleware(request: NextRequest) {
