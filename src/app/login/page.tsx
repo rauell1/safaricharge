@@ -12,9 +12,13 @@ import {
   CheckCircle2,
   AlertCircle,
   Mail,
+  Lock,
 } from 'lucide-react';
 
 type State = 'idle' | 'loading' | 'sent' | 'error';
+
+// Set to false to re-enable sign-in
+const SIGN_IN_ENABLED = false;
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -212,7 +216,46 @@ export default function LoginPage() {
         <div className="flex-1 flex items-center justify-center px-6 py-12">
           <div className="w-full max-w-[380px]">
 
-            {state === 'sent' ? (
+            {!SIGN_IN_ENABLED ? (
+              /* ── Sign-in disabled notice ── */
+              <div
+                className="text-center rounded-2xl px-6 py-8"
+                style={{
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-card)',
+                }}
+              >
+                <div
+                  className="mx-auto w-16 h-16 rounded-2xl grid place-items-center mb-6"
+                  style={{ background: 'var(--battery-soft)' }}
+                >
+                  <Lock
+                    className="w-8 h-8"
+                    style={{ color: 'var(--battery)' }}
+                  />
+                </div>
+                <h1
+                  className="text-2xl font-bold mb-2"
+                  style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}
+                >
+                  Sign-in unavailable
+                </h1>
+                <p
+                  className="text-sm leading-relaxed"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  Sign-in is temporarily disabled. Please check back later or
+                  contact your administrator.
+                </p>
+                <Link
+                  href="/landing"
+                  className="inline-flex items-center gap-2 mt-6 text-sm font-medium transition-colors"
+                  style={{ color: 'var(--battery)' }}
+                >
+                  Back to home <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            ) : state === 'sent' ? (
               /* ── Sent state ── */
               <div
                 className="text-center rounded-2xl px-6 py-8"
