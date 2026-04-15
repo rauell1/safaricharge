@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`5122ec6`](https://github.com/rauell1/safaricharge/commit/5122ec689b462ea03e658adb9bd2698b59f9b392) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`3dcc31b`](https://github.com/rauell1/safaricharge/commit/3dcc31b80323c1274edc60f6bb6f857252abd464) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-15 |
-| **Message** | Merge pull request #192 from rauell1/copilot/upgrade-safaricharge-dashboard |
-| **Total commits** | 967 |
+| **Message** | fix: set royokola3@gmail.com as default Resend from/admin address in auth |
+| **Total commits** | 971 |
 | **TypeScript files** | 197 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
