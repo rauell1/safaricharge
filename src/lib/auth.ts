@@ -6,7 +6,8 @@ import { prisma } from '@/lib/prisma';
 import { Resend } from 'resend';
 import { verifyPassword } from '@/lib/password';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resendApiKey = process.env.RESEND_API_KEY;
+const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 // Default sender — override via EMAIL_FROM env var in production
 const DEFAULT_FROM = process.env.EMAIL_FROM ?? 'SafariCharge <royokola3@gmail.com>';
@@ -22,7 +23,11 @@ async function sendVerificationRequest({
   url: string;
   provider: { from: string };
 }) {
-  await resend.emails.send({
+  if (!resend) {
+    throw new Error('RESEND_API_KEY is missing. Magic-link emails are not configured.');
+  }
+
+  const { error } = await resend.emails.send({
     from: provider.from ?? DEFAULT_FROM,
     to: email,
     subject: 'Your SafariCharge sign-in link',
@@ -50,6 +55,10 @@ async function sendVerificationRequest({
       </div>
     `,
   });
+
+  if (error) {
+    throw new Error(`Resend failed to send magic link: ${error.message}`);
+  }
 }
 
 export const authOptions: NextAuthOptions = {
