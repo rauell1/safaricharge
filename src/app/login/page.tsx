@@ -18,8 +18,12 @@ type State = 'idle' | 'loading' | 'sent' | 'error';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
+  const [passwordEmail, setPasswordEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [state, setState] = useState<State>('idle');
   const [errorMsg, setErrorMsg] = useState('');
+  const [passwordState, setPasswordState] = useState<State>('idle');
+  const [passwordErrorMsg, setPasswordErrorMsg] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +43,34 @@ export default function LoginPage() {
     } else {
       setState('sent');
     }
+  };
+
+  const handlePasswordSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passwordEmail.trim() || !password) return;
+    setPasswordState('loading');
+    setPasswordErrorMsg('');
+
+    const res = await signIn('credentials', {
+      email: passwordEmail.trim().toLowerCase(),
+      password,
+      redirect: false,
+      callbackUrl: '/demo',
+    });
+
+    if (res?.error) {
+      setPasswordState('error');
+      setPasswordErrorMsg('Invalid email or password.');
+      return;
+    }
+
+    if (res?.ok) {
+      window.location.href = '/demo';
+      return;
+    }
+
+    setPasswordState('error');
+    setPasswordErrorMsg('Could not sign in.');
   };
 
   return (
@@ -236,12 +268,92 @@ export default function LoginPage() {
                   >
                     Sign in
                   </h1>
-                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                    Enter your email and we&rsquo;ll send a magic link &mdash; no password needed.
-                  </p>
-                </div>
+                   <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    Sign in with password, or request a resend magic link.
+                   </p>
+                 </div>
 
-                {/* Form */}
+                {/* Password sign-in */}
+                <form onSubmit={handlePasswordSignIn} className="space-y-4 mb-6">
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="password-email"
+                      className="block text-xs font-semibold uppercase tracking-wider"
+                      style={{ color: 'var(--text-tertiary)' }}
+                    >
+                      Email
+                    </label>
+                    <input
+                      id="password-email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={passwordEmail}
+                      onChange={(e) => setPasswordEmail(e.target.value)}
+                      disabled={passwordState === 'loading'}
+                      className="w-full rounded-xl px-4 py-3 text-sm outline-none disabled:opacity-50"
+                      style={{
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text-primary)',
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="password"
+                      className="block text-xs font-semibold uppercase tracking-wider"
+                      style={{ color: 'var(--text-tertiary)' }}
+                    >
+                      Password
+                    </label>
+                    <input
+                      id="password"
+                      type="password"
+                      autoComplete="current-password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={passwordState === 'loading'}
+                      className="w-full rounded-xl px-4 py-3 text-sm outline-none disabled:opacity-50"
+                      style={{
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text-primary)',
+                      }}
+                    />
+                  </div>
+                  {passwordState === 'error' && (
+                    <div
+                      className="flex items-center gap-2.5 rounded-xl px-4 py-3 text-sm"
+                      style={{
+                        background: 'var(--alert-soft)',
+                        border: '1px solid rgba(239,68,68,0.25)',
+                        color: 'var(--alert)',
+                      }}
+                    >
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      {passwordErrorMsg}
+                    </div>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={passwordState === 'loading' || !passwordEmail.trim() || !password}
+                    className="w-full flex items-center justify-center gap-2 font-semibold text-sm px-4 py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      background: 'var(--battery)',
+                      color: '#fff',
+                    }}
+                  >
+                    {passwordState === 'loading' ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Signing in&hellip;</>
+                    ) : (
+                      <>Sign in with password <ArrowRight className="w-4 h-4" /></>
+                    )}
+                  </button>
+                </form>
+
+                {/* Magic-link form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-1.5">
                     <label
@@ -311,7 +423,7 @@ export default function LoginPage() {
                     {state === 'loading' ? (
                       <><Loader2 className="w-4 h-4 animate-spin" /> Sending&hellip;</>
                     ) : (
-                      <>Send magic link <ArrowRight className="w-4 h-4" /></>
+                      <>Email me a magic link <ArrowRight className="w-4 h-4" /></>
                     )}
                   </button>
                 </form>
@@ -332,34 +444,11 @@ export default function LoginPage() {
                   />
                 </div>
 
-                {/* Google OAuth */}
-                <button
-                  type="button"
-                  onClick={() => signIn('google', { callbackUrl: '/demo' })}
-                  className="w-full flex items-center justify-center gap-3 text-sm font-medium py-3 px-4 rounded-xl transition-all"
-                  style={{
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--text-secondary)',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.background = 'var(--bg-card-hover)';
-                    (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-hover)';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.background = 'var(--bg-card)';
-                    (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
-                  }}
-                >
-                  {/* Google G */}
-                  <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-                    <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z"/>
-                    <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z"/>
-                    <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z"/>
-                    <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z"/>
-                  </svg>
-                  Continue with Google
-                </button>
+                <div className="text-sm text-center" style={{ color: 'var(--text-secondary)' }}>
+                  New here? <Link href="/signup" className="underline underline-offset-2">Create an account</Link>
+                  {' · '}
+                  <Link href="/forgot-password" className="underline underline-offset-2">Forgot password?</Link>
+                </div>
 
                 {/* Footer */}
                 <p
