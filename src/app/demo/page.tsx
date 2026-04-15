@@ -42,6 +42,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { MapPin } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { resampleTo5MinBucketsProgressive, resampleTo5MinBuckets } from '@/lib/graphSampler';
 import type { SimulationMinuteRecord } from '@/types/simulation-core';
 
@@ -51,6 +52,7 @@ import { buildFinancialSnapshot, type FinancialInputs } from '@/lib/financial-da
 import { LoadConfigComponents } from '@/components/simulation/LoadConfigComponents';
 import { RecommendationComponents } from '@/components/energy/RecommendationComponents';
 import { SimulationNodes } from '@/components/simulation/SimulationNodes';
+import { ValidationPanel } from '@/components/simulation/ValidationPanel';
 import { SafariChargeAIAssistant } from '@/components/ai/AIAssistant';
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -74,6 +76,9 @@ const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct
 // Static fallback displayed while the simulation is still warming up (no minuteData yet).
 const FALLBACK_GEN  = [65, 70, 78, 85, 90, 95, 88, 92, 80, 75, 68, 62] as const;
 const FALLBACK_CONS = [55, 58, 60, 62, 65, 68, 70, 69, 65, 60, 57, 54] as const;
+const SOLAR_MODEL_SUNRISE_HOUR = 6;
+const SOLAR_MODEL_DAYLIGHT_HOURS = 12;
+const SOLAR_MODEL_PERFORMANCE_RATIO = 0.82;
 
 // ─── Location picker data ────────────────────────────────────────────────────
 interface LocationOption {
@@ -192,6 +197,10 @@ export default function ModularDashboardDemo({
     ? latestPoint.homeLoadKW + latestPoint.ev1LoadKW + latestPoint.ev2LoadKW
     : homeNode.powerKW ?? 0;
   const batteryLevel = latestPoint?.batteryLevelPct ?? batteryNode.soc ?? 0;
+  const ambientTemp = Number((26 + Math.max(0, solarPower * 0.22)).toFixed(1));
+  const inverterTemp = Number((38 + Math.max(0, solarPower * 1.6)).toFixed(1));
+  const batteryTemp = Number((batteryNode.temperature ?? (29 + Math.max(0, Math.abs(batteryPower) * 0.9))).toFixed(1));
+  const deratingPct = Number(Math.max(0, (inverterTemp - 60) * 1.8).toFixed(1));
 
   // ── Financial snapshot — computed from live minuteData ────────────────────
   const financialSnapshot = useMemo(() =>
@@ -532,6 +541,16 @@ export default function ModularDashboardDemo({
     () => resampleTo5MinBucketsProgressive(minuteData),
     [minuteData]
   );
+  const expectedOutputData = useMemo(
+    () =>
+      graphData.map((point) => {
+        // Approximation model: sunrise offset, daylight span, and baseline performance ratio.
+        const sunAngle = Math.max(0, Math.sin(((point.timeOfDay - SOLAR_MODEL_SUNRISE_HOUR) / SOLAR_MODEL_DAYLIGHT_HOURS) * Math.PI));
+        const expected = (solarNode.capacityKW ?? 10) * SOLAR_MODEL_PERFORMANCE_RATIO * sunAngle;
+        return { timeOfDay: point.timeOfDay, output: Number(expected.toFixed(2)) };
+      }),
+    [graphData, solarNode.capacityKW]
+  );
 
   const energySplit = useMemo(() => {
     const totalEnergy = stats.totalSolarKWh + stats.totalConsumptionKWh + stats.totalGridExportKWh;
@@ -665,7 +684,20 @@ export default function ModularDashboardDemo({
                 <h2 className="text-2xl font-bold text-[var(--text-primary)]">Simulation</h2>
                 <p className="text-sm text-[var(--text-tertiary)]">Core physics engine, scenario controls and system visualisation</p>
               </div>
-              <SimulationNodes />
+              <Accordion type="single" collapsible defaultValue="simulation-core" className="rounded-xl border border-[var(--border)] px-4">
+                <AccordionItem value="simulation-core">
+                  <AccordionTrigger className="text-sm font-medium text-muted-foreground">Simulation Core</AccordionTrigger>
+                  <AccordionContent>
+                    <SimulationNodes />
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="validation-testing">
+                  <AccordionTrigger className="text-sm font-medium text-muted-foreground">Validation &amp; Testing Panel</AccordionTrigger>
+                  <AccordionContent>
+                    <ValidationPanel />
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </div>
           </main>
         );
@@ -696,6 +728,9 @@ export default function ModularDashboardDemo({
                 inputs={financialInputs}
                 onInputsChange={setFinancialInputs}
                 hasSimulationData={minuteData.length > 0}
+                expectedYieldKwh={(solarNode.capacityKW ?? 10) * activeLocation.annualAvgSunHours}
+                actualYieldKwh={financialSnapshot.energy.avgDailySolarKWh}
+                tariffRate={financialInputs.chargingTariffKes}
               />
             </div>
           </main>
@@ -851,7 +886,14 @@ export default function ModularDashboardDemo({
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-0">
-                      <DailyEnergyGraph data={graphData} dateLabel={currentDate?.toISOString().slice(0, 10)} />
+                      <DailyEnergyGraph
+                        data={graphData}
+                        dateLabel={currentDate?.toISOString().slice(0, 10)}
+                        minuteData={minuteData}
+                        solarCapacityKw={solarNode.capacityKW}
+                        expectedOutputData={expectedOutputData}
+                        showSoCBands
+                      />
                     </CardContent>
                   </Card>
                 </div>
@@ -910,11 +952,19 @@ export default function ModularDashboardDemo({
                   <PanelStatusTable />
                 </div>
                 <div className="flex flex-col gap-6">
-                  <WeatherCard locationName={activeLocation.displayName} />
+                  <WeatherCard
+                    locationName={activeLocation.displayName}
+                    temperature={ambientTemp}
+                    irradiance={Math.round((latestPoint?.solarKW ?? 0) * 80)}
+                  />
                   <BatteryStatusCard
                     batteryLevel={batteryLevel}
                     batteryPower={batteryPower}
                     isCharging={batteryPower >= 0}
+                    temperature={batteryTemp}
+                    showDeratingBadge
+                    deratingPct={deratingPct}
+                    showSoCBands
                   />
                 </div>
               </div>
@@ -967,7 +1017,7 @@ export default function ModularDashboardDemo({
               </Card>
 
               {/* Engineering KPIs */}
-              <EngineeringKpisCard />
+              <EngineeringKpisCard deratingPct={deratingPct} showDeratingBadge />
 
               {/* Alerts — live from store */}
               <AlertsList />

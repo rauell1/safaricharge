@@ -12,6 +12,9 @@ export type FinancialDashboardProps = {
   onInputsChange: (next: FinancialInputs) => void;
   hasSimulationData?: boolean;
   onRunSimulation?: () => void;
+  expectedYieldKwh?: number;
+  actualYieldKwh?: number;
+  tariffRate?: number;
 };
 
 const formatCurrency = (value: number, digits = 0) =>
@@ -20,13 +23,24 @@ const formatCurrency = (value: number, digits = 0) =>
 const formatNumber = (value: number, digits = 1) =>
   Number.isFinite(value) ? value.toLocaleString('en-KE', { maximumFractionDigits: digits }) : '0';
 
+const DEFAULT_EXPECTED_YIELD_MULTIPLIER = 1.05;
+
 const ProgressBar = ({ value }: { value: number }) => (
   <div className="h-2.5 w-full rounded-full bg-[var(--bg-card-muted)]">
     <div className="h-full rounded-full bg-[var(--battery)] transition-all" style={{ width: `${Math.min(100, Math.max(0, value))}%` }} />
   </div>
 );
 
-export default function FinancialDashboard({ snapshot, inputs, onInputsChange, hasSimulationData = true, onRunSimulation }: FinancialDashboardProps) {
+export default function FinancialDashboard({
+  snapshot,
+  inputs,
+  onInputsChange,
+  hasSimulationData = true,
+  onRunSimulation,
+  expectedYieldKwh,
+  actualYieldKwh,
+  tariffRate = 23,
+}: FinancialDashboardProps) {
   const [scenario, setScenario] = useState({
     chargingTariffKes: inputs.chargingTariffKes,
     utilizationPct: snapshot.utilizationPct || inputs.targetUtilizationPct || 45,
@@ -40,6 +54,12 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
   );
 
   const marginPct = snapshot.revenueMonthly > 0 ? (snapshot.netMonthly / snapshot.revenueMonthly) * 100 : 0;
+  const actualYield = actualYieldKwh ?? snapshot.energy.avgDailySolarKWh;
+  const expectedYield = expectedYieldKwh ?? snapshot.energy.avgDailySolarKWh * DEFAULT_EXPECTED_YIELD_MULTIPLIER;
+  const yieldDelta = actualYield - expectedYield;
+  const deviationPct = expectedYield === 0 ? 0 : (yieldDelta / expectedYield) * 100;
+  const deviationClass = Math.abs(deviationPct) <= 5 ? 'text-green-600 bg-green-50' : Math.abs(deviationPct) <= 15 ? 'text-yellow-600 bg-yellow-50' : 'text-red-600 bg-red-50';
+  const revenueImpact = yieldDelta * tariffRate;
 
   return (
     <section className="w-full">
@@ -117,6 +137,31 @@ export default function FinancialDashboard({ snapshot, inputs, onInputsChange, h
             </div>
 
             <div className="rounded-2xl border border-[var(--border-strong)] p-4 bg-[var(--bg-secondary)] space-y-4">
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card-hover)] p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-muted-foreground">Expected yield vs actual yield</p>
+                  <span className={`rounded-full px-2 py-1 text-xs font-semibold ${deviationClass}`}>
+                    {deviationPct >= 0 ? '+' : ''}{deviationPct.toFixed(1)}%
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                  <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] p-3">
+                    <p className="text-sm font-medium text-muted-foreground">Expected yield</p>
+                    <p className="text-2xl font-bold text-[var(--text-primary)]">{formatNumber(expectedYield, 2)} kWh</p>
+                  </div>
+                  <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] p-3">
+                    <p className="text-sm font-medium text-muted-foreground">Actual yield</p>
+                    <p className="text-2xl font-bold text-[var(--text-primary)]">{formatNumber(actualYield, 2)} kWh</p>
+                  </div>
+                  <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] p-3">
+                    <p className="text-sm font-medium text-muted-foreground">Estimated revenue impact</p>
+                    <p className="text-2xl font-bold text-[var(--text-primary)]">
+                      {formatCurrency(revenueImpact, 2)}
+                    </p>
+                    <p className="text-xs text-[var(--text-tertiary)]">Tariff rate: KES {formatNumber(tariffRate, 2)}/kWh</p>
+                  </div>
+                </div>
+              </div>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs uppercase text-[var(--text-tertiary)] font-semibold tracking-wider">Scenario & Sensitivity</p>

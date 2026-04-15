@@ -48,7 +48,12 @@ function KpiTile({ icon, label, value, unit, tooltip, accent = 'text-[var(--sola
   );
 }
 
-export function EngineeringKpisCard() {
+interface EngineeringKpisCardProps {
+  deratingPct?: number;
+  showDeratingBadge?: boolean;
+}
+
+export function EngineeringKpisCard({ deratingPct = 0, showDeratingBadge = false }: EngineeringKpisCardProps = {}) {
   const minuteData   = useEnergySystemStore((s) => s.minuteData);
   const systemConfig = useEnergySystemStore((s) => s.systemConfig);
   const accumulators = useEnergySystemStore((s) => s.accumulators);
@@ -76,6 +81,8 @@ export function EngineeringKpisCard() {
   }, [minuteData, systemConfig.batteryCapacityKWh]);
 
   const noData = minuteData.length === 0;
+  const deratingClass =
+    deratingPct > 15 ? 'text-red-600 bg-red-50' : deratingPct >= 5 ? 'text-yellow-600 bg-yellow-50' : 'text-green-600 bg-green-50';
 
   return (
     <Card className="bg-[var(--bg-card)] border-[var(--border)] shadow-card">
@@ -83,8 +90,13 @@ export function EngineeringKpisCard() {
         <CardTitle className="text-base font-semibold text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-2">
           <Activity className="h-4 w-4 text-[var(--solar)]" />
           Engineering KPIs
+          {showDeratingBadge && (
+            <span className={`ml-auto rounded-full px-2 py-1 text-xs font-semibold normal-case tracking-normal ${deratingClass}`}>
+              Derating {Math.max(0, deratingPct).toFixed(1)}%
+            </span>
+          )}
           {kpis.prIsEstimated && (
-            <span className="ml-auto text-[10px] font-normal normal-case tracking-normal text-[var(--text-tertiary)] bg-[var(--bg-card-muted)] border border-[var(--border)] rounded px-2 py-0.5">PR estimated (no irradiance)</span>
+            <span className={`${showDeratingBadge ? '' : 'ml-auto'} text-[10px] font-normal normal-case tracking-normal text-[var(--text-tertiary)] bg-[var(--bg-card-muted)] border border-[var(--border)] rounded px-2 py-0.5`}>PR estimated (no irradiance)</span>
           )}
         </CardTitle>
       </CardHeader>

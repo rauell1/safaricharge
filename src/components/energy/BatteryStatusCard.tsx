@@ -13,6 +13,11 @@ interface BatteryStatusCardProps {
   temperature?: number;
   isCharging?: boolean;
   isLoading?: boolean;
+  deratingPct?: number;
+  showDeratingBadge?: boolean;
+  showSoCBands?: boolean;
+  minSoCBand?: number;
+  maxSoCBand?: number;
 }
 
 export function BatteryStatusCard({
@@ -23,6 +28,11 @@ export function BatteryStatusCard({
   temperature = 32,
   isCharging = true,
   isLoading,
+  deratingPct = 0,
+  showDeratingBadge = false,
+  showSoCBands = false,
+  minSoCBand = 20,
+  maxSoCBand = 90,
 }: BatteryStatusCardProps) {
   const getColor = (level: number) => {
     if (level >= 60) return { bar: 'var(--battery)', text: 'var(--battery)' };
@@ -33,6 +43,8 @@ export function BatteryStatusCard({
   const colors = getColor(batteryLevel);
   const formattedLevel = Number.isFinite(batteryLevel) ? batteryLevel.toFixed(2) : '0.00';
   const storedKwh = ((batteryLevel / 100) * capacity).toFixed(1);
+  const deratingClass =
+    deratingPct > 15 ? 'text-red-600 bg-red-50' : deratingPct >= 5 ? 'text-yellow-600 bg-yellow-50' : 'text-green-600 bg-green-50';
 
   if (isLoading) {
     return (
@@ -89,22 +101,37 @@ export function BatteryStatusCard({
             <span className="text-3xl font-bold" style={{ color: colors.text }}>{formattedLevel}%</span>
             <span className="text-sm text-[var(--text-secondary)] ml-2">{storedKwh} / {capacity} kWh</span>
           </div>
-          <div
-            className="flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold"
-            style={{
-              backgroundColor: isCharging ? 'var(--battery-soft)' : 'var(--alert-soft)',
-              color: isCharging ? 'var(--battery)' : 'var(--alert)'
-            }}
-          >
-            <Zap className="h-3 w-3" />
-            {isCharging ? 'Charging' : 'Discharging'}
+          <div className="flex items-center gap-2">
+            {showDeratingBadge && (
+              <span className={`rounded-full px-2 py-1 text-xs font-semibold ${deratingClass}`}>
+                Derating {Math.max(0, deratingPct).toFixed(1)}%
+              </span>
+            )}
+            <div
+              className="flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold"
+              style={{
+                backgroundColor: isCharging ? 'var(--battery-soft)' : 'var(--alert-soft)',
+                color: isCharging ? 'var(--battery)' : 'var(--alert)'
+              }}
+            >
+              <Zap className="h-3 w-3" />
+              {isCharging ? 'Charging' : 'Discharging'}
+            </div>
           </div>
         </div>
-        <div className="h-3 w-full rounded-full overflow-hidden mb-4" style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
-          <div
-            className="h-full rounded-full transition-all duration-700"
-            style={{ width: `${batteryLevel}%`, backgroundColor: colors.bar }}
-          />
+        <div className="space-y-1.5 mb-4">
+          <div className="h-3 w-full rounded-full overflow-hidden" style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${batteryLevel}%`, backgroundColor: colors.bar }}
+            />
+          </div>
+          {showSoCBands && (
+            <div className="flex items-center justify-between text-[10px] text-[var(--text-tertiary)]">
+              <span>SoC band min {minSoCBand}%</span>
+              <span>max {maxSoCBand}%</span>
+            </div>
+          )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <div className="rounded-lg p-2 text-center border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>

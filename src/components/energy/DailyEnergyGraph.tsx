@@ -39,13 +39,14 @@ export interface GraphDataPoint {
   solar: number;
   load: number;
   batSoc: number;
+  expectedOutput?: number;
 }
 
 const MIN_MAX_KW = 10;
 
 const computeMaxKw = (data: GraphDataPoint[]): number => {
   if (!data || data.length === 0) return 60;
-  const maxVal = data.reduce((max, point) => Math.max(max, point.load, point.solar), 0);
+  const maxVal = data.reduce((max, point) => Math.max(max, point.load, point.solar, point.expectedOutput ?? 0), 0);
   const padded = Math.max(MIN_MAX_KW, maxVal * 1.1);
   const exponent = Math.pow(10, Math.floor(Math.log10(padded)));
   const normalized = padded / exponent;
@@ -233,11 +234,15 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
   dateLabel,
   minuteData,
   solarCapacityKw,
+  expectedOutputData = [],
+  showSoCBands = false,
 }: {
   data: GraphDataPoint[];
   dateLabel?: string;
   minuteData?: MinuteDataPoint[];
   solarCapacityKw?: number;
+  expectedOutputData?: { timeOfDay: number; output: number }[];
+  showSoCBands?: boolean;
 }) {
   const { forecastData, isLoading, showOverlay, toggleOverlay, fetchForecast } =
     useForecastStore();
@@ -280,10 +285,17 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
   const solarCoords = data.map(d => ({ x: getX(d.timeOfDay), y: getY_Kw(d.solar) }));
   const loadCoords = data.map(d => ({ x: getX(d.timeOfDay), y: getY_Kw(d.load) }));
   const socCoords = data.map(d => ({ x: getX(d.timeOfDay), y: getY_Soc(d.batSoc) }));
+  const expectedSeries = expectedOutputData.length > 0
+    ? expectedOutputData
+    : data
+        .filter((d) => typeof d.expectedOutput === 'number')
+        .map((d) => ({ timeOfDay: d.timeOfDay, output: d.expectedOutput as number }));
+  const expectedCoords = expectedSeries.map((d) => ({ x: getX(d.timeOfDay), y: getY_Kw(d.output) }));
 
   const solarPath = buildSmoothPath(solarCoords);
   const loadPath = buildSmoothPath(loadCoords);
   const socPath = buildSmoothPath(socCoords);
+  const expectedPath = buildSmoothPath(expectedCoords);
   const solarArea = `${solarPath} L ${solarCoords[solarCoords.length - 1].x},${padding.top + innerHeight} L ${solarCoords[0].x},${padding.top + innerHeight} Z`;
   const last = data[data.length - 1];
 
@@ -390,6 +402,14 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
                 </g>
               );
             })}
+            {showSoCBands && (
+              <>
+                <line x1={padding.left} y1={getY_Soc(20)} x2={width - padding.right} y2={getY_Soc(20)} stroke={palette.soc} strokeDasharray="3 4" opacity="0.35" />
+                <line x1={padding.left} y1={getY_Soc(90)} x2={width - padding.right} y2={getY_Soc(90)} stroke={palette.soc} strokeDasharray="3 4" opacity="0.35" />
+                <text x={width - padding.right - 2} y={getY_Soc(20) - 3} textAnchor="end" fill={palette.soc} fontSize="8">SoC Min 20%</text>
+                <text x={width - padding.right - 2} y={getY_Soc(90) - 3} textAnchor="end" fill={palette.soc} fontSize="8">SoC Max 90%</text>
+              </>
+            )}
 
             {[0, 3, 6, 9, 12, 15, 18, 21, 24].map(hr => {
               const x = padding.left + (hr / 24) * innerWidth;
@@ -416,6 +436,9 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
 
             <path d={solarArea} fill="url(#solarGradient)" />
             <path d={solarPath} fill="none" stroke={palette.solar} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+            {expectedCoords.length > 1 && (
+              <path d={expectedPath} fill="none" stroke={palette.solar} strokeWidth="1.8" strokeDasharray="6 4" strokeLinecap="round" strokeLinejoin="round" opacity="0.8" />
+            )}
             <path d={loadPath} fill="none" stroke={palette.load} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
             <path d={socPath} fill="none" stroke={palette.soc} strokeWidth="2" strokeDasharray="10 6" strokeLinecap="round" strokeLinejoin="round" />
 
@@ -462,6 +485,12 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
               <div className="w-4 h-4 rounded-sm" style={{ backgroundColor: palette.solar }} />
               <span className="text-[var(--text-secondary)]">Solar Gen (kW)</span>
             </div>
+            {expectedCoords.length > 1 && (
+              <div className="flex items-center gap-2">
+                <div className="w-5 border-t-2 border-dashed opacity-80" style={{ borderColor: palette.solar }} />
+                <span className="text-[var(--text-secondary)]">Expected Output</span>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <div className="w-5 h-1 rounded-full" style={{ backgroundColor: palette.load }} />
               <span className="text-[var(--text-secondary)]">Total Load (kW)</span>

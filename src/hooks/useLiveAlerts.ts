@@ -9,6 +9,8 @@ export interface LiveAlert {
   title: string;
   message: string;
   timestamp: Date;
+  predictive?: boolean;
+  context?: string;
 }
 
 /**
@@ -22,6 +24,9 @@ export function useLiveAlerts(): LiveAlert[] {
   const systemConfig = useEnergySystemStore((s) => s.systemConfig);
 
   return useMemo(() => {
+    const INVERTER_BASE_TEMP_C = 40;
+    const INVERTER_TEMP_PER_KW = 1.5;
+    const RECENT_WINDOW_POINTS = 120;
     const alerts: LiveAlert[] = [];
     const now = new Date();
 
@@ -163,6 +168,32 @@ export function useLiveAlerts(): LiveAlert[] {
         timestamp: now,
       });
     }
+
+    // ── Predictive alerts (demo/model-based) ────────────────────────────────
+    const inverterTempEstimate = INVERTER_BASE_TEMP_C + solarKW * INVERTER_TEMP_PER_KW;
+    alerts.push({
+      id: 'pred-thermal-derating-threshold',
+      type: inverterTempEstimate >= 55 ? 'warning' : 'info',
+      title: 'Thermal Derating Forecast',
+      message: 'System approaching thermal derating threshold',
+      context: `Inverter temp at ${inverterTempEstimate.toFixed(0)}°C — derating begins at 65°C`,
+      predictive: true,
+      timestamp: now,
+    });
+
+    const recentPoints = minuteData.slice(-RECENT_WINDOW_POINTS);
+    const avgRecentSolar = recentPoints.reduce((sum, point) => sum + point.solarKW, 0) / Math.max(1, recentPoints.length);
+    const expectedRecentSolar = systemConfig.solarCapacityKW * 0.7;
+    const perfDropPct = expectedRecentSolar <= 0 ? 0 : ((expectedRecentSolar - avgRecentSolar) / expectedRecentSolar) * 100;
+    alerts.push({
+      id: 'pred-performance-deviation',
+      type: perfDropPct > 10 ? 'warning' : 'info',
+      title: 'Performance Forecast',
+      message: 'Performance deviating from expected model',
+      context: `Actual output ${Math.max(0, perfDropPct).toFixed(0)}% below forecast for past 2 hours`,
+      predictive: true,
+      timestamp: now,
+    });
 
     // Sort: errors first, then warnings, then info/success
     const order: Record<LiveAlert['type'], number> = { error: 0, warning: 1, info: 2, success: 3 };
