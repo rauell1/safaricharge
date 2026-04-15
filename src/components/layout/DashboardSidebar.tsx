@@ -71,11 +71,10 @@ export function DashboardSidebar({
   const pathname = usePathname();
   const [governanceOpen, setGovernanceOpen] = useState(false);
   const battery = useEnergyNode('battery');
+  const solar = useEnergyNode('solar');
   const minuteData = useMinuteData('today');
   const latestPoint = minuteData[minuteData.length - 1];
-  const expectedOutput = minuteData.length > 0
-    ? minuteData.reduce((sum, p) => sum + p.solarKW, 0) / minuteData.length
-    : 0;
+  const expectedOutputBaseline = (solar.capacityKW ?? 10) * 0.7;
 
   const resolvedActive: DashboardSection = useMemo(() => {
     if (activeSection && activeSection !== 'dashboard') return activeSection;
@@ -257,7 +256,7 @@ export function DashboardSidebar({
                   minSoc={20}
                   maxSoc={90}
                   actualOutput={latestPoint?.solarKW ?? 0}
-                  expectedOutput={expectedOutput}
+                  expectedOutput={expectedOutputBaseline}
                 />
               </div>
             )}

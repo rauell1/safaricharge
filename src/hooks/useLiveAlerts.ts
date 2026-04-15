@@ -24,6 +24,9 @@ export function useLiveAlerts(): LiveAlert[] {
   const systemConfig = useEnergySystemStore((s) => s.systemConfig);
 
   return useMemo(() => {
+    const INVERTER_BASE_TEMP_C = 40;
+    const INVERTER_TEMP_PER_KW = 1.5;
+    const RECENT_WINDOW_POINTS = 120;
     const alerts: LiveAlert[] = [];
     const now = new Date();
 
@@ -167,7 +170,7 @@ export function useLiveAlerts(): LiveAlert[] {
     }
 
     // ── Predictive alerts (demo/model-based) ────────────────────────────────
-    const inverterTempEstimate = 40 + solarKW * 1.5;
+    const inverterTempEstimate = INVERTER_BASE_TEMP_C + solarKW * INVERTER_TEMP_PER_KW;
     alerts.push({
       id: 'pred-thermal-derating-threshold',
       type: inverterTempEstimate >= 55 ? 'warning' : 'info',
@@ -178,7 +181,8 @@ export function useLiveAlerts(): LiveAlert[] {
       timestamp: now,
     });
 
-    const avgRecentSolar = minuteData.slice(-120).reduce((sum, point) => sum + point.solarKW, 0) / Math.max(1, Math.min(120, minuteData.length));
+    const recentPoints = minuteData.slice(-RECENT_WINDOW_POINTS);
+    const avgRecentSolar = recentPoints.reduce((sum, point) => sum + point.solarKW, 0) / Math.max(1, recentPoints.length);
     const expectedRecentSolar = systemConfig.solarCapacityKW * 0.7;
     const perfDropPct = expectedRecentSolar <= 0 ? 0 : ((expectedRecentSolar - avgRecentSolar) / expectedRecentSolar) * 100;
     alerts.push({

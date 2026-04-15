@@ -81,9 +81,12 @@ export function GovernanceWidget({
       <CardContent className="space-y-4 p-4">
         <div className="space-y-3">
           <p className="text-sm font-medium text-muted-foreground">ER Checklist</p>
-          {DEFAULT_CHECKS.map((item) => (
-            <label key={item.key} className="flex items-start gap-2 text-base text-[var(--text-secondary)]">
+          {DEFAULT_CHECKS.map((item) => {
+            const checkboxId = `gov-check-${item.key}`;
+            return (
+            <label key={item.key} htmlFor={checkboxId} className="flex items-start gap-2 text-base text-[var(--text-secondary)]">
               <Checkbox
+                id={checkboxId}
                 checked={Boolean(checks[item.key])}
                 onCheckedChange={(next) =>
                   setChecks((prev) => ({ ...prev, [item.key]: Boolean(next) }))
@@ -91,7 +94,8 @@ export function GovernanceWidget({
               />
               <span>{item.label}</span>
             </label>
-          ))}
+          );
+          })}
         </div>
         <div className="space-y-2">
           <p className="text-sm font-medium text-muted-foreground">Compliance indicators</p>

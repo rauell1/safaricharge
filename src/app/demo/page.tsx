@@ -76,6 +76,9 @@ const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct
 // Static fallback displayed while the simulation is still warming up (no minuteData yet).
 const FALLBACK_GEN  = [65, 70, 78, 85, 90, 95, 88, 92, 80, 75, 68, 62] as const;
 const FALLBACK_CONS = [55, 58, 60, 62, 65, 68, 70, 69, 65, 60, 57, 54] as const;
+const SOLAR_MODEL_SUNRISE_HOUR = 6;
+const SOLAR_MODEL_DAYLIGHT_HOURS = 12;
+const SOLAR_MODEL_PERFORMANCE_RATIO = 0.82;
 
 // ─── Location picker data ────────────────────────────────────────────────────
 interface LocationOption {
@@ -541,8 +544,9 @@ export default function ModularDashboardDemo({
   const expectedOutputData = useMemo(
     () =>
       graphData.map((point) => {
-        const sunAngle = Math.max(0, Math.sin(((point.timeOfDay - 6) / 12) * Math.PI));
-        const expected = (solarNode.capacityKW ?? 10) * 0.82 * sunAngle;
+        // Approximation model: sunrise offset, daylight span, and baseline performance ratio.
+        const sunAngle = Math.max(0, Math.sin(((point.timeOfDay - SOLAR_MODEL_SUNRISE_HOUR) / SOLAR_MODEL_DAYLIGHT_HOURS) * Math.PI));
+        const expected = (solarNode.capacityKW ?? 10) * SOLAR_MODEL_PERFORMANCE_RATIO * sunAngle;
         return { timeOfDay: point.timeOfDay, output: Number(expected.toFixed(2)) };
       }),
     [graphData, solarNode.capacityKW]

@@ -287,7 +287,9 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
   const socCoords = data.map(d => ({ x: getX(d.timeOfDay), y: getY_Soc(d.batSoc) }));
   const expectedSeries = expectedOutputData.length > 0
     ? expectedOutputData
-    : data.map((d) => ({ timeOfDay: d.timeOfDay, output: d.expectedOutput ?? d.solar }));
+    : data
+        .filter((d) => typeof d.expectedOutput === 'number')
+        .map((d) => ({ timeOfDay: d.timeOfDay, output: d.expectedOutput as number }));
   const expectedCoords = expectedSeries.map((d) => ({ x: getX(d.timeOfDay), y: getY_Kw(d.output) }));
 
   const solarPath = buildSmoothPath(solarCoords);
@@ -434,7 +436,9 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
 
             <path d={solarArea} fill="url(#solarGradient)" />
             <path d={solarPath} fill="none" stroke={palette.solar} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-            <path d={expectedPath} fill="none" stroke={palette.solar} strokeWidth="1.8" strokeDasharray="6 4" strokeLinecap="round" strokeLinejoin="round" opacity="0.8" />
+            {expectedCoords.length > 1 && (
+              <path d={expectedPath} fill="none" stroke={palette.solar} strokeWidth="1.8" strokeDasharray="6 4" strokeLinecap="round" strokeLinejoin="round" opacity="0.8" />
+            )}
             <path d={loadPath} fill="none" stroke={palette.load} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
             <path d={socPath} fill="none" stroke={palette.soc} strokeWidth="2" strokeDasharray="10 6" strokeLinecap="round" strokeLinejoin="round" />
 
@@ -481,10 +485,12 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
               <div className="w-4 h-4 rounded-sm" style={{ backgroundColor: palette.solar }} />
               <span className="text-[var(--text-secondary)]">Solar Gen (kW)</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-5 border-t-2 border-dashed opacity-80" style={{ borderColor: palette.solar }} />
-              <span className="text-[var(--text-secondary)]">Expected Output</span>
-            </div>
+            {expectedCoords.length > 1 && (
+              <div className="flex items-center gap-2">
+                <div className="w-5 border-t-2 border-dashed opacity-80" style={{ borderColor: palette.solar }} />
+                <span className="text-[var(--text-secondary)]">Expected Output</span>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <div className="w-5 h-1 rounded-full" style={{ backgroundColor: palette.load }} />
               <span className="text-[var(--text-secondary)]">Total Load (kW)</span>

@@ -23,6 +23,8 @@ const formatCurrency = (value: number, digits = 0) =>
 const formatNumber = (value: number, digits = 1) =>
   Number.isFinite(value) ? value.toLocaleString('en-KE', { maximumFractionDigits: digits }) : '0';
 
+const DEFAULT_EXPECTED_YIELD_MULTIPLIER = 1.05;
+
 const ProgressBar = ({ value }: { value: number }) => (
   <div className="h-2.5 w-full rounded-full bg-[var(--bg-card-muted)]">
     <div className="h-full rounded-full bg-[var(--battery)] transition-all" style={{ width: `${Math.min(100, Math.max(0, value))}%` }} />
@@ -52,9 +54,8 @@ export default function FinancialDashboard({
   );
 
   const marginPct = snapshot.revenueMonthly > 0 ? (snapshot.netMonthly / snapshot.revenueMonthly) * 100 : 0;
-  const trackedDays = Math.max(1, snapshot.energy.trackedDays || 1);
-  const expectedYield = expectedYieldKwh ?? snapshot.energy.lifetimeEnergyKWh / Math.max(1, snapshot.projectYears * 365);
-  const actualYield = actualYieldKwh ?? snapshot.energy.totalSolarKWh / trackedDays;
+  const actualYield = actualYieldKwh ?? snapshot.energy.avgDailySolarKWh;
+  const expectedYield = expectedYieldKwh ?? snapshot.energy.avgDailySolarKWh * DEFAULT_EXPECTED_YIELD_MULTIPLIER;
   const yieldDelta = actualYield - expectedYield;
   const deviationPct = expectedYield === 0 ? 0 : (yieldDelta / expectedYield) * 100;
   const deviationClass = Math.abs(deviationPct) <= 5 ? 'text-green-600 bg-green-50' : Math.abs(deviationPct) <= 15 ? 'text-yellow-600 bg-yellow-50' : 'text-red-600 bg-red-50';

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useToast } from '@/hooks/use-toast';
 
 type ValidationMetric = {
   metric: string;
@@ -51,6 +52,7 @@ export function ValidationPanel({
   metrics = defaultMetrics,
   stressScenarios = defaultStressScenarios,
 }: ValidationPanelProps) {
+  const { toast } = useToast();
   const [events, setEvents] = useState<CommissioningEvent[]>([]);
   const [eventType, setEventType] = useState('');
   const [notes, setNotes] = useState('');
@@ -120,6 +122,11 @@ export function ValidationPanel({
         }),
       });
     } catch {
+      toast({
+        title: 'Remote save failed',
+        description: 'Event was kept locally, but could not be saved to Supabase.',
+        variant: 'destructive',
+      });
       // local fallback remains active
     }
   };
@@ -127,7 +134,7 @@ export function ValidationPanel({
   return (
     <Card className="dashboard-card">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold text-[var(--text-primary)]">Validation &amp; Testing (C.H.I.L / PAT)</CardTitle>
+        <CardTitle className="text-base font-semibold text-[var(--text-primary)]">Validation &amp; Testing (Controller-Hardware-in-the-Loop / PAT)</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6 p-4 sm:p-6">
         <div className="rounded-lg border border-[var(--border)] p-4">
