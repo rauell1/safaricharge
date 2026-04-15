@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`85832a5`](https://github.com/rauell1/safaricharge/commit/85832a5f79a6c9796515bce279a5a0295dd90956) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`992fa0d`](https://github.com/rauell1/safaricharge/commit/992fa0db90517648084145812f9965ceba1f98eb) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-15 |
-| **Message** | bypass auth for /demo; redesign landing + login pages |
-| **Total commits** | 994 |
+| **Message** | redesign: new landing page, login page, bypass auth → /demo access |
+| **Total commits** | 998 |
 | **TypeScript files** | 197 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
