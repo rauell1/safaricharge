@@ -9,6 +9,8 @@ export interface LiveAlert {
   title: string;
   message: string;
   timestamp: Date;
+  predictive?: boolean;
+  context?: string;
 }
 
 /**
@@ -163,6 +165,31 @@ export function useLiveAlerts(): LiveAlert[] {
         timestamp: now,
       });
     }
+
+    // ── Predictive alerts (demo/model-based) ────────────────────────────────
+    const inverterTempEstimate = 40 + solarKW * 1.5;
+    alerts.push({
+      id: 'pred-thermal-derating-threshold',
+      type: inverterTempEstimate >= 55 ? 'warning' : 'info',
+      title: 'Thermal Derating Forecast',
+      message: 'System approaching thermal derating threshold',
+      context: `Inverter temp at ${inverterTempEstimate.toFixed(0)}°C — derating begins at 65°C`,
+      predictive: true,
+      timestamp: now,
+    });
+
+    const avgRecentSolar = minuteData.slice(-120).reduce((sum, point) => sum + point.solarKW, 0) / Math.max(1, Math.min(120, minuteData.length));
+    const expectedRecentSolar = systemConfig.solarCapacityKW * 0.7;
+    const perfDropPct = expectedRecentSolar <= 0 ? 0 : ((expectedRecentSolar - avgRecentSolar) / expectedRecentSolar) * 100;
+    alerts.push({
+      id: 'pred-performance-deviation',
+      type: perfDropPct > 10 ? 'warning' : 'info',
+      title: 'Performance Forecast',
+      message: 'Performance deviating from expected model',
+      context: `Actual output ${Math.max(0, perfDropPct).toFixed(0)}% below forecast for past 2 hours`,
+      predictive: true,
+      timestamp: now,
+    });
 
     // Sort: errors first, then warnings, then info/success
     const order: Record<LiveAlert['type'], number> = { error: 0, warning: 1, info: 2, success: 3 };

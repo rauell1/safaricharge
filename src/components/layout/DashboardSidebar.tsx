@@ -10,7 +10,9 @@ import {
   BookMarked,
   Lightbulb,
   Bot,
+  ShieldCheck,
 } from 'lucide-react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -26,6 +28,8 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
+import { GovernanceWidget } from '@/components/widgets/GovernanceWidget';
+import { useEnergyNode, useMinuteData } from '@/hooks/useEnergySystem';
 
 export type DashboardSection =
   | 'dashboard'
@@ -65,6 +69,13 @@ export function DashboardSidebar({
   contextualMetrics = [],
 }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const [governanceOpen, setGovernanceOpen] = useState(false);
+  const battery = useEnergyNode('battery');
+  const minuteData = useMinuteData('today');
+  const latestPoint = minuteData[minuteData.length - 1];
+  const expectedOutput = minuteData.length > 0
+    ? minuteData.reduce((sum, p) => sum + p.solarKW, 0) / minuteData.length
+    : 0;
 
   const resolvedActive: DashboardSection = useMemo(() => {
     if (activeSection && activeSection !== 'dashboard') return activeSection;
@@ -222,6 +233,36 @@ export function DashboardSidebar({
             </SidebarGroupContent>
           </SidebarGroup>
         )}
+
+        <SidebarGroup className="mt-5">
+          <SidebarGroupLabel
+            className="mb-1.5 px-2 text-xs font-semibold uppercase tracking-wider"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
+            Governance
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <button
+              type="button"
+              onClick={() => setGovernanceOpen((prev) => !prev)}
+              className="flex w-full items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2 text-sm font-medium text-[var(--text-primary)]"
+            >
+              <ShieldCheck className="h-4 w-4 text-[var(--battery)]" />
+              Governance
+            </button>
+            {governanceOpen && (
+              <div className="mt-2">
+                <GovernanceWidget
+                  currentSoc={battery.soc ?? latestPoint?.batteryLevelPct ?? 50}
+                  minSoc={20}
+                  maxSoc={90}
+                  actualOutput={latestPoint?.solarKW ?? 0}
+                  expectedOutput={expectedOutput}
+                />
+              </div>
+            )}
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
       {/* Footer */}

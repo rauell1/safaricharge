@@ -134,9 +134,17 @@ export function AlertsList({ isLoading }: AlertsListProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <h4 className="text-sm font-semibold text-[var(--text-primary)]">{alert.title}</h4>
-                    <AlertTypeBadge type={alert.type} />
+                    <div className="flex items-center gap-1.5">
+                      {alert.predictive && (
+                        <Badge className="text-yellow-600 bg-yellow-50 border-yellow-200">⚡ Predicted</Badge>
+                      )}
+                      <AlertTypeBadge type={alert.type} />
+                    </div>
                   </div>
                   <p className="text-base text-[var(--text-secondary)] mb-2 leading-relaxed prose-comfortable">{alert.message}</p>
+                  {alert.context && (
+                    <p className="text-base text-[var(--text-tertiary)] mb-2 leading-relaxed">{alert.context}</p>
+                  )}
                   <span className="text-[10px] text-[var(--text-tertiary)]">{formatTimestamp(alert.timestamp)}</span>
                 </div>
               </div>

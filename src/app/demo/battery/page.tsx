@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import { EnergyDetailShell } from '@/components/dashboard/EnergyDetailShell';
 import { useEnergyNode, useEnergyStats, useMinuteData, useTimeRange } from '@/hooks/useEnergySystem';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Area, AreaChart, CartesianGrid, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Battery, Activity, Zap } from 'lucide-react';
 
 const formatTime = (hour: number, minute: number) =>
@@ -100,6 +100,8 @@ export default function BatteryDetailPage() {
                     <YAxis yAxisId="left" tick={{ fill: 'var(--text-tertiary)', fontSize: 10 }} domain={[-6, 6]} />
                     <YAxis yAxisId="right" orientation="right" tick={{ fill: 'var(--text-tertiary)', fontSize: 10 }} domain={[20, 100]} />
                     <Tooltip contentStyle={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+                    <ReferenceLine yAxisId="right" y={20} stroke="var(--grid)" strokeDasharray="4 4" />
+                    <ReferenceLine yAxisId="right" y={90} stroke="var(--grid)" strokeDasharray="4 4" />
                     <Area yAxisId="right" type="monotone" dataKey="soc" stroke="var(--grid)" fill="var(--grid)" fillOpacity={0.08} strokeWidth={2} name="SOC (%)" />
                     <Line yAxisId="left" type="monotone" dataKey="power" stroke="var(--battery)" strokeWidth={2.5} dot={false} name="Battery kW" />
                   </AreaChart>
