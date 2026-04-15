@@ -8,6 +8,11 @@ import { verifyPassword } from '@/lib/password';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Default sender — override via EMAIL_FROM env var in production
+const DEFAULT_FROM = process.env.EMAIL_FROM ?? 'SafariCharge <royokola3@gmail.com>';
+// Admin/notifications recipient
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'royokola3@gmail.com';
+
 async function sendVerificationRequest({
   identifier: email,
   url,
@@ -18,7 +23,7 @@ async function sendVerificationRequest({
   provider: { from: string };
 }) {
   await resend.emails.send({
-    from: provider.from ?? 'SafariCharge <noreply@safaricharge.co.ke>',
+    from: provider.from ?? DEFAULT_FROM,
     to: email,
     subject: 'Your SafariCharge sign-in link',
     html: `
@@ -75,7 +80,7 @@ export const authOptions: NextAuthOptions = {
     }),
     EmailProvider({
       server: '', // not used — we override sendVerificationRequest
-      from: process.env.EMAIL_FROM ?? 'SafariCharge <noreply@safaricharge.co.ke>',
+      from: DEFAULT_FROM,
       sendVerificationRequest,
     }),
   ],
@@ -101,3 +106,6 @@ export const authOptions: NextAuthOptions = {
     },
   },
 };
+
+// Export admin email constant for use in other API routes
+export { ADMIN_EMAIL, DEFAULT_FROM };
