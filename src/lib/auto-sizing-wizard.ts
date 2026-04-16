@@ -308,6 +308,8 @@ export function autoSizeSystem(input: SizingWizardInput): SizingRecommendation {
       minReservePct: 20, // Standard 20% reserve
     },
     loads: [], // Will be populated based on user's actual loads
+    performanceRatio: 0.8,
+    shadingLossPct: 0,
   };
 
   // ========================================================================

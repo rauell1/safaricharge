@@ -775,6 +775,8 @@ export default function ModularDashboardDemo({
                   industrialLoadKw: 0,
                   accessoryLoadKw: 0,
                   accessoryScale: 1,
+                  performanceRatio: 0.8,
+                  shadingLossPct: 0,
                   pvCapacityKw: 10,
                 }}
               />
