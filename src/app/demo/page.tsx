@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import type { DashboardSection } from '@/components/layout/DashboardSidebar';
@@ -31,6 +31,7 @@ import { BarChart3, PieChart, TrendingUp, Leaf, Car, Trees } from 'lucide-react'
 import { EnergyReportModal } from '@/components/energy/EnergyReportModal';
 import type { SolarIrradianceData } from '@/lib/nasa-power-api';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
+import { SIZING_SIMULATOR_STORAGE_KEY, parseSimulatorSizingPayload } from '@/lib/pv-sizing';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import {
@@ -107,7 +108,7 @@ export default function ModularDashboardDemo({
   useDemoEnergySystem();
   const router = useRouter();
   const { timeRange, setTimeRange } = useTimeRange();
-  const { currentDate } = useSimulationState();
+  const { currentDate, setSimulationState } = useSimulationState();
   const solarNode    = useEnergyNode('solar');
   const batteryNode  = useEnergyNode('battery');
   const gridNode     = useEnergyNode('grid');
@@ -118,6 +119,9 @@ export default function ModularDashboardDemo({
   const accumulators = useAccumulators();
   const saveScenario = useEnergySystemStore((s) => s.saveScenario);
   const resetSystem  = useEnergySystemStore((s) => s.resetSystem);
+  const updateSystemConfig = useEnergySystemStore((s) => s.updateSystemConfig);
+  const updateFullSystemConfig = useEnergySystemStore((s) => s.updateFullSystemConfig);
+  const updateNode = useEnergySystemStore((s) => s.updateNode);
   const { toast }    = useToast();
 
   const [activeSection, setActiveSection] = useState<DashboardSection>(initialSection);
@@ -137,6 +141,50 @@ export default function ModularDashboardDemo({
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [activeLocation, setActiveLocation]         = useState<LocationOption>(KENYA_LOCATIONS[0]);
   // ─────────────────────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    const payload = parseSimulatorSizingPayload(localStorage.getItem(SIZING_SIMULATOR_STORAGE_KEY));
+    if (!payload) return;
+
+    localStorage.removeItem(SIZING_SIMULATOR_STORAGE_KEY);
+
+    const store = useEnergySystemStore.getState();
+    const nextBatteryCapacity = payload.systemType === 'off-grid' ? (payload.batteryCapacityKwh ?? store.fullSystemConfig.battery.capacityKwh) : store.fullSystemConfig.battery.capacityKwh;
+    const nextFullSystemConfig = {
+      ...store.fullSystemConfig,
+      solar: {
+        ...store.fullSystemConfig.solar,
+        panelCount: payload.panelCount,
+        panelWattage: payload.panelWattage,
+        totalCapacityKw: payload.requiredPvCapacityKw,
+      },
+      inverter: {
+        ...store.fullSystemConfig.inverter,
+        capacityKw: Math.max(1, Number((payload.requiredPvCapacityKw * 0.9).toFixed(2))),
+      },
+      battery: {
+        ...store.fullSystemConfig.battery,
+        capacityKwh: nextBatteryCapacity,
+      },
+    };
+
+    updateFullSystemConfig(nextFullSystemConfig);
+    updateSystemConfig({
+      solarCapacityKW: payload.requiredPvCapacityKw,
+      inverterKW: nextFullSystemConfig.inverter.capacityKw,
+      batteryCapacityKWh: nextBatteryCapacity,
+    });
+    updateNode('solar', { capacityKW: payload.requiredPvCapacityKw });
+    updateNode('battery', { capacityKWh: nextBatteryCapacity });
+    setSimulationState({ isAutoMode: true });
+    const matchedLocation = KENYA_LOCATIONS.find((loc) => loc.name === payload.county);
+    if (matchedLocation) setActiveLocation(matchedLocation);
+
+    toast({
+      title: 'Sizing loaded',
+      description: `${payload.county} sizing preset loaded and simulation started.`,
+    });
+  }, [setSimulationState, toast, updateFullSystemConfig, updateNode, updateSystemConfig]);
 
   // ─── Reset handler ───────────────────────────────────────────────────────
   const handleReset = useCallback(() => {

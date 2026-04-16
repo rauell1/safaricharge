@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import {
   Calendar,
   Bell,
@@ -198,6 +199,12 @@ export function DashboardHeader({
               <span className="hidden md:inline">Recommend</span>
             </button>
           )}
+
+          <Link href="/sizing">
+            <Button variant="outline" className="h-9 md:h-10">
+              PV Sizing
+            </Button>
+          </Link>
 
           {/* Filters */}
           <Popover>
