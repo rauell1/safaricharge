@@ -43,7 +43,8 @@ interface EnergyReportModalProps {
   carbonOffset: number;
   minuteData: ReportMinuteRecord[];
   systemStartDate: string;
-  onExport: () => void;
+  onExportCsv: () => Promise<void>;
+  onExportExcel: () => Promise<void>;
   onFormalReport: () => Promise<void>;
   onDownloadCharts?: () => Promise<void>;
 }
@@ -57,13 +58,15 @@ export const EnergyReportModal = ({
   gridImport,
   minuteData,
   systemStartDate,
-  onExport,
+  onExportCsv,
+  onExportExcel,
   onFormalReport,
   onDownloadCharts,
   carbonOffset,
 }: EnergyReportModalProps) => {
   const [activeTab, setActiveTab] = useState('daily');
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingExcel, setIsExportingExcel] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [isDownloadingCharts, setIsDownloadingCharts] = useState(false);
 
@@ -365,15 +368,29 @@ export const EnergyReportModal = ({
               <button
                 onClick={async () => {
                   setIsExporting(true);
-                  try { await onExport(); } finally { setIsExporting(false); }
+                  try { await onExportCsv(); } finally { setIsExporting(false); }
                 }}
                 disabled={isExporting || totalDataPoints === 0}
                 className="w-full py-3 bg-[var(--consumption)] text-white font-bold rounded-lg hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isExporting ? (
-                  <><Loader2 size={18} className="animate-spin" />Generating Report...</>
+                  <><Loader2 size={18} className="animate-spin" />Generating CSV...</>
                 ) : (
-                  <><Download size={18} />Download Excel Report ({(totalDataPoints * 0.5 / 1024).toFixed(1)} KB)</>
+                  <><Download size={18} />Download Structured CSV</>
+                )}
+              </button>
+              <button
+                onClick={async () => {
+                  setIsExportingExcel(true);
+                  try { await onExportExcel(); } finally { setIsExportingExcel(false); }
+                }}
+                disabled={isExportingExcel || totalDataPoints === 0}
+                className="mt-3 w-full py-3 bg-[var(--battery)] text-white font-bold rounded-lg hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isExportingExcel ? (
+                  <><Loader2 size={18} className="animate-spin" />Generating Excel...</>
+                ) : (
+                  <><FileSpreadsheet size={18} />Download Excel (4 sheets)</>
                 )}
               </button>
 
@@ -423,8 +440,8 @@ export const EnergyReportModal = ({
               <div className="flex items-center gap-3 mb-4">
                 <FileText size={24} className="text-sky-400" />
                 <div>
-                  <h3 className="font-bold text-white text-lg">Generate PDF Report</h3>
-                  <p className="text-xs text-slate-400">Professional investor-ready report with charts &amp; analysis</p>
+                  <h3 className="font-bold text-white text-lg">Export PDF Summary</h3>
+                  <p className="text-xs text-slate-400">Print-ready one-page SafariCharge summary for KPLC net-metering applications</p>
                 </div>
               </div>
 
@@ -438,15 +455,15 @@ export const EnergyReportModal = ({
                 className="w-full py-3 bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold rounded-lg hover:from-sky-600 hover:to-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-sky-500/25"
               >
                 {isGeneratingPDF ? (
-                  <><Loader2 size={18} className="animate-spin" />Generating Report...</>
+                  <><Loader2 size={18} className="animate-spin" />Preparing print layout...</>
                 ) : (
-                  <><FileText size={18} />Open PDF Report (New Tab)</>
+                  <><FileText size={18} />Export PDF (Print)</>
                 )}
               </button>
               {totalDataPoints === 0 ? (
                 <p className="text-xs text-amber-400 mt-2 text-center">Start the simulation to generate a report</p>
               ) : (
-                <p className="text-xs text-[var(--text-secondary)] mt-2 text-center">Opens in new tab: use browser Print (Ctrl+P) to save as PDF</p>
+                <p className="text-xs text-[var(--text-secondary)] mt-2 text-center">Uses browser print view with a hidden print-only summary layout</p>
               )}
             </div>
           </div>
