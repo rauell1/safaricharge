@@ -35,6 +35,7 @@ function safeLocalStorage() {
 
 // Node types in the energy system
 export type NodeType = 'solar' | 'battery' | 'grid' | 'home' | 'ev1' | 'ev2';
+export type SystemMode = 'on-grid' | 'off-grid' | 'hybrid';
 
 // Energy flow between two nodes
 export interface EnergyFlow {
@@ -113,6 +114,10 @@ export interface SystemConfigSnapshot {
   inverterKW: number;
   ev1CapacityKWh: number;
   ev2CapacityKWh: number;
+  systemMode: SystemMode;
+  batteryDodPct: number;
+  generatorThresholdPct: number;
+  gridOutageEnabled: boolean;
   gridTariff: { peakRate: number; offPeakRate: number };
 }
 
@@ -201,6 +206,10 @@ interface EnergySystemState {
     inverterKW: number;
     ev1CapacityKWh: number;
     ev2CapacityKWh: number;
+    systemMode: SystemMode;
+    batteryDodPct: number;
+    generatorThresholdPct: number;
+    gridOutageEnabled: boolean;
     gridTariff: {
       peakRate: number;
       offPeakRate: number;
@@ -343,6 +352,10 @@ export const useEnergySystemStore = create<EnergySystemState>()(
     inverterKW: 10,
     ev1CapacityKWh: 80,
     ev2CapacityKWh: 118,
+    systemMode: 'hybrid',
+    batteryDodPct: 80,
+    generatorThresholdPct: 20,
+    gridOutageEnabled: false,
     gridTariff: {
       peakRate: 24.31,
       offPeakRate: 14.93,
