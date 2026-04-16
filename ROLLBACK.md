@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 109 | `rollback/feat-add-kenya-county-irradiance-prese-2026-04-16-3d5fbea` | `3d5fbea` | feat: add Kenya county irradiance presets & social impact calculator | 2026-04-16 |
 | 108 | `rollback/merge-pull-request-204-from-rauell1-co-2026-04-16-58e0529` | `58e0529` | Merge pull request #204 from rauell1/copilot/feat-upgrade-csv-excel-export | 2026-04-16 |
 | 107 | `rollback/merge-pull-request-203-from-rauell1-co-2026-04-16-f67514d` | `f67514d` | Merge pull request #203 from rauell1/copilot/add-social-impact-dashboard-panel | 2026-04-16 |
 | 106 | `rollback/merge-pull-request-202-from-rauell1-co-2026-04-16-515093a` | `515093a` | Merge pull request #202 from rauell1/copilot/add-on-grid-off-grid-simulation-paths | 2026-04-16 |
@@ -1145,6 +1146,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/merge-pull-request-204-from-rauell1-co-2026-04-16-58e0529`
 - **Commit**: `58e0529a71298d5cea99db38078b8a72bf516804`
 - **Subject**: Merge pull request #204 from rauell1/copilot/feat-upgrade-csv-excel-export
+- **Date**: 2026-04-16
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #109 — `rollback/feat-add-kenya-county-irradiance-prese-2026-04-16-3d5fbea`
+
+- **Branch**: `rollback/feat-add-kenya-county-irradiance-prese-2026-04-16-3d5fbea`
+- **Commit**: `3d5fbea4ac183c61a5ee06ac27d8e745836a3fec`
+- **Subject**: feat: add Kenya county irradiance presets & social impact calculator
 - **Date**: 2026-04-16
 - **Auto-generated**: yes (by update-rollback.yml)
 
