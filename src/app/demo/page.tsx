@@ -269,8 +269,7 @@ export default function ModularDashboardDemo({
     const annualSolarGeneratedKwh = financialSnapshot.energy.avgDailySolarKWh * 365;
     const totalGridExportKwh = minuteData.reduce((sum, d) => sum + (d.gridExportKWh ?? 0), 0);
     const avgDailyGridExportKwh = totalGridExportKwh / trackedDays;
-    const annualGridExportKwh = avgDailyGridExportKwh * 365;
-    const gridImportDisplacedKwh = Math.max(0, annualSolarGeneratedKwh - annualGridExportKwh);
+    const gridImportDisplacedKwh = Math.max(0, annualSolarGeneratedKwh - (avgDailyGridExportKwh * 365));
 
     return {
       annualSolarGeneratedKwh,
