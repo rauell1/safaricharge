@@ -108,7 +108,7 @@ export default function ModularDashboardDemo({
   useDemoEnergySystem();
   const router = useRouter();
   const { timeRange, setTimeRange } = useTimeRange();
-  const { currentDate, setSimulationState } = useSimulationState();
+  const { currentDate } = useSimulationState();
   const solarNode    = useEnergyNode('solar');
   const batteryNode  = useEnergyNode('battery');
   const gridNode     = useEnergyNode('grid');
@@ -119,9 +119,6 @@ export default function ModularDashboardDemo({
   const accumulators = useAccumulators();
   const saveScenario = useEnergySystemStore((s) => s.saveScenario);
   const resetSystem  = useEnergySystemStore((s) => s.resetSystem);
-  const updateSystemConfig = useEnergySystemStore((s) => s.updateSystemConfig);
-  const updateFullSystemConfig = useEnergySystemStore((s) => s.updateFullSystemConfig);
-  const updateNode = useEnergySystemStore((s) => s.updateNode);
   const { toast }    = useToast();
 
   const [activeSection, setActiveSection] = useState<DashboardSection>(initialSection);
@@ -168,15 +165,15 @@ export default function ModularDashboardDemo({
       },
     };
 
-    updateFullSystemConfig(nextFullSystemConfig);
-    updateSystemConfig({
+    store.updateFullSystemConfig(nextFullSystemConfig);
+    store.updateSystemConfig({
       solarCapacityKW: payload.requiredPvCapacityKw,
       inverterKW: nextFullSystemConfig.inverter.capacityKw,
       batteryCapacityKWh: nextBatteryCapacity,
     });
-    updateNode('solar', { capacityKW: payload.requiredPvCapacityKw });
-    updateNode('battery', { capacityKWh: nextBatteryCapacity });
-    setSimulationState({ isAutoMode: true });
+    store.updateNode('solar', { capacityKW: payload.requiredPvCapacityKw });
+    store.updateNode('battery', { capacityKWh: nextBatteryCapacity });
+    store.setSimulationState({ isAutoMode: true });
     const matchedLocation = KENYA_LOCATIONS.find((loc) => loc.name === payload.county);
     if (matchedLocation) setActiveLocation(matchedLocation);
 
@@ -184,7 +181,7 @@ export default function ModularDashboardDemo({
       title: 'Sizing loaded',
       description: `${payload.county} sizing preset loaded and simulation started.`,
     });
-  }, [setSimulationState, toast, updateFullSystemConfig, updateNode, updateSystemConfig]);
+  }, [toast]);
 
   // ─── Reset handler ───────────────────────────────────────────────────────
   const handleReset = useCallback(() => {

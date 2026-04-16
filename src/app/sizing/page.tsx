@@ -43,7 +43,7 @@ export default function SizingPage() {
   const [county, setCounty] = useState(typedPresets.presets[0]?.county ?? 'Nairobi');
   const [systemType, setSystemType] = useState<SystemType>('on-grid');
   const [performanceRatio, setPerformanceRatio] = useState(0.8);
-  const [batteryChemistry, setBatteryChemistry] = useState<BatteryChemistry>('lifepo2');
+  const [batteryChemistry, setBatteryChemistry] = useState<BatteryChemistry>('lifepo4');
   const [autonomyDays, setAutonomyDays] = useState(2);
   const [panelWattage, setPanelWattage] = useState(400);
 
@@ -162,7 +162,7 @@ export default function SizingPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="lead-acid">Lead-Acid (50% DoD)</SelectItem>
-                  <SelectItem value="lifepo2">LiFePO₂ (80% DoD)</SelectItem>
+                  <SelectItem value="lifepo4">LiFePO₄ (80% DoD)</SelectItem>
                   <SelectItem value="agm">AGM (60% DoD)</SelectItem>
                 </SelectContent>
               </Select>
@@ -184,7 +184,7 @@ export default function SizingPage() {
             <p><span className="font-semibold text-[var(--text-primary)]">Suggested panels:</span> {result.suggestedPanelCount} × {panelWattage}W</p>
             <p><span className="font-semibold text-[var(--text-primary)]">Required battery capacity:</span> {result.requiredBatteryCapacityKwh === null ? 'N/A (on-grid / hybrid)' : `${result.requiredBatteryCapacityKwh.toFixed(2)} kWh`}</p>
             <p><span className="font-semibold text-[var(--text-primary)]">Estimated monthly generation:</span> {result.estimatedMonthlyGenerationKwh.toFixed(1)} kWh</p>
-            <p><span className="font-semibold text-[var(--text-primary)]">Simple payback estimate:</span> {result.simplePaybackYears.toFixed(1)} years</p>
+            <p><span className="font-semibold text-[var(--text-primary)]">Simple payback estimate:</span> {Number.isFinite(result.simplePaybackYears) ? `${result.simplePaybackYears.toFixed(1)} years` : 'Not applicable'}</p>
             <p><span className="font-semibold text-[var(--text-primary)]">County solar profile:</span> {selectedPreset.county} • {selectedPreset.annualYieldKwhPerKwp} kWh/kWp/year • Peak: {selectedPreset.peakMonth} • Low: {selectedPreset.lowMonth}</p>
             <p className="text-xs">Battery DoD reference: {Math.round(BATTERY_DOD[batteryChemistry] * 100)}%</p>
 

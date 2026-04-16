@@ -1,5 +1,5 @@
 export type SystemType = 'on-grid' | 'off-grid' | 'hybrid';
-export type BatteryChemistry = 'lead-acid' | 'lifepo2' | 'agm';
+export type BatteryChemistry = 'lead-acid' | 'lifepo4' | 'agm';
 
 export interface KenyaIrradiancePreset {
   county: string;
@@ -32,7 +32,7 @@ export interface SimulatorSizingPayload {
 
 export const BATTERY_DOD: Record<BatteryChemistry, number> = {
   'lead-acid': 0.5,
-  lifepo2: 0.8,
+  lifepo4: 0.8,
   agm: 0.6,
 };
 
@@ -77,8 +77,8 @@ export function computeSizingResult({
   const solarCost = requiredPvCapacityKw * 1000 * SOLAR_COST_PER_W_KES;
   const batteryCost = (requiredBatteryCapacityKwh ?? 0) * BATTERY_COST_PER_KWH_KES;
   const estimatedCapex = (solarCost + batteryCost) * INSTALLATION_FACTOR;
-  const annualSavings = Math.max(1, estimatedMonthlyGenerationKwh * KPLC_AVG_RATE_KES_PER_KWH * 12);
-  const simplePaybackYears = estimatedCapex / annualSavings;
+  const annualSavings = estimatedMonthlyGenerationKwh * KPLC_AVG_RATE_KES_PER_KWH * 12;
+  const simplePaybackYears = annualSavings > 0 ? estimatedCapex / annualSavings : Number.POSITIVE_INFINITY;
 
   return {
     requiredPvCapacityKw,
