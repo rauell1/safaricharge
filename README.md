@@ -5,12 +5,20 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`bfc0481`](https://github.com/rauell1/safaricharge/commit/bfc04814b8fd8330fb87ac30f0f683bd61022a89) by Roy Otieno | Energy & Mobility Systems |
-| **Date** | 2026-04-15 |
-| **Message** | fix: add 'use client' to landing page to allow event handlers |
-| **Total commits** | 1002 |
-| **TypeScript files** | 197 |
+| **Last commit** | [`f67514d`](https://github.com/rauell1/safaricharge/commit/f67514d8ec36b111886425e71fb6b4807409d1a7) by Roy Otieno | Energy & Mobility Systems |
+| **Date** | 2026-04-16 |
+| **Message** | Merge pull request #203 from rauell1/copilot/add-social-impact-dashboard-panel |
+| **Total commits** | 1031 |
+| **TypeScript files** | 203 |
 <!-- END AUTO-UPDATED -->
+
+
+
+
+
+
+
+
 
 
 

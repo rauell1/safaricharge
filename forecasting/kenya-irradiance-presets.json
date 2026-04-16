@@ -1,0 +1,318 @@
+{
+  "source": {
+    "name": "Global Solar Atlas (World Bank Group, Solargis)",
+    "url": "https://globalsolaratlas.info/",
+    "accessed": "2026-04-16",
+    "notes": "County presets are representative planning values for SafariCharge PV sizing."
+  },
+  "presets": [
+    {
+      "county": "Nairobi",
+      "lat": -1.2921,
+      "lon": 36.8219,
+      "avgDailySunHours": 2.9,
+      "annualYieldKwhPerKwp": 1050,
+      "peakMonth": "February",
+      "lowMonth": "July"
+    },
+    {
+      "county": "Mombasa",
+      "lat": -4.0435,
+      "lon": 39.6682,
+      "avgDailySunHours": 5.6,
+      "annualYieldKwhPerKwp": 1940,
+      "peakMonth": "January",
+      "lowMonth": "June"
+    },
+    {
+      "county": "Kisumu",
+      "lat": -0.1022,
+      "lon": 34.7617,
+      "avgDailySunHours": 4.7,
+      "annualYieldKwhPerKwp": 1690,
+      "peakMonth": "February",
+      "lowMonth": "August"
+    },
+    {
+      "county": "Nakuru",
+      "lat": -0.3031,
+      "lon": 36.08,
+      "avgDailySunHours": 5.2,
+      "annualYieldKwhPerKwp": 1860,
+      "peakMonth": "January",
+      "lowMonth": "July"
+    },
+    {
+      "county": "Eldoret",
+      "lat": 0.5143,
+      "lon": 35.2698,
+      "avgDailySunHours": 4.8,
+      "annualYieldKwhPerKwp": 1730,
+      "peakMonth": "February",
+      "lowMonth": "August"
+    },
+    {
+      "county": "Turkana",
+      "lat": 3.119,
+      "lon": 35.5973,
+      "avgDailySunHours": 6.4,
+      "annualYieldKwhPerKwp": 2120,
+      "peakMonth": "January",
+      "lowMonth": "July"
+    },
+    {
+      "county": "Garissa",
+      "lat": -0.4532,
+      "lon": 39.6461,
+      "avgDailySunHours": 6.1,
+      "annualYieldKwhPerKwp": 2050,
+      "peakMonth": "January",
+      "lowMonth": "June"
+    },
+    {
+      "county": "Kisii",
+      "lat": -0.6773,
+      "lon": 34.7796,
+      "avgDailySunHours": 4.3,
+      "annualYieldKwhPerKwp": 1560,
+      "peakMonth": "February",
+      "lowMonth": "August"
+    },
+    {
+      "county": "Nyeri",
+      "lat": -0.4167,
+      "lon": 36.95,
+      "avgDailySunHours": 4.8,
+      "annualYieldKwhPerKwp": 1710,
+      "peakMonth": "January",
+      "lowMonth": "July"
+    },
+    {
+      "county": "Machakos",
+      "lat": -1.5177,
+      "lon": 37.2634,
+      "avgDailySunHours": 5.4,
+      "annualYieldKwhPerKwp": 1910,
+      "peakMonth": "January",
+      "lowMonth": "July"
+    }
+  ],
+  "counties": [
+    {
+      "county": "Nairobi",
+      "locationName": "Nairobi",
+      "displayName": "Nairobi, Kenya",
+      "latitude": -1.2921,
+      "longitude": 36.8219,
+      "annualAvgSunHours": 5.4,
+      "irradianceRangeKwhM2Day": "4.8-5.8",
+      "electrificationRatePct": 95,
+      "isKosapTarget": false,
+      "countyNote": "Nairobi has strong year-round irradiance and high electricity demand, making rooftop PV attractive for distributed generation."
+    },
+    {
+      "county": "Mombasa",
+      "locationName": "Mombasa",
+      "displayName": "Mombasa, Kenya",
+      "latitude": -4.0435,
+      "longitude": 39.6682,
+      "annualAvgSunHours": 5.8,
+      "irradianceRangeKwhM2Day": "5.2-6.1",
+      "electrificationRatePct": 86,
+      "isKosapTarget": false,
+      "countyNote": "Mombasa's coastal solar profile supports strong daytime production for commercial and mobility loads."
+    },
+    {
+      "county": "Kisumu",
+      "locationName": "Kisumu",
+      "displayName": "Kisumu, Kenya",
+      "latitude": -0.1022,
+      "longitude": 34.7617,
+      "annualAvgSunHours": 5.2,
+      "irradianceRangeKwhM2Day": "4.7-5.6",
+      "electrificationRatePct": 71,
+      "isKosapTarget": false,
+      "countyNote": "Kisumu has solid irradiance with strong potential for hybrid PV-battery systems serving homes and SMEs."
+    },
+    {
+      "county": "Nakuru",
+      "locationName": "Nakuru",
+      "displayName": "Nakuru, Kenya",
+      "latitude": -0.3031,
+      "longitude": 36.08,
+      "annualAvgSunHours": 5.6,
+      "irradianceRangeKwhM2Day": "5.0-5.9",
+      "electrificationRatePct": 79,
+      "isKosapTarget": false,
+      "countyNote": "Nakuru's highland climate and good irradiance make it suitable for stable PV output across the year."
+    },
+    {
+      "county": "Uasin Gishu",
+      "locationName": "Eldoret",
+      "displayName": "Eldoret, Kenya",
+      "latitude": 0.5143,
+      "longitude": 35.2698,
+      "annualAvgSunHours": 5.3,
+      "irradianceRangeKwhM2Day": "4.9-5.7",
+      "electrificationRatePct": 73,
+      "isKosapTarget": false,
+      "countyNote": "Uasin Gishu offers moderate-to-strong irradiance, supporting productive-use solar for households and agri-business."
+    },
+    {
+      "county": "Kiambu",
+      "locationName": "Thika",
+      "displayName": "Thika, Kenya",
+      "latitude": -1.0332,
+      "longitude": 37.0693,
+      "annualAvgSunHours": 5.5,
+      "irradianceRangeKwhM2Day": "5.0-5.9",
+      "electrificationRatePct": 90,
+      "isKosapTarget": false,
+      "countyNote": "Kiambu combines good solar irradiance with dense peri-urban demand, improving payback for distributed PV."
+    },
+    {
+      "county": "Kilifi",
+      "locationName": "Malindi",
+      "displayName": "Malindi, Kenya",
+      "latitude": -3.2175,
+      "longitude": 40.1169,
+      "annualAvgSunHours": 6,
+      "irradianceRangeKwhM2Day": "5.5-6.4",
+      "electrificationRatePct": 52,
+      "isKosapTarget": true,
+      "countyNote": "Kilifi's high irradiance and underserved settlements make off-grid and mini-grid solar especially impactful."
+    },
+    {
+      "county": "Garissa",
+      "locationName": "Garissa",
+      "displayName": "Garissa, Kenya",
+      "latitude": -0.4532,
+      "longitude": 39.6461,
+      "annualAvgSunHours": 6.4,
+      "irradianceRangeKwhM2Day": "5.8-6.8",
+      "electrificationRatePct": 38,
+      "isKosapTarget": true,
+      "countyNote": "Garissa has very high solar irradiance and is a priority county for off-grid deployment under KOSAP."
+    },
+    {
+      "county": "Turkana",
+      "locationName": "Lodwar",
+      "displayName": "Lodwar, Turkana",
+      "latitude": 3.1167,
+      "longitude": 35.6,
+      "annualAvgSunHours": 6.5,
+      "irradianceRangeKwhM2Day": "6.0-6.9",
+      "electrificationRatePct": 22,
+      "isKosapTarget": true,
+      "countyNote": "Turkana has among the highest solar irradiance in Kenya and is ideal for off-grid deployment in dispersed settlements."
+    },
+    {
+      "county": "Marsabit",
+      "locationName": "Marsabit",
+      "displayName": "Marsabit, Kenya",
+      "latitude": 2.3347,
+      "longitude": 37.99,
+      "annualAvgSunHours": 6.2,
+      "irradianceRangeKwhM2Day": "5.7-6.7",
+      "electrificationRatePct": 24,
+      "isKosapTarget": true,
+      "countyNote": "Marsabit's high irradiance profile supports reliable standalone solar where grid extension is costly."
+    },
+    {
+      "county": "Isiolo",
+      "locationName": "Isiolo",
+      "displayName": "Isiolo, Kenya",
+      "latitude": 0.355,
+      "longitude": 37.5833,
+      "annualAvgSunHours": 6.1,
+      "irradianceRangeKwhM2Day": "5.6-6.5",
+      "electrificationRatePct": 45,
+      "isKosapTarget": true,
+      "countyNote": "Isiolo receives strong solar resource and is well suited for mini-grid and productive-use PV systems."
+    },
+    {
+      "county": "Mandera",
+      "locationName": "Mandera",
+      "displayName": "Mandera, Kenya",
+      "latitude": 3.9373,
+      "longitude": 41.8569,
+      "annualAvgSunHours": 6.3,
+      "irradianceRangeKwhM2Day": "5.8-6.8",
+      "electrificationRatePct": 18,
+      "isKosapTarget": true,
+      "countyNote": "Mandera combines high irradiance with low access, making PAYGo and mini-grid solar crucial for first-time electrification."
+    },
+    {
+      "county": "Wajir",
+      "locationName": "Wajir",
+      "displayName": "Wajir, Kenya",
+      "latitude": 1.7471,
+      "longitude": 40.0573,
+      "annualAvgSunHours": 6.3,
+      "irradianceRangeKwhM2Day": "5.8-6.7",
+      "electrificationRatePct": 20,
+      "isKosapTarget": true,
+      "countyNote": "Wajir's strong sun and sparse grid coverage make solar systems a cost-effective primary energy source."
+    },
+    {
+      "county": "Tana River",
+      "locationName": "Hola",
+      "displayName": "Hola, Tana River",
+      "latitude": -1.4826,
+      "longitude": 40.0334,
+      "annualAvgSunHours": 6,
+      "irradianceRangeKwhM2Day": "5.5-6.4",
+      "electrificationRatePct": 28,
+      "isKosapTarget": true,
+      "countyNote": "Tana River has strong irradiance and significant off-grid demand, aligning with KOSAP expansion goals."
+    },
+    {
+      "county": "Lamu",
+      "locationName": "Lamu",
+      "displayName": "Lamu, Kenya",
+      "latitude": -2.2717,
+      "longitude": 40.902,
+      "annualAvgSunHours": 6.1,
+      "irradianceRangeKwhM2Day": "5.6-6.5",
+      "electrificationRatePct": 40,
+      "isKosapTarget": true,
+      "countyNote": "Lamu's island and coastal geography favors decentralized solar and storage systems."
+    },
+    {
+      "county": "Samburu",
+      "locationName": "Maralal",
+      "displayName": "Maralal, Samburu",
+      "latitude": 1.1,
+      "longitude": 36.7,
+      "annualAvgSunHours": 6.2,
+      "irradianceRangeKwhM2Day": "5.7-6.6",
+      "electrificationRatePct": 30,
+      "isKosapTarget": true,
+      "countyNote": "Samburu's high insolation and dispersed settlements make stand-alone solar systems highly relevant."
+    },
+    {
+      "county": "West Pokot",
+      "locationName": "Kapenguria",
+      "displayName": "Kapenguria, West Pokot",
+      "latitude": 1.2389,
+      "longitude": 35.1119,
+      "annualAvgSunHours": 5.8,
+      "irradianceRangeKwhM2Day": "5.3-6.2",
+      "electrificationRatePct": 34,
+      "isKosapTarget": true,
+      "countyNote": "West Pokot can benefit from off-grid solar to reduce diesel reliance in remote communities."
+    },
+    {
+      "county": "Kwale",
+      "locationName": "Kwale",
+      "displayName": "Kwale, Kenya",
+      "latitude": -4.1748,
+      "longitude": 39.4521,
+      "annualAvgSunHours": 5.9,
+      "irradianceRangeKwhM2Day": "5.3-6.3",
+      "electrificationRatePct": 49,
+      "isKosapTarget": true,
+      "countyNote": "Kwale combines strong irradiance and underserved rural areas where solar can improve household reliability and affordability."
+    }
+  ]
+}

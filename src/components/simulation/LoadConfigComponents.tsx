@@ -10,7 +10,7 @@
 import React, { useState } from 'react';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
 import {
-  Plus, Trash2, Edit, Save, X, Home, Car, Building2, Wind, Zap, ChevronDown, ChevronUp
+  Plus, Trash2, Edit, Save, Home, Car, Building2, Wind, Zap, ChevronDown, ChevronUp, AlertTriangle, Info
 } from 'lucide-react';
 import type {
   SystemConfiguration,
@@ -21,16 +21,49 @@ import type {
   HVACLoadConfig,
   CustomLoadConfig,
 } from '@/lib/system-config';
-import { createLoadTemplate, generateLoadId, DEFAULT_SYSTEM_CONFIG } from '@/lib/system-config';
+import { createLoadTemplate } from '@/lib/system-config';
+import {
+  computeDaysOfAutonomy,
+  computeNetMeteringCreditKesPerMonth,
+  computeOffGridPvRecommendation,
+  DEFAULT_BATTERY_DOD_PCT,
+  DEFAULT_GENERATOR_THRESHOLD_PCT,
+  SYSTEM_MODE_LABELS,
+} from '@/lib/system-mode-metrics';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface LoadListProps {
   config: SystemConfiguration;
   onConfigChange: (config: SystemConfiguration) => void;
 }
 
+function clampPercentage(value: string, defaultValue: number): number {
+  return Math.max(1, Math.min(100, Number(value) || defaultValue));
+}
+const clamp = (value: number, min: number, max: number): number =>
+  Math.max(min, Math.min(max, value));
+
 export function LoadList({ config, onConfigChange }: LoadListProps) {
   const [editingLoadId, setEditingLoadId] = useState<string | null>(null);
   const [isAddingLoad, setIsAddingLoad] = useState(false);
+  const performanceRatio = clamp(config.performanceRatio ?? 0.8, 0.65, 0.95);
+  const shadingLossPct = clamp(config.shadingLossPct ?? 0, 0, 50);
+
+  const handlePerformanceRatioChange = (value: number) => {
+    onConfigChange({
+      ...config,
+      performanceRatio: clamp(value, 0.65, 0.95),
+      shadingLossPct,
+    });
+  };
+
+  const handleShadingLossChange = (value: number) => {
+    onConfigChange({
+      ...config,
+      performanceRatio,
+      shadingLossPct: clamp(value, 0, 50),
+    });
+  };
 
   const handleAddLoad = (type: LoadConfig['type']) => {
     const newLoad = createLoadTemplate(type, config.loads);
@@ -58,6 +91,71 @@ export function LoadList({ config, onConfigChange }: LoadListProps) {
         <button onClick={() => setIsAddingLoad(!isAddingLoad)} className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors">
           <Plus className="w-3 h-3" />Add Load
         </button>
+      </div>
+
+      <div className="p-3 bg-gray-50 border border-gray-200 rounded space-y-3">
+        <h3 className="text-sm font-semibold text-gray-700">PV Performance Derates</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <label className="flex items-center gap-1 text-xs font-medium text-gray-700">
+              Performance Ratio
+              <Info
+                className="w-3.5 h-3.5 text-gray-500"
+                title="Real-world PV derate for inverter, wiring, mismatch and temperature losses. Typical Kenya rooftop systems run around 75–90%."
+              />
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min={0.65}
+                max={0.95}
+                step={0.01}
+                value={performanceRatio}
+                onChange={(e) => handlePerformanceRatioChange(parseFloat(e.target.value))}
+                className="flex-1"
+              />
+              <input
+                type="number"
+                min={0.65}
+                max={0.95}
+                step={0.01}
+                value={performanceRatio}
+                onChange={(e) => handlePerformanceRatioChange(parseFloat(e.target.value) || 0.8)}
+                className="w-20 px-2 py-1 text-sm border border-gray-300 rounded"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="flex items-center gap-1 text-xs font-medium text-gray-700">
+              Shading Loss (%)
+              <Info
+                className="w-3.5 h-3.5 text-gray-500"
+                title="Extra partial-shading loss. In Kenya urban rooftops, antennae, trees or nearby buildings can shade small panel areas and sharply reduce output (sometimes >80% on affected modules)."
+              />
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min={0}
+                max={50}
+                step={1}
+                value={shadingLossPct}
+                onChange={(e) => handleShadingLossChange(parseFloat(e.target.value))}
+                className="flex-1"
+              />
+              <input
+                type="number"
+                min={0}
+                max={50}
+                step={1}
+                value={shadingLossPct}
+                onChange={(e) => handleShadingLossChange(parseFloat(e.target.value) || 0)}
+                className="w-20 px-2 py-1 text-sm border border-gray-300 rounded"
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       {isAddingLoad && (
@@ -264,5 +362,127 @@ function getLoadSummary(load: LoadConfig): string {
 export function LoadConfigComponents() {
   const fullSystemConfig = useEnergySystemStore((s) => s.fullSystemConfig);
   const updateFullSystemConfig = useEnergySystemStore((s) => s.updateFullSystemConfig);
-  return <LoadList config={fullSystemConfig} onConfigChange={updateFullSystemConfig} />;
+  const minuteData = useEnergySystemStore((s) => s.minuteData);
+  const modeConfig = useEnergySystemStore((s) => s.systemConfig);
+  const updateSystemConfig = useEnergySystemStore((s) => s.updateSystemConfig);
+
+  const dayPoints = minuteData.slice(-420);
+  const dailyLoadKwh = dayPoints.reduce((sum, d) => sum + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh, 0);
+  const dailyExportKwh = dayPoints.reduce((sum, d) => sum + d.gridExportKWh, 0);
+  const autonomyDays = computeDaysOfAutonomy(
+    modeConfig.batteryCapacityKWh,
+    modeConfig.batteryDodPct,
+    dailyLoadKwh
+  );
+  const netMeteringCreditKes = computeNetMeteringCreditKesPerMonth(dailyExportKwh);
+  const offGridPvKw = computeOffGridPvRecommendation(modeConfig.solarCapacityKW);
+
+  return (
+    <div className="space-y-4">
+      <div className="p-4 border border-gray-200 rounded-lg bg-white space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-semibold text-gray-800">System mode</span>
+          {(['on-grid', 'off-grid', 'hybrid'] as const).map((mode) => (
+            <button
+              key={mode}
+              onClick={() => updateSystemConfig({ systemMode: mode })}
+              className={`px-3 py-1 text-xs font-semibold rounded border transition-colors ${
+                modeConfig.systemMode === mode
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+              }`}
+            >
+              {SYSTEM_MODE_LABELS[mode]}
+            </button>
+          ))}
+        </div>
+
+        {modeConfig.systemMode === 'off-grid' && (
+          <div className="space-y-3">
+            {modeConfig.batteryCapacityKWh <= 0 && (
+              <div className="flex items-start gap-2 rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                <AlertTriangle className="h-4 w-4 mt-0.5" />
+                <span>Battery bank is mandatory in Off-Grid mode. Set battery capacity above 0 kWh.</span>
+              </div>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label className="text-xs font-medium text-gray-700">
+                Battery DoD (%)
+                <input
+                  type="number"
+                  className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                  min="1"
+                  max="100"
+                  value={modeConfig.batteryDodPct}
+                  onChange={(e) => updateSystemConfig({ batteryDodPct: clampPercentage(e.target.value, DEFAULT_BATTERY_DOD_PCT) })}
+                />
+              </label>
+              <label className="text-xs font-medium text-gray-700">
+                Generator threshold (% SOC)
+                <input
+                  type="number"
+                  className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                  min="1"
+                  max="100"
+                  value={modeConfig.generatorThresholdPct}
+                  onChange={(e) => updateSystemConfig({ generatorThresholdPct: clampPercentage(e.target.value, DEFAULT_GENERATOR_THRESHOLD_PCT) })}
+                />
+              </label>
+            </div>
+            <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              Recommended off-grid PV size: <strong>{offGridPvKw.toFixed(1)} kW</strong> (25% above on-grid equivalent).
+            </div>
+            <div className="text-xs text-gray-700">
+              Days of autonomy: <strong>{autonomyDays.toFixed(2)} days</strong>
+            </div>
+          </div>
+        )}
+
+        {modeConfig.systemMode === 'on-grid' && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="rounded border border-gray-200 bg-gray-50 px-3 py-2">
+                Grid export: <strong>{dailyExportKwh.toFixed(2)} kWh/day</strong>
+              </div>
+              <div className="rounded border border-gray-200 bg-gray-50 px-3 py-2">
+                Net-metering credit: <strong>KES {Math.round(netMeteringCreditKes).toLocaleString()}/month</strong>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                id="grid-outage-toggle"
+                type="checkbox"
+                checked={modeConfig.gridOutageEnabled}
+                onChange={(e) => updateSystemConfig({ gridOutageEnabled: e.target.checked })}
+                className="h-4 w-4"
+              />
+              <label htmlFor="grid-outage-toggle" className="text-xs font-medium text-gray-700">
+                Simulate grid outage (anti-islanding)
+              </label>
+              <TooltipProvider delayDuration={150}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-gray-500 hover:text-gray-700">
+                      <Info className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-[260px] text-xs">
+                    Kenya 2024 Net-Metering Regulations (EPRA): anti-islanding requires grid-tied systems to stop export during outages.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </div>
+        )}
+
+        {modeConfig.systemMode === 'hybrid' && (
+          <div className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+            Hybrid mode active: battery storage and grid import/export are both enabled.
+          </div>
+        )}
+      </div>
+
+      <LoadList config={fullSystemConfig} onConfigChange={updateFullSystemConfig} />
+    </div>
+  );
 }
