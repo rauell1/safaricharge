@@ -28,6 +28,7 @@ import {
 } from '@/hooks/useEnergySystem';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, PieChart, TrendingUp, Leaf, Car, Trees } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { EnergyReportModal } from '@/components/energy/EnergyReportModal';
 import type { SolarIrradianceData } from '@/lib/nasa-power-api';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
@@ -42,10 +43,13 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { MapPin } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { MapPin, Sun, Info } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { resampleTo5MinBucketsProgressive, resampleTo5MinBuckets } from '@/lib/graphSampler';
 import type { SimulationMinuteRecord } from '@/types/simulation-core';
+import { SocialImpactCard } from '@/components/widgets/SocialImpactCard';
+import kenyaIrradiancePresets from '../../../forecasting/kenya-irradiance-presets.json';
 
 // ── Restored page components ──────────────────────────────────────────────────
 import FinancialDashboard from '@/components/dashboard/FinancialDashboard';
@@ -85,21 +89,58 @@ const SOLAR_MODEL_PERFORMANCE_RATIO = 0.82;
 interface LocationOption {
   name: string;
   displayName: string;
+  county: string;
   latitude: number;
   longitude: number;
   annualAvgSunHours: number;
+  isKosapTarget: boolean;
+  electrificationRatePct: number | null;
+  countyNote: string;
 }
 
-const KENYA_LOCATIONS: LocationOption[] = [
-  { name: 'Nairobi',  displayName: 'Nairobi, Kenya',  latitude: -1.2921, longitude:  36.8219, annualAvgSunHours: 5.4 },
-  { name: 'Mombasa',  displayName: 'Mombasa, Kenya',  latitude: -4.0435, longitude:  39.6682, annualAvgSunHours: 5.8 },
-  { name: 'Kisumu',   displayName: 'Kisumu, Kenya',   latitude: -0.1022, longitude:  34.7617, annualAvgSunHours: 5.2 },
-  { name: 'Nakuru',   displayName: 'Nakuru, Kenya',   latitude: -0.3031, longitude:  36.0800, annualAvgSunHours: 5.6 },
-  { name: 'Eldoret',  displayName: 'Eldoret, Kenya',  latitude:  0.5143, longitude:  35.2698, annualAvgSunHours: 5.3 },
-  { name: 'Thika',    displayName: 'Thika, Kenya',    latitude: -1.0332, longitude:  37.0693, annualAvgSunHours: 5.5 },
-  { name: 'Malindi',  displayName: 'Malindi, Kenya',  latitude: -3.2175, longitude:  40.1169, annualAvgSunHours: 6.0 },
-  { name: 'Garissa',  displayName: 'Garissa, Kenya',  latitude: -0.4532, longitude:  39.6461, annualAvgSunHours: 6.4 },
-];
+type KenyaCountyPreset = {
+  county: string;
+  locationName: string;
+  displayName: string;
+  latitude: number;
+  longitude: number;
+  annualAvgSunHours: number;
+  electrificationRatePct: number | null;
+  isKosapTarget: boolean;
+  countyNote: string;
+};
+
+const KENYA_COUNTY_PRESETS: KenyaCountyPreset[] = (
+  (kenyaIrradiancePresets as { counties?: KenyaCountyPreset[] }).counties ?? []
+);
+
+const KENYA_LOCATIONS: LocationOption[] = KENYA_COUNTY_PRESETS.map((preset) => ({
+  name: preset.locationName,
+  displayName: preset.displayName,
+  county: preset.county,
+  latitude: preset.latitude,
+  longitude: preset.longitude,
+  annualAvgSunHours: preset.annualAvgSunHours,
+  isKosapTarget: preset.isKosapTarget,
+  electrificationRatePct: preset.electrificationRatePct,
+  countyNote: preset.countyNote,
+}));
+
+const DEFAULT_LOCATION: LocationOption = KENYA_LOCATIONS[0] ?? {
+  name: 'Nairobi',
+  displayName: 'Nairobi, Kenya',
+  county: 'Nairobi',
+  latitude: -1.2921,
+  longitude: 36.8219,
+  annualAvgSunHours: 5.4,
+  isKosapTarget: false,
+  electrificationRatePct: null,
+  countyNote: 'Nairobi has strong year-round irradiance and supports high daytime demand.',
+};
+
+const KENYA_HOUSEHOLD_ANNUAL_KWH = 1200;
+const KEROSENE_DISPLACEMENT_L_PER_KWH = 0.8;
+const KENYA_DIESEL_BACKUP_CO2_KG_PER_KWH = 0.4;
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function ModularDashboardDemo({
@@ -136,7 +177,7 @@ export default function ModularDashboardDemo({
 
   // ─── Location state ──────────────────────────────────────────────────────
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
-  const [activeLocation, setActiveLocation]         = useState<LocationOption>(KENYA_LOCATIONS[0]);
+  const [activeLocation, setActiveLocation]         = useState<LocationOption>(DEFAULT_LOCATION);
   // ─────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -258,6 +299,30 @@ export default function ModularDashboardDemo({
     [minuteData, financialInputs]
   );
   // ─────────────────────────────────────────────────────────────────────────
+
+  const socialImpact = useMemo(() => {
+    const trackedDays = financialSnapshot.energy.trackedDays;
+    if (trackedDays <= 0) {
+      return {
+        annualSolarGeneratedKwh: 0,
+        householdsPowered: 0,
+        keroseneDisplacedLiters: 0,
+        co2AvoidedKg: 0,
+      };
+    }
+
+    const annualSolarGeneratedKwh = financialSnapshot.energy.avgDailySolarKWh * 365;
+    const totalGridExportKwh = minuteData.reduce((sum, d) => sum + (d.gridExportKWh ?? 0), 0);
+    const avgDailyGridExportKwh = totalGridExportKwh / trackedDays;
+    const gridImportDisplacedKwh = Math.max(0, annualSolarGeneratedKwh - (avgDailyGridExportKwh * 365));
+
+    return {
+      annualSolarGeneratedKwh,
+      householdsPowered: annualSolarGeneratedKwh / KENYA_HOUSEHOLD_ANNUAL_KWH,
+      keroseneDisplacedLiters: gridImportDisplacedKwh * KEROSENE_DISPLACEMENT_L_PER_KWH,
+      co2AvoidedKg: annualSolarGeneratedKwh * KENYA_DIESEL_BACKUP_CO2_KG_PER_KWH,
+    };
+  }, [financialSnapshot.energy.avgDailySolarKWh, financialSnapshot.energy.trackedDays, minuteData]);
 
   // Export report as CSV
   const handleExportReport = useCallback(async () => {
@@ -913,6 +978,19 @@ export default function ModularDashboardDemo({
                 </CardContent>
               </Card>
 
+              {financialSnapshot.energy.trackedDays > 0 && (
+                <SocialImpactCard
+                  householdsPowered={socialImpact.householdsPowered}
+                  keroseneDisplacedLiters={socialImpact.keroseneDisplacedLiters}
+                  co2AvoidedKg={socialImpact.co2AvoidedKg}
+                  annualSolarGeneratedKwh={socialImpact.annualSolarGeneratedKwh}
+                  countyName={activeLocation.county}
+                  countyNote={activeLocation.countyNote}
+                  countyElectrificationRatePct={activeLocation.electrificationRatePct}
+                  isKosapTarget={activeLocation.isKosapTarget}
+                />
+              )}
+
               <PowerFlowVisualization
                 solarPower={solarPower}
                 batteryPower={batteryPower}
@@ -1086,6 +1164,16 @@ export default function ModularDashboardDemo({
             <DialogTitle className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-[var(--solar)]" />
               Select Location
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" className="inline-flex" aria-label="Learn more about Kenya solar irradiance">
+                    <Info className="h-4 w-4 text-[var(--text-tertiary)]" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs text-xs">
+                  Kenya&apos;s 4–6 kWh/m²/day solar resource is typically stronger than many temperate regions, improving PV productivity and payback.
+                </TooltipContent>
+              </Tooltip>
             </DialogTitle>
             <DialogDescription className="text-[var(--text-secondary)]">
               Choose a Kenyan city to calibrate solar irradiance data for the simulation.
@@ -1098,13 +1186,28 @@ export default function ModularDashboardDemo({
                 variant="ghost"
                 onClick={() => handleSelectLocation(loc)}
                 className={[
-                  'justify-between rounded-lg px-3 py-2 text-sm transition-all duration-150',
+                  'h-auto justify-between rounded-lg px-3 py-2 text-sm transition-all duration-150',
                   activeLocation.name === loc.name
                     ? 'bg-[var(--solar-soft)] text-[var(--solar)] font-semibold'
                     : 'text-[var(--text-primary)] hover:bg-[var(--bg-card-muted)]',
                 ].join(' ')}
               >
-                <span>{loc.displayName}</span>
+                <div className="min-w-0 text-left">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate">{loc.displayName}</span>
+                    {loc.isKosapTarget && (
+                      <Badge variant="secondary" className="h-5 border border-amber-300 bg-amber-100 px-1.5 text-[10px] text-amber-900 dark:border-amber-700 dark:bg-amber-900/40 dark:text-amber-100">
+                        <Sun className="mr-1 h-3 w-3" />
+                        KOSAP
+                      </Badge>
+                    )}
+                  </div>
+                  {loc.electrificationRatePct != null && (
+                    <div className="text-[11px] text-[var(--text-tertiary)]">
+                      County electrification: {loc.electrificationRatePct.toFixed(0)}%
+                    </div>
+                  )}
+                </div>
                 <span className="text-xs text-[var(--text-tertiary)]">{loc.annualAvgSunHours} sun-hrs/day</span>
               </Button>
             ))}
