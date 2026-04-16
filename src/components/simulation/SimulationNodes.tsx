@@ -40,6 +40,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import {
+  computeDaysOfAutonomy,
+  computeNetMeteringCreditKesPerMonth,
+  DEFAULT_BATTERY_DOD_PCT,
+  DEFAULT_GENERATOR_THRESHOLD_PCT,
+  SYSTEM_MODE_LABELS,
+} from '@/lib/system-mode-metrics';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -409,6 +416,32 @@ export const HomeProduct = React.memo(
 );
 HomeProduct.displayName = 'HomeProduct';
 
+function SocTimelineChart({ points }: { points: number[] }) {
+  const width = 480;
+  const height = 110;
+  const safePoints = points.length > 1 ? points : [50, 50];
+  const maxIndex = Math.max(1, safePoints.length - 1);
+  const path = safePoints
+    .map((value, index) => {
+      const x = (index / maxIndex) * (width - 8) + 4;
+      const y = (1 - Math.max(0, Math.min(100, value)) / 100) * (height - 8) + 4;
+      return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`;
+    })
+    .join(' ');
+
+  return (
+    <div className="rounded border border-[var(--border)] bg-[var(--bg-card-muted)] p-2">
+      <div className="mb-1 text-[10px] font-semibold uppercase text-[var(--text-tertiary)]">Battery SOC timeline (24h)</div>
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-24 w-full">
+        <rect x="0" y="0" width={width} height={height} fill="transparent" />
+        <line x1="0" y1={height - 4} x2={width} y2={height - 4} stroke="var(--border)" strokeWidth="1" />
+        <line x1="0" y1="4" x2={width} y2="4" stroke="var(--border)" strokeWidth="1" strokeDasharray="3 3" />
+        <path d={path} fill="none" stroke="var(--battery)" strokeWidth="2.5" strokeLinecap="round" />
+      </svg>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // SimulationControls — sticky top bar
 // ---------------------------------------------------------------------------
@@ -562,7 +595,7 @@ export function SimulationNodes() {
   const isImporting  = gridImportKw > 0.05;
   const isExporting  = gridExportKw > 0.05;
   const gridPower    = isImporting ? gridImportKw : isExporting ? gridExportKw : 0;
-  const gridStatus   = gridNode.status === 'offline' ? 'Offline' : 'Online';
+  const gridStatus   = systemConfig.gridOutageEnabled ? 'Offline' : gridNode.status === 'offline' ? 'Offline' : 'Online';
   const batteryStatus = batteryPower > 0.1 ? 'Charging' : batteryPower < -0.1 ? 'Discharging' : 'Idle';
   const ev1Status    = ev1Power > 0.1 ? 'Charging' : (ev1Node.status === 'offline' ? 'Away' : 'Idle');
   const ev2Status    = ev2Power > 0.1 ? 'Charging' : (ev2Node.status === 'offline' ? 'Away' : 'Idle');
@@ -575,6 +608,15 @@ export function SimulationNodes() {
   // Session totals
   const totalSolarKWh   = minuteData.reduce((s, d) => s + d.solarEnergyKWh, 0);
   const totalSavingsKES = minuteData.reduce((s, d) => s + d.savingsKES, 0);
+  const dayPoints = minuteData.slice(-420);
+  const dayLoadKwh = dayPoints.reduce((s, d) => s + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh, 0);
+  const dayExportKwh = dayPoints.reduce((s, d) => s + d.gridExportKWh, 0);
+  const reservePct = Math.max(0, 100 - (systemConfig.batteryDodPct ?? DEFAULT_BATTERY_DOD_PCT));
+  const isGeneratorOn =
+    systemConfig.systemMode === 'off-grid' &&
+    batteryLevel < (systemConfig.generatorThresholdPct ?? DEFAULT_GENERATOR_THRESHOLD_PCT);
+  const autonomyDays = computeDaysOfAutonomy(systemConfig.batteryCapacityKWh, systemConfig.batteryDodPct, dayLoadKwh);
+  const netMeteringCreditKes = computeNetMeteringCreditKesPerMonth(dayExportKwh);
 
   // Cable capacity references
   const dcCap = systemConfig.solarCapacityKW ?? 10;
@@ -606,6 +648,54 @@ export function SimulationNodes() {
           </Card>
         ))}
       </div>
+
+      <Card className="dashboard-card">
+        <CardContent className="pt-4 pb-4 space-y-3">
+          <div className="text-xs font-semibold uppercase text-[var(--text-tertiary)]">Mode: {SYSTEM_MODE_LABELS[systemConfig.systemMode]}</div>
+
+          {systemConfig.systemMode === 'off-grid' && (
+            <div className="space-y-3">
+              <SocTimelineChart points={dayPoints.map((d) => d.batteryLevelPct)} />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                <div className="rounded border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2">
+                  Autonomy: <strong>{autonomyDays.toFixed(2)} days</strong>
+                </div>
+                <div className="rounded border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2">
+                  Reserve threshold: <strong>{reservePct.toFixed(0)}% SOC</strong>
+                </div>
+                <div className="rounded border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2">
+                  Generator: <strong>{isGeneratorOn ? 'ON' : 'Standby'}</strong>
+                </div>
+              </div>
+              {batteryLevel <= reservePct && (
+                <div className="rounded border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700">
+                  Battery SOC is at reserve threshold.
+                </div>
+              )}
+            </div>
+          )}
+
+          {systemConfig.systemMode === 'on-grid' && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+              <div className="rounded border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2">
+                Grid export: <strong>{dayExportKwh.toFixed(2)} kWh/day</strong>
+              </div>
+              <div className="rounded border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2">
+                Net-metering credit: <strong>KES {Math.round(netMeteringCreditKes).toLocaleString()}/month</strong>
+              </div>
+              <div className="rounded border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2">
+                Anti-islanding: <strong>{systemConfig.gridOutageEnabled ? 'Grid outage active' : 'Normal grid operation'}</strong>
+              </div>
+            </div>
+          )}
+
+          {systemConfig.systemMode === 'hybrid' && (
+            <div className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+              Hybrid mode keeps both battery and grid pathways active.
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* ══════════════════════════════════════════
            SINGLE-LINE DIAGRAM (SLD)

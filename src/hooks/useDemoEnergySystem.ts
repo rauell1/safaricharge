@@ -42,12 +42,19 @@ const HOURS_PER_TICK   = 24 / TICKS_PER_DAY; // ~3.43 simulated minutes/tick
  */
 export function useDemoEnergySystem() {
   const fullSystemConfig = useEnergySystemStore((s) => s.fullSystemConfig);
+  const systemMode = useEnergySystemStore((s) => s.systemConfig.systemMode);
+  const gridOutageEnabled = useEnergySystemStore((s) => s.systemConfig.gridOutageEnabled);
+  const generatorThresholdPct = useEnergySystemStore((s) => s.systemConfig.generatorThresholdPct);
+  const gridEnabled =
+    systemMode === 'off-grid' ? false : systemMode === 'on-grid' ? !gridOutageEnabled : true;
 
   const { tick } = usePhysicsSimulation({
     systemConfig: fullSystemConfig,
     solarData: DEMO_SOLAR_DATA,
     priorityMode: 'auto',
-    gridEnabled: true,
+    systemMode,
+    generatorThresholdPct,
+    gridEnabled,
     peakRate: 24.31,
     offPeakRate: 14.93,
     peakWindow: DEMO_PEAK_WINDOW,

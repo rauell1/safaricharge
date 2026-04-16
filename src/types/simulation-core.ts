@@ -20,6 +20,8 @@ export type SystemConfig = {
   industrialLoadKw: number;
   accessoryLoadKw: number;
   accessoryScale: number;
+  performanceRatio: number;
+  shadingLossPct: number;
 };
 
 export type DerivedSystemConfig = SystemConfig & { pvCapacityKw: number };

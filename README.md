@@ -5,12 +5,18 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`bfc0481`](https://github.com/rauell1/safaricharge/commit/bfc04814b8fd8330fb87ac30f0f683bd61022a89) by Roy Otieno | Energy & Mobility Systems |
-| **Date** | 2026-04-15 |
-| **Message** | fix: add 'use client' to landing page to allow event handlers |
-| **Total commits** | 1002 |
-| **TypeScript files** | 197 |
+| **Last commit** | [`515093a`](https://github.com/rauell1/safaricharge/commit/515093a1d137b2382fa16237a0599bc7431e9eec) by Roy Otieno | Energy & Mobility Systems |
+| **Date** | 2026-04-16 |
+| **Message** | Merge pull request #202 from rauell1/copilot/add-on-grid-off-grid-simulation-paths |
+| **Total commits** | 1023 |
+| **TypeScript files** | 202 |
 <!-- END AUTO-UPDATED -->
+
+
+
+
+
+
 
 
 

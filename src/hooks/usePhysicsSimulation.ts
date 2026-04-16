@@ -32,6 +32,7 @@
 import { useRef, useCallback, useEffect } from 'react';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
 import type { MinuteDataPoint, EnergyFlow } from '@/stores/energySystemStore';
+import type { SystemMode } from '@/stores/energySystemStore';
 import {
   calculateInstantPhysics,
   generateDayScenario,
@@ -65,7 +66,15 @@ export interface PhysicsSimulationOptions {
    * Default: [17, 21] (Kenya KPLC evening peak).
    */
   peakWindow?: [number, number];
+  /** System mode used for mode-specific dispatch behavior */
+  systemMode?: SystemMode;
+  /** Off-grid generator auto-start threshold (%) */
+  generatorThresholdPct?: number;
 }
+
+// Keep simulation cadence aligned with the demo tick loop (420 steps/day ≈ 3.43 min/step).
+const TICKS_PER_DAY = 420;
+const TICK_HOURS = 24 / TICKS_PER_DAY;
 
 // ---------------------------------------------------------------------------
 // Hook
@@ -91,6 +100,8 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
     peakRate = 24.31,
     offPeakRate = 14.93,
     peakWindow = [17, 21],
+    systemMode = 'hybrid',
+    generatorThresholdPct = 20,
   } = options;
 
   // -------------------------------------------------------------------------
@@ -101,6 +112,14 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
   const updateFlows = useEnergySystemStore((s) => s.updateFlows);
   const addMinuteData = useEnergySystemStore((s) => s.addMinuteData);
   const updateAccumulators = useEnergySystemStore((s) => s.updateAccumulators);
+
+  const shouldTriggerGenerator = useCallback(
+    (batteryLevelPct: number) =>
+      systemMode === 'off-grid' &&
+      systemConfig.battery.capacityKwh > 0 &&
+      batteryLevelPct < generatorThresholdPct,
+    [systemMode, systemConfig.battery.capacityKwh, generatorThresholdPct]
+  );
 
   // NOTE: `accumulators` (the data) is intentionally NOT subscribed here.
   // Reading it reactively would make this hook re-render on every tick,
@@ -202,6 +221,34 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
         offPeakRate
       );
 
+      let adjustedBatteryPowerKw = result.batteryPowerKw;
+      let adjustedBatteryLevelPct = result.batteryLevelPct;
+      let adjustedGridImportKw = result.gridImportKw;
+      let adjustedGridExportKw = result.gridExportKw;
+
+      if (systemMode === 'off-grid') {
+        adjustedGridImportKw = 0;
+        adjustedGridExportKw = 0;
+
+        if (shouldTriggerGenerator(adjustedBatteryLevelPct)) {
+          const batteryMaxKwh = systemConfig.battery.capacityKwh;
+          const headroomKwh = Math.max(0, batteryMaxKwh - state.batteryKwh);
+          // Generator dispatch model:
+          // - generator output is capped by battery max charge rate and inverter capacity
+          // - actual charging is further capped by available battery headroom this tick
+          const generatorChargeKw = Math.min(
+            systemConfig.battery.maxChargeKw,
+            systemConfig.inverter.capacityKw
+          );
+          const chargeKw = Math.min(generatorChargeKw, headroomKwh / TICK_HOURS);
+          if (chargeKw > 0) {
+            state.batteryKwh += chargeKw * TICK_HOURS;
+            adjustedBatteryPowerKw += chargeKw;
+            adjustedBatteryLevelPct = (state.batteryKwh / batteryMaxKwh) * 100;
+          }
+        }
+      }
+
       // NOTE: calculateInstantPhysics mutates state.batteryKwh in-place,
       // so physicsStateRef.current is already updated after the call above.
 
@@ -209,12 +256,12 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
       // 1. Update battery node
       // -----------------------------------------------------------------------
       updateNode('battery', {
-        powerKW: result.batteryPowerKw,
-        soc: result.batteryLevelPct,
+        powerKW: adjustedBatteryPowerKw,
+        soc: adjustedBatteryLevelPct,
         status:
-          result.batteryPowerKw > 0.01
+          adjustedBatteryPowerKw > 0.01
             ? 'charging'
-            : result.batteryPowerKw < -0.01
+            : adjustedBatteryPowerKw < -0.01
             ? 'discharging'
             : 'idle',
       });
@@ -230,13 +277,12 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
       // -----------------------------------------------------------------------
       // 3. Update grid node
       // -----------------------------------------------------------------------
-      const netGridKw = result.gridImportKw - result.gridExportKw;
       updateNode('grid', {
-        powerKW: Math.abs(netGridKw),
+        powerKW: Math.abs(adjustedGridImportKw - adjustedGridExportKw),
         status:
-          result.gridImportKw > 0.01
+          adjustedGridImportKw > 0.01
             ? 'importing'
-            : result.gridExportKw > 0.01
+            : adjustedGridExportKw > 0.01
             ? 'exporting'
             : 'idle',
       });
@@ -277,44 +323,44 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
         {
           from: 'solar',
           to: 'home',
-          powerKW: Math.min(result.solarPowerKw, result.totalLoadKw),
-          active: result.solarPowerKw > 0.01,
-        },
+            powerKW: Math.min(result.solarPowerKw, result.totalLoadKw),
+            active: result.solarPowerKw > 0.01,
+          },
         {
           from: 'solar',
           to: 'battery',
-          powerKW: Math.max(0, result.batteryPowerKw),
-          active: result.batteryPowerKw > 0.01,
-        },
-        {
-          from: 'solar',
-          to: 'grid',
-          powerKW: result.gridExportKw,
-          active: result.gridExportKw > 0.01,
-        },
-        {
-          from: 'battery',
-          to: 'home',
-          powerKW: Math.max(0, -result.batteryPowerKw),
-          active: result.batteryPowerKw < -0.01,
-        },
-        {
-          from: 'grid',
-          to: 'home',
-          powerKW: result.gridImportKw,
-          active: result.gridImportKw > 0.01,
-        },
+            powerKW: Math.max(0, adjustedBatteryPowerKw),
+            active: adjustedBatteryPowerKw > 0.01,
+          },
+          {
+            from: 'solar',
+            to: 'grid',
+            powerKW: adjustedGridExportKw,
+            active: adjustedGridExportKw > 0.01,
+          },
+          {
+            from: 'battery',
+            to: 'home',
+            powerKW: Math.max(0, -adjustedBatteryPowerKw),
+            active: adjustedBatteryPowerKw < -0.01,
+          },
+          {
+            from: 'grid',
+            to: 'home',
+            powerKW: adjustedGridImportKw,
+            active: adjustedGridImportKw > 0.01,
+          },
       ];
       updateFlows(flows);
 
       // -----------------------------------------------------------------------
       // 7. Append MinuteDataPoint to history
       // -----------------------------------------------------------------------
-      const timeStep = 24 / 420; // ~3.43-minute intervals (420 ticks/day)
+      const timeStep = TICK_HOURS; // ~3.43-minute intervals (420 ticks/day)
       const solarKwh = result.solarPowerKw * timeStep;
       const homeLoadKwh = result.totalLoadKw * timeStep;
-      const gridImportKwh = result.gridImportKw * timeStep;
-      const gridExportKwh = result.gridExportKw * timeStep;
+      const gridImportKwh = adjustedGridImportKw * timeStep;
+      const gridExportKwh = adjustedGridExportKw * timeStep;
 
       const ev1LoadKw = evIds[0] ? (result.loadBreakdown[evIds[0]] ?? 0) : 0;
       const ev2LoadKw = evIds[1] ? (result.loadBreakdown[evIds[1]] ?? 0) : 0;
@@ -334,10 +380,10 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
         homeLoadKW: result.totalLoadKw - ev1LoadKw - ev2LoadKw,
         ev1LoadKW: ev1LoadKw,
         ev2LoadKW: ev2LoadKw,
-        batteryPowerKW: result.batteryPowerKw,
-        batteryLevelPct: result.batteryLevelPct,
-        gridImportKW: result.gridImportKw,
-        gridExportKW: result.gridExportKw,
+        batteryPowerKW: adjustedBatteryPowerKw,
+        batteryLevelPct: adjustedBatteryLevelPct,
+        gridImportKW: adjustedGridImportKw,
+        gridExportKW: adjustedGridExportKw,
         ev1SocPct: evIds[0] ? (result.evStates[evIds[0]]?.soc ?? 0) : 0,
         ev2SocPct: evIds[1] ? (result.evStates[evIds[1]]?.soc ?? 0) : 0,
         tariffRate: rate,
@@ -347,8 +393,8 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
         homeLoadKWh: homeLoadKwh,
         ev1LoadKWh: ev1LoadKw * timeStep,
         ev2LoadKWh: ev2LoadKw * timeStep,
-        gridImportKWh: gridImportKwh,
-        gridExportKWh: gridExportKwh,
+        gridImportKWh: adjustedGridImportKw * timeStep,
+        gridExportKWh: adjustedGridExportKw * timeStep,
       };
 
       addMinuteData(minutePoint);
@@ -370,14 +416,18 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
         carbonOffset: accumulators.carbonOffset + solarKwh * 0.233, // kg CO₂ per kWh (Kenya grid factor)
         batDischargeKwh:
           accumulators.batDischargeKwh +
-          (result.batteryPowerKw < 0 ? Math.abs(result.batteryPowerKw) * timeStep : 0),
-        feedInEarnings: accumulators.feedInEarnings + gridExportKwh * 5.0, // KES feed-in tariff
+          (adjustedBatteryPowerKw < 0 ? Math.abs(adjustedBatteryPowerKw) * timeStep : 0),
+        feedInEarnings: accumulators.feedInEarnings + adjustedGridExportKw * timeStep * 5.0, // KES feed-in tariff
       });
     },
     [
       systemConfig,
       solarData,
       priorityMode,
+      systemMode,
+      generatorThresholdPct,
+      TICK_HOURS,
+      shouldTriggerGenerator,
       gridEnabled,
       peakRate,
       offPeakRate,

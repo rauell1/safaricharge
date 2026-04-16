@@ -55,6 +55,9 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 106 | `rollback/merge-pull-request-202-from-rauell1-co-2026-04-16-515093a` | `515093a` | Merge pull request #202 from rauell1/copilot/add-on-grid-off-grid-simulation-paths | 2026-04-16 |
+| 105 | `rollback/merge-pull-request-201-from-rauell1-co-2026-04-16-f3334b4` | `f3334b4` | Merge pull request #201 from rauell1/copilot/add-pv-sizing-calculator | 2026-04-16 |
+| 104 | `rollback/merge-pull-request-200-from-rauell1-co-2026-04-16-12e4b53` | `12e4b53` | Merge pull request #200 from rauell1/copilot/add-configurable-performance-ratio | 2026-04-16 |
 | 103 | `rollback/fix-add-use-client-to-landing-page-to-2026-04-15-bfc0481` | `bfc0481` | fix: add 'use client' to landing page to allow event handlers | 2026-04-15 |
 | 102 | `rollback/redesign-new-landing-page-login-page-b-2026-04-15-992fa0d` | `992fa0d` | redesign: new landing page, login page, bypass auth → /demo access | 2026-04-15 |
 | 101 | `rollback/bypass-auth-for-demo-redesign-landing-2026-04-15-85832a5` | `85832a5` | bypass auth for /demo; redesign landing + login pages | 2026-04-15 |
@@ -1096,6 +1099,33 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Commit**: `bfc04814b8fd8330fb87ac30f0f683bd61022a89`
 - **Subject**: fix: add 'use client' to landing page to allow event handlers
 - **Date**: 2026-04-15
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #104 — `rollback/merge-pull-request-200-from-rauell1-co-2026-04-16-12e4b53`
+
+- **Branch**: `rollback/merge-pull-request-200-from-rauell1-co-2026-04-16-12e4b53`
+- **Commit**: `12e4b53417a1e503bc997ee853d6203b7e1a13d4`
+- **Subject**: Merge pull request #200 from rauell1/copilot/add-configurable-performance-ratio
+- **Date**: 2026-04-16
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #105 — `rollback/merge-pull-request-201-from-rauell1-co-2026-04-16-f3334b4`
+
+- **Branch**: `rollback/merge-pull-request-201-from-rauell1-co-2026-04-16-f3334b4`
+- **Commit**: `f3334b48e71c97d92bc15820c2788de36a87a574`
+- **Subject**: Merge pull request #201 from rauell1/copilot/add-pv-sizing-calculator
+- **Date**: 2026-04-16
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #106 — `rollback/merge-pull-request-202-from-rauell1-co-2026-04-16-515093a`
+
+- **Branch**: `rollback/merge-pull-request-202-from-rauell1-co-2026-04-16-515093a`
+- **Commit**: `515093a1d137b2382fa16237a0599bc7431e9eec`
+- **Subject**: Merge pull request #202 from rauell1/copilot/add-on-grid-off-grid-simulation-paths
+- **Date**: 2026-04-16
 - **Auto-generated**: yes (by update-rollback.yml)
 
 

@@ -16,6 +16,7 @@ const PUBLIC_PATHS = [
   '/demo',        // dashboard accessible without sign-in
   '/scenarios',
   '/simulation',
+  '/sizing',
 ];
 
 export async function middleware(request: NextRequest) {
