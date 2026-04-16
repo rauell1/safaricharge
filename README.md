@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`58e0529`](https://github.com/rauell1/safaricharge/commit/58e0529a71298d5cea99db38078b8a72bf516804) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`3d5fbea`](https://github.com/rauell1/safaricharge/commit/3d5fbea4ac183c61a5ee06ac27d8e745836a3fec) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-16 |
-| **Message** | Merge pull request #204 from rauell1/copilot/feat-upgrade-csv-excel-export |
-| **Total commits** | 1039 |
-| **TypeScript files** | 205 |
+| **Message** | feat: add Kenya county irradiance presets & social impact calculator |
+| **Total commits** | 1043 |
+| **TypeScript files** | 207 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
