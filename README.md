@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`f67514d`](https://github.com/rauell1/safaricharge/commit/f67514d8ec36b111886425e71fb6b4807409d1a7) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`58e0529`](https://github.com/rauell1/safaricharge/commit/58e0529a71298d5cea99db38078b8a72bf516804) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-16 |
-| **Message** | Merge pull request #203 from rauell1/copilot/add-social-impact-dashboard-panel |
-| **Total commits** | 1031 |
-| **TypeScript files** | 203 |
+| **Message** | Merge pull request #204 from rauell1/copilot/feat-upgrade-csv-excel-export |
+| **Total commits** | 1039 |
+| **TypeScript files** | 205 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
