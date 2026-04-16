@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`12e4b53`](https://github.com/rauell1/safaricharge/commit/12e4b53417a1e503bc997ee853d6203b7e1a13d4) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`f3334b4`](https://github.com/rauell1/safaricharge/commit/f3334b48e71c97d92bc15820c2788de36a87a574) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-16 |
-| **Message** | Merge pull request #200 from rauell1/copilot/add-configurable-performance-ratio |
-| **Total commits** | 1008 |
-| **TypeScript files** | 198 |
+| **Message** | Merge pull request #201 from rauell1/copilot/add-pv-sizing-calculator |
+| **Total commits** | 1015 |
+| **TypeScript files** | 200 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
