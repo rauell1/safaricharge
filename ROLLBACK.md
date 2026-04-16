@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 108 | `rollback/merge-pull-request-204-from-rauell1-co-2026-04-16-58e0529` | `58e0529` | Merge pull request #204 from rauell1/copilot/feat-upgrade-csv-excel-export | 2026-04-16 |
 | 107 | `rollback/merge-pull-request-203-from-rauell1-co-2026-04-16-f67514d` | `f67514d` | Merge pull request #203 from rauell1/copilot/add-social-impact-dashboard-panel | 2026-04-16 |
 | 106 | `rollback/merge-pull-request-202-from-rauell1-co-2026-04-16-515093a` | `515093a` | Merge pull request #202 from rauell1/copilot/add-on-grid-off-grid-simulation-paths | 2026-04-16 |
 | 105 | `rollback/merge-pull-request-201-from-rauell1-co-2026-04-16-f3334b4` | `f3334b4` | Merge pull request #201 from rauell1/copilot/add-pv-sizing-calculator | 2026-04-16 |
@@ -1135,6 +1136,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/merge-pull-request-203-from-rauell1-co-2026-04-16-f67514d`
 - **Commit**: `f67514d8ec36b111886425e71fb6b4807409d1a7`
 - **Subject**: Merge pull request #203 from rauell1/copilot/add-social-impact-dashboard-panel
+- **Date**: 2026-04-16
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #108 — `rollback/merge-pull-request-204-from-rauell1-co-2026-04-16-58e0529`
+
+- **Branch**: `rollback/merge-pull-request-204-from-rauell1-co-2026-04-16-58e0529`
+- **Commit**: `58e0529a71298d5cea99db38078b8a72bf516804`
+- **Subject**: Merge pull request #204 from rauell1/copilot/feat-upgrade-csv-excel-export
 - **Date**: 2026-04-16
 - **Auto-generated**: yes (by update-rollback.yml)
 
