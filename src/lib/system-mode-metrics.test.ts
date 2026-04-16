@@ -4,6 +4,7 @@ import {
   computeNetMeteringCreditKesPerMonth,
   computeOffGridPvRecommendation,
 } from './system-mode-metrics';
+import { computeAllInRate, TARIFF_PROFILES } from './tariff-config';
 
 describe('system mode metrics', () => {
   it('computes days of autonomy from battery, DoD and daily load', () => {
@@ -16,5 +17,11 @@ describe('system mode metrics', () => {
 
   it('returns zero net-metering credit when no export', () => {
     expect(computeNetMeteringCreditKesPerMonth(0)).toBe(0);
+  });
+
+  it('computes net-metering credit for positive export', () => {
+    const domestic = TARIFF_PROFILES.domestic;
+    const expectedRate = computeAllInRate(domestic.energy.lowRateBase, domestic);
+    expect(computeNetMeteringCreditKesPerMonth(10)).toBeCloseTo(10 * 30 * expectedRate);
   });
 });

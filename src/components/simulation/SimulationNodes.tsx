@@ -43,6 +43,9 @@ import { useToast } from '@/hooks/use-toast';
 import {
   computeDaysOfAutonomy,
   computeNetMeteringCreditKesPerMonth,
+  DEFAULT_BATTERY_DOD_PCT,
+  DEFAULT_GENERATOR_THRESHOLD_PCT,
+  SYSTEM_MODE_LABELS,
 } from '@/lib/system-mode-metrics';
 
 // ---------------------------------------------------------------------------
@@ -608,8 +611,10 @@ export function SimulationNodes() {
   const dayPoints = minuteData.slice(-420);
   const dayLoadKwh = dayPoints.reduce((s, d) => s + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh, 0);
   const dayExportKwh = dayPoints.reduce((s, d) => s + d.gridExportKWh, 0);
-  const reservePct = Math.max(0, 100 - (systemConfig.batteryDodPct ?? 80));
-  const isGeneratorOn = systemConfig.systemMode === 'off-grid' && batteryLevel < (systemConfig.generatorThresholdPct ?? 20);
+  const reservePct = Math.max(0, 100 - (systemConfig.batteryDodPct ?? DEFAULT_BATTERY_DOD_PCT));
+  const isGeneratorOn =
+    systemConfig.systemMode === 'off-grid' &&
+    batteryLevel < (systemConfig.generatorThresholdPct ?? DEFAULT_GENERATOR_THRESHOLD_PCT);
   const autonomyDays = computeDaysOfAutonomy(systemConfig.batteryCapacityKWh, systemConfig.batteryDodPct, dayLoadKwh);
   const netMeteringCreditKes = computeNetMeteringCreditKesPerMonth(dayExportKwh);
 
@@ -646,9 +651,7 @@ export function SimulationNodes() {
 
       <Card className="dashboard-card">
         <CardContent className="pt-4 pb-4 space-y-3">
-          <div className="text-xs font-semibold uppercase text-[var(--text-tertiary)]">
-            Mode: {systemConfig.systemMode === 'on-grid' ? 'On-Grid' : systemConfig.systemMode === 'off-grid' ? 'Off-Grid' : 'Hybrid'}
-          </div>
+          <div className="text-xs font-semibold uppercase text-[var(--text-tertiary)]">Mode: {SYSTEM_MODE_LABELS[systemConfig.systemMode]}</div>
 
           {systemConfig.systemMode === 'off-grid' && (
             <div className="space-y-3">

@@ -26,12 +26,19 @@ import {
   computeDaysOfAutonomy,
   computeNetMeteringCreditKesPerMonth,
   computeOffGridPvRecommendation,
+  DEFAULT_BATTERY_DOD_PCT,
+  DEFAULT_GENERATOR_THRESHOLD_PCT,
+  SYSTEM_MODE_LABELS,
 } from '@/lib/system-mode-metrics';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface LoadListProps {
   config: SystemConfiguration;
   onConfigChange: (config: SystemConfiguration) => void;
+}
+
+function clampPercentage(value: string, defaultValue: number): number {
+  return Math.max(1, Math.min(100, Number(value) || defaultValue));
 }
 
 export function LoadList({ config, onConfigChange }: LoadListProps) {
@@ -300,7 +307,7 @@ export function LoadConfigComponents() {
                   : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
               }`}
             >
-              {mode === 'on-grid' ? 'On-Grid' : mode === 'off-grid' ? 'Off-Grid' : 'Hybrid'}
+              {SYSTEM_MODE_LABELS[mode]}
             </button>
           ))}
         </div>
@@ -322,7 +329,7 @@ export function LoadConfigComponents() {
                   min="1"
                   max="100"
                   value={modeConfig.batteryDodPct}
-                  onChange={(e) => updateSystemConfig({ batteryDodPct: Math.max(1, Math.min(100, Number(e.target.value) || 80)) })}
+                  onChange={(e) => updateSystemConfig({ batteryDodPct: clampPercentage(e.target.value, DEFAULT_BATTERY_DOD_PCT) })}
                 />
               </label>
               <label className="text-xs font-medium text-gray-700">
@@ -333,7 +340,7 @@ export function LoadConfigComponents() {
                   min="1"
                   max="100"
                   value={modeConfig.generatorThresholdPct}
-                  onChange={(e) => updateSystemConfig({ generatorThresholdPct: Math.max(1, Math.min(100, Number(e.target.value) || 20)) })}
+                  onChange={(e) => updateSystemConfig({ generatorThresholdPct: clampPercentage(e.target.value, DEFAULT_GENERATOR_THRESHOLD_PCT) })}
                 />
               </label>
             </div>

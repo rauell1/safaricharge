@@ -72,6 +72,10 @@ export interface PhysicsSimulationOptions {
   generatorThresholdPct?: number;
 }
 
+// Keep simulation cadence aligned with the demo tick loop (420 steps/day ≈ 3.43 min/step).
+const TICKS_PER_DAY = 420;
+const TICK_HOURS = 24 / TICKS_PER_DAY;
+
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
@@ -108,6 +112,14 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
   const updateFlows = useEnergySystemStore((s) => s.updateFlows);
   const addMinuteData = useEnergySystemStore((s) => s.addMinuteData);
   const updateAccumulators = useEnergySystemStore((s) => s.updateAccumulators);
+
+  const shouldTriggerGenerator = useCallback(
+    (batteryLevelPct: number) =>
+      systemMode === 'off-grid' &&
+      systemConfig.battery.capacityKwh > 0 &&
+      batteryLevelPct < generatorThresholdPct,
+    [systemMode, systemConfig.battery.capacityKwh, generatorThresholdPct]
+  );
 
   // NOTE: `accumulators` (the data) is intentionally NOT subscribed here.
   // Reading it reactively would make this hook re-render on every tick,
@@ -218,17 +230,19 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
         adjustedGridImportKw = 0;
         adjustedGridExportKw = 0;
 
-        if (adjustedBatteryLevelPct < generatorThresholdPct && systemConfig.battery.capacityKwh > 0) {
-          const tickHours = 24 / 420;
+        if (shouldTriggerGenerator(adjustedBatteryLevelPct)) {
           const batteryMaxKwh = systemConfig.battery.capacityKwh;
           const headroomKwh = Math.max(0, batteryMaxKwh - state.batteryKwh);
+          // Generator dispatch model:
+          // - generator output is capped by battery max charge rate and inverter capacity
+          // - actual charging is further capped by available battery headroom this tick
           const generatorChargeKw = Math.min(
             systemConfig.battery.maxChargeKw,
             systemConfig.inverter.capacityKw
           );
-          const chargeKw = Math.min(generatorChargeKw, headroomKwh / tickHours);
+          const chargeKw = Math.min(generatorChargeKw, headroomKwh / TICK_HOURS);
           if (chargeKw > 0) {
-            state.batteryKwh += chargeKw * tickHours;
+            state.batteryKwh += chargeKw * TICK_HOURS;
             adjustedBatteryPowerKw += chargeKw;
             adjustedBatteryLevelPct = (state.batteryKwh / batteryMaxKwh) * 100;
           }
@@ -342,7 +356,7 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
       // -----------------------------------------------------------------------
       // 7. Append MinuteDataPoint to history
       // -----------------------------------------------------------------------
-      const timeStep = 24 / 420; // ~3.43-minute intervals (420 ticks/day)
+      const timeStep = TICK_HOURS; // ~3.43-minute intervals (420 ticks/day)
       const solarKwh = result.solarPowerKw * timeStep;
       const homeLoadKwh = result.totalLoadKw * timeStep;
       const gridImportKwh = adjustedGridImportKw * timeStep;
@@ -412,6 +426,8 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
       priorityMode,
       systemMode,
       generatorThresholdPct,
+      TICK_HOURS,
+      shouldTriggerGenerator,
       gridEnabled,
       peakRate,
       offPeakRate,

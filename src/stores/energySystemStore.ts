@@ -6,6 +6,10 @@ import type { SystemConfiguration } from '@/lib/system-config';
 import { DEFAULT_SYSTEM_CONFIG } from '@/lib/system-config';
 import type { SolarData } from '@/lib/physics-engine';
 import { computeEngineeringKpis } from '@/lib/engineeringKpis';
+import {
+  DEFAULT_BATTERY_DOD_PCT,
+  DEFAULT_GENERATOR_THRESHOLD_PCT,
+} from '@/lib/system-mode-metrics';
 
 // Static Nairobi solar data used for engineering KPI calculations
 const DEMO_SOLAR_DATA: SolarData = {
@@ -353,8 +357,8 @@ export const useEnergySystemStore = create<EnergySystemState>()(
     ev1CapacityKWh: 80,
     ev2CapacityKWh: 118,
     systemMode: 'hybrid',
-    batteryDodPct: 80,
-    generatorThresholdPct: 20,
+    batteryDodPct: DEFAULT_BATTERY_DOD_PCT,
+    generatorThresholdPct: DEFAULT_GENERATOR_THRESHOLD_PCT,
     gridOutageEnabled: false,
     gridTariff: {
       peakRate: 24.31,

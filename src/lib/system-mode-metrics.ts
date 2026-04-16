@@ -1,5 +1,13 @@
 import { computeAllInRate, TARIFF_PROFILES } from './tariff-config';
 
+export const DEFAULT_BATTERY_DOD_PCT = 80;
+export const DEFAULT_GENERATOR_THRESHOLD_PCT = 20;
+export const SYSTEM_MODE_LABELS: Record<'on-grid' | 'off-grid' | 'hybrid', string> = {
+  'on-grid': 'On-Grid',
+  'off-grid': 'Off-Grid',
+  hybrid: 'Hybrid',
+};
+
 export function computeDaysOfAutonomy(
   batteryCapacityKwh: number,
   dodPct: number,
