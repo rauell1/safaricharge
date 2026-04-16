@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`f3334b4`](https://github.com/rauell1/safaricharge/commit/f3334b48e71c97d92bc15820c2788de36a87a574) by Roy Otieno | Energy & Mobility Systems |
+| **Last commit** | [`515093a`](https://github.com/rauell1/safaricharge/commit/515093a1d137b2382fa16237a0599bc7431e9eec) by Roy Otieno | Energy & Mobility Systems |
 | **Date** | 2026-04-16 |
-| **Message** | Merge pull request #201 from rauell1/copilot/add-pv-sizing-calculator |
-| **Total commits** | 1015 |
-| **TypeScript files** | 200 |
+| **Message** | Merge pull request #202 from rauell1/copilot/add-on-grid-off-grid-simulation-paths |
+| **Total commits** | 1023 |
+| **TypeScript files** | 202 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
