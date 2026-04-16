@@ -5,12 +5,16 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`bfc0481`](https://github.com/rauell1/safaricharge/commit/bfc04814b8fd8330fb87ac30f0f683bd61022a89) by Roy Otieno | Energy & Mobility Systems |
-| **Date** | 2026-04-15 |
-| **Message** | fix: add 'use client' to landing page to allow event handlers |
-| **Total commits** | 1002 |
-| **TypeScript files** | 197 |
+| **Last commit** | [`f3334b4`](https://github.com/rauell1/safaricharge/commit/f3334b48e71c97d92bc15820c2788de36a87a574) by Roy Otieno | Energy & Mobility Systems |
+| **Date** | 2026-04-16 |
+| **Message** | Merge pull request #201 from rauell1/copilot/add-pv-sizing-calculator |
+| **Total commits** | 1015 |
+| **TypeScript files** | 200 |
 <!-- END AUTO-UPDATED -->
+
+
+
+
 
 
 

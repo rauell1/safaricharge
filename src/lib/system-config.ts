@@ -188,6 +188,11 @@ export interface SystemConfiguration {
   /** Dynamic load configurations */
   loads: LoadConfig[];
 
+  /** Real-world PV system performance ratio derate (0.65–0.95). */
+  performanceRatio: number;
+  /** Additional partial shading loss percentage (0–50). */
+  shadingLossPct: number;
+
   /** Legacy scaling factors (for backward compatibility) */
   legacy?: {
     loadScale: number;
@@ -309,6 +314,8 @@ export const DEFAULT_SYSTEM_CONFIG: SystemConfiguration = {
     DEFAULT_EV_COMMUTER,
     DEFAULT_EV_FLEET,
   ],
+  performanceRatio: 0.8,
+  shadingLossPct: 0,
   legacy: {
     loadScale: 1.0,
     evCommuterScale: 1.0,
@@ -393,6 +400,12 @@ export function validateSystemConfig(config: SystemConfiguration): {
   }
   if (config.solar.totalCapacityKw > 1000) {
     warnings.push('PV capacity exceeds 1 MW - very large system');
+  }
+  if (config.performanceRatio < 0.65 || config.performanceRatio > 0.95) {
+    errors.push('Performance ratio must be between 0.65 and 0.95');
+  }
+  if (config.shadingLossPct < 0 || config.shadingLossPct > 50) {
+    errors.push('Shading loss must be between 0% and 50%');
   }
 
   // Inverter validation

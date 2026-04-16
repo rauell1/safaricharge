@@ -56,6 +56,7 @@ interface EngineeringKpisCardProps {
 export function EngineeringKpisCard({ deratingPct = 0, showDeratingBadge = false }: EngineeringKpisCardProps = {}) {
   const minuteData   = useEnergySystemStore((s) => s.minuteData);
   const systemConfig = useEnergySystemStore((s) => s.systemConfig);
+  const fullSystemConfig = useEnergySystemStore((s) => s.fullSystemConfig);
   const accumulators = useEnergySystemStore((s) => s.accumulators);
   const solarData    = useEnergySystemStore((s) => s.solarData);
   const currentDate  = useEnergySystemStore((s) => s.currentDate);
@@ -83,6 +84,9 @@ export function EngineeringKpisCard({ deratingPct = 0, showDeratingBadge = false
   const noData = minuteData.length === 0;
   const deratingClass =
     deratingPct > 15 ? 'text-red-600 bg-red-50' : deratingPct >= 5 ? 'text-yellow-600 bg-yellow-50' : 'text-green-600 bg-green-50';
+  const effectivePr = Math.max(0.65, Math.min(0.95, fullSystemConfig.performanceRatio ?? 0.8));
+  const effectiveShadingPct = Math.max(0, Math.min(50, fullSystemConfig.shadingLossPct ?? 0));
+  const effectiveAnnualYieldReductionPct = (1 - effectivePr * (1 - effectiveShadingPct / 100)) * 100;
 
   return (
     <Card className="bg-[var(--bg-card)] border-[var(--border)] shadow-card">
@@ -108,6 +112,11 @@ export function EngineeringKpisCard({ deratingPct = 0, showDeratingBadge = false
           <KpiTile icon={<BatteryCharging className="h-3.5 w-3.5" />} label="Battery Cycles" value={noData ? '—' : kpis.batteryCycles.toFixed(2)} unit="cycles" accent="text-[var(--grid)]" dim={noData} tooltip="Equivalent full discharge cycles accumulated. Li-ion BESS typically rated 3 000–6 000 cycles at 80 % DoD." />
           <KpiTile icon={<Sun className="h-3.5 w-3.5" />} label="Self-Sufficiency" value={noData ? '—' : `${kpis.selfSufficiencyPct.toFixed(1)}`} unit="%" accent="text-[var(--solar)]" dim={noData} tooltip="Percentage of total load met by solar and battery without the grid. Target ≥ 70 %." progress={kpis.selfSufficiencyPct} progressColor="var(--solar)" />
           <KpiTile icon={<Plug className="h-3.5 w-3.5" />} label="Grid Dependency" value={noData ? '—' : `${kpis.gridDependencyPct.toFixed(1)}`} unit="%" accent="text-[var(--grid)]" dim={noData} tooltip="Fraction of total load supplied by the grid. The complement of Self-Sufficiency." progress={kpis.gridDependencyPct} progressColor="var(--grid)" />
+        </div>
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2 text-xs text-[var(--text-secondary)]">
+          Effective annual yield reduction from PR + shading:{' '}
+          <span className="font-semibold text-[var(--text-primary)]">{effectiveAnnualYieldReductionPct.toFixed(1)}%</span>
+          {' '}(PR {(effectivePr * 100).toFixed(0)}%, shading {effectiveShadingPct.toFixed(0)}%)
         </div>
         {sparkData.length > 1 && (
           <div className="rounded-xl bg-[var(--bg-card-muted)] border border-[var(--border)] p-4">

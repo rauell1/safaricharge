@@ -40,10 +40,30 @@ interface LoadListProps {
 function clampPercentage(value: string, defaultValue: number): number {
   return Math.max(1, Math.min(100, Number(value) || defaultValue));
 }
+const clamp = (value: number, min: number, max: number): number =>
+  Math.max(min, Math.min(max, value));
 
 export function LoadList({ config, onConfigChange }: LoadListProps) {
   const [editingLoadId, setEditingLoadId] = useState<string | null>(null);
   const [isAddingLoad, setIsAddingLoad] = useState(false);
+  const performanceRatio = clamp(config.performanceRatio ?? 0.8, 0.65, 0.95);
+  const shadingLossPct = clamp(config.shadingLossPct ?? 0, 0, 50);
+
+  const handlePerformanceRatioChange = (value: number) => {
+    onConfigChange({
+      ...config,
+      performanceRatio: clamp(value, 0.65, 0.95),
+      shadingLossPct,
+    });
+  };
+
+  const handleShadingLossChange = (value: number) => {
+    onConfigChange({
+      ...config,
+      performanceRatio,
+      shadingLossPct: clamp(value, 0, 50),
+    });
+  };
 
   const handleAddLoad = (type: LoadConfig['type']) => {
     const newLoad = createLoadTemplate(type, config.loads);
@@ -71,6 +91,71 @@ export function LoadList({ config, onConfigChange }: LoadListProps) {
         <button onClick={() => setIsAddingLoad(!isAddingLoad)} className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors">
           <Plus className="w-3 h-3" />Add Load
         </button>
+      </div>
+
+      <div className="p-3 bg-gray-50 border border-gray-200 rounded space-y-3">
+        <h3 className="text-sm font-semibold text-gray-700">PV Performance Derates</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <label className="flex items-center gap-1 text-xs font-medium text-gray-700">
+              Performance Ratio
+              <Info
+                className="w-3.5 h-3.5 text-gray-500"
+                title="Real-world PV derate for inverter, wiring, mismatch and temperature losses. Typical Kenya rooftop systems run around 75–90%."
+              />
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min={0.65}
+                max={0.95}
+                step={0.01}
+                value={performanceRatio}
+                onChange={(e) => handlePerformanceRatioChange(parseFloat(e.target.value))}
+                className="flex-1"
+              />
+              <input
+                type="number"
+                min={0.65}
+                max={0.95}
+                step={0.01}
+                value={performanceRatio}
+                onChange={(e) => handlePerformanceRatioChange(parseFloat(e.target.value) || 0.8)}
+                className="w-20 px-2 py-1 text-sm border border-gray-300 rounded"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="flex items-center gap-1 text-xs font-medium text-gray-700">
+              Shading Loss (%)
+              <Info
+                className="w-3.5 h-3.5 text-gray-500"
+                title="Extra partial-shading loss. In Kenya urban rooftops, antennae, trees or nearby buildings can shade small panel areas and sharply reduce output (sometimes >80% on affected modules)."
+              />
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min={0}
+                max={50}
+                step={1}
+                value={shadingLossPct}
+                onChange={(e) => handleShadingLossChange(parseFloat(e.target.value))}
+                className="flex-1"
+              />
+              <input
+                type="number"
+                min={0}
+                max={50}
+                step={1}
+                value={shadingLossPct}
+                onChange={(e) => handleShadingLossChange(parseFloat(e.target.value) || 0)}
+                className="w-20 px-2 py-1 text-sm border border-gray-300 rounded"
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       {isAddingLoad && (

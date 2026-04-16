@@ -1,0 +1,100 @@
+{
+  "source": {
+    "name": "Global Solar Atlas (World Bank Group, Solargis)",
+    "url": "https://globalsolaratlas.info/",
+    "accessed": "2026-04-16",
+    "notes": "County presets are representative planning values for SafariCharge PV sizing."
+  },
+  "presets": [
+    {
+      "county": "Nairobi",
+      "lat": -1.2921,
+      "lon": 36.8219,
+      "avgDailySunHours": 2.9,
+      "annualYieldKwhPerKwp": 1050,
+      "peakMonth": "February",
+      "lowMonth": "July"
+    },
+    {
+      "county": "Mombasa",
+      "lat": -4.0435,
+      "lon": 39.6682,
+      "avgDailySunHours": 5.6,
+      "annualYieldKwhPerKwp": 1940,
+      "peakMonth": "January",
+      "lowMonth": "June"
+    },
+    {
+      "county": "Kisumu",
+      "lat": -0.1022,
+      "lon": 34.7617,
+      "avgDailySunHours": 4.7,
+      "annualYieldKwhPerKwp": 1690,
+      "peakMonth": "February",
+      "lowMonth": "August"
+    },
+    {
+      "county": "Nakuru",
+      "lat": -0.3031,
+      "lon": 36.08,
+      "avgDailySunHours": 5.2,
+      "annualYieldKwhPerKwp": 1860,
+      "peakMonth": "January",
+      "lowMonth": "July"
+    },
+    {
+      "county": "Eldoret",
+      "lat": 0.5143,
+      "lon": 35.2698,
+      "avgDailySunHours": 4.8,
+      "annualYieldKwhPerKwp": 1730,
+      "peakMonth": "February",
+      "lowMonth": "August"
+    },
+    {
+      "county": "Turkana",
+      "lat": 3.119,
+      "lon": 35.5973,
+      "avgDailySunHours": 6.4,
+      "annualYieldKwhPerKwp": 2120,
+      "peakMonth": "January",
+      "lowMonth": "July"
+    },
+    {
+      "county": "Garissa",
+      "lat": -0.4532,
+      "lon": 39.6461,
+      "avgDailySunHours": 6.1,
+      "annualYieldKwhPerKwp": 2050,
+      "peakMonth": "January",
+      "lowMonth": "June"
+    },
+    {
+      "county": "Kisii",
+      "lat": -0.6773,
+      "lon": 34.7796,
+      "avgDailySunHours": 4.3,
+      "annualYieldKwhPerKwp": 1560,
+      "peakMonth": "February",
+      "lowMonth": "August"
+    },
+    {
+      "county": "Nyeri",
+      "lat": -0.4167,
+      "lon": 36.95,
+      "avgDailySunHours": 4.8,
+      "annualYieldKwhPerKwp": 1710,
+      "peakMonth": "January",
+      "lowMonth": "July"
+    },
+    {
+      "county": "Machakos",
+      "lat": -1.5177,
+      "lon": 37.2634,
+      "avgDailySunHours": 5.4,
+      "annualYieldKwhPerKwp": 1910,
+      "peakMonth": "January",
+      "lowMonth": "July"
+    }
+  ]
+}

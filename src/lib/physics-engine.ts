@@ -290,12 +290,15 @@ export function calculateInstantPhysics(
   // Peak sun hours ≈ monthlyYield; distribute as sine curve
   const peakSolarKw = config.solar.totalCapacityKw * scenario.solarMultiplier * state.soilingFactor;
   const rawSolarKw = peakSolarKw * irradianceFrac;
+  const performanceRatio = clamp(config.performanceRatio ?? 0.8, 0.65, 0.95);
+  const shadingLossPct = clamp(config.shadingLossPct ?? 0, 0, 50);
+  const deratedSolarKw = rawSolarKw * performanceRatio * (1 - shadingLossPct / 100);
 
   const inverterEff = 0.97;
   // Temperature derating: -0.4%/°C above 25°C (NOCT model)
   const cellTemp = monthlyTemp + irradianceFrac * 25;
   const tempDerate = 1 - 0.004 * Math.max(0, cellTemp - 25);
-  const solarPowerKw = Math.max(0, rawSolarKw * inverterEff * tempDerate);
+  const solarPowerKw = Math.max(0, deratedSolarKw * inverterEff * tempDerate);
 
   void monthlyYield; // used implicitly via peakSolarKw scaling above
 
