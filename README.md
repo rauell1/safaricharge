@@ -5,12 +5,14 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`bfc0481`](https://github.com/rauell1/safaricharge/commit/bfc04814b8fd8330fb87ac30f0f683bd61022a89) by Roy Otieno | Energy & Mobility Systems |
-| **Date** | 2026-04-15 |
-| **Message** | fix: add 'use client' to landing page to allow event handlers |
-| **Total commits** | 1002 |
-| **TypeScript files** | 197 |
+| **Last commit** | [`12e4b53`](https://github.com/rauell1/safaricharge/commit/12e4b53417a1e503bc997ee853d6203b7e1a13d4) by Roy Otieno | Energy & Mobility Systems |
+| **Date** | 2026-04-16 |
+| **Message** | Merge pull request #200 from rauell1/copilot/add-configurable-performance-ratio |
+| **Total commits** | 1008 |
+| **TypeScript files** | 198 |
 <!-- END AUTO-UPDATED -->
+
+
 
 
 
