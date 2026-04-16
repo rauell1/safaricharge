@@ -17,6 +17,8 @@
  *   "batteryCapacityKwh": number   // usable battery kWh
  *   "tiltDeg":            number   // panel tilt (degrees)
  *   "azimuthDeg":         number   // panel azimuth (degrees, 180 = south)
+ *   "performanceRatio":   number   // optional PV PR derate (0.65–0.95)
+ *   "shadingLossPct":     number   // optional shading loss in percent (0–50)
  *   "simulationYear":     number   // calendar year (e.g. 2023)
  * }
  *
@@ -46,6 +48,8 @@ interface EngineOutputRequestBody {
   batteryCapacityKwh?: number;
   tiltDeg?: number;
   azimuthDeg?: number;
+  performanceRatio?: number;
+  shadingLossPct?: number;
   simulationYear?: number;
 }
 
@@ -94,6 +98,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       ...DEFAULT_SYSTEM_CONFIG.battery,
       capacityKwh: batteryCapacityKwh,
     },
+    performanceRatio: Math.max(0.65, Math.min(0.95, body.performanceRatio ?? DEFAULT_SYSTEM_CONFIG.performanceRatio)),
+    shadingLossPct: Math.max(0, Math.min(50, body.shadingLossPct ?? DEFAULT_SYSTEM_CONFIG.shadingLossPct)),
   };
 
   // ------------------------------------------------------------------

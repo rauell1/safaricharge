@@ -23,6 +23,9 @@ const NAIROBI_TMY_MONTHLY_GHI: Readonly<number[]> = [
   5.38, // Dec
 ];
 
+const clamp = (value: number, min: number, max: number): number =>
+  Math.max(min, Math.min(max, value));
+
 /**
  * NOCT-corrected panel cell temperature.
  *
@@ -113,7 +116,16 @@ export const simulateSolar = (
       windSpeed_m_s ?? 2.0 // Nairobi mean surface wind ~2 m/s (NASA POWER)
     );
 
-    solar = systemConfig.pvCapacityKw * effectiveIrradiance * soilingFactor * tempEffect;
+    const performanceRatio = clamp(systemConfig.performanceRatio ?? 0.8, 0.65, 0.95);
+    const shadingLossPct = clamp(systemConfig.shadingLossPct ?? 0, 0, 50);
+    const shadingFactor = 1 - shadingLossPct / 100;
+    solar =
+      systemConfig.pvCapacityKw *
+      effectiveIrradiance *
+      soilingFactor *
+      tempEffect *
+      performanceRatio *
+      shadingFactor;
     solar = Math.max(0, solar);
   }
 
