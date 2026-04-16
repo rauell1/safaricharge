@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 105 | `rollback/merge-pull-request-201-from-rauell1-co-2026-04-16-f3334b4` | `f3334b4` | Merge pull request #201 from rauell1/copilot/add-pv-sizing-calculator | 2026-04-16 |
 | 104 | `rollback/merge-pull-request-200-from-rauell1-co-2026-04-16-12e4b53` | `12e4b53` | Merge pull request #200 from rauell1/copilot/add-configurable-performance-ratio | 2026-04-16 |
 | 103 | `rollback/fix-add-use-client-to-landing-page-to-2026-04-15-bfc0481` | `bfc0481` | fix: add 'use client' to landing page to allow event handlers | 2026-04-15 |
 | 102 | `rollback/redesign-new-landing-page-login-page-b-2026-04-15-992fa0d` | `992fa0d` | redesign: new landing page, login page, bypass auth → /demo access | 2026-04-15 |
@@ -1105,6 +1106,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/merge-pull-request-200-from-rauell1-co-2026-04-16-12e4b53`
 - **Commit**: `12e4b53417a1e503bc997ee853d6203b7e1a13d4`
 - **Subject**: Merge pull request #200 from rauell1/copilot/add-configurable-performance-ratio
+- **Date**: 2026-04-16
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #105 — `rollback/merge-pull-request-201-from-rauell1-co-2026-04-16-f3334b4`
+
+- **Branch**: `rollback/merge-pull-request-201-from-rauell1-co-2026-04-16-f3334b4`
+- **Commit**: `f3334b48e71c97d92bc15820c2788de36a87a574`
+- **Subject**: Merge pull request #201 from rauell1/copilot/add-pv-sizing-calculator
 - **Date**: 2026-04-16
 - **Auto-generated**: yes (by update-rollback.yml)
 
