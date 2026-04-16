@@ -1,86 +1,37 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import { Zap, BarChart2, Activity, BatteryCharging, Sun, Plug, Info } from 'lucide-react';
+import React from 'react';
+import { Activity } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { AreaChart, Area, ResponsiveContainer } from 'recharts';
-import { useEnergySystemStore } from '@/stores/energySystemStore';
-import { computeEngineeringKpis } from '@/lib/engineeringKpis';
-
-interface KpiTileProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  unit: string;
-  tooltip: string;
-  accent?: string;
-  dim?: boolean;
-  progress?: number;
-  progressColor?: string;
-}
-
-function KpiTile({ icon, label, value, unit, tooltip, accent = 'text-[var(--solar)]', dim, progress, progressColor = 'var(--battery)' }: KpiTileProps) {
-  return (
-    <TooltipProvider delayDuration={200}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className={`flex flex-col gap-2 rounded-xl p-4 bg-[var(--bg-card-muted)] border border-[var(--border)] cursor-default select-none ${dim ? 'opacity-60' : ''}`}>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
-              <span className={accent}>{icon}</span>
-              {label}
-              <Info className="h-3 w-3 ml-auto text-[var(--text-tertiary)] opacity-50" />
-            </div>
-            <div className="flex items-baseline gap-1">
-              <span className={`text-2xl font-bold tabular-nums ${accent}`}>{value}</span>
-              <span className="text-xs text-[var(--text-tertiary)]">{unit}</span>
-            </div>
-            {progress !== undefined && (
-              <div className="h-1.5 w-full rounded-full bg-[var(--bg-card)] overflow-hidden">
-                <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${Math.min(Math.max(progress, 0), 100)}%`, backgroundColor: progressColor }} />
-              </div>
-            )}
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" className="max-w-[220px] text-xs">{tooltip}</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-}
+import { useEngineeringKPIs, type BenchmarkTone } from '@/hooks/useEngineeringKPIs';
 
 interface EngineeringKpisCardProps {
   deratingPct?: number;
   showDeratingBadge?: boolean;
+  financeSummary?: {
+    lcoeKesPerKwh: number;
+    npvKes: number;
+    irrPct: number;
+    paybackYears: number;
+  };
 }
 
-export function EngineeringKpisCard({ deratingPct = 0, showDeratingBadge = false }: EngineeringKpisCardProps = {}) {
-  const minuteData   = useEnergySystemStore((s) => s.minuteData);
-  const systemConfig = useEnergySystemStore((s) => s.systemConfig);
-  const accumulators = useEnergySystemStore((s) => s.accumulators);
-  const solarData    = useEnergySystemStore((s) => s.solarData);
-  const currentDate  = useEnergySystemStore((s) => s.currentDate);
+const toneClass: Record<BenchmarkTone, string> = {
+  green: 'bg-green-100 text-green-700',
+  amber: 'bg-amber-100 text-amber-700',
+  red: 'bg-red-100 text-red-700',
+};
 
-  const kpis = useMemo(() => {
-    const durationHours   = minuteData.length / 60;
-    const effectiveDuration = Math.max(durationHours, 1);
-    const currentMonth    = new Date(currentDate).getMonth();
-    const monthlyPSH      = solarData.monthlyAvgKwhPerKwp[currentMonth];
-    const irradianceKWhPerM2 = monthlyPSH * (effectiveDuration / 24);
-    const totalLoadKWh    = minuteData.reduce((sum, d) => sum + (d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (1 / 60)) + (d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (1 / 60)) + (d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (1 / 60)), 0);
-    const accRec          = accumulators as unknown as Record<string, number>;
-    const gridImportKWh   = accRec.gridImportKwh != null ? accRec.gridImportKwh : minuteData.reduce((sum, d) => sum + (d.gridImportKWh ?? 0), 0);
-    return computeEngineeringKpis({ totalSolarKWh: accumulators.solar, dcCapacityKWp: systemConfig.solarCapacityKW, durationHours: effectiveDuration, totalBatDischargeKWh: accumulators.batDischargeKwh, batteryCapacityKWh: systemConfig.batteryCapacityKWh, totalLoadKWh, gridImportKWh, planeIrradianceKWhPerM2: irradianceKWhPerM2 > 0 ? irradianceKWhPerM2 : undefined });
-  }, [minuteData, accumulators, systemConfig, solarData, currentDate]);
+function StatusBadge({ tone }: { tone: BenchmarkTone }) {
+  return (
+    <span className={`inline-flex rounded px-2 py-0.5 text-xs font-semibold capitalize ${toneClass[tone]}`}>
+      {tone}
+    </span>
+  );
+}
 
-  const sparkData = useMemo(() => {
-    const batteryCapacityKWh = systemConfig.batteryCapacityKWh;
-    return minuteData.filter((_, i) => i % 60 === 0).map((_, i, arr) => {
-      const dischargeKwh = arr.slice(0, i + 1).reduce((sum, p) => sum + Math.max(0, -p.batteryPowerKW) * (24 / 420), 0);
-      return { t: i, cycles: batteryCapacityKWh > 0 ? dischargeKwh / batteryCapacityKWh : 0 };
-    });
-  }, [minuteData, systemConfig.batteryCapacityKWh]);
-
-  const noData = minuteData.length === 0;
+export function EngineeringKpisCard({ deratingPct = 0, showDeratingBadge = false, financeSummary }: EngineeringKpisCardProps = {}) {
+  const kpis = useEngineeringKPIs();
   const deratingClass =
     deratingPct > 15 ? 'text-red-600 bg-red-50' : deratingPct >= 5 ? 'text-yellow-600 bg-yellow-50' : 'text-green-600 bg-green-50';
 
@@ -95,39 +46,83 @@ export function EngineeringKpisCard({ deratingPct = 0, showDeratingBadge = false
               Derating {Math.max(0, deratingPct).toFixed(1)}%
             </span>
           )}
-          {kpis.prIsEstimated && (
-            <span className={`${showDeratingBadge ? '' : 'ml-auto'} text-[10px] font-normal normal-case tracking-normal text-[var(--text-tertiary)] bg-[var(--bg-card-muted)] border border-[var(--border)] rounded px-2 py-0.5`}>PR estimated (no irradiance)</span>
-          )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <KpiTile icon={<Zap className="h-3.5 w-3.5" />} label="Specific Yield" value={noData ? '—' : kpis.specificYieldKWhPerKWp.toFixed(1)} unit="kWh/kWp" accent="text-[var(--solar)]" dim={noData} tooltip="Total PV energy generated divided by installed DC capacity. Typical Nairobi rooftop: 1 400–1 600 kWh/kWp/year." />
-          <KpiTile icon={<BarChart2 className="h-3.5 w-3.5" />} label="Perf. Ratio" value={noData ? '—' : `${kpis.performanceRatioPct.toFixed(1)}`} unit="%" accent="text-[var(--battery)]" dim={noData} tooltip={`Ratio of actual yield to theoretical maximum. Good systems: 75–85 %. ${kpis.prIsEstimated ? 'Estimated from local peak-sun-hours.' : 'Computed from plane-of-array irradiance.'}`} progress={kpis.performanceRatioPct} progressColor="var(--battery)" />
-          <KpiTile icon={<Activity className="h-3.5 w-3.5" />} label="Capacity Factor" value={noData ? '—' : `${kpis.capacityFactorPct.toFixed(1)}`} unit="%" accent="text-[var(--consumption)]" dim={noData} tooltip="Actual energy output as a fraction of maximum possible output. Kenyan rooftop PV typically 15–22 %." progress={kpis.capacityFactorPct} progressColor="var(--consumption)" />
-          <KpiTile icon={<BatteryCharging className="h-3.5 w-3.5" />} label="Battery Cycles" value={noData ? '—' : kpis.batteryCycles.toFixed(2)} unit="cycles" accent="text-[var(--grid)]" dim={noData} tooltip="Equivalent full discharge cycles accumulated. Li-ion BESS typically rated 3 000–6 000 cycles at 80 % DoD." />
-          <KpiTile icon={<Sun className="h-3.5 w-3.5" />} label="Self-Sufficiency" value={noData ? '—' : `${kpis.selfSufficiencyPct.toFixed(1)}`} unit="%" accent="text-[var(--solar)]" dim={noData} tooltip="Percentage of total load met by solar and battery without the grid. Target ≥ 70 %." progress={kpis.selfSufficiencyPct} progressColor="var(--solar)" />
-          <KpiTile icon={<Plug className="h-3.5 w-3.5" />} label="Grid Dependency" value={noData ? '—' : `${kpis.gridDependencyPct.toFixed(1)}`} unit="%" accent="text-[var(--grid)]" dim={noData} tooltip="Fraction of total load supplied by the grid. The complement of Self-Sufficiency." progress={kpis.gridDependencyPct} progressColor="var(--grid)" />
+      <CardContent>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-wide text-[var(--text-tertiary)] border-b border-[var(--border)]">
+                <th className="py-2">KPI</th>
+                <th className="py-2">Value</th>
+                <th className="py-2">Benchmark</th>
+                <th className="py-2">Status</th>
+              </tr>
+            </thead>
+            <tbody className="text-[var(--text-primary)]">
+              <tr className="border-b border-[var(--border)]">
+                <td className="py-2">Specific Yield</td>
+                <td className="py-2">{kpis.specificYield.toFixed(1)} kWh/kWp/yr</td>
+                <td className="py-2">1400–2000</td>
+                <td className="py-2"><StatusBadge tone={kpis.benchmarks.specificYield} /></td>
+              </tr>
+              <tr className="border-b border-[var(--border)]">
+                <td className="py-2">Performance Ratio</td>
+                <td className="py-2">{(kpis.performanceRatio * 100).toFixed(1)}%</td>
+                <td className="py-2">75–90%</td>
+                <td className="py-2"><StatusBadge tone={kpis.benchmarks.performanceRatio} /></td>
+              </tr>
+              <tr className="border-b border-[var(--border)]">
+                <td className="py-2">Capacity Factor</td>
+                <td className="py-2">{(kpis.capacityFactor * 100).toFixed(1)}%</td>
+                <td className="py-2">18–22%</td>
+                <td className="py-2"><StatusBadge tone={kpis.benchmarks.capacityFactor} /></td>
+              </tr>
+              <tr className="border-b border-[var(--border)]">
+                <td className="py-2">Self-consumption</td>
+                <td className="py-2">{(kpis.selfConsumptionRate * 100).toFixed(1)}%</td>
+                <td className="py-2">&gt;70%</td>
+                <td className="py-2"><StatusBadge tone={kpis.benchmarks.selfConsumptionRate} /></td>
+              </tr>
+              <tr className="border-b border-[var(--border)]">
+                <td className="py-2">Grid Independence</td>
+                <td className="py-2">{(kpis.gridIndependence * 100).toFixed(1)}%</td>
+                <td className="py-2">Higher is better</td>
+                <td className="py-2">—</td>
+              </tr>
+              <tr className="border-b border-[var(--border)]">
+                <td className="py-2">Battery Cycles / Year</td>
+                <td className="py-2">{kpis.batteryCyclesPerYear.toFixed(1)}</td>
+                <td className="py-2">Simulation-derived</td>
+                <td className="py-2">—</td>
+              </tr>
+              <tr className="border-b border-[var(--border)]">
+                <td className="py-2">CO₂ Avoided</td>
+                <td className="py-2">{kpis.co2AvoidedKgPerYear.toFixed(1)} kg/yr</td>
+                <td className="py-2">Grid factor 0.4 kg/kWh</td>
+                <td className="py-2">—</td>
+              </tr>
+              <tr className="border-b border-[var(--border)]">
+                <td className="py-2">LCOE</td>
+                <td className="py-2">{financeSummary ? `KES ${financeSummary.lcoeKesPerKwh.toFixed(2)}/kWh` : '—'}</td>
+                <td className="py-2">Finance model</td>
+                <td className="py-2">—</td>
+              </tr>
+              <tr className="border-b border-[var(--border)]">
+                <td className="py-2">NPV / IRR</td>
+                <td className="py-2">{financeSummary ? `KES ${financeSummary.npvKes.toFixed(0)} / ${financeSummary.irrPct.toFixed(1)}%` : '—'}</td>
+                <td className="py-2">Finance model</td>
+                <td className="py-2">—</td>
+              </tr>
+              <tr>
+                <td className="py-2">Simple Payback</td>
+                <td className="py-2">{financeSummary ? `${financeSummary.paybackYears.toFixed(2)} years` : '—'}</td>
+                <td className="py-2">Finance model</td>
+                <td className="py-2">—</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        {sparkData.length > 1 && (
-          <div className="rounded-xl bg-[var(--bg-card-muted)] border border-[var(--border)] p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">Battery Cycle Accumulation</span>
-              <span className="text-xs tabular-nums text-[var(--grid)]">{kpis.batteryCycles.toFixed(2)} cycles total</span>
-            </div>
-            <ResponsiveContainer width="100%" height={56}>
-              <AreaChart data={sparkData} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="cycleGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--grid)" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="var(--grid)" stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <Area type="monotone" dataKey="cycles" stroke="var(--grid)" strokeWidth={1.5} fill="url(#cycleGrad)" dot={false} isAnimationActive={false} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

@@ -126,3 +126,102 @@ export function computeEngineeringKpis(input: EngineeringKpiInput): EngineeringK
     prIsEstimated,
   };
 }
+
+export interface ProfessionalEngineeringKpiInput {
+  minuteData: Array<{
+    date?: string;
+    solarEnergyKWh?: number;
+    solarKW?: number;
+    homeLoadKWh?: number;
+    homeLoadKW?: number;
+    ev1LoadKWh?: number;
+    ev1LoadKW?: number;
+    ev2LoadKWh?: number;
+    ev2LoadKW?: number;
+    gridImportKWh?: number;
+    gridExportKWh?: number;
+    batteryPowerKW?: number;
+  }>;
+  systemCapacityKwp: number;
+  avgDailySunHours: number;
+}
+
+export interface ProfessionalEngineeringKpiResult {
+  simulationDays: number;
+  annualEnergyKwh: number;
+  totalSolarGeneratedKwh: number;
+  solarUsedOnSiteKwh: number;
+  totalLoadKwh: number;
+  gridImportKwh: number;
+  gridImportDisplacedKwh: number;
+  specificYield: number;
+  performanceRatio: number;
+  capacityFactor: number;
+  selfConsumptionRate: number;
+  gridIndependence: number;
+  batteryCyclesPerYear: number;
+  co2AvoidedKgPerYear: number;
+  batteryDischargeEvents: number;
+}
+
+export function computeProfessionalEngineeringKpis(
+  input: ProfessionalEngineeringKpiInput
+): ProfessionalEngineeringKpiResult {
+  const { minuteData, systemCapacityKwp, avgDailySunHours } = input;
+  const dates = new Set(minuteData.map((d) => d.date).filter((d): d is string => Boolean(d)));
+  const simulationDays = Math.max(dates.size || minuteData.length / 420, 1);
+  const annualizationFactor = 365 / simulationDays;
+
+  const totalSolarGeneratedKwh = minuteData.reduce(
+    (sum, d) => sum + (d.solarEnergyKWh ?? (d.solarKW ?? 0) * (24 / 420)),
+    0
+  );
+  const totalLoadKwh = minuteData.reduce((sum, d) => {
+    const home = d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (24 / 420);
+    const ev1 = d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (24 / 420);
+    const ev2 = d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (24 / 420);
+    return sum + home + ev1 + ev2;
+  }, 0);
+  const gridImportKwh = minuteData.reduce((sum, d) => sum + (d.gridImportKWh ?? 0), 0);
+  const totalGridExportKwh = minuteData.reduce((sum, d) => sum + (d.gridExportKWh ?? 0), 0);
+
+  const annualEnergyKwh = totalSolarGeneratedKwh * annualizationFactor;
+  const solarUsedOnSiteKwh = Math.max(totalSolarGeneratedKwh - totalGridExportKwh, 0);
+  const gridImportDisplacedKwh = Math.max(totalLoadKwh - gridImportKwh, 0) * annualizationFactor;
+
+  const specificYield = systemCapacityKwp > 0 ? annualEnergyKwh / systemCapacityKwp : 0;
+  const performanceRatioDenominator = Math.max(avgDailySunHours, 0) * 365;
+  const performanceRatio = performanceRatioDenominator > 0 ? specificYield / performanceRatioDenominator : 0;
+  const capacityFactor = systemCapacityKwp > 0 ? annualEnergyKwh / (systemCapacityKwp * 8760) : 0;
+  const selfConsumptionRate = totalSolarGeneratedKwh > 0 ? solarUsedOnSiteKwh / totalSolarGeneratedKwh : 0;
+  const gridIndependence = totalLoadKwh > 0 ? Math.max((totalLoadKwh - gridImportKwh) / totalLoadKwh, 0) : 0;
+
+  let batteryDischargeEvents = 0;
+  let wasDischarging = false;
+  for (const point of minuteData) {
+    const isDischarging = (point.batteryPowerKW ?? 0) < -0.05;
+    if (isDischarging && !wasDischarging) batteryDischargeEvents += 1;
+    wasDischarging = isDischarging;
+  }
+
+  const batteryCyclesPerYear = (batteryDischargeEvents / simulationDays) * 365;
+  const co2AvoidedKgPerYear = gridImportDisplacedKwh * 0.4;
+
+  return {
+    simulationDays,
+    annualEnergyKwh,
+    totalSolarGeneratedKwh,
+    solarUsedOnSiteKwh,
+    totalLoadKwh,
+    gridImportKwh,
+    gridImportDisplacedKwh,
+    specificYield,
+    performanceRatio,
+    capacityFactor,
+    selfConsumptionRate,
+    gridIndependence,
+    batteryCyclesPerYear,
+    co2AvoidedKgPerYear,
+    batteryDischargeEvents,
+  };
+}

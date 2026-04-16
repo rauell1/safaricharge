@@ -49,6 +49,7 @@ import type { SimulationMinuteRecord } from '@/types/simulation-core';
 // ── Restored page components ──────────────────────────────────────────────────
 import FinancialDashboard from '@/components/dashboard/FinancialDashboard';
 import { buildFinancialSnapshot, type FinancialInputs } from '@/lib/financial-dashboard';
+import { computeProfessionalEngineeringKpis } from '@/lib/engineeringKpis';
 import { LoadConfigComponents } from '@/components/simulation/LoadConfigComponents';
 import { RecommendationComponents } from '@/components/energy/RecommendationComponents';
 import { SimulationNodes } from '@/components/simulation/SimulationNodes';
@@ -107,7 +108,7 @@ export default function ModularDashboardDemo({
   useDemoEnergySystem();
   const router = useRouter();
   const { timeRange, setTimeRange } = useTimeRange();
-  const { currentDate } = useSimulationState();
+  const { currentDate, isAutoMode } = useSimulationState();
   const solarNode    = useEnergyNode('solar');
   const batteryNode  = useEnergyNode('battery');
   const gridNode     = useEnergyNode('grid');
@@ -118,6 +119,7 @@ export default function ModularDashboardDemo({
   const accumulators = useAccumulators();
   const saveScenario = useEnergySystemStore((s) => s.saveScenario);
   const resetSystem  = useEnergySystemStore((s) => s.resetSystem);
+  const systemConfig = useEnergySystemStore((s) => s.systemConfig);
   const { toast }    = useToast();
 
   const [activeSection, setActiveSection] = useState<DashboardSection>(initialSection);
@@ -212,124 +214,67 @@ export default function ModularDashboardDemo({
     }),
     [minuteData, financialInputs]
   );
+
+  const engineeringKpis = useMemo(
+    () =>
+      computeProfessionalEngineeringKpis({
+        minuteData,
+        systemCapacityKwp: Math.max(systemConfig.solarCapacityKW, 0),
+        avgDailySunHours: activeLocation.annualAvgSunHours,
+      }),
+    [activeLocation.annualAvgSunHours, minuteData, systemConfig.solarCapacityKW]
+  );
   // ─────────────────────────────────────────────────────────────────────────
 
-  // Export report as CSV
-  const handleExportReport = useCallback(async () => {
+  // Export report as structured CSV
+  const handleExportCsv = useCallback(async () => {
     try {
       if (!minuteData || minuteData.length === 0) {
         alert('No data to export. Please wait for the simulation to generate data.');
         return;
       }
 
-      type AggRow = {
-        period: string; totalSolarKWh: number; totalHomeLoadKWh: number;
-        totalEV1LoadKWh: number; totalEV2LoadKWh: number; totalGridImportKWh: number;
-        totalGridExportKWh: number; avgBatteryLevelPct: number; avgEV1SocPct: number;
-        avgEV2SocPct: number; totalSavingsKES: number; peakHoursCount: number;
-        offPeakHoursCount: number;
-      };
-      const aggregate = (keyFn: (d: typeof minuteData[0]) => string): AggRow[] => {
-        const groups = new Map<string, typeof minuteData>();
-        for (const d of minuteData) {
-          const k = keyFn(d);
-          if (!groups.has(k)) groups.set(k, []);
-          groups.get(k)!.push(d);
-        }
-        return Array.from(groups.entries()).map(([period, items]) => {
-          const c = items.length;
-          return {
-            period,
-            totalSolarKWh:      items.reduce((s, d) => s + (d.solarEnergyKWh || 0), 0),
-            totalHomeLoadKWh:   items.reduce((s, d) => s + (d.homeLoadKWh ?? (d.homeLoadKW || 0) * (24 / 420)), 0),
-            totalEV1LoadKWh:    items.reduce((s, d) => s + (d.ev1LoadKWh  ?? (d.ev1LoadKW  || 0) * (24 / 420)), 0),
-            totalEV2LoadKWh:    items.reduce((s, d) => s + (d.ev2LoadKWh  ?? (d.ev2LoadKW  || 0) * (24 / 420)), 0),
-            totalGridImportKWh: items.reduce((s, d) => s + (d.gridImportKWh || 0), 0),
-            totalGridExportKWh: items.reduce((s, d) => s + (d.gridExportKWh || 0), 0),
-            avgBatteryLevelPct: c > 0 ? items.reduce((s, d) => s + (d.batteryLevelPct || 0), 0) / c : 0,
-            avgEV1SocPct:       c > 0 ? items.reduce((s, d) => s + (d.ev1SocPct || 0), 0) / c : 0,
-            avgEV2SocPct:       c > 0 ? items.reduce((s, d) => s + (d.ev2SocPct || 0), 0) / c : 0,
-            totalSavingsKES:    items.reduce((s, d) => s + (d.savingsKES || 0), 0),
-            peakHoursCount:     items.filter(d => d.isPeakTime).length,
-            offPeakHoursCount:  items.filter(d => !d.isPeakTime).length,
-          };
-        }).sort((a, b) => a.period.localeCompare(b.period));
-      };
+      const rows: string[] = [];
+      rows.push('Section 1: System Configuration');
+      rows.push('Metric,Value,Unit');
+      rows.push(`Solar Capacity,${systemConfig.solarCapacityKW.toFixed(2)},kWp`);
+      rows.push(`Battery Capacity,${systemConfig.batteryCapacityKWh.toFixed(2)},kWh`);
+      rows.push(`Inverter Capacity,${systemConfig.inverterKW.toFixed(2)},kW`);
+      rows.push(`Location,${activeLocation.displayName},-`);
+      rows.push(`Mode,${isAutoMode ? 'Auto' : 'Manual'},-`);
+      rows.push('');
 
-      const hourlyData  = aggregate(d => `${d.date} ${String(d.hour).padStart(2, '0')}:00`);
-      const dailyData   = aggregate(d => d.date);
-      const weeklyData  = aggregate(d => `${d.year}-W${String(d.week).padStart(2, '0')}`);
-      const monthlyData = aggregate(d => `${d.year}-${String(d.month).padStart(2, '0')}`);
-      const yearlyData  = aggregate(d => String(d.year));
+      rows.push('Section 2: Engineering KPIs');
+      rows.push('KPI,Value,Unit');
+      rows.push(`Specific Yield,${engineeringKpis.specificYield.toFixed(2)},kWh/kWp/year`);
+      rows.push(`Performance Ratio,${engineeringKpis.performanceRatio.toFixed(4)},ratio`);
+      rows.push(`Capacity Factor,${engineeringKpis.capacityFactor.toFixed(4)},ratio`);
+      rows.push(`Self-consumption Rate,${engineeringKpis.selfConsumptionRate.toFixed(4)},ratio`);
+      rows.push(`Grid Independence,${engineeringKpis.gridIndependence.toFixed(4)},ratio`);
+      rows.push(`Battery cycles/year,${engineeringKpis.batteryCyclesPerYear.toFixed(2)},cycles/year`);
+      rows.push(`CO2 avoided,${engineeringKpis.co2AvoidedKgPerYear.toFixed(2)},kg/year`);
+      rows.push('');
 
-      const totalSolar      = minuteData.reduce((s, d) => s + (d.solarEnergyKWh || 0), 0);
-      const totalGridImport = minuteData.reduce((s, d) => s + (d.gridImportKWh || 0), 0);
-      const totalGridExport = minuteData.reduce((s, d) => s + (d.gridExportKWh || 0), 0);
-      const totalSavings    = minuteData.reduce((s, d) => s + (d.savingsKES || 0), 0);
-      const totalHomeLoad   = minuteData.reduce((s, d) => s + (d.homeLoadKWh ?? (d.homeLoadKW || 0) * (24 / 420)), 0);
-      const totalEV1Load    = minuteData.reduce((s, d) => s + (d.ev1LoadKWh  ?? (d.ev1LoadKW  || 0) * (24 / 420)), 0);
-      const totalEV2Load    = minuteData.reduce((s, d) => s + (d.ev2LoadKWh  ?? (d.ev2LoadKW  || 0) * (24 / 420)), 0);
-      const totalLoad       = totalHomeLoad + totalEV1Load + totalEV2Load;
+      rows.push('Section 3: Finance KPIs');
+      rows.push('KPI,Value,Unit');
+      rows.push(`LCOE,${financialSnapshot.lcoeKesPerKwh.toFixed(2)},KES/kWh`);
+      rows.push(`NPV,${financialSnapshot.npvKes.toFixed(2)},KES`);
+      rows.push(`IRR,${financialSnapshot.irrPct.toFixed(2)},%`);
+      rows.push(`Simple Payback,${financialSnapshot.paybackYears.toFixed(2)},years`);
+      rows.push('');
 
-      const uniqueDays   = new Set(minuteData.map(d => d.date)).size;
-      const uniqueWeeks  = new Set(minuteData.map(d => `${d.year}-W${d.week}`)).size;
-      const uniqueMonths = new Set(minuteData.map(d => `${d.year}-${d.month}`)).size;
-      const uniqueYears  = new Set(minuteData.map(d => d.year)).size;
-      const peakCount    = minuteData.filter(d => d.isPeakTime).length;
-      const offPeakCount = minuteData.filter(d => !d.isPeakTime).length;
-
-      const parts: string[] = [];
-      parts.push('SAFARICHARGE ENERGY REPORT');
-      parts.push(`Generated,${new Date().toISOString()}`);
-      parts.push(`Total Data Points,${minuteData.length}`);
-      parts.push(`Date Range,${minuteData[0]?.date || 'N/A'},to,${minuteData[minuteData.length - 1]?.date || 'N/A'}`);
-      parts.push('');
-      parts.push('OVERALL SUMMARY');
-      parts.push('Metric,Value,Unit');
-      parts.push(`Total Solar Generated,${totalSolar.toFixed(2)},kWh`);
-      parts.push(`Total Home Load,${totalHomeLoad.toFixed(2)},kWh`);
-      parts.push(`Total EV1 Load,${totalEV1Load.toFixed(2)},kWh`);
-      parts.push(`Total EV2 Load,${totalEV2Load.toFixed(2)},kWh`);
-      parts.push(`Total Grid Import,${totalGridImport.toFixed(2)},kWh`);
-      parts.push(`Total Grid Export,${totalGridExport.toFixed(2)},kWh`);
-      parts.push(`Total Savings,${totalSavings.toFixed(2)},KES`);
-      parts.push(`Net Energy,${(totalSolar - totalGridImport + totalGridExport).toFixed(2)},kWh`);
-      parts.push(`Self-Sufficiency Rate,${totalLoad > 0 ? ((totalSolar / totalLoad) * 100).toFixed(1) : 0},%`);
-      parts.push(`Unique Days Tracked,${uniqueDays},days`);
-      parts.push(`Unique Weeks Tracked,${uniqueWeeks},weeks`);
-      parts.push(`Unique Months Tracked,${uniqueMonths},months`);
-      parts.push(`Unique Years Tracked,${uniqueYears},years`);
-      parts.push(`Peak Time Records,${peakCount},records`);
-      parts.push(`Off-Peak Time Records,${offPeakCount},records`);
-      parts.push('');
-
-      parts.push('MINUTE-BY-MINUTE DATA');
-      parts.push('Timestamp,Date,Year,Month,Week,Day,Hour,Minute,Solar (kW),Home Load (kW),EV1 Load (kW),EV2 Load (kW),Battery Power (kW),Battery Level (%),Grid Import (kW),Grid Export (kW),EV1 SoC (%),EV2 SoC (%),Tariff Rate (KES/kWh),Peak Time,Savings (KES),Solar Energy (kWh),Grid Import (kWh),Grid Export (kWh)');
+      rows.push('Section 4: Raw Simulation Time Series');
+      rows.push('Timestamp,Date,Year,Month,Week,Day,Hour,Minute,Solar (kW),Home Load (kW),EV1 Load (kW),EV2 Load (kW),Battery Power (kW),Battery Level (%),Grid Import (kW),Grid Export (kW),EV1 SoC (%),EV2 SoC (%),Tariff Rate (KES/kWh),Peak Time,Savings (KES),Solar Energy (kWh),Grid Import (kWh),Grid Export (kWh)');
       for (const d of minuteData) {
-        parts.push(`${d.timestamp},${d.date},${d.year},${d.month},${d.week},${d.day},${d.hour},${d.minute},${(d.solarKW || 0).toFixed(2)},${(d.homeLoadKW || 0).toFixed(2)},${(d.ev1LoadKW || 0).toFixed(2)},${(d.ev2LoadKW || 0).toFixed(2)},${(d.batteryPowerKW || 0).toFixed(2)},${(d.batteryLevelPct || 0).toFixed(1)},${(d.gridImportKW || 0).toFixed(2)},${(d.gridExportKW || 0).toFixed(2)},${(d.ev1SocPct || 0).toFixed(1)},${(d.ev2SocPct || 0).toFixed(1)},${(d.tariffRate || 0).toFixed(2)},${d.isPeakTime ? 'Yes' : 'No'},${(d.savingsKES || 0).toFixed(2)},${(d.solarEnergyKWh || 0).toFixed(4)},${(d.gridImportKWh || 0).toFixed(4)},${(d.gridExportKWh || 0).toFixed(4)}`);
+        rows.push(`${d.timestamp},${d.date},${d.year},${d.month},${d.week},${d.day},${d.hour},${d.minute},${(d.solarKW || 0).toFixed(2)},${(d.homeLoadKW || 0).toFixed(2)},${(d.ev1LoadKW || 0).toFixed(2)},${(d.ev2LoadKW || 0).toFixed(2)},${(d.batteryPowerKW || 0).toFixed(2)},${(d.batteryLevelPct || 0).toFixed(1)},${(d.gridImportKW || 0).toFixed(2)},${(d.gridExportKW || 0).toFixed(2)},${(d.ev1SocPct || 0).toFixed(1)},${(d.ev2SocPct || 0).toFixed(1)},${(d.tariffRate || 0).toFixed(2)},${d.isPeakTime ? 'Yes' : 'No'},${(d.savingsKES || 0).toFixed(2)},${(d.solarEnergyKWh || 0).toFixed(4)},${(d.gridImportKWh || 0).toFixed(4)},${(d.gridExportKWh || 0).toFixed(4)}`);
       }
-      parts.push('');
 
-      const writeSection = (title: string, data: AggRow[], periodLabel: string) => {
-        parts.push(title);
-        parts.push(`${periodLabel},Total Solar (kWh),Total Home Load (kWh),Total EV1 Load (kWh),Total EV2 Load (kWh),Grid Import (kWh),Grid Export (kWh),Avg Battery (%),Avg EV1 SoC (%),Avg EV2 SoC (%),Savings (KES),Peak Count,Off-Peak Count`);
-        for (const d of data) {
-          parts.push(`${d.period},${d.totalSolarKWh.toFixed(2)},${d.totalHomeLoadKWh.toFixed(2)},${d.totalEV1LoadKWh.toFixed(2)},${d.totalEV2LoadKWh.toFixed(2)},${d.totalGridImportKWh.toFixed(2)},${d.totalGridExportKWh.toFixed(2)},${d.avgBatteryLevelPct.toFixed(1)},${d.avgEV1SocPct.toFixed(1)},${d.avgEV2SocPct.toFixed(1)},${d.totalSavingsKES.toFixed(2)},${d.peakHoursCount},${d.offPeakHoursCount}`);
-        }
-        parts.push('');
-      };
-      writeSection('HOURLY SUMMARY',  hourlyData,  'Period');
-      writeSection('DAILY SUMMARY',   dailyData,   'Date');
-      writeSection('WEEKLY SUMMARY',  weeklyData,  'Week');
-      writeSection('MONTHLY SUMMARY', monthlyData, 'Month');
-      writeSection('YEARLY SUMMARY',  yearlyData,  'Year');
-
-      const csv  = parts.join('\n');
+      const csv  = rows.join('\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
       a.href     = url;
-      a.download = `SafariCharge_Report_${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `SafariCharge_Engineering_Report_${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -339,154 +284,102 @@ export default function ModularDashboardDemo({
       console.error('Export error:', error);
       alert(`Failed to export report: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
     }
-  }, [minuteData]);
+  }, [activeLocation.displayName, engineeringKpis, financialSnapshot, isAutoMode, minuteData, systemConfig]);
 
-  // Generate formal PDF report
-  const handleFormalReport = useCallback(async () => {
-    let reportWindow: Window | null = null;
+  const handleExportExcel = useCallback(async () => {
     try {
       if (!minuteData || minuteData.length === 0) {
-        alert('No data available. Please wait for the simulation to generate data.');
+        alert('No data to export. Please wait for the simulation to generate data.');
         return;
       }
 
-      reportWindow = window.open('', '_blank');
-      if (!reportWindow) {
-        alert('Unable to open the report. Please allow pop-ups for this site and try again.');
-        return;
-      }
-      reportWindow.document.write('<html><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#0f172a;color:#94a3b8;"><p>Generating report\u2026</p></body></html>');
-      reportWindow.document.close();
+      const xmlEscape = (value: string | number) =>
+        String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&apos;');
 
-      const totalSolar      = minuteData.reduce((s, d) => s + (d.solarEnergyKWh ?? 0), 0);
-      const totalGridImport = minuteData.reduce((s, d) => s + (d.gridImportKWh ?? 0), 0);
-      const totalGridExport = minuteData.reduce((s, d) => s + (d.gridExportKWh ?? 0), 0);
-      const totalSavings    = minuteData.reduce((s, d) => s + (d.savingsKES ?? 0), 0);
-      const totalHomeLoad   = minuteData.reduce((s, d) => s + (d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (24 / 420)), 0);
-      const totalEV1        = minuteData.reduce((s, d) => s + (d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (24 / 420)), 0);
-      const totalEV2        = minuteData.reduce((s, d) => s + (d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (24 / 420)), 0);
-      let peakGridImport = 0, peakInstantSolar = 0, peakEVLoad = 0;
-      let batterySum = 0;
-      const peakBreakdown    = { records: 0, solar: 0, gridImport: 0, gridExport: 0, savings: 0, homeLoad: 0, evLoad: 0 };
-      const offPeakBreakdown = { records: 0, solar: 0, gridImport: 0, gridExport: 0, savings: 0, homeLoad: 0, evLoad: 0 };
-      for (const d of minuteData) {
-        const isPeak        = Boolean(d.isPeakTime);
-        const gi            = d.gridImportKW ?? 0;
-        if (gi > peakGridImport)     peakGridImport    = gi;
-        const sk            = d.solarKW ?? 0;
-        if (sk > peakInstantSolar)   peakInstantSolar  = sk;
-        const ev            = (d.ev1LoadKW ?? 0) + (d.ev2LoadKW ?? 0);
-        if (ev > peakEVLoad)         peakEVLoad        = ev;
-        const solarEnergy       = d.solarEnergyKWh ?? 0;
-        const gridImportEnergy  = d.gridImportKWh  ?? 0;
-        const gridExportEnergy  = d.gridExportKWh  ?? 0;
-        const homeEnergy        = d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (24 / 420);
-        const evEnergy          = (d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (24 / 420)) + (d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (24 / 420));
-        const target = isPeak ? peakBreakdown : offPeakBreakdown;
-        target.records    += 1;
-        target.solar      += solarEnergy;
-        target.gridImport += gridImportEnergy;
-        target.gridExport += gridExportEnergy;
-        target.savings    += d.savingsKES ?? 0;
-        target.homeLoad   += homeEnergy;
-        target.evLoad     += evEnergy;
-        batterySum += d.batteryLevelPct ?? 0;
-      }
-      const avgBattery = minuteData.length > 0 ? batterySum / minuteData.length : 0;
-      const peakSolar  = peakBreakdown.solar;
+      const sheet = (name: string, rows: Array<Array<string | number>>) => `
+      <Worksheet ss:Name="${xmlEscape(name)}">
+        <Table>
+          ${rows
+            .map(
+              (cells) =>
+                `<Row>${cells.map((cell) => `<Cell><Data ss:Type="String">${xmlEscape(cell)}</Data></Cell>`).join('')}</Row>`
+            )
+            .join('')}
+        </Table>
+      </Worksheet>`;
 
-      const dailyMap = new Map<string, {date: string; solar: number; gridImport: number; gridExport: number; savings: number; homeLoad: number; evLoad: number; ev1Load: number; ev2Load: number; avgBattery: number; batteryCount: number}>();
-      for (const d of minuteData) {
-        if (!dailyMap.has(d.date)) {
-          dailyMap.set(d.date, { date: d.date, solar: 0, gridImport: 0, gridExport: 0, savings: 0, homeLoad: 0, evLoad: 0, ev1Load: 0, ev2Load: 0, avgBattery: 0, batteryCount: 0 });
-        }
-        const a = dailyMap.get(d.date)!;
-        a.solar      += d.solarEnergyKWh ?? 0;
-        a.gridImport += d.gridImportKWh  ?? 0;
-        a.gridExport += d.gridExportKWh  ?? 0;
-        a.savings    += d.savingsKES     ?? 0;
-        a.homeLoad   += d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (24 / 420);
-        a.ev1Load    += d.ev1LoadKWh  ?? (d.ev1LoadKW  ?? 0) * (24 / 420);
-        a.ev2Load    += d.ev2LoadKWh  ?? (d.ev2LoadKW  ?? 0) * (24 / 420);
-        a.evLoad     += (d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (24 / 420)) + (d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (24 / 420));
-        a.avgBattery   += d.batteryLevelPct ?? 0;
-        a.batteryCount += 1;
-      }
-      const dailyAgg = Array.from(dailyMap.values())
-        .map(r => ({ ...r, avgBattery: r.batteryCount > 0 ? r.avgBattery / r.batteryCount : 0 }))
-        .sort((a, b) => a.date.localeCompare(b.date));
-      const uniqueDays    = dailyAgg.length;
-      const dailyAggCharts = dailyAgg.slice(-30);
+      const workbook = `<?xml version="1.0"?>
+      <?mso-application progid="Excel.Sheet"?>
+      <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+        xmlns:o="urn:schemas-microsoft-com:office:office"
+        xmlns:x="urn:schemas-microsoft-com:office:excel"
+        xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+        xmlns:html="http://www.w3.org/TR/REC-html40">
+        ${sheet('Configuration', [
+          ['Metric', 'Value', 'Unit'],
+          ['Solar Capacity', systemConfig.solarCapacityKW.toFixed(2), 'kWp'],
+          ['Battery Capacity', systemConfig.batteryCapacityKWh.toFixed(2), 'kWh'],
+          ['Inverter Capacity', systemConfig.inverterKW.toFixed(2), 'kW'],
+          ['Location', activeLocation.displayName, '-'],
+          ['Mode', isAutoMode ? 'Auto' : 'Manual', '-'],
+        ])}
+        ${sheet('Engineering KPIs', [
+          ['KPI', 'Value', 'Unit'],
+          ['Specific Yield', engineeringKpis.specificYield.toFixed(2), 'kWh/kWp/year'],
+          ['Performance Ratio', engineeringKpis.performanceRatio.toFixed(4), 'ratio'],
+          ['Capacity Factor', engineeringKpis.capacityFactor.toFixed(4), 'ratio'],
+          ['Self-consumption Rate', engineeringKpis.selfConsumptionRate.toFixed(4), 'ratio'],
+          ['Grid Independence', engineeringKpis.gridIndependence.toFixed(4), 'ratio'],
+          ['Battery cycles/year', engineeringKpis.batteryCyclesPerYear.toFixed(2), 'cycles/year'],
+          ['CO2 avoided', engineeringKpis.co2AvoidedKgPerYear.toFixed(2), 'kg/year'],
+        ])}
+        ${sheet('Finance KPIs', [
+          ['KPI', 'Value', 'Unit'],
+          ['LCOE', financialSnapshot.lcoeKesPerKwh.toFixed(2), 'KES/kWh'],
+          ['NPV', financialSnapshot.npvKes.toFixed(2), 'KES'],
+          ['IRR', financialSnapshot.irrPct.toFixed(2), '%'],
+          ['Simple Payback', financialSnapshot.paybackYears.toFixed(2), 'years'],
+        ])}
+        ${sheet('Raw Simulation Data', [
+          ['Timestamp', 'Date', 'Year', 'Month', 'Week', 'Day', 'Hour', 'Minute', 'Solar (kW)', 'Home Load (kW)', 'EV1 Load (kW)', 'EV2 Load (kW)', 'Battery Power (kW)', 'Battery Level (%)', 'Grid Import (kW)', 'Grid Export (kW)', 'EV1 SoC (%)', 'EV2 SoC (%)', 'Tariff Rate (KES/kWh)', 'Peak Time', 'Savings (KES)', 'Solar Energy (kWh)', 'Grid Import (kWh)', 'Grid Export (kWh)'],
+          ...minuteData.map((d) => [
+            d.timestamp, d.date, d.year, d.month, d.week, d.day, d.hour, d.minute,
+            (d.solarKW || 0).toFixed(2), (d.homeLoadKW || 0).toFixed(2), (d.ev1LoadKW || 0).toFixed(2), (d.ev2LoadKW || 0).toFixed(2),
+            (d.batteryPowerKW || 0).toFixed(2), (d.batteryLevelPct || 0).toFixed(1), (d.gridImportKW || 0).toFixed(2), (d.gridExportKW || 0).toFixed(2),
+            (d.ev1SocPct || 0).toFixed(1), (d.ev2SocPct || 0).toFixed(1), (d.tariffRate || 0).toFixed(2), d.isPeakTime ? 'Yes' : 'No',
+            (d.savingsKES || 0).toFixed(2), (d.solarEnergyKWh || 0).toFixed(4), (d.gridImportKWh || 0).toFixed(4), (d.gridExportKWh || 0).toFixed(4),
+          ]),
+        ])}
+      </Workbook>`;
 
-      const { createLoadProfileFromSimulation, generateRecommendation } = await import('@/lib/recommendation-engine');
-      const loadProfile   = createLoadProfileFromSimulation(minuteData);
-      const recommendation = generateRecommendation(loadProfile, NAIROBI_SOLAR_DATA, {
-        batteryPreference: 'auto',
-        gridBackupRequired: true,
-        autonomyDays: 1.5,
-      });
-
-      const startDate = minuteData[0]?.date ?? new Date().toISOString().slice(0, 10);
-      const response  = await fetch('/api/formal-report', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          preAggregated: true,
-          startDate,
-          reportDate: new Date().toLocaleDateString('en-KE', { year: 'numeric', month: 'long', day: 'numeric' }),
-          dateFrom: minuteData[0]?.date ?? startDate,
-          dateTo:   minuteData[minuteData.length - 1]?.date ?? startDate,
-          totalDataPoints: minuteData.length,
-          totalSolar, totalGridImport, totalGridExport, totalSavings,
-          totalHomeLoad, totalEV1, totalEV2,
-          peakSolar, peakGridImport, avgBattery,
-          peakInstantSolar, peakEVLoad,
-          peakBreakdown, offPeakBreakdown,
-          uniqueDays,
-          dailyAgg: dailyAggCharts,
-          recommendation,
-          financial: {
-            capexTotal:       financialSnapshot.capex.total,
-            npvKes:           financialSnapshot.npvKes,
-            irrPct:           financialSnapshot.irrPct,
-            lcoeKesPerKwh:    financialSnapshot.lcoeKesPerKwh,
-            paybackYears:     financialSnapshot.paybackYears,
-            annualSavingsKes: financialSnapshot.revenueMonthly * 12,
-          },
-        }),
-      });
-
-      if (!response.ok) {
-        const fallback  = `HTTP ${response.status}`;
-        const rawError  = await response.text().catch(() => '');
-        let parsedMessage = fallback;
-        if (rawError) {
-          try {
-            const errorData = JSON.parse(rawError) as { error?: string; message?: string; details?: string };
-            parsedMessage   = errorData.error || errorData.message || fallback;
-            if (errorData.details && errorData.details !== parsedMessage) {
-              parsedMessage = `${parsedMessage}: ${errorData.details}`;
-            }
-          } catch {
-            const textOnly = rawError.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-            if (textOnly) parsedMessage = textOnly.slice(0, 180);
-          }
-        }
-        reportWindow.close();
-        throw new Error(parsedMessage);
-      }
-
-      const html    = await response.text();
-      const blob    = new Blob([html], { type: 'text/html; charset=utf-8' });
-      const blobUrl = URL.createObjectURL(blob);
-      reportWindow.location.href = blobUrl;
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
+      const blob = new Blob([workbook], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `SafariCharge_Engineering_Report_${new Date().toISOString().split('T')[0]}.xls`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 300);
     } catch (error) {
-      if (reportWindow && !reportWindow.closed) reportWindow.close();
-      console.error('Formal report error:', error);
-      alert(`Failed to generate report: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
+      console.error('Excel export error:', error);
+      alert(`Failed to export Excel report: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
     }
-  }, [minuteData, financialSnapshot]);
+  }, [activeLocation.displayName, engineeringKpis, financialSnapshot, isAutoMode, minuteData, systemConfig]);
+
+  // Print one-page PDF summary
+  const handleFormalReport = useCallback(async () => {
+    if (!minuteData || minuteData.length === 0) {
+      alert('No data available. Please wait for the simulation to generate data.');
+      return;
+    }
+    window.print();
+  }, [minuteData]);
 
   const handleDownloadCharts = useCallback(async () => {
     if (!minuteData || minuteData.length === 0) {
@@ -1017,7 +910,16 @@ export default function ModularDashboardDemo({
               </Card>
 
               {/* Engineering KPIs */}
-              <EngineeringKpisCard deratingPct={deratingPct} showDeratingBadge />
+              <EngineeringKpisCard
+                deratingPct={deratingPct}
+                showDeratingBadge
+                financeSummary={{
+                  lcoeKesPerKwh: financialSnapshot.lcoeKesPerKwh,
+                  npvKes: financialSnapshot.npvKes,
+                  irrPct: financialSnapshot.irrPct,
+                  paybackYears: financialSnapshot.paybackYears,
+                }}
+              />
 
               {/* Alerts — live from store */}
               <AlertsList />
@@ -1031,6 +933,41 @@ export default function ModularDashboardDemo({
   return (
     <DashboardLayout activeSection={activeSection} onSectionChange={setActiveSection} contextualMetrics={sidebarMetrics}>
       <Toaster />
+      <style jsx global>{`
+        .print-only-summary { display: none; }
+        @media print {
+          .print-only-summary {
+            display: block;
+            padding: 24px;
+            color: #0f172a;
+            background: white;
+          }
+          .hide-in-print { display: none !important; }
+        }
+      `}</style>
+
+      <div className="print-only-summary">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+          <img src="/logo.png" alt="SafariCharge logo" style={{ width: 44, height: 44, objectFit: 'contain' }} />
+          <div>
+            <h1 style={{ fontSize: 20, fontWeight: 700 }}>SafariCharge PV Engineering Summary</h1>
+            <p style={{ marginTop: 2, fontSize: 12 }}>KPLC Net-Metering Submission Summary • {activeLocation.displayName}</p>
+          </div>
+        </div>
+        <div style={{ fontSize: 12, marginBottom: 10 }}>
+          <strong>System diagram:</strong> PV Array → Inverter → Battery / Load → Grid Interconnection
+        </div>
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 12, fontSize: 12 }}>
+          <tbody>
+            <tr><td>Solar Capacity</td><td>{systemConfig.solarCapacityKW.toFixed(2)} kWp</td><td>Battery Capacity</td><td>{systemConfig.batteryCapacityKWh.toFixed(2)} kWh</td></tr>
+            <tr><td>Specific Yield</td><td>{engineeringKpis.specificYield.toFixed(1)} kWh/kWp/yr</td><td>PR</td><td>{(engineeringKpis.performanceRatio * 100).toFixed(1)}%</td></tr>
+            <tr><td>Capacity Factor</td><td>{(engineeringKpis.capacityFactor * 100).toFixed(1)}%</td><td>Self-Consumption</td><td>{(engineeringKpis.selfConsumptionRate * 100).toFixed(1)}%</td></tr>
+            <tr><td>Grid Independence</td><td>{(engineeringKpis.gridIndependence * 100).toFixed(1)}%</td><td>CO₂ Avoided</td><td>{engineeringKpis.co2AvoidedKgPerYear.toFixed(1)} kg/year</td></tr>
+            <tr><td>LCOE</td><td>KES {financialSnapshot.lcoeKesPerKwh.toFixed(2)}/kWh</td><td>NPV / IRR</td><td>KES {financialSnapshot.npvKes.toFixed(0)} / {financialSnapshot.irrPct.toFixed(1)}%</td></tr>
+            <tr><td>Simple Payback</td><td>{financialSnapshot.paybackYears.toFixed(2)} years</td><td>Kenya Context</td><td>Typical PR 0.75–0.90, Yield 1400–2000 kWh/kWp/yr</td></tr>
+          </tbody>
+        </table>
+      </div>
 
       {/* ── Location Picker Dialog ─────────────────────────────────────── */}
       <Dialog open={locationPickerOpen} onOpenChange={setLocationPickerOpen}>
@@ -1066,6 +1003,7 @@ export default function ModularDashboardDemo({
       </Dialog>
       {/* ───────────────────────────────────────────────────────────────── */}
 
+      <div className="hide-in-print">
       <EnergyReportModal
         isOpen={isReportOpen}
         onClose={() => setIsReportOpen(false)}
@@ -1074,7 +1012,8 @@ export default function ModularDashboardDemo({
         gridImport={stats.totalGridImportKWh ?? 0}
         minuteData={minuteData}
         systemStartDate={minuteData[0]?.date ?? new Date().toISOString().slice(0, 10)}
-        onExport={handleExportReport}
+        onExportCsv={handleExportCsv}
+        onExportExcel={handleExportExcel}
         onFormalReport={handleFormalReport}
         onDownloadCharts={handleDownloadCharts}
         carbonOffset={accumulators.carbonOffset}
@@ -1090,6 +1029,7 @@ export default function ModularDashboardDemo({
       />
 
       {renderSection()}
+      </div>
     </DashboardLayout>
   );
 }
