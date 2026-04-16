@@ -307,7 +307,11 @@ export default function ModularDashboardDemo({
           ${rows
             .map(
               (cells) =>
-                `<Row>${cells.map((cell) => `<Cell><Data ss:Type="String">${xmlEscape(cell)}</Data></Cell>`).join('')}</Row>`
+                `<Row>${cells.map((cell) => {
+                  const isNumber = typeof cell === 'number' || (typeof cell === 'string' && cell.trim() !== '' && !Number.isNaN(Number(cell)));
+                  const cellType = isNumber ? 'Number' : 'String';
+                  return `<Cell><Data ss:Type="${cellType}">${xmlEscape(cell)}</Data></Cell>`;
+                }).join('')}</Row>`
             )
             .join('')}
         </Table>

@@ -144,6 +144,7 @@ export interface ProfessionalEngineeringKpiInput {
   }>;
   systemCapacityKwp: number;
   avgDailySunHours: number;
+  co2KgPerKwh?: number;
 }
 
 export interface ProfessionalEngineeringKpiResult {
@@ -167,19 +168,23 @@ export interface ProfessionalEngineeringKpiResult {
 export function computeProfessionalEngineeringKpis(
   input: ProfessionalEngineeringKpiInput
 ): ProfessionalEngineeringKpiResult {
-  const { minuteData, systemCapacityKwp, avgDailySunHours } = input;
+  const SAMPLES_PER_DAY = 420;
+  const HOURS_PER_SAMPLE = 24 / SAMPLES_PER_DAY;
+  const DEFAULT_CO2_KG_PER_KWH = 0.4;
+  const DISCHARGE_THRESHOLD_KW = -0.05;
+  const { minuteData, systemCapacityKwp, avgDailySunHours, co2KgPerKwh = DEFAULT_CO2_KG_PER_KWH } = input;
   const dates = new Set(minuteData.map((d) => d.date).filter((d): d is string => Boolean(d)));
   const simulationDays = Math.max(dates.size || minuteData.length / 420, 1);
   const annualizationFactor = 365 / simulationDays;
 
   const totalSolarGeneratedKwh = minuteData.reduce(
-    (sum, d) => sum + (d.solarEnergyKWh ?? (d.solarKW ?? 0) * (24 / 420)),
+    (sum, d) => sum + (d.solarEnergyKWh ?? (d.solarKW ?? 0) * HOURS_PER_SAMPLE),
     0
   );
   const totalLoadKwh = minuteData.reduce((sum, d) => {
-    const home = d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (24 / 420);
-    const ev1 = d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (24 / 420);
-    const ev2 = d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (24 / 420);
+    const home = d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * HOURS_PER_SAMPLE;
+    const ev1 = d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * HOURS_PER_SAMPLE;
+    const ev2 = d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * HOURS_PER_SAMPLE;
     return sum + home + ev1 + ev2;
   }, 0);
   const gridImportKwh = minuteData.reduce((sum, d) => sum + (d.gridImportKWh ?? 0), 0);
@@ -199,13 +204,13 @@ export function computeProfessionalEngineeringKpis(
   let batteryDischargeEvents = 0;
   let wasDischarging = false;
   for (const point of minuteData) {
-    const isDischarging = (point.batteryPowerKW ?? 0) < -0.05;
+    const isDischarging = (point.batteryPowerKW ?? 0) < DISCHARGE_THRESHOLD_KW;
     if (isDischarging && !wasDischarging) batteryDischargeEvents += 1;
     wasDischarging = isDischarging;
   }
 
   const batteryCyclesPerYear = (batteryDischargeEvents / simulationDays) * 365;
-  const co2AvoidedKgPerYear = gridImportDisplacedKwh * 0.4;
+  const co2AvoidedKgPerYear = gridImportDisplacedKwh * co2KgPerKwh;
 
   return {
     simulationDays,
