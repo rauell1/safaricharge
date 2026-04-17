@@ -84,7 +84,8 @@ jobs:
           for i in 1 2 3 4 5; do
             echo "=== Attempt ${i} ==="
             git restore ROLLBACK.md 2>/dev/null || true
-            git pull --rebase origin "$DEFAULT_BRANCH"
+            git fetch origin "$DEFAULT_BRANCH"
+            git reset --hard "origin/$DEFAULT_BRANCH"
             python3 .github/scripts/gen_rollback_entry.py
             git add ROLLBACK.md
             if git diff --cached --quiet; then
@@ -93,8 +94,6 @@ jobs:
             fi
             git commit -m 'docs(auto): update ROLLBACK.md snapshot log [skip ci]'
             git push origin "$DEFAULT_BRANCH" && exit 0
-            git reset HEAD~1
-            git restore ROLLBACK.md
             echo "Push rejected — retrying in 3s"
             sleep 3
           done

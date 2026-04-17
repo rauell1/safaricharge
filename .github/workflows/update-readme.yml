@@ -62,10 +62,17 @@ jobs:
             echo 'No changes — skipping'
             exit 0
           fi
-          git commit -m 'docs(auto): regenerate README.md [skip ci]'
           for i in 1 2 3 4 5; do
             echo "Push attempt ${i}"
-            git pull --rebase origin "$DEFAULT_BRANCH"
+            git fetch origin "$DEFAULT_BRANCH"
+            git reset --hard "origin/$DEFAULT_BRANCH"
+            python3 .github/scripts/gen_readme.py
+            git add README.md
+            if git diff --cached --quiet; then
+              echo 'No changes after sync — skipping'
+              exit 0
+            fi
+            git commit -m 'docs(auto): regenerate README.md [skip ci]'
             git push origin "$DEFAULT_BRANCH" && exit 0
             echo "Push rejected — retrying in 3s"
             sleep 3
