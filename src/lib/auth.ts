@@ -10,7 +10,7 @@ const resendApiKey = process.env.RESEND_API_KEY;
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 // Default sender — override via EMAIL_FROM env var in production
-const DEFAULT_FROM = process.env.EMAIL_FROM ?? 'SafariCharge <royokola3@gmail.com>';
+const DEFAULT_FROM = process.env.EMAIL_FROM ?? 'SafariCharge <onboarding@resend.dev>';
 // Admin/notifications recipient
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'royokola3@gmail.com';
 
