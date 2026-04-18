@@ -4,12 +4,14 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 export default async function RootPage() {
   const supabase = await createServerSupabaseClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  if (session) {
+  // Authenticated users go straight to their dashboard
+  if (user) {
     redirect('/dashboard')
   }
 
-  redirect('/login')
+  // Everyone else sees the landing page first
+  redirect('/landing')
 }
