@@ -13,10 +13,22 @@ export interface BatteryState {
 
 export type BatteryStrategy = 'self-consumption' | 'peak-shaving' | 'backup-resilience';
 
+const INITIAL_SOC_PERCENT = 30;
+const BACKUP_RESERVE_PERCENT = 30;
+
 const BATTERY_EFFICIENCY_ALPHA = 1.1;
 const BATTERY_EFFICIENCY_K = 0.04;
 const BATTERY_EFFICIENCY_ETA0 = 0.97;
 const MIN_EFFICIENCY = 0.75;
+
+const CYCLE_FADE_COEFFICIENT = 0.0003;
+const CALENDAR_FADE_COEFFICIENT = 0.00002;
+const MAX_FADE_FRACTION = 0.2;
+
+const HIGH_TEMP_DERATE_THRESHOLD_C = 35;
+const LOW_TEMP_DERATE_THRESHOLD_C = 10;
+const HIGH_TEMP_DERATE_PER_DEG = 0.005;
+const LOW_TEMP_DERATE_PER_DEG = 0.008;
 
 const clamp = (value: number, min: number, max: number): number =>
   Math.max(min, Math.min(max, value));
@@ -24,11 +36,11 @@ const clamp = (value: number, min: number, max: number): number =>
 const safePositive = (value: number): number => (Number.isFinite(value) ? Math.max(0, value) : 0);
 
 const getThermalDeratingFactor = (temperatureC: number): number => {
-  if (temperatureC > 35) {
-    return Math.max(0, 1 - (temperatureC - 35) * 0.005);
+  if (temperatureC > HIGH_TEMP_DERATE_THRESHOLD_C) {
+    return Math.max(0, 1 - (temperatureC - HIGH_TEMP_DERATE_THRESHOLD_C) * HIGH_TEMP_DERATE_PER_DEG);
   }
-  if (temperatureC < 10) {
-    return Math.max(0, 1 - (10 - temperatureC) * 0.008);
+  if (temperatureC < LOW_TEMP_DERATE_THRESHOLD_C) {
+    return Math.max(0, 1 - (LOW_TEMP_DERATE_THRESHOLD_C - temperatureC) * LOW_TEMP_DERATE_PER_DEG);
   }
   return 1;
 };
@@ -41,26 +53,26 @@ const getPeukertAdjustedEfficiency = (powerKw: number, ratedPowerKw: number): nu
 };
 
 const getFadeFromCyclesAndAge = (cycles: number, ageDays: number): number => {
-  const cycleTerm = 0.0003 * Math.sqrt(Math.max(0, cycles));
-  const ageTerm = 0.00002 * Math.max(0, ageDays);
-  return Math.min(0.2, cycleTerm + ageTerm);
+  const cycleTerm = CYCLE_FADE_COEFFICIENT * Math.sqrt(Math.max(0, cycles));
+  const ageTerm = CALENDAR_FADE_COEFFICIENT * Math.max(0, ageDays);
+  return Math.min(MAX_FADE_FRACTION, cycleTerm + ageTerm);
 };
 
 const inferAgeDaysFromHealth = (healthPct: number, cycles: number): number => {
-  const fade = clamp(1 - healthPct / 100, 0, 0.2);
-  const cycleTerm = 0.0003 * Math.sqrt(Math.max(0, cycles));
+  const fade = clamp(1 - healthPct / 100, 0, MAX_FADE_FRACTION);
+  const cycleTerm = CYCLE_FADE_COEFFICIENT * Math.sqrt(Math.max(0, cycles));
   if (fade <= cycleTerm) return 0;
-  return (fade - cycleTerm) / 0.00002;
+  return (fade - cycleTerm) / CALENDAR_FADE_COEFFICIENT;
 };
 
-const getReservePct = (strategy: BatteryStrategy): number => {
-  if (strategy === 'backup-resilience') return 30;
+const getReservePercent = (strategy: BatteryStrategy): number => {
+  if (strategy === 'backup-resilience') return BACKUP_RESERVE_PERCENT;
   return 0;
 };
 
 export function initBatteryState(config: DerivedSystemConfig): BatteryState {
   return {
-    socPct: 30,
+    socPct: INITIAL_SOC_PERCENT,
     capacityKwh: safePositive(config.batteryKwh),
     cycleCount: 0,
     healthPct: 100,
@@ -96,7 +108,7 @@ export function stepBattery(
   let storedEnergyKwh = clamp(prev.socPct / 100, 0, 1) * Math.max(previousUsableCapacityKwh, 0.0001);
   storedEnergyKwh = Math.min(storedEnergyKwh, currentUsableCapacityKwh);
 
-  const reserveEnergyKwh = currentUsableCapacityKwh * (getReservePct(strategy) / 100);
+  const reserveEnergyKwh = currentUsableCapacityKwh * (getReservePercent(strategy) / 100);
   const maxChargePowerKw = ratedChargeKw * thermalDeratingFactor;
   const maxDischargePowerKw = ratedDischargeKw * thermalDeratingFactor;
 

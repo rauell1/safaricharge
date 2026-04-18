@@ -131,4 +131,28 @@ describe('batteryEngine', () => {
     expect(next.healthPct).toBeGreaterThanOrEqual(80);
     expect(next.capacityKwh).toBeLessThanOrEqual(SYSTEM_CONFIG.batteryKwh);
   });
+
+  it('tracks moderate cycle degradation close to expected curve', () => {
+    const prev: BatteryState = {
+      ...initBatteryState(SYSTEM_CONFIG),
+      socPct: 50,
+      cycleCount: 1000,
+      healthPct: 99.05,
+      thermalDeratingFactor: 1,
+    };
+
+    const next = stepBattery(
+      prev,
+      0,
+      0,
+      'self-consumption',
+      SYSTEM_CONFIG,
+      25,
+      false,
+      24
+    );
+
+    expect(next.healthPct).toBeLessThan(prev.healthPct);
+    expect(next.healthPct).toBeCloseTo(99.048, 3);
+  });
 });
