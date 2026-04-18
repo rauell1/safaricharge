@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 119 | `rollback/merge-pull-request-219-from-rauell1-co-2026-04-18-3d6ad98` | `3d6ad98` | Merge pull request #219 from rauell1/codex/fix-ui-login-page | 2026-04-18 |
 | 118 | `rollback/merge-pull-request-218-from-rauell1-co-2026-04-18-a693beb` | `a693beb` | Merge pull request #218 from rauell1/copilot/revamp-safaricharge-landing-page | 2026-04-18 |
 | 117 | `rollback/merge-pull-request-194-from-rauell1-fi-2026-04-18-2eec621` | `2eec621` | Merge pull request #194 from rauell1/fix/codebase-cleanup-p0-p1 | 2026-04-18 |
 | 116 | `rollback/merge-pull-request-217-from-rauell1-co-2026-04-18-2dcacf8` | `2dcacf8` | Merge pull request #217 from rauell1/copilot/fix-damaged-lockfile | 2026-04-18 |
@@ -1245,6 +1246,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/merge-pull-request-218-from-rauell1-co-2026-04-18-a693beb`
 - **Commit**: `a693bebe5e985a520c1b3739628a9e768b6a238b`
 - **Subject**: Merge pull request #218 from rauell1/copilot/revamp-safaricharge-landing-page
+- **Date**: 2026-04-18
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #119 — `rollback/merge-pull-request-219-from-rauell1-co-2026-04-18-3d6ad98`
+
+- **Branch**: `rollback/merge-pull-request-219-from-rauell1-co-2026-04-18-3d6ad98`
+- **Commit**: `3d6ad985891cb1d4d6c7115508c0c19e29534aa5`
+- **Subject**: Merge pull request #219 from rauell1/codex/fix-ui-login-page
 - **Date**: 2026-04-18
 - **Auto-generated**: yes (by update-rollback.yml)
 
