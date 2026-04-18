@@ -1,9 +1,10 @@
 import { withWorkflow } from "workflow/next";
 import type { NextConfig } from "next";
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://*.supabase.co";
+
 const nextConfig: NextConfig = {
   output: "standalone",
-  // Enable gzip/brotli compression to reduce bandwidth under heavy traffic.
   compress: true,
   typescript: {
     ignoreBuildErrors: true,
@@ -27,8 +28,6 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // Immutable cache for hashed static assets – browsers never re-fetch
-        // these under high traffic, dramatically reducing origin requests.
         source: "/_next/static/:path*",
         headers: [
           {
@@ -38,7 +37,6 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Cache public static files (images, icons, robots.txt, etc.).
         source: "/public/:path*",
         headers: [
           {
@@ -48,7 +46,6 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Security headers for all routes.
         source: "/(.*)",
         headers: [
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
@@ -63,17 +60,16 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: blob: https://www.transparenttextures.com https://drive.google.com",
-              "connect-src 'self' https://generativelanguage.googleapis.com https://vitals.vercel-insights.com https://va.vercel-scripts.com",
+              // Supabase auth, realtime, storage + existing analytics endpoints
+              `connect-src 'self' ${SUPABASE_URL} https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com https://vitals.vercel-insights.com https://va.vercel-scripts.com`,
               "font-src 'self' https://fonts.gstatic.com",
+              "frame-src 'self' https://*.supabase.co",
               "worker-src blob:",
             ].join("; "),
           },
         ],
       },
       {
-        // API routes must not be cached by shared proxies; each response is
-        // user-specific or dynamically generated. CORS is handled per-route
-        // via buildCorsHeaders to avoid conflicting Access-Control headers.
         source: "/api/(.*)",
         headers: [
           { key: "Cache-Control", value: "no-store" },
