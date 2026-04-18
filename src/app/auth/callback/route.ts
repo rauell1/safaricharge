@@ -12,22 +12,33 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error && data.user) {
+      const metadata = data.user.user_metadata ?? {}
       const { error: profileError } = await supabase.from('profiles').upsert(
         {
           id: data.user.id,
           email: data.user.email,
+          full_name: metadata.full_name ?? metadata.name ?? null,
+          phone: metadata.phone ?? null,
+          organization: metadata.organization ?? metadata.work_org ?? null,
           subscription_status: 'inactive',
           plan: 'free',
         },
-        // Keep existing rows unchanged on repeat logins.
-        { onConflict: 'id', ignoreDuplicates: true }
+        { onConflict: 'id', ignoreDuplicates: false }
       )
 
       if (profileError) {
         return NextResponse.redirect(`${origin}/login?error=profile_upsert_failed`)
       }
 
-      return NextResponse.redirect(`${origin}${safeNext}`)
+      const response = NextResponse.redirect(`${origin}${safeNext}`)
+      response.cookies.set('sc_last_seen', String(Date.now()), {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: true,
+        path: '/',
+        maxAge: 15 * 60,
+      })
+      return response
     }
   }
 

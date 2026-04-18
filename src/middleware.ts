@@ -2,25 +2,18 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// Routes that never require authentication — always pass through immediately.
-// /auth/* is especially critical: the session cookie hasn't been written yet
-// when /auth/callback is hit, so calling getUser() here would see no user
-// and redirect away before the code-exchange can complete.
-const PUBLIC_PREFIXES = ['/', '/login', '/landing', '/pricing', '/auth', '/api']
+const PUBLIC_PREFIXES = ['/', '/login', '/landing', '/auth', '/api']
+const SESSION_TTL_MS = 15 * 60 * 1000
+const SESSION_TOUCH_COOKIE = 'sc_last_seen'
 
 function isPublic(pathname: string): boolean {
-  return PUBLIC_PREFIXES.some(
-    p => pathname === p || pathname.startsWith(p + '/')
-  )
+  return PUBLIC_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-
-  // Fast-path: no Supabase call needed for public routes
   if (isPublic(pathname)) return NextResponse.next()
 
-  // Only protected routes reach here
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -28,19 +21,20 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() { return request.cookies.getAll() },
+        getAll() {
+          return request.cookies.getAll()
+        },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value, options }) => {
             supabaseResponse.cookies.set(name, value, options)
-          )
+          })
         },
       },
     }
   )
 
-  // getUser() validates the JWT server-side — never stale
   const { data: { user }, error } = await supabase.auth.getUser()
 
   if (error || !user) {
@@ -49,12 +43,33 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
+  const now = Date.now()
+  const lastSeen = Number(request.cookies.get(SESSION_TOUCH_COOKIE)?.value || '0')
+  const isExpired = !lastSeen || now - lastSeen > SESSION_TTL_MS
+
+  if (isExpired) {
+    await supabase.auth.signOut()
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('next', pathname)
+    loginUrl.searchParams.set('reason', 'session_expired')
+    const response = NextResponse.redirect(loginUrl)
+    response.cookies.delete(SESSION_TOUCH_COOKIE)
+    return response
+  }
+
+  supabaseResponse.cookies.set(SESSION_TOUCH_COOKIE, String(now), {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: true,
+    path: '/',
+    maxAge: 15 * 60,
+  })
+
   return supabaseResponse
 }
 
 export const config = {
   matcher: [
-    // Exclude all static assets and auth routes at pattern level
-    '/((?!_next/static|_next/image|favicon.ico|auth/|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'
+    '/((?!_next/static|_next/image|favicon.ico|auth/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
