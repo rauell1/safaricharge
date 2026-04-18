@@ -344,6 +344,21 @@ npm run dev
 
 Open: `http://localhost:3000`
 
+## Authentication & magic-link setup (Resend)
+
+1. Verify a sending domain in **Resend** and create an API key with "Sending" scope.
+2. Add the following to your `.env` (adjust domains/addresses to your org):
+   ```bash
+   NEXTAUTH_URL=http://localhost:3000
+   NEXTAUTH_SECRET=generate-a-strong-secret
+   RESEND_API_KEY=your_resend_api_key
+   EMAIL_FROM="SafariCharge <you@yourdomain.com>"
+   ADMIN_EMAIL=you@yourdomain.com
+   ```
+3. Ensure the database is available (`npm run db:push` for local SQLite) so NextAuth can store users.
+4. Start the app with `npm run dev` and visit `/login`. Magic links are sent via Resend and expire after 10 minutes.
+5. To temporarily pause sign-in without code changes, set `NEXT_PUBLIC_SIGN_IN_ENABLED=false` in your environment.
+
 ## Available Scripts
 
 - `npm run dev` — run Next.js in development mode on port 3000
@@ -385,4 +400,3 @@ Open: `http://localhost:3000`
 - `SCIENTIFIC_TECHNICAL_AUDIT_2026-04-10.md` — scientific/technical model audit and roadmap
 - `ENGINEERING_ISSUES_V2_2026-04-10.md` — issue-ready implementation backlog (v2.0)
 - `ROLLBACK.md` — rollback guidance
-

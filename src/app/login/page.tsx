@@ -19,8 +19,8 @@ import {
 
 type State = 'idle' | 'loading' | 'sent' | 'error';
 
-// Set to true to re-enable sign-in
-const SIGN_IN_ENABLED = false;
+// Toggle via NEXT_PUBLIC_SIGN_IN_ENABLED=false if you need to pause auth flows
+const SIGN_IN_ENABLED = process.env.NEXT_PUBLIC_SIGN_IN_ENABLED !== 'false';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -43,10 +43,14 @@ export default function LoginPage() {
     });
     if (res?.error) {
       setState('error');
-      setErrorMsg('We could not send the magic link. Please try again.');
-    } else {
-      setState('sent');
+      setErrorMsg(
+        res.error === 'Configuration'
+          ? 'Magic links are not configured. Check RESEND_API_KEY and EMAIL_FROM.'
+          : 'We could not send the magic link. Please try again.'
+      );
+      return;
     }
+    setState('sent');
   };
 
   const handlePasswordSignIn = async (e: React.FormEvent) => {
@@ -464,6 +468,10 @@ export default function LoginPage() {
                       : <>Email me a magic link <ArrowRight className="w-4 h-4" /></>}
                   </button>
                 </form>
+
+                <p className="mt-3 text-xs text-center" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                  Magic links are delivered via Resend and expire after 10 minutes.
+                </p>
 
                 <div className="mt-6 text-sm text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>
                   New here?{' '}<Link href="/signup" className="underline underline-offset-2" style={{ color: 'rgba(255,255,255,0.55)' }}>Create an account</Link>
