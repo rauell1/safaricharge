@@ -137,21 +137,22 @@ p, li {
   line-height: 1.7;
 }
 
+/* ─── Page shell ─────────────────────────────────────────────── */
+/* Block layout — children use their own spacing utilities (space-y-*, gap-*).
+   flex-direction:column was removed because it caused inline/span children
+   to stack vertically instead of flowing horizontally. */
 .page-shell {
+  display: block;
   width: min(1400px, 100% - 32px);
   margin: 0 auto;
   padding: 24px 16px 32px;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
 }
 
 @media (min-width: 640px) {
   .page-shell {
     width: min(1400px, 100% - 48px);
     padding: 28px 20px 36px;
-    gap: 28px;
   }
 }
 
@@ -159,7 +160,6 @@ p, li {
   .page-shell {
     width: min(1400px, 100% - 80px);
     padding: 32px 28px 44px;
-    gap: 32px;
   }
 }
 
