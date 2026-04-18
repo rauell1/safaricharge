@@ -643,9 +643,9 @@ export default function LandingPage() {
           <div>
             <p className="font-semibold mb-3" style={{ color: '#e2e8f0' }}>Links</p>
             <div className="space-y-2">
-              <Link href="/demo" className="inline-flex items-center gap-1.5 hover:text-white/65 transition-colors">Dashboard</Link>
-              <a href="#features" className="inline-flex items-center gap-1.5 hover:text-white/65 transition-colors">Features</a>
-              <a href="#pricing" className="inline-flex items-center gap-1.5 hover:text-white/65 transition-colors">Pricing</a>
+              <Link href="/demo" className="block hover:text-white/65 transition-colors">Dashboard</Link>
+              <a href="#features" className="block hover:text-white/65 transition-colors">Features</a>
+              <a href="#pricing" className="block hover:text-white/65 transition-colors">Pricing</a>
               <a
                 href="https://github.com/rauell1/safaricharge"
                 target="_blank"
