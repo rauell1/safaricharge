@@ -2,6 +2,7 @@ import type { DerivedSystemConfig } from '@/types/simulation-core';
 import type { DayScenario } from './timeEngine';
 import { simulateSolar } from './solarEngine';
 import { gaussianRandom } from './mathUtils';
+import { defaultGridConfig, simulatePowerFlow, type GridConfig, type GridNode } from './gridEngine';
 import {
   defaultEVFleetConfig,
   simulateEVFleet,
@@ -40,6 +41,17 @@ export interface SolarSimulationResult {
   ev2Soc: number;
   gridImport: number;
   gridExport: number;
+  gridFrequencyHz: number;
+  gridLineLossKw: number;
+  cumulativeSavingsKes: number;
+}
+
+export interface RunSimulationFinancialConfig {
+  previousCumulativeSavingsKes?: number;
+  gridTariffKesPerKwh?: number;
+  gridExportTariffKesPerKwh?: number;
+  gridNodes?: GridNode[];
+  gridConfig?: Partial<GridConfig>;
   inverterEfficiency: number;
   inverterClippingKw: number;
   acCableLossKw: number;
@@ -61,6 +73,10 @@ const getEVTaperedRate = (soc: number, maxRate: number): number => {
 
 const DC_CABLE_LOSS_FRACTION = 0.015;
 const AC_CABLE_LOSS_FRACTION = 0.01;
+const DEFAULT_GRID_NODE_CABLE_LENGTH_M = 1;
+const DEFAULT_GRID_NODE_CABLE_MM2 = 95;
+const DEFAULT_GRID_TARIFF_KES_PER_KWH = 23;
+const DEFAULT_EXPORT_TARIFF_KES_PER_KWH = 5;
 const PEAK_TARIFF_RATE_KES = 24.31;
 const OFF_PEAK_TARIFF_RATE_KES = 14.93;
 const NOMINAL_GRID_FREQUENCY_HZ = 50;
@@ -78,6 +94,7 @@ export const runSolarSimulation = (
   actualTimeStep: number,
   priorityMode: string,
   isPeakTime: boolean,
+  financialConfig?: RunSimulationFinancialConfig,
   evFleetConfig?: Partial<EVFleetConfig>
 ): SolarSimulationResult => {
   const rawSolar = simulateSolar(t, scenario, systemConfig, cloudNoise, scenario.solarData);
@@ -268,6 +285,32 @@ export const runSolarSimulation = (
     gridImport = deficit;
   }
 
+  const fallbackNode: GridNode = {
+    id: 'main-feeder',
+    loadKw: totalLoad,
+    generationKw: augmentedSolar,
+    voltageKv: 0.4,
+    cableLengthM: DEFAULT_GRID_NODE_CABLE_LENGTH_M,
+    cableMm2: DEFAULT_GRID_NODE_CABLE_MM2,
+  };
+  const gridNodes = financialConfig?.gridNodes?.length ? financialConfig.gridNodes : [fallbackNode];
+  const gridConfig: GridConfig = {
+    ...defaultGridConfig(),
+    dtSeconds: actualTimeStep * 3600,
+    ...financialConfig?.gridConfig,
+  };
+  const gridResult = simulatePowerFlow(gridNodes, gridConfig);
+
+  const gridTariffKesPerKwh = financialConfig?.gridTariffKesPerKwh ?? DEFAULT_GRID_TARIFF_KES_PER_KWH;
+  const gridExportTariffKesPerKwh =
+    financialConfig?.gridExportTariffKesPerKwh ?? DEFAULT_EXPORT_TARIFF_KES_PER_KWH;
+  const baselineGridOnlyCostKes = totalLoad * actualTimeStep * gridTariffKesPerKwh;
+  const actualGridCostKes =
+    gridImport * actualTimeStep * gridTariffKesPerKwh -
+    gridExport * actualTimeStep * gridExportTariffKesPerKwh;
+  const minuteSavingsKes = baselineGridOnlyCostKes - actualGridCostKes;
+  const cumulativeSavingsKes = (financialConfig?.previousCumulativeSavingsKes ?? 0) + minuteSavingsKes;
+
   return {
     solar: effectiveSolar,
     availableSolarKw: rawSolar,
@@ -289,6 +332,9 @@ export const runSolarSimulation = (
     ev2V2g,
     gridImport,
     gridExport,
+    gridFrequencyHz: gridResult.frequencyHz,
+    gridLineLossKw: gridResult.totalLossesKw,
+    cumulativeSavingsKes,
     batPower: batCharge > 0 ? batCharge : -batDischarge,
     batDischargeKw: batDischarge,
     batKwh: Math.max(0, Math.min(effectiveCapacity, newBatKwh)),
