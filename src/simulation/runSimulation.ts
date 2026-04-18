@@ -65,6 +65,9 @@ const getEVTaperedRate = (soc: number, maxRate: number): number => {
 
 const DC_CABLE_LOSS_FRACTION = 0.015;
 const AC_CABLE_LOSS_FRACTION = 0.01;
+const PEAK_TARIFF_RATE_KES = 24.31;
+const OFF_PEAK_TARIFF_RATE_KES = 14.93;
+const NOMINAL_GRID_FREQUENCY_HZ = 50;
 
 export const runSolarSimulation = (
   t: number,
@@ -127,9 +130,9 @@ export const runSolarSimulation = (
       vehicleCount: Math.max(2, inferredFleetConfig.vehicleCount),
     },
     Math.max(0, rawSolar - houseLoad),
-    isPeakTime ? 24.31 : 14.93,
+    isPeakTime ? PEAK_TARIFF_RATE_KES : OFF_PEAK_TARIFF_RATE_KES,
     isPeakTime,
-    50,
+    NOMINAL_GRID_FREQUENCY_HZ,
     actualTimeStep
   );
 

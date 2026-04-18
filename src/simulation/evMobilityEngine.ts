@@ -27,6 +27,10 @@ let observedPeakTariff = 40;
 const TARGET_SOC_RESIDENTIAL = 0.9;
 const TARGET_SOC_DEPOT = 0.92;
 const TARGET_SOC_PUBLIC = 0.9;
+const V2G_DISCHARGE_WINDOW_HOURS = 1;
+const SOC_DEFERRAL_BUFFER = 0.1;
+const MAX_DEFERRAL_HOURS_UNTIL_SOLAR = 2;
+const CHEAP_TARIFF_CHARGING_MULTIPLIER = 1.15;
 
 const normalizeHour = (t: number): number => ((t % 24) + 24) % 24;
 
@@ -70,7 +74,10 @@ const smartCanDefer = (
     return 24 - hour + 9;
   })();
 
-  return soc > minSocForV2g + 0.1 && hoursUntilSolar <= 2;
+  return (
+    soc > minSocForV2g + SOC_DEFERRAL_BUFFER &&
+    hoursUntilSolar <= MAX_DEFERRAL_HOURS_UNTIL_SOLAR
+  );
 };
 
 const loadForVehicle = (
@@ -132,7 +139,7 @@ export function simulateEVFleet(
   const hour = normalizeHour(t);
 
   if (isPeakTime) observedPeakTariff = Math.max(observedPeakTariff, tariffRate);
-  const cheapTariff = tariffRate < 0.5 * Math.max(observedPeakTariff, tariffRate);
+  const cheapTariff = tariffRate < 0.5 * Math.max(1e-6, observedPeakTariff);
 
   let totalLoadKw = 0;
   let sessionCount = 0;
@@ -202,7 +209,9 @@ export function simulateEVFleet(
 
       if (!shouldCharge) continue;
 
-      const aggressiveMultiplier = config.smartChargingEnabled && cheapTariff ? 1.15 : 1;
+      const aggressiveMultiplier = config.smartChargingEnabled && cheapTariff
+        ? CHEAP_TARIFF_CHARGING_MULTIPLIER
+        : 1;
       const effectiveLoad = Math.min(baseChargerKw, baseLoad * aggressiveMultiplier);
       const deliveredKwh = effectiveLoad * safeDt;
       vehicleSocs[i] = clamp(soc + deliveredKwh / batteryKwh, 0, 1);
@@ -217,7 +226,7 @@ export function simulateEVFleet(
       const soc = vehicleSocs[i];
       if (soc <= config.minSocForV2g) continue;
       const dischargeRoomKwh = (soc - config.minSocForV2g) * batteryKwh;
-      const dischargeLimitKw = dischargeRoomKwh / 1;
+      const dischargeLimitKw = dischargeRoomKwh / V2G_DISCHARGE_WINDOW_HOURS;
       const exportKw = Math.min(config.onboardInverterKw, dischargeLimitKw);
       if (exportKw <= 0) continue;
       v2gExportKw += exportKw;
