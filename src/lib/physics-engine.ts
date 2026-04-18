@@ -15,7 +15,12 @@ import type {
   EVLoadConfig,
   CommercialLoadConfig,
   HVACLoadConfig,
+  CustomLoadConfig,
 } from '@/lib/system-config';
+import {
+  BATTERY_ROUND_TRIP_EFFICIENCY,
+  FEED_IN_TARIFF_RATE_KES,
+} from '@/lib/config';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -75,8 +80,11 @@ export interface HourlyProfile {
 export interface DayScenario {
   /** Total load profile (all loads combined), per hour. */
   totalLoadHourlyKw: number[];
-  /** Per-load breakdown. Key = load.id */
-  loadProfiles: Record<string, HourlyProfile>;
+  /**
+   * Per-load breakdown. Key = load.id.
+   * Partial because a load may be disabled and have no entry.
+   */
+  loadProfiles: Partial<Record<string, HourlyProfile>>;
   /** Which EVs are "at home" today (randomly set each day). */
   evIsHome: Record<string, boolean>;
   /** Daily solar-generation multiplier (weather perturbation 0.5–1.05). */
@@ -146,7 +154,7 @@ export function generateDayScenario(
   _solarData: SolarData,
   currentEvSocs: Record<string, number>
 ): DayScenario {
-  const loadProfiles: Record<string, HourlyProfile> = {};
+  const loadProfiles: Partial<Record<string, HourlyProfile>> = {};
   const totalLoadHourlyKw = new Array<number>(24).fill(0);
   const evIsHome: Record<string, boolean> = {};
 
@@ -235,14 +243,13 @@ function buildLoadProfile(
 
     case 'custom':
     default: {
-      // Custom or unknown: use hourlyProfile if available, else constant
-      const custom = load as { mode?: string; constantKw?: number; hourlyProfile?: number[]; peakKw?: number };
+      const custom = load as CustomLoadConfig;
       if (custom.mode === 'profile' && custom.hourlyProfile) {
         for (let h = 0; h < 24; h++) {
           hourlyKw[h] = custom.hourlyProfile[h] ?? 0;
         }
       } else {
-        const kw = custom.constantKw ?? custom.peakKw ?? 1;
+        const kw = custom.constantKw ?? 1;
         for (let h = 0; h < 24; h++) {
           hourlyKw[h] = kw * 0.6;
         }
@@ -261,7 +268,7 @@ function buildLoadProfile(
  * Core energy-balance function — called every simulation tick.
  *
  * Mutates `state.batteryKwh` and `state.evSocs` in-place so SOC
- * accumulates correctly across ticks (fixes Issue A).
+ * accumulates correctly across ticks.
  */
 export function calculateInstantPhysics(
   config: SystemConfiguration,
@@ -282,12 +289,9 @@ export function calculateInstantPhysics(
   // 1. Solar generation — use monthly avg kWh/kWp if available
   // ------------------------------------------------------------------
   const month = new Date().getMonth(); // 0-based
-  const monthlyYield = solarData.monthlyAvgKwhPerKwp?.[month] ?? solarData.annualAvgKwhPerKwp ?? 5.4;
   const monthlyTemp = solarData.monthlyAvgTemp?.[month] ?? 25;
 
   const irradianceFrac = solarFraction(timeOfDay);
-  // Scale instantaneous kW from daily kWh/kWp yield
-  // Peak sun hours ≈ monthlyYield; distribute as sine curve
   const peakSolarKw = config.solar.totalCapacityKw * scenario.solarMultiplier * state.soilingFactor;
   const rawSolarKw = peakSolarKw * irradianceFrac;
   const performanceRatio = clamp(config.performanceRatio ?? 0.8, 0.65, 0.95);
@@ -299,8 +303,6 @@ export function calculateInstantPhysics(
   const cellTemp = monthlyTemp + irradianceFrac * 25;
   const tempDerate = 1 - 0.004 * Math.max(0, cellTemp - 25);
   const solarPowerKw = Math.max(0, deratedSolarKw * inverterEff * tempDerate);
-
-  void monthlyYield; // used implicitly via peakSolarKw scaling above
 
   // ------------------------------------------------------------------
   // 2. Load this tick — use real hourly profiles from scenario
@@ -326,16 +328,16 @@ export function calculateInstantPhysics(
   }
 
   // ------------------------------------------------------------------
-  // 3. Battery config — use actual field names from BatteryConfig
+  // 3. Battery config
   // ------------------------------------------------------------------
   const bat = config.battery;
   const batMaxKwh = bat.capacityKwh;
   const batMinKwh = batMaxKwh * ((bat.minReservePct ?? 20) / 100);
-  const batMaxChargeKw = bat.maxChargeKw;       // ← correct field name
-  const batMaxDischargeKw = bat.maxDischargeKw; // ← correct field name
-  const BAT_EFF = 0.94; // round-trip; lifepo4 typical
-  const batChargeEff = Math.sqrt(BAT_EFF);
-  const batDischargeEff = Math.sqrt(BAT_EFF);
+  const batMaxChargeKw = bat.maxChargeKw;
+  const batMaxDischargeKw = bat.maxDischargeKw;
+  // Round-trip efficiency for LiFePO₄ — sourced from config.ts
+  const batChargeEff = Math.sqrt(BATTERY_ROUND_TRIP_EFFICIENCY);
+  const batDischargeEff = Math.sqrt(BATTERY_ROUND_TRIP_EFFICIENCY);
 
   // ------------------------------------------------------------------
   // 4. Net power balance & dispatch
@@ -399,7 +401,7 @@ export function calculateInstantPhysics(
   }
 
   // ------------------------------------------------------------------
-  // 5. Persist battery SOC (core Issue A fix)
+  // 5. Persist battery SOC
   // ------------------------------------------------------------------
   if (batteryPowerKw > 0) {
     state.batteryKwh += batteryPowerKw * TICK_HOURS * batChargeEff;
@@ -420,7 +422,7 @@ export function calculateInstantPhysics(
     const isHome = state.evIsHome[ev.id] ?? true;
     const loadKw = loadBreakdown[ev.id] ?? 0;
     const isCharging = loadKw > 0.01 && isHome;
-    const capKwh = ev.batteryKwh ?? 60; // ← correct EVLoadConfig field
+    const capKwh = ev.batteryKwh ?? 60;
 
     if (isCharging) {
       const added = (loadKw * TICK_HOURS) / capKwh * 100;
@@ -440,8 +442,7 @@ export function calculateInstantPhysics(
   const rate = isPeakTime ? peakRate : offPeakRate;
   const solarKwh = solarPowerKw * TICK_HOURS;
   const exportKwh = gridExportKw * TICK_HOURS;
-  const FEED_IN_RATE = 5.0;
-  const savingsKES = solarKwh * rate + exportKwh * FEED_IN_RATE;
+  const savingsKES = solarKwh * rate + exportKwh * FEED_IN_TARIFF_RATE_KES;
 
   return {
     solarPowerKw,
