@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 122 | `rollback/merge-pull-request-222-from-rauell1-co-2026-04-18-baaa8f8` | `baaa8f8` | Merge pull request #222 from rauell1/copilot/refactor-authentication-system | 2026-04-18 |
 | 121 | `rollback/merge-pull-request-221-from-rauell1-co-2026-04-18-d4d8504` | `d4d8504` | Merge pull request #221 from rauell1/codex/fix-sender-email-resend | 2026-04-18 |
 | 120 | `rollback/merge-pull-request-220-from-rauell1-co-2026-04-18-a1e884a` | `a1e884a` | Merge pull request #220 from rauell1/codex/fix-login-page-layout-and-dropdown-visibility | 2026-04-18 |
 | 119 | `rollback/merge-pull-request-219-from-rauell1-co-2026-04-18-3d6ad98` | `3d6ad98` | Merge pull request #219 from rauell1/codex/fix-ui-login-page | 2026-04-18 |
@@ -1275,6 +1276,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/merge-pull-request-221-from-rauell1-co-2026-04-18-d4d8504`
 - **Commit**: `d4d85047e46d798093c76fb7e269f7e9741e8757`
 - **Subject**: Merge pull request #221 from rauell1/codex/fix-sender-email-resend
+- **Date**: 2026-04-18
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #122 — `rollback/merge-pull-request-222-from-rauell1-co-2026-04-18-baaa8f8`
+
+- **Branch**: `rollback/merge-pull-request-222-from-rauell1-co-2026-04-18-baaa8f8`
+- **Commit**: `baaa8f81ef84a8a340d84689aaf46a5d266ca843`
+- **Subject**: Merge pull request #222 from rauell1/copilot/refactor-authentication-system
 - **Date**: 2026-04-18
 - **Auto-generated**: yes (by update-rollback.yml)
 
