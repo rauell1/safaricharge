@@ -2,6 +2,11 @@ import type { DerivedSystemConfig } from '@/types/simulation-core';
 import type { DayScenario } from './timeEngine';
 import { simulateSolar } from './solarEngine';
 import { gaussianRandom } from './mathUtils';
+import {
+  defaultEVFleetConfig,
+  simulateEVFleet,
+  type EVFleetConfig,
+} from './evMobilityEngine';
 import { defaultInverterConfig, simulateInverter } from './inverterEngine';
 
 export interface EVSpecs {
@@ -21,6 +26,9 @@ export interface SolarSimulationResult {
   accessoryLoad: number;
   ev1Kw: number;
   ev2Kw: number;
+  evFleetLoadKw: number;
+  evV2gKw: number;
+  evSmartDeferralKw: number;
   ev1IsHome: boolean;
   ev2IsHome: boolean;
   ev1V2g?: boolean;
@@ -52,6 +60,10 @@ const getEVTaperedRate = (soc: number, maxRate: number): number => {
 };
 
 const DC_CABLE_LOSS_FRACTION = 0.015;
+const AC_CABLE_LOSS_FRACTION = 0.01;
+const PEAK_TARIFF_RATE_KES = 24.31;
+const OFF_PEAK_TARIFF_RATE_KES = 14.93;
+const NOMINAL_GRID_FREQUENCY_HZ = 50;
 
 export const runSolarSimulation = (
   t: number,
@@ -65,7 +77,8 @@ export const runSolarSimulation = (
   batteryHealth: number,
   actualTimeStep: number,
   priorityMode: string,
-  isPeakTime: boolean
+  isPeakTime: boolean,
+  evFleetConfig?: Partial<EVFleetConfig>
 ): SolarSimulationResult => {
   const rawSolar = simulateSolar(t, scenario, systemConfig, cloudNoise, scenario.solarData);
   const solarConstrainedByInverter = Math.min(rawSolar, systemConfig.inverterKw);
@@ -97,6 +110,27 @@ export const runSolarSimulation = (
 
   const accessoryLoad = Math.max(0, (systemConfig.accessoryLoadKw ?? 0) * (systemConfig.accessoryScale ?? 1));
   const houseLoad = residentialLoad + commercialLoad + industrialLoad + accessoryLoad;
+
+  const inferredFleetConfig: EVFleetConfig = {
+    ...defaultEVFleetConfig(),
+    ...evFleetConfig,
+    batteryKwh: evFleetConfig?.batteryKwh ?? evSpecs.ev2.cap,
+    chargerKw: evFleetConfig?.chargerKw ?? systemConfig.evChargerKw,
+    onboardInverterKw: evFleetConfig?.onboardInverterKw ?? Math.min(5, evSpecs.ev2.onboard),
+  };
+  const fleetResult = simulateEVFleet(
+    t,
+    [prevEv1Soc / 100, prevEv2Soc / 100],
+    {
+      ...inferredFleetConfig,
+      vehicleCount: Math.max(2, inferredFleetConfig.vehicleCount),
+    },
+    Math.max(0, rawSolar - houseLoad),
+    isPeakTime ? PEAK_TARIFF_RATE_KES : OFF_PEAK_TARIFF_RATE_KES,
+    isPeakTime,
+    NOMINAL_GRID_FREQUENCY_HZ,
+    actualTimeStep
+  );
 
   const effectiveCapacity = systemConfig.batteryKwh * batteryHealth;
   const effectiveReserve = Math.max(systemConfig.batteryKwh * 0.15, 8) * batteryHealth;
@@ -246,6 +280,9 @@ export const runSolarSimulation = (
     accessoryLoad,
     ev1Kw: ev1Load,
     ev2Kw: ev2Load,
+    evFleetLoadKw: fleetResult.totalLoadKw,
+    evV2gKw: fleetResult.v2gExportKw,
+    evSmartDeferralKw: fleetResult.smartChargingDeferralKw,
     ev1IsHome,
     ev2IsHome,
     ev1V2g,

@@ -39,6 +39,9 @@ export type SimulationMinuteRecord = {
   homeLoadKW: number;
   ev1LoadKW: number;
   ev2LoadKW: number;
+  evFleetLoadKw?: number;
+  evV2gKw?: number;
+  evSmartDeferralKw?: number;
   batteryPowerKW: number;
   batteryLevelPct: number;
   gridImportKW: number;
