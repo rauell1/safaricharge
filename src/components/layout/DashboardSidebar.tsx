@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
 import {
   LayoutDashboard,
@@ -14,7 +14,6 @@ import {
   Zap,
   TrendingUp,
 } from 'lucide-react';
-import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -67,18 +66,65 @@ const TONE: Record<SidebarContextMetric['tone'], { dot: string; bg: string; text
 const LOGO_URL =
   'https://drive.google.com/uc?export=view&id=17VYQ0H4enZMSZGs9SeH5xTPaOsnQjdrM';
 
+// ── Governance section — lazy: hooks only mount when panel is open ─────────────
+// Keeps useEnergyNode / useMinuteData out of the top-level sidebar render
+// so they don't run (and trigger re-renders) on every non-dashboard route.
+
+function GovernanceSection() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className="flex w-full items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2 text-sm font-medium text-[var(--text-primary)]"
+      >
+        <ShieldCheck className="h-4 w-4 text-[var(--battery)]" />
+        Governance
+      </button>
+      {open && <GovernancePanelContent />}
+    </>
+  );
+}
+
+// Only mounts (and therefore only calls hooks) when the panel is open.
+function GovernancePanelContent() {
+  const battery = useEnergyNode('battery');
+  const solar = useEnergyNode('solar');
+
+  // Stable selector: only re-compute when the last minute-data point changes.
+  // Avoids iterating the full array on every simulation tick.
+  const minuteData = useMinuteData('today');
+  const latestPoint = useMemo(
+    () => minuteData[minuteData.length - 1],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [minuteData.length],
+  );
+
+  const expectedOutputBaseline = (solar.capacityKW ?? 10) * 0.7;
+
+  return (
+    <div className="mt-2">
+      <GovernanceWidget
+        currentSoc={battery.soc ?? latestPoint?.batteryLevelPct ?? 50}
+        minSoc={20}
+        maxSoc={90}
+        actualOutput={latestPoint?.solarKW ?? 0}
+        expectedOutput={expectedOutputBaseline}
+      />
+    </div>
+  );
+}
+
+// ── Main sidebar ──────────────────────────────────────────────────────────────
+
 export function DashboardSidebar({
   activeSection = 'dashboard',
   onSectionChange,
   contextualMetrics = [],
 }: DashboardSidebarProps) {
   const pathname = usePathname();
-  const [governanceOpen, setGovernanceOpen] = useState(false);
-  const battery = useEnergyNode('battery');
-  const solar = useEnergyNode('solar');
-  const minuteData = useMinuteData('today');
-  const latestPoint = minuteData[minuteData.length - 1];
-  const expectedOutputBaseline = (solar.capacityKW ?? 10) * 0.7;
 
   const resolvedActive: DashboardSection = useMemo(() => {
     if (activeSection && activeSection !== 'dashboard') return activeSection;
@@ -94,21 +140,28 @@ export function DashboardSidebar({
     return activeSection ?? 'dashboard';
   }, [activeSection, pathname]);
 
+  // ── Nav items ────────────────────────────────────────────────────────────
+  // Two financial entries are intentionally distinct:
+  //   • "Live Financials"  — simulation tab showing real-time revenue/savings
+  //   • "Financial Planner" — standalone LCOE / NPV / IRR calculator at /financial
   const navItems: Array<{
     id: DashboardSection;
     label: string;
     icon: React.ElementType;
     href?: string;
+    description?: string;
   }> = [
-    { id: 'dashboard',          label: 'Dashboard',            icon: LayoutDashboard },
-    { id: 'simulation',         label: 'Simulation',           icon: FlaskConical },
-    { id: 'configuration',      label: 'System Config',        icon: SlidersHorizontal },
-    { id: 'energy-intelligence', label: 'Energy Intelligence', icon: Zap,        href: '/energy-intelligence' },
-    { id: 'financial-model',    label: 'Financial Model',      icon: TrendingUp, href: '/financial' },
-    { id: 'financial',          label: 'Financial',            icon: DollarSign },
-    { id: 'scenarios',          label: 'Scenarios',            icon: BookMarked, href: '/scenarios' },
-    { id: 'recommendation',     label: 'Recommendations',      icon: Lightbulb },
-    { id: 'ai-assistant',       label: 'AI Assistant',         icon: Bot },
+    { id: 'dashboard',           label: 'Dashboard',          icon: LayoutDashboard },
+    { id: 'simulation',          label: 'Simulation',         icon: FlaskConical },
+    { id: 'configuration',       label: 'System Config',      icon: SlidersHorizontal },
+    { id: 'energy-intelligence', label: 'Energy Intelligence', icon: Zap,         href: '/energy-intelligence' },
+    // Live financials: simulation tab — shows real-time KES savings & revenue
+    { id: 'financial',           label: 'Live Financials',    icon: DollarSign },
+    // Financial Planner: standalone calculator — LCOE, NPV, IRR, payback
+    { id: 'financial-model',     label: 'Financial Planner',  icon: TrendingUp,  href: '/financial' },
+    { id: 'scenarios',           label: 'Scenarios',          icon: BookMarked,  href: '/scenarios' },
+    { id: 'recommendation',      label: 'Recommendations',    icon: Lightbulb },
+    { id: 'ai-assistant',        label: 'AI Assistant',       icon: Bot },
   ];
 
   return (
@@ -241,6 +294,7 @@ export function DashboardSidebar({
           </SidebarGroup>
         )}
 
+        {/* Governance — lazy: hooks only mount when panel is open */}
         <SidebarGroup className="mt-5">
           <SidebarGroupLabel
             className="mb-1.5 px-2 text-xs font-semibold uppercase tracking-wider"
@@ -249,25 +303,7 @@ export function DashboardSidebar({
             Governance
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <button
-              type="button"
-              onClick={() => setGovernanceOpen((prev) => !prev)}
-              className="flex w-full items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2 text-sm font-medium text-[var(--text-primary)]"
-            >
-              <ShieldCheck className="h-4 w-4 text-[var(--battery)]" />
-              Governance
-            </button>
-            {governanceOpen && (
-              <div className="mt-2">
-                <GovernanceWidget
-                  currentSoc={battery.soc ?? latestPoint?.batteryLevelPct ?? 50}
-                  minSoc={20}
-                  maxSoc={90}
-                  actualOutput={latestPoint?.solarKW ?? 0}
-                  expectedOutput={expectedOutputBaseline}
-                />
-              </div>
-            )}
+            <GovernanceSection />
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
