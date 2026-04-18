@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 114 | `rollback/merge-pull-request-215-from-rauell1-co-2026-04-18-64fd1b6` | `64fd1b6` | Merge pull request #215 from rauell1/copilot/add-financial-modeling-engine | 2026-04-18 |
 | 113 | `rollback/merge-pull-request-214-from-rauell1-co-2026-04-18-1f1b43c` | `1f1b43c` | Merge pull request #214 from rauell1/copilot/feat-ev-mobility-simulation-engine | 2026-04-18 |
 | 112 | `rollback/merge-pull-request-213-from-rauell1-co-2026-04-18-0f7355e` | `0f7355e` | Merge pull request #213 from rauell1/copilot/add-inverter-simulation-module | 2026-04-18 |
 | 111 | `rollback/merge-pull-request-208-from-rauell1-co-2026-04-18-c4b35b4` | `c4b35b4` | Merge pull request #208 from rauell1/copilot/add-battery-simulation-engine | 2026-04-18 |
@@ -1195,6 +1196,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/merge-pull-request-214-from-rauell1-co-2026-04-18-1f1b43c`
 - **Commit**: `1f1b43c2b5154ed1ddd9ebe25a685cb7e10581c5`
 - **Subject**: Merge pull request #214 from rauell1/copilot/feat-ev-mobility-simulation-engine
+- **Date**: 2026-04-18
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #114 — `rollback/merge-pull-request-215-from-rauell1-co-2026-04-18-64fd1b6`
+
+- **Branch**: `rollback/merge-pull-request-215-from-rauell1-co-2026-04-18-64fd1b6`
+- **Commit**: `64fd1b6c078b785219121dc34528ba984e1a05f2`
+- **Subject**: Merge pull request #215 from rauell1/copilot/add-financial-modeling-engine
 - **Date**: 2026-04-18
 - **Auto-generated**: yes (by update-rollback.yml)
 
