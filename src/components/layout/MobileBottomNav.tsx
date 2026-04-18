@@ -21,13 +21,15 @@ const NAV_ITEMS: Array<{
   icon: React.ElementType;
   href: string;
 }> = [
-  { id: 'dashboard',          label: 'Home',       icon: LayoutDashboard,  href: '/demo' },
-  { id: 'simulation',         label: 'Simulate',   icon: FlaskConical,     href: '/demo' },
-  { id: 'energy-intelligence', label: 'Energy',    icon: Zap,              href: '/energy-intelligence' },
-  { id: 'financial-model',    label: 'Finance',    icon: TrendingUp,       href: '/financial' },
-  { id: 'scenarios',          label: 'Scenarios',  icon: BookMarked,       href: '/scenarios' },
-  { id: 'recommendation',     label: 'Recommend',  icon: Lightbulb,        href: '/demo' },
-  { id: 'ai-assistant',       label: 'AI',         icon: Bot,              href: '/demo' },
+  { id: 'dashboard',           label: 'Home',      icon: LayoutDashboard, href: '/demo' },
+  { id: 'simulation',          label: 'Simulate',  icon: FlaskConical,    href: '/demo' },
+  { id: 'energy-intelligence', label: 'Energy',    icon: Zap,             href: '/energy-intelligence' },
+  // Mobile shows the Financial Planner (standalone calc) as the primary finance entry.
+  // Live Financials is accessible via the Simulation tab on desktop.
+  { id: 'financial-model',     label: 'Planner',   icon: TrendingUp,      href: '/financial' },
+  { id: 'scenarios',           label: 'Scenarios', icon: BookMarked,      href: '/scenarios' },
+  { id: 'recommendation',      label: 'Recs',      icon: Lightbulb,       href: '/demo' },
+  { id: 'ai-assistant',        label: 'AI',        icon: Bot,             href: '/demo' },
 ];
 
 interface MobileBottomNavProps {
@@ -64,7 +66,7 @@ export function MobileBottomNav({
             />
             <span
               className={cn(
-                'text-sm leading-none transition-colors',
+                'text-[10px] leading-none transition-colors',
                 isActive ? 'text-[var(--solar)]' : 'text-[var(--text-tertiary)]'
               )}
             >
