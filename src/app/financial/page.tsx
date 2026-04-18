@@ -269,21 +269,22 @@ export default function FinancialPage() {
 
   return (
     <DashboardLayout activeSection="financial-model">
-      {/* ─── Header ──────────────────────────────────────────────────── */}
-      <div className="px-4 sm:px-6 pt-6 pb-2 flex items-center gap-3">
-        <div className="h-10 w-10 rounded-full bg-[var(--battery-soft)] border border-[var(--battery)]/30 flex items-center justify-center text-[var(--battery)]">
-          <TrendingUp size={18} />
+      <main className="flex-1 overflow-y-auto">
+        {/* ─── Header ──────────────────────────────────────────────────── */}
+        <div className="px-4 sm:px-6 pt-6 pb-2 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-[var(--battery-soft)] border border-[var(--battery)]/30 flex items-center justify-center text-[var(--battery)]">
+            <TrendingUp size={18} />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-[var(--text-primary)]">Financial Model</h1>
+            <p className="text-sm text-[var(--text-secondary)]">
+              LCOE · Payback · NPV · IRR — {form.projectYears}-year projection
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-bold text-[var(--text-primary)]">Financial Model</h1>
-          <p className="text-sm text-[var(--text-secondary)]">
-            LCOE · Payback · NPV · IRR — {form.projectYears}-year projection
-          </p>
-        </div>
-      </div>
 
-      <div className="px-4 sm:px-6 pb-10 mt-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="px-4 sm:px-6 pb-10 mt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* ═══ Left: Inputs ════════════════════════════════════════ */}
           <div className="space-y-4">
             <Card className="dashboard-card">
@@ -622,8 +623,9 @@ export default function FinancialPage() {
               </div>
             )}
           </div>
+          </div>
         </div>
-      </div>
+      </main>
     </DashboardLayout>
   );
 }

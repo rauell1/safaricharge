@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import presetsData from '../../../forecasting/kenya-irradiance-presets.json';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,6 +23,7 @@ import {
   type SimulatorSizingPayload,
   type SystemType,
 } from '@/lib/pv-sizing';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 type KenyaIrradiancePresetsFile = {
   source: {
@@ -78,21 +78,21 @@ export default function SizingPage() {
       dailyLoadKwh,
     };
 
-    localStorage.setItem(SIZING_SIMULATOR_STORAGE_KEY, JSON.stringify(payload));
+    try {
+      localStorage.setItem(SIZING_SIMULATOR_STORAGE_KEY, JSON.stringify(payload));
+    } catch {}
     router.push('/simulation');
   };
 
   return (
-    <main className="min-h-screen bg-[var(--bg-primary)] px-4 py-8 lg:px-8">
+    <DashboardLayout activeSection="sizing">
+      <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
       <div className="mx-auto max-w-5xl space-y-6">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-[var(--text-primary)]">PV Sizing Calculator</h1>
             <p className="text-sm text-[var(--text-secondary)]">Kenya county irradiance presets with simulator handoff</p>
           </div>
-          <Link href="/">
-            <Button variant="outline">Back to Dashboard</Button>
-          </Link>
         </div>
 
         <Card className="dashboard-card">
@@ -198,6 +198,7 @@ export default function SizingPage() {
           </CardContent>
         </Card>
       </div>
-    </main>
+      </main>
+    </DashboardLayout>
   );
 }
