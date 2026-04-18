@@ -2,24 +2,25 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// Public paths that never require authentication
-const PUBLIC_PATHS = ['/', '/login', '/landing', '/auth/callback', '/auth/confirm']
+// Routes that never require authentication — always pass through immediately.
+// /auth/* is especially critical: the session cookie hasn't been written yet
+// when /auth/callback is hit, so calling getUser() here would see no user
+// and redirect away before the code-exchange can complete.
+const PUBLIC_PREFIXES = ['/', '/login', '/landing', '/pricing', '/auth', '/api']
+
+function isPublic(pathname: string): boolean {
+  return PUBLIC_PREFIXES.some(
+    p => pathname === p || pathname.startsWith(p + '/')
+  )
+}
 
 export async function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname
+  const { pathname } = request.nextUrl
 
-  // Always pass through public paths immediately — no Supabase call needed.
-  // This is critical for /auth/callback: the session cookie hasn't been set
-  // yet when this route is hit, so calling getUser() here would see no user
-  // and redirect away before the code-exchange can complete.
-  if (PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))) {
-    return NextResponse.next()
-  }
+  // Fast-path: no Supabase call needed for public routes
+  if (isPublic(pathname)) return NextResponse.next()
 
-  const isProtectedPath = pathname === '/dashboard' || pathname.startsWith('/dashboard/')
-  if (!isProtectedPath) return NextResponse.next()
-
-  // Only hit Supabase for protected routes
+  // Only protected routes reach here
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -27,9 +28,7 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
+        getAll() { return request.cookies.getAll() },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request })
@@ -41,13 +40,10 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
+  // getUser() validates the JWT server-side — never stale
+  const { data: { user }, error } = await supabase.auth.getUser()
 
   if (error || !user) {
-    // Redirect to /login (not /) preserving the intended destination
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('next', pathname)
     return NextResponse.redirect(loginUrl)
@@ -57,8 +53,8 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Exclude static assets, images, favicons, AND auth routes from middleware
   matcher: [
+    // Exclude all static assets and auth routes at pattern level
     '/((?!_next/static|_next/image|favicon.ico|auth/|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'
   ],
 }
