@@ -560,30 +560,119 @@ export default function EnergyIntelligencePage() {
     [data]
   );
 
+  const heroCards = useMemo(
+    () => [
+      {
+        title: 'Solar generation',
+        value: `${totalAcKwh.toFixed(1)} kWh`,
+        hint: `DC peak ${dcPeak.toFixed(1)} kW`,
+      },
+      {
+        title: 'Battery capacity',
+        value: `${battery.capacityKwh} kWh`,
+        hint: `${(data[data.length - 1]?.socPct ?? 0).toFixed(0)}% SoC now`,
+      },
+      {
+        title: 'Grid reliability',
+        value: `${avgFreq.toFixed(3)} Hz`,
+        hint: inverter.gridConnected ? 'Grid-tied · stable' : 'Islanded · microgrid',
+      },
+      {
+        title: 'EV readiness',
+        value: `${ev.vehicleCount} vehicles`,
+        hint: `${ev.useCase} · ${ev.smartCharging ? 'Smart charging' : 'Manual'}`,
+      },
+    ],
+    [avgFreq, battery.capacityKwh, data, dcPeak, ev.smartCharging, ev.useCase, ev.vehicleCount, inverter.gridConnected, totalAcKwh]
+  );
+
   const CABLE_MM2_OPTIONS = [4, 6, 10, 16, 25, 35];
 
   return (
     <DashboardLayout activeSection="energy-intelligence">
-      {/* ─── Header ──────────────────────────────────────────────────── */}
-      <div className="px-4 sm:px-6 pt-6 pb-2 flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-[var(--solar-soft)] border border-[var(--solar)]/30 flex items-center justify-center text-[var(--solar)]">
-            <Zap size={18} />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-[var(--text-primary)]">Energy Intelligence</h1>
-            <p className="text-sm text-[var(--text-secondary)]">
-              Solar · Battery · EV Fleet · Grid — 15-min resolution
-            </p>
+      {/* ─── Hero ────────────────────────────────────────────────────── */}
+      <div className="px-4 sm:px-6 pt-6">
+        <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-gradient-to-br from-[#0f172a] via-[#0c1324] to-[#0a0f1d] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 opacity-70"
+            style={{
+              background:
+                'radial-gradient(circle at 18% 22%, rgba(16,185,129,0.25), transparent 45%), radial-gradient(circle at 82% 18%, rgba(59,130,246,0.18), transparent 40%), radial-gradient(circle at 40% 88%, rgba(245,158,11,0.16), transparent 35%)',
+            }}
+          />
+          <div className="relative px-5 sm:px-8 py-7 sm:py-8">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-4 max-w-2xl">
+                <div className="flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-white/5 px-3 py-1 text-[var(--text-primary)]/90">
+                    <Zap className="h-3.5 w-3.5 text-[var(--solar)]" />
+                    Energy storage
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-white/5 px-3 py-1">
+                    Battery &amp; grid stability
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-white/5 px-3 py-1">
+                    EV fleet charging
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight">
+                    Energy Storage Insights
+                  </h1>
+                  <p className="text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed max-w-xl">
+                    Grid performance, storage operations, and EV charging stitched together at 15-minute resolution.
+                    Tune the scenario, watch the chart respond, and keep resilience in view.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2 text-xs text-[var(--text-secondary)]">
+                  {['Live telemetry', '15-min resolution', 'Kenya grid + EV ready'].map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-white/5 px-3 py-1"
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full bg-[var(--battery)] animate-pulse-glow" />
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
+                    <span className="h-2 w-2 rounded-full bg-[var(--battery)] animate-pulse-glow" />
+                    Simulation updates instantly with every control change.
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={reset}
+                    className="gap-1.5 border-[var(--border)] bg-white/5 hover:bg-[var(--bg-card-hover)]"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                    Reset scenario
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-3 w-full lg:max-w-md">
+                {heroCards.map((card) => (
+                  <div
+                    key={card.title}
+                    className="rounded-xl border border-[var(--border)] bg-white/5 backdrop-blur-sm p-4 shadow-sm"
+                  >
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
+                      {card.title}
+                    </p>
+                    <p className="text-lg font-bold text-[var(--text-primary)] tabular-nums">{card.value}</p>
+                    <p className="text-xs text-[var(--text-secondary)] mt-1.5">{card.hint}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={reset} className="gap-1.5">
-          <RefreshCw className="h-3.5 w-3.5" />
-          Reset
-        </Button>
       </div>
 
-      <div className="px-4 sm:px-6 pb-10 space-y-6 mt-4">
+      <div className="px-4 sm:px-6 pb-10 space-y-6 mt-6">
         {/* ─── Grid ──────────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
           {/* ═══ Panel A: Solar + Inverter ═══════════════════════════ */}
