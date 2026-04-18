@@ -6,11 +6,11 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   FlaskConical,
-  SlidersHorizontal,
-  DollarSign,
   BookMarked,
   Lightbulb,
   Bot,
+  Zap,
+  TrendingUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DashboardSection } from './DashboardSidebar';
@@ -21,13 +21,13 @@ const NAV_ITEMS: Array<{
   icon: React.ElementType;
   href: string;
 }> = [
-  { id: 'dashboard',      label: 'Home',      icon: LayoutDashboard,   href: '/demo' },
-  { id: 'simulation',     label: 'Simulate',  icon: FlaskConical,      href: '/demo' },
-  { id: 'configuration',  label: 'Config',    icon: SlidersHorizontal, href: '/demo' },
-  { id: 'financial',      label: 'Finance',   icon: DollarSign,        href: '/demo' },
-  { id: 'scenarios',      label: 'Scenarios', icon: BookMarked,        href: '/scenarios' },
-  { id: 'recommendation', label: 'Recommend', icon: Lightbulb,         href: '/demo' },
-  { id: 'ai-assistant',   label: 'AI',        icon: Bot,               href: '/demo' },
+  { id: 'dashboard',          label: 'Home',       icon: LayoutDashboard,  href: '/demo' },
+  { id: 'simulation',         label: 'Simulate',   icon: FlaskConical,     href: '/demo' },
+  { id: 'energy-intelligence', label: 'Energy',    icon: Zap,              href: '/energy-intelligence' },
+  { id: 'financial-model',    label: 'Finance',    icon: TrendingUp,       href: '/financial' },
+  { id: 'scenarios',          label: 'Scenarios',  icon: BookMarked,       href: '/scenarios' },
+  { id: 'recommendation',     label: 'Recommend',  icon: Lightbulb,        href: '/demo' },
+  { id: 'ai-assistant',       label: 'AI',         icon: Bot,              href: '/demo' },
 ];
 
 interface MobileBottomNavProps {
