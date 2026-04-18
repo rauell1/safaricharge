@@ -2,6 +2,11 @@ import type { DerivedSystemConfig } from '@/types/simulation-core';
 import type { DayScenario } from './timeEngine';
 import { simulateSolar } from './solarEngine';
 import { gaussianRandom } from './mathUtils';
+import {
+  defaultEVFleetConfig,
+  simulateEVFleet,
+  type EVFleetConfig,
+} from './evMobilityEngine';
 
 export interface EVSpecs {
   ev1: { drainRate: number; cap: number; onboard: number };
@@ -20,6 +25,9 @@ export interface SolarSimulationResult {
   accessoryLoad: number;
   ev1Kw: number;
   ev2Kw: number;
+  evFleetLoadKw: number;
+  evV2gKw: number;
+  evSmartDeferralKw: number;
   ev1IsHome: boolean;
   ev2IsHome: boolean;
   ev1V2g?: boolean;
@@ -70,7 +78,8 @@ export const runSolarSimulation = (
   batteryHealth: number,
   actualTimeStep: number,
   priorityMode: string,
-  isPeakTime: boolean
+  isPeakTime: boolean,
+  evFleetConfig?: Partial<EVFleetConfig>
 ): SolarSimulationResult => {
   const rawSolar = simulateSolar(t, scenario, systemConfig, cloudNoise, scenario.solarData);
   const solarConstrainedByInverter = Math.min(rawSolar, systemConfig.inverterKw);
@@ -102,6 +111,27 @@ export const runSolarSimulation = (
 
   const accessoryLoad = Math.max(0, (systemConfig.accessoryLoadKw ?? 0) * (systemConfig.accessoryScale ?? 1));
   const houseLoad = residentialLoad + commercialLoad + industrialLoad + accessoryLoad;
+
+  const inferredFleetConfig: EVFleetConfig = {
+    ...defaultEVFleetConfig(),
+    ...evFleetConfig,
+    batteryKwh: evFleetConfig?.batteryKwh ?? evSpecs.ev2.cap,
+    chargerKw: evFleetConfig?.chargerKw ?? systemConfig.evChargerKw,
+    onboardInverterKw: evFleetConfig?.onboardInverterKw ?? Math.min(5, evSpecs.ev2.onboard),
+  };
+  const fleetResult = simulateEVFleet(
+    t,
+    [prevEv1Soc / 100, prevEv2Soc / 100],
+    {
+      ...inferredFleetConfig,
+      vehicleCount: Math.max(2, inferredFleetConfig.vehicleCount),
+    },
+    Math.max(0, rawSolar - houseLoad),
+    isPeakTime ? 24.31 : 14.93,
+    isPeakTime,
+    50,
+    actualTimeStep
+  );
 
   const effectiveCapacity = systemConfig.batteryKwh * batteryHealth;
   const effectiveReserve = Math.max(systemConfig.batteryKwh * 0.15, 8) * batteryHealth;
@@ -248,6 +278,9 @@ export const runSolarSimulation = (
     accessoryLoad,
     ev1Kw: ev1Load,
     ev2Kw: ev2Load,
+    evFleetLoadKw: fleetResult.totalLoadKw,
+    evV2gKw: fleetResult.v2gExportKw,
+    evSmartDeferralKw: fleetResult.smartChargingDeferralKw,
     ev1IsHome,
     ev2IsHome,
     ev1V2g,
