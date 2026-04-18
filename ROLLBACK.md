@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 124 | `rollback/fix-remove-flex-direction-column-from-2026-04-18-53841af` | `53841af` | fix: remove flex-direction column from .page-shell to restore horizontal text flow | 2026-04-18 |
 | 123 | `rollback/fix-clean-magic-link-login-page-full-v-2026-04-18-9aef114` | `9aef114` | fix: clean magic-link login page — full viewport, no scroll, back-to-home link | 2026-04-18 |
 | 122 | `rollback/merge-pull-request-222-from-rauell1-co-2026-04-18-baaa8f8` | `baaa8f8` | Merge pull request #222 from rauell1/copilot/refactor-authentication-system | 2026-04-18 |
 | 121 | `rollback/merge-pull-request-221-from-rauell1-co-2026-04-18-d4d8504` | `d4d8504` | Merge pull request #221 from rauell1/codex/fix-sender-email-resend | 2026-04-18 |
@@ -1295,6 +1296,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-clean-magic-link-login-page-full-v-2026-04-18-9aef114`
 - **Commit**: `9aef114402e2c36e80e3c2a2a0edba2e5e8a1063`
 - **Subject**: fix: clean magic-link login page — full viewport, no scroll, back-to-home link
+- **Date**: 2026-04-18
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #124 — `rollback/fix-remove-flex-direction-column-from-2026-04-18-53841af`
+
+- **Branch**: `rollback/fix-remove-flex-direction-column-from-2026-04-18-53841af`
+- **Commit**: `53841af523e2f42fb7dbc94efaa16f9914a4e0a5`
+- **Subject**: fix: remove flex-direction column from .page-shell to restore horizontal text flow
 - **Date**: 2026-04-18
 - **Auto-generated**: yes (by update-rollback.yml)
 
