@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import {
   Sun, Zap, BarChart3, Battery, ArrowRight, Shield,
-  Globe, TrendingDown, Check, Activity, ChevronRight, Cpu, Leaf,
+  Globe, TrendingDown, Check, Activity, ChevronRight, Cpu, Leaf, Quote, ArrowUpRight,
 } from 'lucide-react';
 
 const features = [
@@ -52,10 +52,10 @@ const features = [
 ];
 
 const stats = [
-  { value: '40%', label: 'Peak demand reduction', sub: 'vs. unoptimised baseline' },
-  { value: 'KES 0', label: 'Licence fee', sub: 'Open-core model' },
-  { value: '5 min', label: 'Re-optimisation cycle', sub: 'Rolling horizon dispatch' },
-  { value: '99.2%', label: 'Energy balance accuracy', sub: 'Validated on live sites' },
+  { value: '40%', label: 'Peak demand reduction', sub: 'vs. unoptimised baseline', sparkline: '2,16 16,10 30,12 44,8 58,6' },
+  { value: 'KES 0', label: 'Licence fee', sub: 'Open-core model', sparkline: '2,14 16,14 30,11 44,9 58,7' },
+  { value: '5 min', label: 'Re-optimisation cycle', sub: 'Rolling horizon dispatch', sparkline: '2,15 16,12 30,9 44,7 58,5' },
+  { value: '99.2%', label: 'Energy balance accuracy', sub: 'Validated on live sites', sparkline: '2,18 16,14 30,11 44,9 58,8' },
 ];
 
 const plans = [
@@ -109,12 +109,64 @@ const plans = [
   },
 ];
 
+const heroKpis = [
+  { label: 'Solar Output', value: '47.3 kW', icon: Sun },
+  { label: 'BESS SoC', value: '78%', icon: Battery },
+  { label: 'Grid Cost Saved', value: 'KES 2,840', icon: TrendingDown },
+  { label: 'CO₂ Avoided', value: '12.4 kg', icon: Leaf },
+];
+
+const steps = [
+  {
+    title: 'Connect your inverter',
+    description: 'Point SafariCharge at your SMA, Fronius, or Sungrow Modbus feed',
+  },
+  {
+    title: 'MILP engine optimises',
+    description: 'Pyomo solves the dispatch schedule every 5 minutes against KPLC TOU windows',
+  },
+  {
+    title: 'Track and export',
+    description: 'Real-time KPIs, cost savings, and CO₂ reports in one dashboard',
+  },
+];
+
+const testimonials = [
+  {
+    quote: 'Cut our KPLC peak bill by 38% in the first month.',
+    by: 'Energy Manager, Nairobi Industrial Park',
+  },
+  {
+    quote: 'Finally a tool built for Kenya\'s grid reality.',
+    by: 'Solar Engineer, Mombasa SEZ',
+  },
+];
+
 export default function LandingPage() {
   return (
     <div
       className="min-h-screen text-white antialiased"
       style={{ background: '#03070f', fontFamily: "'Inter', system-ui, sans-serif" }}
     >
+      <style jsx>{`
+        @keyframes proPulse {
+          0% { opacity: 0.42; transform: scale(1); }
+          50% { opacity: 0.78; transform: scale(1.01); }
+          100% { opacity: 0.42; transform: scale(1); }
+        }
+
+        .pro-glow::before {
+          content: '';
+          position: absolute;
+          inset: -1px;
+          border-radius: 1rem;
+          border: 1px solid rgba(16,185,129,0.55);
+          box-shadow: 0 0 30px rgba(16,185,129,0.25), 0 0 60px rgba(16,185,129,0.1);
+          animation: proPulse 3s ease-in-out infinite;
+          pointer-events: none;
+        }
+      `}</style>
+
       {/* ── Subtle grid bg ── */}
       <div
         aria-hidden
@@ -148,9 +200,9 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-6 sm:px-10 h-16 flex items-center justify-between">
           <Link href="/landing" className="flex items-center gap-2.5">
             <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-label="SafariCharge logo">
-              <circle cx="14" cy="14" r="13" stroke="rgba(16,185,129,0.35)" strokeWidth="1"/>
-              <path d="M14 7 L17.5 13 L21 13 L14 21 L16 15 L12 15 Z" fill="#10b981" opacity="0.9"/>
-              <circle cx="14" cy="14" r="2" fill="#10b981"/>
+              <circle cx="14" cy="14" r="13" stroke="rgba(16,185,129,0.35)" strokeWidth="1" />
+              <path d="M14 7 L17.5 13 L21 13 L14 21 L16 15 L12 15 Z" fill="#10b981" opacity="0.9" />
+              <circle cx="14" cy="14" r="2" fill="#10b981" />
             </svg>
             <span className="font-semibold text-sm tracking-tight" style={{ color: '#e2e8f0' }}>SafariCharge</span>
           </Link>
@@ -167,16 +219,7 @@ export default function LandingPage() {
                 href={item.href}
                 target={item.external ? '_blank' : undefined}
                 rel={item.external ? 'noopener noreferrer' : undefined}
-                className="text-sm px-3.5 py-2 rounded-lg"
-                style={{ color: 'rgba(255,255,255,0.45)', transition: 'color 150ms, background 150ms' }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.85)';
-                  (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.45)';
-                  (e.currentTarget as HTMLElement).style.background = 'transparent';
-                }}
+                className="text-sm px-3.5 py-2 rounded-lg text-white/45 hover:text-white/85 hover:bg-white/5 transition-colors"
               >
                 {item.label}
               </a>
@@ -186,34 +229,14 @@ export default function LandingPage() {
           <div className="flex items-center gap-2">
             <Link
               href="/demo"
-              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-lg"
-              style={{
-                color: 'rgba(255,255,255,0.55)',
-                border: '1px solid rgba(255,255,255,0.09)',
-                transition: 'color 150ms, border-color 150ms',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.9)';
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.18)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)';
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.09)';
-              }}
+              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-lg text-white/55 border border-white/10 hover:text-white/90 hover:border-white/20 transition-colors"
             >
               <Activity className="w-3.5 h-3.5" />
               Dashboard
             </Link>
             <Link
               href="/demo"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-1.5 rounded-lg"
-              style={{
-                background: '#10b981',
-                color: '#fff',
-                transition: 'background 150ms',
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#059669'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#10b981'; }}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-1.5 rounded-lg bg-[#10b981] text-white hover:bg-[#059669] transition-colors"
             >
               Open app <ArrowRight className="w-3.5 h-3.5" />
             </Link>
@@ -223,9 +246,9 @@ export default function LandingPage() {
 
       {/* ── Hero ── */}
       <section className="relative pt-44 pb-32 px-6 sm:px-10 overflow-hidden">
-        <div className="relative mx-auto max-w-5xl">
+        <div className="relative mx-auto max-w-7xl">
           {/* Live pill */}
-          <div className="flex justify-center mb-9">
+          <div className="flex justify-center lg:justify-start mb-9">
             <span
               className="inline-flex items-center gap-2 text-xs font-semibold px-3.5 py-1.5 rounded-full"
               style={{
@@ -244,7 +267,7 @@ export default function LandingPage() {
 
           {/* Headline */}
           <h1
-            className="text-center font-bold leading-[1.06] mb-8"
+            className="text-center lg:text-left font-bold leading-[1.06] mb-8"
             style={{
               fontSize: 'clamp(2.8rem, 7vw, 5.5rem)',
               letterSpacing: '-0.04em',
@@ -266,7 +289,7 @@ export default function LandingPage() {
           </h1>
 
           <p
-            className="text-center mx-auto mb-12"
+            className="text-center lg:text-left mx-auto lg:mx-0 mb-10"
             style={{
               fontSize: 'clamp(1rem, 2vw, 1.15rem)',
               color: 'rgba(255,255,255,0.45)',
@@ -279,52 +302,46 @@ export default function LandingPage() {
             visibility into every kilowatt-hour.
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-3 mb-14">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-12">
+            {heroKpis.map((kpi) => {
+              const Icon = kpi.icon;
+              return (
+                <div
+                  key={kpi.label}
+                  className="rounded-2xl p-4"
+                  style={{
+                    background: 'rgba(255,255,255,0.02)',
+                    border: '1px solid rgba(16,185,129,0.15)',
+                    boxShadow: '0 0 24px rgba(16,185,129,0.08)',
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>{kpi.label}</span>
+                    <Icon className="w-4 h-4" style={{ color: '#10b981' }} />
+                  </div>
+                  <div className="text-lg font-semibold" style={{ color: '#f0fdf8', letterSpacing: '-0.02em' }}>{kpi.value}</div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 mb-14">
             <Link
               href="/demo"
-              className="inline-flex items-center gap-2 font-semibold text-sm px-7 py-3.5 rounded-xl"
-              style={{
-                background: '#10b981',
-                color: '#fff',
-                boxShadow: '0 0 40px rgba(16,185,129,0.3)',
-                transition: 'background 150ms, box-shadow 150ms',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background = '#059669';
-                (e.currentTarget as HTMLElement).style.boxShadow = '0 0 56px rgba(16,185,129,0.45)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = '#10b981';
-                (e.currentTarget as HTMLElement).style.boxShadow = '0 0 40px rgba(16,185,129,0.3)';
-              }}
+              className="group inline-flex items-center gap-2 font-semibold text-sm px-7 py-3.5 rounded-xl bg-[#10b981] text-white shadow-[0_0_40px_rgba(16,185,129,0.3)] hover:bg-[#059669] hover:shadow-[0_0_56px_rgba(16,185,129,0.45)] transition-all"
             >
-              Open dashboard <ArrowRight className="w-4 h-4" />
+              Open dashboard <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <a
               href="#features"
-              className="inline-flex items-center gap-2 text-sm px-6 py-3.5 rounded-xl"
-              style={{
-                color: 'rgba(255,255,255,0.55)',
-                border: '1px solid rgba(255,255,255,0.09)',
-                transition: 'color 150ms, border-color 150ms, background 150ms',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.9)';
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.18)';
-                (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)';
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.09)';
-                (e.currentTarget as HTMLElement).style.background = 'transparent';
-              }}
+              className="group inline-flex items-center gap-2 text-sm px-6 py-3.5 rounded-xl text-white/55 border border-white/10 hover:text-white/90 hover:border-white/20 hover:bg-white/5 transition-colors"
             >
-              See features <ChevronRight className="w-4 h-4" />
+              See features <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
             </a>
           </div>
 
           {/* Trust line */}
-          <p className="text-center text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>
+          <p className="text-center lg:text-left text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>
             Built for Nairobi&rsquo;s C&amp;I solar sites · KPLC TOU-aware · Open source
           </p>
         </div>
@@ -357,9 +374,55 @@ export default function LandingPage() {
                   {s.value}
                 </div>
                 <div className="text-sm font-medium mb-1" style={{ color: 'rgba(255,255,255,0.65)' }}>{s.label}</div>
-                <div className="text-xs" style={{ color: 'rgba(255,255,255,0.28)' }}>{s.sub}</div>
+                <div className="text-xs mb-3" style={{ color: 'rgba(255,255,255,0.28)' }}>{s.sub}</div>
+                <svg className="mx-auto" width="64" height="20" viewBox="0 0 60 20" fill="none" aria-hidden>
+                  <polyline points={s.sparkline} fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── How it works ── */}
+      <section className="py-28 px-6 sm:px-10" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-14">
+            <div
+              className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full mb-5"
+              style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.18)', color: '#34d399' }}
+            >
+              How it works
+            </div>
+            <h2
+              className="font-bold tracking-tight mb-4"
+              style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', color: '#f0fdf8', letterSpacing: '-0.04em' }}
+            >
+              From telemetry to dispatch in minutes
+            </h2>
+          </div>
+
+          <div className="relative">
+            <div className="absolute left-8 top-2 bottom-2 hidden sm:block" style={{ width: '1px', background: 'rgba(16,185,129,0.3)' }} />
+            <div className="space-y-10">
+              {steps.map((step, index) => (
+                <div key={step.title} className="grid sm:grid-cols-[90px_1fr] gap-5 sm:gap-8 items-start">
+                  <div className="text-4xl sm:text-5xl font-black leading-none" style={{ color: 'rgba(16,185,129,0.7)', letterSpacing: '-0.04em' }}>
+                    {index + 1}
+                  </div>
+                  <div
+                    className="rounded-2xl p-6"
+                    style={{
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                    }}
+                  >
+                    <h3 className="text-lg font-semibold mb-2" style={{ color: '#e2e8f0' }}>{step.title}</h3>
+                    <p className="text-sm" style={{ color: 'rgba(255,255,255,0.42)', lineHeight: 1.7 }}>{step.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -385,16 +448,14 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-px" style={{ background: 'rgba(255,255,255,0.05)' }}>
-            {features.map((f) => {
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {features.map((f, index) => {
               const Icon = f.icon;
+              const isPrimary = index === 0;
               return (
                 <div
                   key={f.title}
-                  className="p-8 group"
-                  style={{ background: '#03070f', transition: 'background 200ms' }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#06100a'; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#03070f'; }}
+                  className={`group rounded-2xl border border-white/10 p-8 bg-[#03070f] hover:bg-[#06100a] transition-colors ${isPrimary ? 'sm:col-span-2 lg:col-span-2 lg:p-10' : ''}`}
                 >
                   <div
                     className="w-10 h-10 rounded-xl grid place-items-center mb-5"
@@ -402,8 +463,8 @@ export default function LandingPage() {
                   >
                     <Icon className="w-5 h-5" style={{ color: f.accent }} strokeWidth={1.8} />
                   </div>
-                  <h3 className="font-semibold mb-3" style={{ color: '#e2e8f0', fontSize: '0.95rem' }}>{f.title}</h3>
-                  <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.38)' }}>
+                  <h3 className={`font-semibold mb-3 ${isPrimary ? 'text-xl' : 'text-[0.95rem]'}`} style={{ color: '#e2e8f0' }}>{f.title}</h3>
+                  <p className={`leading-relaxed text-white/40 group-hover:text-white/55 transition-colors ${isPrimary ? 'text-base max-w-3xl' : 'text-sm'}`}>
                     {f.description}
                   </p>
                 </div>
@@ -440,24 +501,10 @@ export default function LandingPage() {
           </p>
           <Link
             href="/demo"
-            className="inline-flex items-center gap-2 font-semibold text-sm px-8 py-4 rounded-xl"
-            style={{
-              background: '#10b981',
-              color: '#fff',
-              boxShadow: '0 0 40px rgba(16,185,129,0.28)',
-              transition: 'background 150ms, box-shadow 150ms',
-              fontSize: '0.95rem',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = '#059669';
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 0 56px rgba(16,185,129,0.42)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background = '#10b981';
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 0 40px rgba(16,185,129,0.28)';
-            }}
+            className="group inline-flex items-center gap-2 font-semibold text-sm px-8 py-4 rounded-xl bg-[#10b981] text-white shadow-[0_0_40px_rgba(16,185,129,0.28)] hover:bg-[#059669] hover:shadow-[0_0_56px_rgba(16,185,129,0.42)] transition-all"
+            style={{ fontSize: '0.95rem' }}
           >
-            Open dashboard <ArrowRight className="w-4 h-4" />
+            Open dashboard <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
       </section>
@@ -465,7 +512,7 @@ export default function LandingPage() {
       {/* ── Pricing ── */}
       <section id="pricing" className="py-32 px-6 sm:px-10" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div className="mx-auto max-w-7xl">
-          <div className="text-center mb-20">
+          <div className="mb-20">
             <div
               className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full mb-5"
               style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.18)', color: '#34d399' }}
@@ -485,7 +532,7 @@ export default function LandingPage() {
             {plans.map((plan) => (
               <div
                 key={plan.name}
-                className="rounded-2xl p-7"
+                className={`group rounded-2xl p-7 relative ${plan.highlight ? 'pro-glow' : ''}`}
                 style={{
                   background: plan.highlight ? 'rgba(16,185,129,0.06)' : 'rgba(255,255,255,0.02)',
                   border: plan.highlight ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.06)',
@@ -516,35 +563,39 @@ export default function LandingPage() {
                 </ul>
                 <Link
                   href={plan.href}
-                  className="block w-full text-center text-sm font-semibold py-2.5 rounded-xl"
-                  style={{
-                    background: plan.highlight ? '#10b981' : 'transparent',
-                    color: plan.highlight ? '#fff' : 'rgba(255,255,255,0.6)',
-                    border: plan.highlight ? 'none' : '1px solid rgba(255,255,255,0.1)',
-                    transition: 'background 150ms, border-color 150ms, color 150ms',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (plan.highlight) {
-                      (e.currentTarget as HTMLElement).style.background = '#059669';
-                    } else {
-                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.22)';
-                      (e.currentTarget as HTMLElement).style.color = '#fff';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (plan.highlight) {
-                      (e.currentTarget as HTMLElement).style.background = '#10b981';
-                    } else {
-                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
-                      (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)';
-                    }
-                  }}
+                  className={`block w-full text-center text-sm font-semibold py-2.5 rounded-xl transition-colors ${
+                    plan.highlight
+                      ? 'bg-[#10b981] text-white hover:bg-[#059669]'
+                      : 'text-white/60 border border-white/10 hover:border-white/25 hover:text-white'
+                  }`}
                 >
                   {plan.cta}
                 </Link>
               </div>
             ))}
           </div>
+          <p className="mt-6 text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            All plans include the Pyomo MILP engine and KPLC tariff calculator
+          </p>
+        </div>
+      </section>
+
+      {/* ── Social proof ── */}
+      <section className="px-6 sm:px-10 pb-24" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="mx-auto max-w-7xl grid md:grid-cols-2 gap-4 pt-16">
+          {testimonials.map((item) => (
+            <div
+              key={item.quote}
+              className="rounded-2xl p-6"
+              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <Quote className="w-5 h-5 mb-4" style={{ color: '#10b981' }} />
+              <p className="text-base mb-3" style={{ color: '#e2e8f0' }}>
+                <em>&ldquo;{item.quote}&rdquo;</em>
+              </p>
+              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>— {item.by}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -566,61 +617,54 @@ export default function LandingPage() {
           </p>
           <Link
             href="/demo"
-            className="inline-flex items-center gap-2 font-semibold px-9 py-4 rounded-xl"
-            style={{
-              background: '#10b981',
-              color: '#fff',
-              boxShadow: '0 0 48px rgba(16,185,129,0.3)',
-              fontSize: '0.95rem',
-              transition: 'background 150ms, box-shadow 150ms',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = '#059669';
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 0 64px rgba(16,185,129,0.44)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background = '#10b981';
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 0 48px rgba(16,185,129,0.3)';
-            }}
+            className="group inline-flex items-center gap-2 font-semibold px-9 py-4 rounded-xl bg-[#10b981] text-white shadow-[0_0_48px_rgba(16,185,129,0.3)] hover:bg-[#059669] hover:shadow-[0_0_64px_rgba(16,185,129,0.44)] transition-all"
+            style={{ fontSize: '0.95rem' }}
           >
-            Open dashboard <ArrowRight className="w-4 h-4" />
+            Open dashboard <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
       </section>
 
       {/* ── Footer ── */}
-      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }} className="py-10 px-6 sm:px-10">
-        <div
-          className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4 text-sm"
-          style={{ color: 'rgba(255,255,255,0.22)' }}
-        >
-          <div className="flex items-center gap-2.5">
-            <svg width="16" height="16" viewBox="0 0 28 28" fill="none">
-              <path d="M14 7 L17.5 13 L21 13 L14 21 L16 15 L12 15 Z" fill="rgba(16,185,129,0.6)"/>
-            </svg>
-            <span>© {new Date().getFullYear()} SafariCharge · Nairobi, Kenya</span>
+      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }} className="py-12 px-6 sm:px-10">
+        <div className="mx-auto max-w-7xl grid gap-10 md:grid-cols-3 text-sm" style={{ color: 'rgba(255,255,255,0.22)' }}>
+          <div>
+            <div className="flex items-center gap-2.5 mb-3">
+              <svg width="18" height="18" viewBox="0 0 28 28" fill="none">
+                <path d="M14 7 L17.5 13 L21 13 L14 21 L16 15 L12 15 Z" fill="rgba(16,185,129,0.75)" />
+              </svg>
+              <span className="font-semibold" style={{ color: '#e2e8f0' }}>SafariCharge</span>
+            </div>
+            <p className="mb-2">Solar intelligence built for Kenya</p>
+            <p>© {new Date().getFullYear()} SafariCharge</p>
           </div>
-          <div className="flex items-center gap-6">
-            <Link
-              href="/demo"
-              style={{ transition: 'color 150ms' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.22)'; }}
-            >Dashboard</Link>
-            <a
-              href="https://github.com/rauell1/safaricharge"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ transition: 'color 150ms' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.22)'; }}
-            >GitHub</a>
-            <a
-              href="mailto:hello@safaricharge.ke"
-              style={{ transition: 'color 150ms' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.22)'; }}
-            >Contact</a>
+
+          <div>
+            <p className="font-semibold mb-3" style={{ color: '#e2e8f0' }}>Links</p>
+            <div className="space-y-2">
+              <Link href="/demo" className="inline-flex items-center gap-1.5 hover:text-white/65 transition-colors">Dashboard</Link>
+              <br />
+              <a href="#features" className="inline-flex items-center gap-1.5 hover:text-white/65 transition-colors">Features</a>
+              <br />
+              <a href="#pricing" className="inline-flex items-center gap-1.5 hover:text-white/65 transition-colors">Pricing</a>
+              <br />
+              <a
+                href="https://github.com/rauell1/safaricharge"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 hover:text-white/65 transition-colors"
+              >
+                GitHub <ArrowUpRight className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
+
+          <div>
+            <p className="font-semibold mb-3" style={{ color: '#e2e8f0' }}>Contact</p>
+            <a href="mailto:hello@safaricharge.ke" className="inline-flex hover:text-white/65 transition-colors mb-2">
+              hello@safaricharge.ke
+            </a>
+            <p>Built in Nairobi 🇰🇪</p>
           </div>
         </div>
       </footer>
