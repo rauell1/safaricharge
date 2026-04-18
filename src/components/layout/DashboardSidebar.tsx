@@ -11,6 +11,8 @@ import {
   Lightbulb,
   Bot,
   ShieldCheck,
+  Zap,
+  TrendingUp,
 } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
@@ -38,7 +40,9 @@ export type DashboardSection =
   | 'financial'
   | 'scenarios'
   | 'recommendation'
-  | 'ai-assistant';
+  | 'ai-assistant'
+  | 'energy-intelligence'
+  | 'financial-model';
 
 export interface SidebarContextMetric {
   label: string;
@@ -79,12 +83,14 @@ export function DashboardSidebar({
   const resolvedActive: DashboardSection = useMemo(() => {
     if (activeSection && activeSection !== 'dashboard') return activeSection;
     if (!pathname) return 'dashboard';
-    if (pathname.startsWith('/scenarios'))                                          return 'scenarios';
+    if (pathname.startsWith('/energy-intelligence'))                               return 'energy-intelligence';
+    if (pathname.startsWith('/financial'))                                         return 'financial-model';
+    if (pathname.startsWith('/scenarios'))                                         return 'scenarios';
     if (pathname.startsWith('/demo/simulation') || pathname.includes('simulation')) return 'simulation';
-    if (pathname.includes('configuration'))                                         return 'configuration';
-    if (pathname.includes('financial'))                                             return 'financial';
-    if (pathname.includes('recommendation'))                                        return 'recommendation';
-    if (pathname.includes('ai-assistant'))                                          return 'ai-assistant';
+    if (pathname.includes('configuration'))                                        return 'configuration';
+    if (pathname.includes('financial'))                                            return 'financial';
+    if (pathname.includes('recommendation'))                                       return 'recommendation';
+    if (pathname.includes('ai-assistant'))                                         return 'ai-assistant';
     return activeSection ?? 'dashboard';
   }, [activeSection, pathname]);
 
@@ -94,13 +100,15 @@ export function DashboardSidebar({
     icon: React.ElementType;
     href?: string;
   }> = [
-    { id: 'dashboard',      label: 'Dashboard',          icon: LayoutDashboard },
-    { id: 'simulation',     label: 'Simulation',         icon: FlaskConical },
-    { id: 'configuration',  label: 'System Config',      icon: SlidersHorizontal },
-    { id: 'financial',      label: 'Financial',          icon: DollarSign },
-    { id: 'scenarios',      label: 'Scenarios',          icon: BookMarked, href: '/scenarios' },
-    { id: 'recommendation', label: 'Recommendations',    icon: Lightbulb },
-    { id: 'ai-assistant',   label: 'AI Assistant',       icon: Bot },
+    { id: 'dashboard',          label: 'Dashboard',            icon: LayoutDashboard },
+    { id: 'simulation',         label: 'Simulation',           icon: FlaskConical },
+    { id: 'configuration',      label: 'System Config',        icon: SlidersHorizontal },
+    { id: 'energy-intelligence', label: 'Energy Intelligence', icon: Zap,        href: '/energy-intelligence' },
+    { id: 'financial-model',    label: 'Financial Model',      icon: TrendingUp, href: '/financial' },
+    { id: 'financial',          label: 'Financial',            icon: DollarSign },
+    { id: 'scenarios',          label: 'Scenarios',            icon: BookMarked, href: '/scenarios' },
+    { id: 'recommendation',     label: 'Recommendations',      icon: Lightbulb },
+    { id: 'ai-assistant',       label: 'AI Assistant',         icon: Bot },
   ];
 
   return (
