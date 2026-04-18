@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 117 | `rollback/merge-pull-request-194-from-rauell1-fi-2026-04-18-2eec621` | `2eec621` | Merge pull request #194 from rauell1/fix/codebase-cleanup-p0-p1 | 2026-04-18 |
 | 116 | `rollback/merge-pull-request-217-from-rauell1-co-2026-04-18-2dcacf8` | `2dcacf8` | Merge pull request #217 from rauell1/copilot/fix-damaged-lockfile | 2026-04-18 |
 | 115 | `rollback/merge-pull-request-216-from-rauell1-co-2026-04-18-8407f30` | `8407f30` | Merge pull request #216 from rauell1/copilot/add-energy-intelligence-page | 2026-04-18 |
 | 114 | `rollback/merge-pull-request-215-from-rauell1-co-2026-04-18-64fd1b6` | `64fd1b6` | Merge pull request #215 from rauell1/copilot/add-financial-modeling-engine | 2026-04-18 |
@@ -1225,6 +1226,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/merge-pull-request-217-from-rauell1-co-2026-04-18-2dcacf8`
 - **Commit**: `2dcacf801117e3518a82f1042054eef3cba96e65`
 - **Subject**: Merge pull request #217 from rauell1/copilot/fix-damaged-lockfile
+- **Date**: 2026-04-18
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #117 — `rollback/merge-pull-request-194-from-rauell1-fi-2026-04-18-2eec621`
+
+- **Branch**: `rollback/merge-pull-request-194-from-rauell1-fi-2026-04-18-2eec621`
+- **Commit**: `2eec6211b2dc994f187761986cb4fd90f6ff5204`
+- **Subject**: Merge pull request #194 from rauell1/fix/codebase-cleanup-p0-p1
 - **Date**: 2026-04-18
 - **Auto-generated**: yes (by update-rollback.yml)
 
