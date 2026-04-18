@@ -44,6 +44,7 @@ interface MinutePoint {
   fleetLoadKw: number;
   v2gExportKw: number;
   smartDeferralKw: number;
+  demandResponseShedKw: number;
   gridImportKw: number;
   gridExportKw: number;
   frequencyHz: number;
@@ -118,7 +119,10 @@ function runDaySimulation(
     let fleetKw = 0;
     let v2gKw = 0;
     let deferralKw = 0;
+    let drShedKw = 0;
     const baseFleet = ev.vehicleCount * ev.chargerKw * 0.25;
+    // Demand response: shed up to 50% of fleet load during peak if grid is tight
+    const DR_PEAK_THRESHOLD_KW = inverter.ratedKw * 0.9;
 
     if (ev.useCase === 'Residential') {
       // Charge overnight + evening
@@ -139,6 +143,15 @@ function runDaySimulation(
       if (ev.v2gEnabled && t >= 17 && t <= 19) v2gKw = baseFleet * 0.3;
     }
 
+    const isPeak = t >= 17 && t <= 21;
+
+    // Demand response shed: curtail fleet charging if total load exceeds DR threshold
+    const totalLoadBeforeDR = houseLoad + fleetKw;
+    if (isPeak && totalLoadBeforeDR > DR_PEAK_THRESHOLD_KW) {
+      drShedKw = Math.min(fleetKw * 0.5, totalLoadBeforeDR - DR_PEAK_THRESHOLD_KW);
+      fleetKw = Math.max(0, fleetKw - drShedKw);
+    }
+
     const totalLoad = houseLoad + fleetKw;
 
     // --- Battery dispatch ---
@@ -146,8 +159,6 @@ function runDaySimulation(
     let deficit = Math.max(0, totalLoad - acKw - v2gKw);
     let chargeKw = 0;
     let dischargeKw = 0;
-
-    const isPeak = t >= 17 && t <= 21;
     const shouldDischarge =
       battery.strategy === 'self-consumption' ||
       battery.strategy === 'backup-resilience' ||
@@ -187,6 +198,7 @@ function runDaySimulation(
       fleetLoadKw: parseFloat(fleetKw.toFixed(2)),
       v2gExportKw: parseFloat(v2gKw.toFixed(2)),
       smartDeferralKw: parseFloat(deferralKw.toFixed(2)),
+      demandResponseShedKw: parseFloat(drShedKw.toFixed(2)),
       gridImportKw: parseFloat(gridImport.toFixed(2)),
       gridExportKw: parseFloat(gridExport.toFixed(2)),
       frequencyHz: parseFloat(frequency.toFixed(3)),
@@ -494,6 +506,16 @@ export default function EnergyIntelligencePage() {
     return battery.capacityKwh > 0 ? throughput / (2 * battery.capacityKwh) : 0;
   }, [data, battery.capacityKwh]);
 
+  /**
+   * Simplified health model: ~0.03% degradation per full equivalent cycle
+   * (LFP: ~3000+ cycles to 80% — 0.007%/cycle; NMC: ~500–2000 cycles).
+   * We apply 0.03%/cycle as a conservative average.
+   */
+  const batHealthPct = useMemo(
+    () => Math.max(70, 100 - batCycles * 365 * 0.03),
+    [batCycles]
+  );
+
   const throughputKwh = useMemo(
     () => data.reduce((s, d) => s + (d.chargePowerKw + d.dischargePowerKw) * 0.25, 0),
     [data]
@@ -507,6 +529,11 @@ export default function EnergyIntelligencePage() {
 
   const totalV2g = useMemo(
     () => data.reduce((s, d) => s + d.v2gExportKw * 0.25, 0),
+    [data]
+  );
+
+  const totalDrShedKwh = useMemo(
+    () => data.reduce((s, d) => s + d.demandResponseShedKw * 0.25, 0),
     [data]
   );
 
@@ -653,7 +680,7 @@ export default function EnergyIntelligencePage() {
               />
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <StatChip label="Cycles" value={batCycles.toFixed(2)} />
-                <StatChip label="Health %" value="98.5 %" />
+                <StatChip label="Health %" value={`${batHealthPct.toFixed(1)} %`} />
                 <StatChip label="Throughput" value={`${throughputKwh.toFixed(1)} kWh`} />
                 <StatChip label="Reserve Floor" value={battery.strategy === 'backup-resilience' ? '30 %' : '0 %'} />
               </div>
@@ -703,7 +730,7 @@ export default function EnergyIntelligencePage() {
                 <StatChip label="Peak Demand" value={`${peakFleetDemand.toFixed(2)} kW`} />
                 <StatChip label="V2G Exported" value={`${totalV2g.toFixed(1)} kWh`} />
                 <StatChip label="Sessions" value={`${evSessions}`} />
-                <StatChip label="DR Shed" value="0 kW" />
+                <StatChip label="DR Shed" value={`${totalDrShedKwh.toFixed(1)} kWh`} />
               </div>
               <div className="space-y-3 pt-2 border-t border-[var(--border)]">
                 <div>

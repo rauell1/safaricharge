@@ -25,7 +25,8 @@ export interface PowerFlowResult {
 }
 
 const NOMINAL_FREQUENCY_HZ = 50;
-const DROOP_COEFFICIENT = 0.02;
+/** Hz deviation per 1 % power imbalance (load-side droop) */
+const FREQUENCY_DROOP_HZ_PER_PCT = 0.02;
 const LINE_RESISTANCE_OHM = 0.05;
 const SYSTEM_VOLTAGE_KV = 0.4;
 
@@ -78,7 +79,7 @@ export function simulatePowerFlow(
 
   const frequencyHz = gridConnected
     ? ambientFrequencyHz
-    : NOMINAL_FREQUENCY_HZ + DROOP_COEFFICIENT * imbalancePct;
+    : NOMINAL_FREQUENCY_HZ + FREQUENCY_DROOP_HZ_PER_PCT * imbalancePct;
 
   const srcVDev = srcLoad > 0 ? (srcLoad / (srcGen + srcLoad + 0.001)) * 1.5 : 0;
   const fdrVDev = fdrLoad > 0 ? (fdrLoad / (fdrGen + fdrLoad + 0.001)) * 2.5 : 0;

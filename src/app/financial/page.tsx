@@ -26,6 +26,9 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { KpiCard } from '@/components/charts/KpiCard';
 import type { FinancialSnapshot } from '@/lib/financial-dashboard';
 
+/** Years between battery replacements (LFP/NMC typical cycle life at ~80% DoD) */
+const BATTERY_REPLACEMENT_YEARS = 10;
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface FinancialFormValues {
@@ -214,7 +217,7 @@ export default function FinancialPage() {
       { year: 'Y0', annual: -snapshot.capex.total, cumulative },
     ];
     for (let y = 1; y <= snapshot.projectYears; y++) {
-      const replacement = snapshot.capex.battery > 0 && y % 10 === 0 ? snapshot.capex.battery : 0;
+      const replacement = snapshot.capex.battery > 0 && y % BATTERY_REPLACEMENT_YEARS === 0 ? snapshot.capex.battery : 0;
       const cf = annualNet - replacement;
       cumulative += cf;
       years.push({ year: `Y${y}`, annual: cf, cumulative });
