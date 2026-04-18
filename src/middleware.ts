@@ -2,12 +2,19 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const PUBLIC_PREFIXES = ['/', '/login', '/landing', '/auth', '/api']
+// Exact public paths or path prefixes that do NOT require authentication.
+// IMPORTANT: '/' must be listed as an exact match only — do NOT use a
+// startsWith check on '/' because every pathname starts with '/'
+// which would make all routes public (critical security bug).
+const PUBLIC_EXACT: Set<string> = new Set(['/', '/login', '/landing'])
+const PUBLIC_PREFIXES: string[] = ['/auth/', '/api/', '/forgot-password', '/signup']
+
 const SESSION_TTL_MS = 15 * 60 * 1000
 const SESSION_TOUCH_COOKIE = 'sc_last_seen'
 
 function isPublic(pathname: string): boolean {
-  return PUBLIC_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))
+  if (PUBLIC_EXACT.has(pathname)) return true
+  return PUBLIC_PREFIXES.some(p => pathname.startsWith(p))
 }
 
 export async function middleware(request: NextRequest) {
@@ -70,6 +77,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|auth/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

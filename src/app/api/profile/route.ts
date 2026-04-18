@@ -1,24 +1,27 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createServerSupabaseClient } from '@/lib/supabase-server'
 
 /**
- * IMPORTANT: createClient is intentionally called *inside* the POST handler,
- * not at module scope. Vercel serverless/edge runtimes can evaluate the module
- * before env vars are injected, causing process.env.SUPABASE_SERVICE_ROLE_KEY
- * to be undefined at bundle time even though it is set in the Vercel dashboard.
- * Moving the call inside the handler guarantees env vars are read at
- * request time, after the runtime has fully initialised.
+ * POST /api/profile
+ * Upserts the authenticated user's own profile row using the service role.
+ * Requires a valid session — the caller's user id is taken from the session,
+ * never from the request body, preventing any user from overwriting another.
  */
 export async function POST(request: Request) {
-  // Instantiate inside the handler — always reads live env vars.
+  // Verify the caller has a valid session first.
+  const supabase = await createServerSupabaseClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorised.' }, { status: 401 })
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl || !serviceRoleKey) {
-    console.error(
-      '[profile/route] Missing env vars:',
-      { supabaseUrl: !!supabaseUrl, serviceRoleKey: !!serviceRoleKey }
-    )
+    console.error('[profile/route] Missing env vars:', { supabaseUrl: !!supabaseUrl, serviceRoleKey: !!serviceRoleKey })
     return NextResponse.json(
       { error: 'Server misconfiguration: missing Supabase credentials.' },
       { status: 500 }
@@ -31,19 +34,13 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json()
-    const { id, email, full_name, phone, organization } = body
+    const { full_name, phone, organization } = body
 
-    if (!id || !email) {
-      return NextResponse.json(
-        { error: 'id and email are required' },
-        { status: 400 }
-      )
-    }
-
+    // id and email always come from the verified session — never the body.
     const { error } = await adminSupabase.from('profiles').upsert(
       {
-        id,
-        email,
+        id: user.id,
+        email: user.email,
         full_name: full_name ?? null,
         phone: phone ?? null,
         organization: organization ?? null,
