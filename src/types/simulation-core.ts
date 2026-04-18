@@ -39,6 +39,9 @@ export type SimulationMinuteRecord = {
   homeLoadKW: number;
   ev1LoadKW: number;
   ev2LoadKW: number;
+  evFleetLoadKw?: number;
+  evV2gKw?: number;
+  evSmartDeferralKw?: number;
   batteryPowerKW: number;
   batteryLevelPct: number;
   gridImportKW: number;
@@ -54,4 +57,23 @@ export type SimulationMinuteRecord = {
   ev2LoadKWh: number;
   gridImportKWh: number;
   gridExportKWh: number;
+  // Battery engine outputs
+  batteryHealthPct?: number;
+  batteryCycles?: number;
+  batteryTempC?: number;
+  batteryStrategy?: string;
+  // Inverter outputs
+  inverterEfficiency?: number;
+  inverterClippingKw?: number;
+  acCableLossKw?: number;
+  // EV fleet outputs
+  evFleetLoadKw?: number;
+  evV2gKw?: number;
+  evSmartDeferralKw?: number;
+  // Grid outputs
+  gridFrequencyHz?: number;
+  gridLineLossKw?: number;
+  // Financial (rolling)
+  cumulativeSavingsKes?: number;
+  lcoeRolling?: number;
 };

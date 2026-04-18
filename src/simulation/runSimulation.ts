@@ -2,6 +2,12 @@ import type { DerivedSystemConfig } from '@/types/simulation-core';
 import type { DayScenario } from './timeEngine';
 import { simulateSolar } from './solarEngine';
 import { gaussianRandom } from './mathUtils';
+import {
+  defaultEVFleetConfig,
+  simulateEVFleet,
+  type EVFleetConfig,
+} from './evMobilityEngine';
+import { defaultInverterConfig, simulateInverter } from './inverterEngine';
 
 export interface EVSpecs {
   ev1: { drainRate: number; cap: number; onboard: number };
@@ -20,6 +26,9 @@ export interface SolarSimulationResult {
   accessoryLoad: number;
   ev1Kw: number;
   ev2Kw: number;
+  evFleetLoadKw: number;
+  evV2gKw: number;
+  evSmartDeferralKw: number;
   ev1IsHome: boolean;
   ev2IsHome: boolean;
   ev1V2g?: boolean;
@@ -31,19 +40,14 @@ export interface SolarSimulationResult {
   ev2Soc: number;
   gridImport: number;
   gridExport: number;
+  inverterEfficiency: number;
+  inverterClippingKw: number;
+  acCableLossKw: number;
 }
 
 /** Minimum V2G export power below which we treat discharge as zero (avoids
  *  amplified inverter-efficiency losses on trivial V2G contributions). */
 const V2G_DEADBAND_KW = 0.05;
-
-const getInverterEfficiency = (loadFraction: number): number => {
-  if (loadFraction <= 0.05) return 0.82;
-  if (loadFraction <= 0.20) return 0.93;
-  if (loadFraction <= 0.60) return 0.97;
-  if (loadFraction <= 0.90) return 0.96;
-  return 0.94;
-};
 
 const getBatteryEfficiency = (rateFraction: number): number => {
   return Math.max(0.85, 0.95 - 0.10 * Math.min(1.0, rateFraction));
@@ -57,6 +61,9 @@ const getEVTaperedRate = (soc: number, maxRate: number): number => {
 
 const DC_CABLE_LOSS_FRACTION = 0.015;
 const AC_CABLE_LOSS_FRACTION = 0.01;
+const PEAK_TARIFF_RATE_KES = 24.31;
+const OFF_PEAK_TARIFF_RATE_KES = 14.93;
+const NOMINAL_GRID_FREQUENCY_HZ = 50;
 
 export const runSolarSimulation = (
   t: number,
@@ -70,7 +77,8 @@ export const runSolarSimulation = (
   batteryHealth: number,
   actualTimeStep: number,
   priorityMode: string,
-  isPeakTime: boolean
+  isPeakTime: boolean,
+  evFleetConfig?: Partial<EVFleetConfig>
 ): SolarSimulationResult => {
   const rawSolar = simulateSolar(t, scenario, systemConfig, cloudNoise, scenario.solarData);
   const solarConstrainedByInverter = Math.min(rawSolar, systemConfig.inverterKw);
@@ -102,6 +110,27 @@ export const runSolarSimulation = (
 
   const accessoryLoad = Math.max(0, (systemConfig.accessoryLoadKw ?? 0) * (systemConfig.accessoryScale ?? 1));
   const houseLoad = residentialLoad + commercialLoad + industrialLoad + accessoryLoad;
+
+  const inferredFleetConfig: EVFleetConfig = {
+    ...defaultEVFleetConfig(),
+    ...evFleetConfig,
+    batteryKwh: evFleetConfig?.batteryKwh ?? evSpecs.ev2.cap,
+    chargerKw: evFleetConfig?.chargerKw ?? systemConfig.evChargerKw,
+    onboardInverterKw: evFleetConfig?.onboardInverterKw ?? Math.min(5, evSpecs.ev2.onboard),
+  };
+  const fleetResult = simulateEVFleet(
+    t,
+    [prevEv1Soc / 100, prevEv2Soc / 100],
+    {
+      ...inferredFleetConfig,
+      vehicleCount: Math.max(2, inferredFleetConfig.vehicleCount),
+    },
+    Math.max(0, rawSolar - houseLoad),
+    isPeakTime ? PEAK_TARIFF_RATE_KES : OFF_PEAK_TARIFF_RATE_KES,
+    isPeakTime,
+    NOMINAL_GRID_FREQUENCY_HZ,
+    actualTimeStep
+  );
 
   const effectiveCapacity = systemConfig.batteryKwh * batteryHealth;
   const effectiveReserve = Math.max(systemConfig.batteryKwh * 0.15, 8) * batteryHealth;
@@ -160,12 +189,15 @@ export const runSolarSimulation = (
   }
 
   // ── Solar through inverter ────────────────────────────────────────────────
-  const inverterEff = getInverterEfficiency(totalLoad / systemConfig.inverterKw);
+  const inverterConfig = defaultInverterConfig();
   const dcLoss = solarConstrainedByInverter * DC_CABLE_LOSS_FRACTION;
   const solarAfterDc = Math.max(0, solarConstrainedByInverter - dcLoss);
-  const solarAfterInverter = solarAfterDc * inverterEff;
-  const acLoss = solarAfterInverter * AC_CABLE_LOSS_FRACTION;
-  const effectiveSolar = Math.max(0, solarAfterInverter - acLoss);
+  const inverterResult = simulateInverter(solarAfterDc, {
+    ...inverterConfig,
+    ratedKw: systemConfig.inverterKw,
+    maxGridExportKw: systemConfig.inverterKw,
+  });
+  const effectiveSolar = Math.max(0, inverterResult.acOutputKw - inverterResult.acCableLossKw);
   const solarLossKw = Math.max(0, rawSolar - effectiveSolar);
 
   if (ev1Load > 0) prevEv1Soc = Math.min(100, prevEv1Soc + (ev1Load * actualTimeStep / evSpecs.ev1.cap * 100));
@@ -248,6 +280,9 @@ export const runSolarSimulation = (
     accessoryLoad,
     ev1Kw: ev1Load,
     ev2Kw: ev2Load,
+    evFleetLoadKw: fleetResult.totalLoadKw,
+    evV2gKw: fleetResult.v2gExportKw,
+    evSmartDeferralKw: fleetResult.smartChargingDeferralKw,
     ev1IsHome,
     ev2IsHome,
     ev1V2g,
@@ -259,5 +294,8 @@ export const runSolarSimulation = (
     batKwh: Math.max(0, Math.min(effectiveCapacity, newBatKwh)),
     ev1Soc: prevEv1Soc,
     ev2Soc: prevEv2Soc,
+    inverterEfficiency: inverterResult.efficiency,
+    inverterClippingKw: inverterResult.clippingLossKw,
+    acCableLossKw: inverterResult.acCableLossKw,
   };
 };
