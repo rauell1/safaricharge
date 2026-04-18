@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 123 | `rollback/fix-clean-magic-link-login-page-full-v-2026-04-18-9aef114` | `9aef114` | fix: clean magic-link login page — full viewport, no scroll, back-to-home link | 2026-04-18 |
 | 122 | `rollback/merge-pull-request-222-from-rauell1-co-2026-04-18-baaa8f8` | `baaa8f8` | Merge pull request #222 from rauell1/copilot/refactor-authentication-system | 2026-04-18 |
 | 121 | `rollback/merge-pull-request-221-from-rauell1-co-2026-04-18-d4d8504` | `d4d8504` | Merge pull request #221 from rauell1/codex/fix-sender-email-resend | 2026-04-18 |
 | 120 | `rollback/merge-pull-request-220-from-rauell1-co-2026-04-18-a1e884a` | `a1e884a` | Merge pull request #220 from rauell1/codex/fix-login-page-layout-and-dropdown-visibility | 2026-04-18 |
@@ -1285,6 +1286,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/merge-pull-request-222-from-rauell1-co-2026-04-18-baaa8f8`
 - **Commit**: `baaa8f81ef84a8a340d84689aaf46a5d266ca843`
 - **Subject**: Merge pull request #222 from rauell1/copilot/refactor-authentication-system
+- **Date**: 2026-04-18
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #123 — `rollback/fix-clean-magic-link-login-page-full-v-2026-04-18-9aef114`
+
+- **Branch**: `rollback/fix-clean-magic-link-login-page-full-v-2026-04-18-9aef114`
+- **Commit**: `9aef114402e2c36e80e3c2a2a0edba2e5e8a1063`
+- **Subject**: fix: clean magic-link login page — full viewport, no scroll, back-to-home link
 - **Date**: 2026-04-18
 - **Auto-generated**: yes (by update-rollback.yml)
 
