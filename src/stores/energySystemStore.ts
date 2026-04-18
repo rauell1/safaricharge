@@ -95,6 +95,9 @@ export interface MinuteDataPoint {
   ev2LoadKWh: number;
   gridImportKWh: number;
   gridExportKWh: number;
+  gridFrequencyHz?: number;
+  gridLineLossKw?: number;
+  cumulativeSavingsKes?: number;
 }
 
 // Running totals and accumulators
