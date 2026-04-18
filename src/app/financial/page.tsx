@@ -275,9 +275,9 @@ export default function FinancialPage() {
           <TrendingUp size={18} />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-[var(--text-primary)]">Financial Model</h1>
+          <h1 className="text-xl font-bold text-[var(--text-primary)]">Finance Planner (Standalone)</h1>
           <p className="text-sm text-[var(--text-secondary)]">
-            LCOE · Payback · NPV · IRR — {form.projectYears}-year projection
+            Independent what-if model: LCOE · Payback · NPV · IRR — {form.projectYears}-year projection
           </p>
         </div>
       </div>

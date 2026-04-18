@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import type { DashboardSection } from '@/components/layout/DashboardSidebar';
@@ -166,6 +166,8 @@ export default function ModularDashboardDemo({
 
   const [activeSection, setActiveSection] = useState<DashboardSection>(initialSection);
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const isDashboardView = activeSection === 'dashboard';
+  const usesFinancialSnapshot = isDashboardView || activeSection === 'financial';
 
   // ─── Financial state ─────────────────────────────────────────────────────
   const [financialInputs, setFinancialInputs] = useState<FinancialInputs>({
@@ -181,6 +183,12 @@ export default function ModularDashboardDemo({
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [activeLocation, setActiveLocation]         = useState<LocationOption>(DEFAULT_LOCATION);
   // ─────────────────────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (activeSection === 'scenarios') {
+      router.push('/scenarios');
+    }
+  }, [activeSection, router]);
 
   useEffect(() => {
     const payload = parseSimulatorSizingPayload(localStorage.getItem(SIZING_SIMULATOR_STORAGE_KEY));
@@ -290,16 +298,24 @@ export default function ModularDashboardDemo({
   const batteryTemp = Number((batteryNode.temperature ?? (29 + Math.max(0, Math.abs(batteryPower) * 0.9))).toFixed(1));
   const deratingPct = Number(Math.max(0, (inverterTemp - 60) * 1.8).toFixed(1));
 
-  // ── Financial snapshot — computed from live minuteData ────────────────────
-  const financialSnapshot = useMemo(() =>
-    buildFinancialSnapshot({
+  // ── Financial snapshot — recompute only while finance views are active ────
+  const financialSnapshotRef = useRef<ReturnType<typeof buildFinancialSnapshot> | null>(null);
+  const financialSnapshot = useMemo(() => {
+    const shouldRecompute = usesFinancialSnapshot || financialSnapshotRef.current === null;
+    if (!shouldRecompute && financialSnapshotRef.current) {
+      return financialSnapshotRef.current;
+    }
+
+    const nextSnapshot = buildFinancialSnapshot({
       minuteData: minuteData as Parameters<typeof buildFinancialSnapshot>[0]['minuteData'],
       solarData: NAIROBI_SOLAR_DATA,
       inputs: financialInputs,
       evCapacityKw: 22,
-    }),
-    [minuteData, financialInputs]
-  );
+    });
+
+    financialSnapshotRef.current = nextSnapshot;
+    return nextSnapshot;
+  }, [usesFinancialSnapshot, minuteData, financialInputs]);
 
   const engineeringKpis = useMemo(
     () =>
@@ -313,6 +329,15 @@ export default function ModularDashboardDemo({
   // ─────────────────────────────────────────────────────────────────────────
 
   const socialImpact = useMemo(() => {
+    if (!isDashboardView) {
+      return {
+        annualSolarGeneratedKwh: 0,
+        householdsPowered: 0,
+        keroseneDisplacedLiters: 0,
+        co2AvoidedKg: 0,
+      };
+    }
+
     const trackedDays = financialSnapshot.energy.trackedDays;
     if (trackedDays <= 0) {
       return {
@@ -334,7 +359,7 @@ export default function ModularDashboardDemo({
       keroseneDisplacedLiters: gridImportDisplacedKwh * KEROSENE_DISPLACEMENT_L_PER_KWH,
       co2AvoidedKg: annualSolarGeneratedKwh * KENYA_DIESEL_BACKUP_CO2_KG_PER_KWH,
     };
-  }, [financialSnapshot.energy.avgDailySolarKWh, financialSnapshot.energy.trackedDays, minuteData]);
+  }, [isDashboardView, financialSnapshot.energy.avgDailySolarKWh, financialSnapshot.energy.trackedDays, minuteData]);
 
   // Export report as structured CSV
   const handleExportCsv = useCallback(async () => {
@@ -536,30 +561,44 @@ export default function ModularDashboardDemo({
     }
   }, [minuteData]);
 
-  const flowDirection = useMemo(() => ({
-    solarToHome:    flows.some((f) => f.from === 'solar'   && f.to === 'home'    && f.active),
-    solarToBattery: flows.some((f) => f.from === 'solar'   && f.to === 'battery' && f.active),
-    solarToGrid:    flows.some((f) => f.from === 'solar'   && f.to === 'grid'    && f.active),
-    batteryToHome:  flows.some((f) => f.from === 'battery' && f.to === 'home'    && f.active),
-    gridToHome:     flows.some((f) => f.from === 'grid'    && f.to === 'home'    && f.active),
-  }), [flows]);
+  const flowDirection = useMemo(() => {
+    if (!isDashboardView) {
+      return {
+        solarToHome: false,
+        solarToBattery: false,
+        solarToGrid: false,
+        batteryToHome: false,
+        gridToHome: false,
+      };
+    }
+
+    return {
+      solarToHome:    flows.some((f) => f.from === 'solar'   && f.to === 'home'    && f.active),
+      solarToBattery: flows.some((f) => f.from === 'solar'   && f.to === 'battery' && f.active),
+      solarToGrid:    flows.some((f) => f.from === 'solar'   && f.to === 'grid'    && f.active),
+      batteryToHome:  flows.some((f) => f.from === 'battery' && f.to === 'home'    && f.active),
+      gridToHome:     flows.some((f) => f.from === 'grid'    && f.to === 'home'    && f.active),
+    };
+  }, [isDashboardView, flows]);
 
   const graphData = useMemo(
-    () => resampleTo5MinBucketsProgressive(minuteData),
-    [minuteData]
+    () => (isDashboardView ? resampleTo5MinBucketsProgressive(minuteData) : []),
+    [isDashboardView, minuteData]
   );
-  const expectedOutputData = useMemo(
-    () =>
-      graphData.map((point) => {
-        // Approximation model: sunrise offset, daylight span, and baseline performance ratio.
-        const sunAngle = Math.max(0, Math.sin(((point.timeOfDay - SOLAR_MODEL_SUNRISE_HOUR) / SOLAR_MODEL_DAYLIGHT_HOURS) * Math.PI));
-        const expected = (solarNode.capacityKW ?? 10) * SOLAR_MODEL_PERFORMANCE_RATIO * sunAngle;
-        return { timeOfDay: point.timeOfDay, output: Number(expected.toFixed(2)) };
-      }),
-    [graphData, solarNode.capacityKW]
-  );
+  const expectedOutputData = useMemo(() => {
+    if (!isDashboardView) return [];
+
+    return graphData.map((point) => {
+      // Approximation model: sunrise offset, daylight span, and baseline performance ratio.
+      const sunAngle = Math.max(0, Math.sin(((point.timeOfDay - SOLAR_MODEL_SUNRISE_HOUR) / SOLAR_MODEL_DAYLIGHT_HOURS) * Math.PI));
+      const expected = (solarNode.capacityKW ?? 10) * SOLAR_MODEL_PERFORMANCE_RATIO * sunAngle;
+      return { timeOfDay: point.timeOfDay, output: Number(expected.toFixed(2)) };
+    });
+  }, [isDashboardView, graphData, solarNode.capacityKW]);
 
   const energySplit = useMemo(() => {
+    if (!isDashboardView) return { solarPct: 0, consumptionPct: 0, exportPct: 0 };
+
     const totalEnergy = stats.totalSolarKWh + stats.totalConsumptionKWh + stats.totalGridExportKWh;
     if (!totalEnergy) return { solarPct: 0, consumptionPct: 0, exportPct: 0 };
     return {
@@ -567,16 +606,24 @@ export default function ModularDashboardDemo({
       consumptionPct: stats.totalConsumptionKWh   / totalEnergy,
       exportPct:      stats.totalGridExportKWh    / totalEnergy,
     };
-  }, [stats]);
+  }, [isDashboardView, stats]);
 
-  const envImpact = useMemo(() => ([
-    { icon: Leaf,  value: `${(accumulators.carbonOffset / 1000).toFixed(2)} tons`, label: 'CO\u2082 Offset (Year)',  color: 'var(--battery)',     tint: 'var(--battery-soft)'     },
-    { icon: Trees, value: Math.round(accumulators.carbonOffset / 14).toString(),   label: 'Trees Equivalent',      color: 'var(--solar)',        tint: 'var(--solar-soft)'        },
-    { icon: Car,   value: `${Math.round(accumulators.carbonOffset * 1.6)} km`,     label: 'Car Miles Offset',      color: 'var(--consumption)', tint: 'var(--consumption-soft)' },
-  ]), [accumulators]);
+  const envImpact = useMemo(() => {
+    if (!isDashboardView) return [];
+
+    return [
+      { icon: Leaf,  value: `${(accumulators.carbonOffset / 1000).toFixed(2)} tons`, label: 'CO\u2082 Offset (Year)',  color: 'var(--battery)',     tint: 'var(--battery-soft)'     },
+      { icon: Trees, value: Math.round(accumulators.carbonOffset / 14).toString(),   label: 'Trees Equivalent',      color: 'var(--solar)',        tint: 'var(--solar-soft)'        },
+      { icon: Car,   value: `${Math.round(accumulators.carbonOffset * 1.6)} km`,     label: 'Car Miles Offset',      color: 'var(--consumption)', tint: 'var(--consumption-soft)' },
+    ];
+  }, [isDashboardView, accumulators]);
 
   const ringSegments = useMemo(() => {
     const circumference = 2 * Math.PI * 48;
+    if (!isDashboardView) {
+      return { circumference, solar: 0, consumption: 0, export: 0 };
+    }
+
     const clamp = (v: number) => Math.max(0, Math.min(1, v));
     return {
       circumference,
@@ -584,9 +631,13 @@ export default function ModularDashboardDemo({
       consumption: clamp(energySplit.consumptionPct) * circumference,
       export:      clamp(energySplit.exportPct)      * circumference,
     };
-  }, [energySplit]);
+  }, [isDashboardView, energySplit]);
 
   const sparklineData = useMemo(() => {
+    if (!isDashboardView) {
+      return { gen: [], power: [], cons: [], savings: [] };
+    }
+
     const last7Days = minuteData.slice(-7 * 420);
     const dailyData: { gen: number[]; power: number[]; cons: number[]; savings: number[] } = {
       gen: [], power: [], cons: [], savings: []
@@ -601,7 +652,7 @@ export default function ModularDashboardDemo({
       }
     }
     return dailyData;
-  }, [minuteData]);
+  }, [isDashboardView, minuteData]);
 
   const sidebarMetrics = useMemo(() => [
     {
@@ -627,6 +678,18 @@ export default function ModularDashboardDemo({
   ], [solarPower, batteryLevel, gridPower, stats.totalSavingsKES]);
 
   const trendsData = useMemo(() => {
+    if (!isDashboardView) {
+      return {
+        weeklyAvgGen: 0,
+        weeklyAvgCons: 0,
+        yesterdaySavings: 0,
+        systemEfficiency: 0,
+        savingsChange: 0,
+        batteryOptimized: false,
+        forecastChange: 0,
+      };
+    }
+
     const weekData      = minuteData.slice(-7 * 420);
     const yesterdayData = minuteData.slice(-2 * 420, -420);
     const weeklyAvgGen  = weekData.length > 0
@@ -647,10 +710,10 @@ export default function ModularDashboardDemo({
       systemEfficiency, savingsChange, batteryOptimized,
       forecastChange: 10,
     };
-  }, [minuteData, stats, solarPower, homePower, batteryPower, batteryLevel]);
+  }, [isDashboardView, minuteData, stats, solarPower, homePower, batteryPower, batteryLevel]);
 
   const monthlyOverviewData = useMemo(() => {
-    if (minuteData.length === 0) {
+    if (!isDashboardView || minuteData.length === 0) {
       return MONTH_LABELS.map((label, i) => ({
         label, gen: FALLBACK_GEN[i], cons: FALLBACK_CONS[i], isFallback: true,
       }));
@@ -674,7 +737,7 @@ export default function ModularDashboardDemo({
       consKWh:  consByMonth[i],
       isFallback: false,
     }));
-  }, [minuteData]);
+  }, [isDashboardView, minuteData]);
 
   const isMonthlyFallback = monthlyOverviewData[0]?.isFallback ?? true;
 
@@ -727,8 +790,8 @@ export default function ModularDashboardDemo({
           <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
             <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
               <div>
-                <h2 className="text-2xl font-bold text-[var(--text-primary)]">Financial Analysis</h2>
-                <p className="text-sm text-[var(--text-tertiary)]">CAPEX, LCOE, NPV, IRR and payback period analysis</p>
+                <h2 className="text-2xl font-bold text-[var(--text-primary)]">Finance: Live Simulation Results</h2>
+                <p className="text-sm text-[var(--text-tertiary)]">CAPEX, LCOE, NPV, IRR and payback derived from your current simulation run</p>
               </div>
               <FinancialDashboard
                 snapshot={financialSnapshot}
@@ -806,8 +869,13 @@ export default function ModularDashboardDemo({
 
       // 'scenarios' navigates away
       case 'scenarios':
-        router.push('/scenarios');
-        return null;
+        return (
+          <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
+            <div className="max-w-7xl mx-auto">
+              <p className="text-sm text-[var(--text-tertiary)]">Opening Scenarios...</p>
+            </div>
+          </main>
+        );
 
       default:
         return (

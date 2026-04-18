@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   FlaskConical,
@@ -15,21 +15,30 @@ import {
 import { cn } from '@/lib/utils';
 import type { DashboardSection } from './DashboardSidebar';
 
+type MobileNavItemId = DashboardSection | 'finance-parent';
+
 const NAV_ITEMS: Array<{
-  id: DashboardSection;
+  id: MobileNavItemId;
   label: string;
   icon: React.ElementType;
-  href: string;
+  href?: string;
 }> = [
   { id: 'dashboard',           label: 'Home',      icon: LayoutDashboard, href: '/demo' },
   { id: 'simulation',          label: 'Simulate',  icon: FlaskConical,    href: '/demo' },
   { id: 'energy-intelligence', label: 'Energy',    icon: Zap,             href: '/energy-intelligence' },
-  // Mobile shows the Financial Planner (standalone calc) as the primary finance entry.
-  // Live Financials is accessible via the Simulation tab on desktop.
-  { id: 'financial-model',     label: 'Planner',   icon: TrendingUp,      href: '/financial' },
+  { id: 'finance-parent',      label: 'Finance',   icon: TrendingUp },
   { id: 'scenarios',           label: 'Scenarios', icon: BookMarked,      href: '/scenarios' },
   { id: 'recommendation',      label: 'Recs',      icon: Lightbulb,       href: '/demo' },
   { id: 'ai-assistant',        label: 'AI',        icon: Bot,             href: '/demo' },
+];
+
+const FINANCE_CHILD_ITEMS: Array<{
+  id: DashboardSection;
+  label: string;
+  href?: string;
+}> = [
+  { id: 'financial', label: 'Live Results' },
+  { id: 'financial-model', label: 'Planner', href: '/financial' },
 ];
 
 interface MobileBottomNavProps {
@@ -41,7 +50,13 @@ export function MobileBottomNav({
   activeSection = 'dashboard',
   onSectionChange,
 }: MobileBottomNavProps) {
+  const router = useRouter();
   const pathname = usePathname();
+  const [isFinanceMenuOpen, setIsFinanceMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setIsFinanceMenuOpen(false);
+  }, [pathname, activeSection]);
 
   return (
     <nav
@@ -50,9 +65,15 @@ export function MobileBottomNav({
       aria-label="Mobile navigation"
     >
       {NAV_ITEMS.map((item) => {
-        const isActive =
-          activeSection === item.id ||
-          (item.href !== '/demo' && !!pathname?.startsWith(item.href));
+        const isFinanceParent = item.id === 'finance-parent';
+        const isFinanceActive =
+          activeSection === 'financial' ||
+          activeSection === 'financial-model' ||
+          !!pathname?.startsWith('/financial');
+        const isActive = isFinanceParent
+          ? isFinanceActive || isFinanceMenuOpen
+          : activeSection === item.id ||
+            (item.href && item.href !== '/demo' && !!pathname?.startsWith(item.href));
 
         const Icon = item.icon;
 
@@ -80,7 +101,70 @@ export function MobileBottomNav({
 
         return (
           <div key={item.id} className="relative flex-1 flex items-stretch">
-            {item.href === '/demo' ? (
+            {isFinanceParent ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsFinanceMenuOpen((prev) => !prev)}
+                  className="flex-1 flex items-stretch focus:outline-none active:bg-[var(--bg-card-muted)]/40 transition-colors"
+                  aria-label="Finance"
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  {inner}
+                </button>
+
+                {isFinanceMenuOpen && (
+                  <div className="absolute bottom-full left-1/2 mb-2 w-44 -translate-x-1/2 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-1 shadow-xl">
+                    {FINANCE_CHILD_ITEMS.map((child) => {
+                      const isChildActive =
+                        activeSection === child.id ||
+                        (!!child.href && !!pathname?.startsWith(child.href));
+
+                      if (child.id === 'financial') {
+                        return (
+                          <button
+                            key={child.id}
+                            type="button"
+                            className={cn(
+                              'w-full rounded-lg px-3 py-2 text-left text-xs transition-colors',
+                              isChildActive
+                                ? 'bg-[var(--bg-card)] text-[var(--battery)]'
+                                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-card-muted)]'
+                            )}
+                            onClick={() => {
+                              setIsFinanceMenuOpen(false);
+                              if (pathname?.startsWith('/demo') && onSectionChange) {
+                                onSectionChange('financial');
+                                return;
+                              }
+                              router.push('/demo');
+                            }}
+                          >
+                            {child.label}
+                          </button>
+                        );
+                      }
+
+                      return (
+                        <Link
+                          key={child.id}
+                          href={child.href ?? '/financial'}
+                          prefetch={false}
+                          className={cn(
+                            'block w-full rounded-lg px-3 py-2 text-left text-xs transition-colors',
+                            isChildActive
+                              ? 'bg-[var(--bg-card)] text-[var(--battery)]'
+                              : 'text-[var(--text-secondary)] hover:bg-[var(--bg-card-muted)]'
+                          )}
+                        >
+                          {child.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            ) : item.href === '/demo' ? (
               <button
                 type="button"
                 onClick={() => onSectionChange?.(item.id)}
@@ -93,6 +177,7 @@ export function MobileBottomNav({
             ) : (
               <Link
                 href={item.href}
+                prefetch={false}
                 className="flex-1 flex items-stretch focus:outline-none active:bg-[var(--bg-card-muted)]/40 transition-colors"
                 aria-label={item.label}
                 aria-current={isActive ? 'page' : undefined}

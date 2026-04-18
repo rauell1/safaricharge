@@ -141,27 +141,31 @@ export function DashboardSidebar({
   }, [activeSection, pathname]);
 
   // ── Nav items ────────────────────────────────────────────────────────────
-  // Two financial entries are intentionally distinct:
-  //   • "Live Financials"  — simulation tab showing real-time revenue/savings
-  //   • "Financial Planner" — standalone LCOE / NPV / IRR calculator at /financial
-  const navItems: Array<{
+  const primaryNavItems: Array<{
     id: DashboardSection;
     label: string;
     icon: React.ElementType;
     href?: string;
     description?: string;
   }> = [
-    { id: 'dashboard',           label: 'Dashboard',          icon: LayoutDashboard },
-    { id: 'simulation',          label: 'Simulation',         icon: FlaskConical },
-    { id: 'configuration',       label: 'System Config',      icon: SlidersHorizontal },
-    { id: 'energy-intelligence', label: 'Energy Intelligence', icon: Zap,         href: '/energy-intelligence' },
-    // Live financials: simulation tab — shows real-time KES savings & revenue
-    { id: 'financial',           label: 'Live Financials',    icon: DollarSign },
-    // Financial Planner: standalone calculator — LCOE, NPV, IRR, payback
-    { id: 'financial-model',     label: 'Financial Planner',  icon: TrendingUp,  href: '/financial' },
-    { id: 'scenarios',           label: 'Scenarios',          icon: BookMarked,  href: '/scenarios' },
-    { id: 'recommendation',      label: 'Recommendations',    icon: Lightbulb },
-    { id: 'ai-assistant',        label: 'AI Assistant',       icon: Bot },
+    { id: 'dashboard',           label: 'Dashboard',              icon: LayoutDashboard,  description: 'Live operations overview' },
+    { id: 'simulation',          label: 'Simulation',             icon: FlaskConical,     description: 'Run and inspect system behavior' },
+    { id: 'configuration',       label: 'System Config',          icon: SlidersHorizontal, description: 'Tune solar, battery and EV settings' },
+    { id: 'energy-intelligence', label: 'Energy Intelligence',    icon: Zap,              href: '/energy-intelligence', description: 'AI analysis of energy performance' },
+    { id: 'scenarios',           label: 'Scenarios',              icon: BookMarked,       href: '/scenarios', description: 'Saved cases and comparisons' },
+    { id: 'recommendation',      label: 'Recommendations',        icon: Lightbulb,        description: 'Sizing and optimization guidance' },
+    { id: 'ai-assistant',        label: 'AI Assistant',           icon: Bot,              description: 'Ask questions about system data' },
+  ];
+
+  const financeNavItems: Array<{
+    id: DashboardSection;
+    label: string;
+    icon: React.ElementType;
+    href?: string;
+    description?: string;
+  }> = [
+    { id: 'financial',       label: 'Live Results', icon: DollarSign, description: 'Uses your running simulation data' },
+    { id: 'financial-model', label: 'Planner',      icon: TrendingUp, href: '/financial', description: 'Standalone what-if model' },
   ];
 
   return (
@@ -202,7 +206,7 @@ export function DashboardSidebar({
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-0.5">
-              {navItems.map((item) => {
+              {primaryNavItems.map((item) => {
                 const isActive =
                   resolvedActive === item.id ||
                   (!!item.href && !!pathname?.startsWith(item.href));
@@ -213,11 +217,21 @@ export function DashboardSidebar({
                       className="h-4 w-4 shrink-0"
                       style={{ color: isActive ? 'var(--battery)' : 'var(--text-tertiary)' }}
                     />
-                    <span
-                      className={cn('text-sm truncate', isActive ? 'font-medium' : 'font-normal')}
-                      style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}
-                    >
-                      {item.label}
+                    <span className="min-w-0 flex-1">
+                      <span
+                        className={cn('block text-sm truncate', isActive ? 'font-medium' : 'font-normal')}
+                        style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}
+                      >
+                        {item.label}
+                      </span>
+                      {item.description && (
+                        <span
+                          className="block truncate text-[11px] leading-tight"
+                          style={{ color: 'var(--text-tertiary)' }}
+                        >
+                          {item.description}
+                        </span>
+                      )}
                     </span>
                     {isActive && (
                       <span
@@ -242,7 +256,74 @@ export function DashboardSidebar({
                       )}
                     >
                       {item.href ? (
-                        <Link href={item.href} className="w-full">
+                        <Link href={item.href} prefetch={false} className="w-full">
+                          {inner}
+                        </Link>
+                      ) : (
+                        inner
+                      )}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+
+              <SidebarMenuItem className="mt-2">
+                <div className="px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  Finance
+                </div>
+              </SidebarMenuItem>
+
+              {financeNavItems.map((item) => {
+                const isActive =
+                  resolvedActive === item.id ||
+                  (!!item.href && !!pathname?.startsWith(item.href));
+
+                const inner = (
+                  <span className="flex items-center gap-3 w-full">
+                    <item.icon
+                      className="h-4 w-4 shrink-0"
+                      style={{ color: isActive ? 'var(--battery)' : 'var(--text-tertiary)' }}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span
+                        className={cn('block text-sm truncate', isActive ? 'font-medium' : 'font-normal')}
+                        style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)' }}
+                      >
+                        {item.label}
+                      </span>
+                      {item.description && (
+                        <span
+                          className="block truncate text-[11px] leading-tight"
+                          style={{ color: 'var(--text-tertiary)' }}
+                        >
+                          {item.description}
+                        </span>
+                      )}
+                    </span>
+                    {isActive && (
+                      <span
+                        className="ml-auto w-1.5 h-1.5 rounded-full shrink-0"
+                        style={{ background: 'var(--battery)' }}
+                      />
+                    )}
+                  </span>
+                );
+
+                return (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      asChild={!!item.href}
+                      isActive={isActive}
+                      onClick={() => !item.href && onSectionChange?.(item.id)}
+                      className={cn(
+                        'group relative rounded-lg px-3 py-2.5 pl-6 transition-all duration-150',
+                        isActive
+                          ? 'bg-[var(--bg-card)] shadow-sm'
+                          : 'hover:bg-[var(--bg-card-muted)]'
+                      )}
+                    >
+                      {item.href ? (
+                        <Link href={item.href} prefetch={false} className="w-full">
                           {inner}
                         </Link>
                       ) : (
