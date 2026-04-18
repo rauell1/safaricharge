@@ -1,16 +1,13 @@
 'use client'
 
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, CheckCircle2, Loader2, LockKeyhole, Mail, UserRound, Building2, Phone } from 'lucide-react'
+import { ArrowLeft, Loader2, LockKeyhole, Mail, UserRound, Building2, Phone } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 
 type OAuthProvider = 'google' | 'azure'
-type Mode = 'signin' | 'register' | 'magic'
-type MagicState = 'idle' | 'loading' | 'sent'
-
-const MAGIC_LINK_COOLDOWN_SECONDS = 60
+type Mode = 'signin' | 'register'
 
 function GoogleIcon() {
   return (
@@ -38,7 +35,7 @@ function Divider() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '6px 0' }}>
       <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-      <span style={{ color: 'rgba(255,255,255,0.26)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>or continue with</span>
+      <span style={{ color: 'rgba(255,255,255,0.26)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>or continue with email</span>
       <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
     </div>
   )
@@ -47,15 +44,15 @@ function Divider() {
 function Field({ id, label, icon, ...props }: any) {
   return (
     <div>
-      <label htmlFor={id} style={{ display: 'block', color: 'rgba(255,255,255,0.44)', fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+      <label htmlFor={id} style={{ display: 'block', color: 'rgba(255,255,255,0.44)', fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>
         {label}
       </label>
       <div style={{ position: 'relative' }}>
-        <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.28)' }}>{icon}</div>
+        <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.28)', pointerEvents: 'none' }}>{icon}</div>
         <input
           id={id}
           {...props}
-          style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.11)', borderRadius: 12, padding: '12px 14px 12px 42px', color: '#e2e8f0', fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+          style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.11)', borderRadius: 10, padding: '11px 14px 11px 42px', color: '#e2e8f0', fontSize: 14, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' }}
         />
       </div>
     </div>
@@ -66,250 +63,177 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const nextPath = useMemo(() => searchParams.get('next') ?? '/dashboard', [searchParams])
-  const initialReason = searchParams.get('reason')
   const initialError = useMemo(() => {
-    const errorParam = searchParams.get('error')
-    if (initialReason === 'session_expired') return 'Your session expired after 15 minutes. Please sign in again.'
-    if (errorParam === 'auth_failed') return 'We could not verify your sign-in request. Please try again.'
-    if (errorParam === 'profile_upsert_failed') return 'We signed you in, but could not save your profile details. Please retry.'
+    const reason = searchParams.get('reason')
+    const err = searchParams.get('error')
+    if (reason === 'session_expired') return 'Your session expired after 15 minutes of inactivity. Please sign in again.'
+    if (err === 'auth_failed') return 'We could not verify your sign-in request. Please try again.'
     return ''
-  }, [searchParams, initialReason])
+  }, [searchParams])
 
   const [mode, setMode] = useState<Mode>('signin')
   const [error, setError] = useState(initialError)
   const [success, setSuccess] = useState('')
   const [oauthLoading, setOauthLoading] = useState<OAuthProvider | null>(null)
-  const [magicState, setMagicState] = useState<MagicState>('idle')
-  const [cooldown, setCooldown] = useState(0)
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  const [fullName, setFullName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [organization, setOrganization] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [fullName, setFullName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [organization, setOrganization] = useState('')
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    if (cooldown <= 0) {
-      if (timerRef.current) clearInterval(timerRef.current)
-      return
-    }
-    timerRef.current = setInterval(() => setCooldown(c => c - 1), 1000)
-    return () => { if (timerRef.current) clearInterval(timerRef.current) }
-  }, [cooldown])
-
-  const resetMessages = () => {
-    setError('')
-    setSuccess('')
-  }
+  const reset = () => { setError(''); setSuccess('') }
 
   const handleOAuth = async (provider: OAuthProvider) => {
-    resetMessages()
+    reset()
     setOauthLoading(provider)
     const supabase = createClient()
-    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+    const { error: e } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
         redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
         scopes: provider === 'azure' ? 'openid email profile' : undefined,
       },
     })
-    if (oauthError) {
-      setError(oauthError.message || `Failed to sign in with ${provider}. Please try again.`)
-      setOauthLoading(null)
-    }
+    if (e) { setError(e.message || `Could not sign in with ${provider}.`); setOauthLoading(null) }
   }
 
-  const handlePasswordSignIn = async (e: React.FormEvent) => {
-    e.preventDefault()
-    resetMessages()
-    setLoading(true)
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault(); reset(); setLoading(true)
     const supabase = createClient()
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password })
-    if (signInError) {
-      setError(signInError.message || 'Unable to sign in with email and password.')
-      setLoading(false)
-      return
-    }
-    router.replace(nextPath)
-    router.refresh()
+    const { error: signInErr } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password })
+    if (signInErr) { setError(signInErr.message || 'Unable to sign in. Check your email and password.'); setLoading(false); return }
+    router.replace(nextPath); router.refresh()
   }
 
   const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault()
-    resetMessages()
-    if (!fullName.trim() || !organization.trim() || !phone.trim()) {
-      setError('Please complete your professional profile details before creating your account.')
-      return
-    }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long.')
-      return
-    }
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.')
-      return
-    }
+    e.preventDefault(); reset()
+    if (!fullName.trim()) { setError('Please enter your full name.'); return }
+    if (!organization.trim()) { setError('Please enter your organisation.'); return }
+    if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
+    if (password !== confirmPassword) { setError('Passwords do not match.'); return }
     setLoading(true)
     const supabase = createClient()
     const normalizedEmail = email.trim().toLowerCase()
-    const { error: signUpError } = await supabase.auth.signUp({
+    // Step 1: create the auth user with metadata
+    const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
       email: normalizedEmail,
       password,
       options: {
-        data: {
-          full_name: fullName.trim(),
-          phone: phone.trim(),
-          organization: organization.trim(),
-        },
+        data: { full_name: fullName.trim(), phone: phone.trim(), organization: organization.trim() },
         emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
       },
     })
+    if (signUpErr) { setError(signUpErr.message || 'Unable to create your account right now.'); setLoading(false); return }
 
-    if (signUpError) {
-      setError(signUpError.message || 'Unable to create your account right now.')
-      setLoading(false)
-      return
+    // Step 2: persist profile via server-side API route (uses service role, bypasses RLS)
+    const userId = signUpData.user?.id
+    if (userId) {
+      const res = await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: userId, email: normalizedEmail, full_name: fullName.trim(), phone: phone.trim() || null, organization: organization.trim() }),
+      })
+      if (!res.ok) {
+        setError('Account created but profile save failed. You can still sign in — your profile will be updated on first login.')
+        setLoading(false)
+        return
+      }
     }
 
-    const { error: profileError } = await supabase.from('profiles').upsert({
-      id: (await supabase.auth.getUser()).data.user?.id,
-      email: normalizedEmail,
-      full_name: fullName.trim(),
-      phone: phone.trim(),
-      organization: organization.trim(),
-      subscription_status: 'inactive',
-      plan: 'free',
-    }, { onConflict: 'id', ignoreDuplicates: false })
-
-    if (profileError) {
-      setError('Account created, but we could not save your profile details. Please sign in and retry.')
-      setLoading(false)
-      return
-    }
-
-    setSuccess('Your account has been created successfully. You can now sign in with your email and password.')
+    setSuccess('Account created! Check your email to confirm, then sign in.')
     setMode('signin')
-    setPassword('')
-    setConfirmPassword('')
+    setPassword(''); setConfirmPassword(''); setFullName(''); setPhone(''); setOrganization('')
     setLoading(false)
   }
 
-  const handleMagicLink = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (cooldown > 0) return
-    resetMessages()
-    setMagicState('loading')
-    const supabase = createClient()
-    const normalizedEmail = email.trim().toLowerCase()
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      email: normalizedEmail,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
-        shouldCreateUser: true,
-        data: {
-          full_name: fullName.trim() || undefined,
-          phone: phone.trim() || undefined,
-          organization: organization.trim() || undefined,
-        },
-      },
-    })
-    if (otpError) {
-      setError(otpError.message || 'Failed to send login link. Please try again.')
-      setMagicState('idle')
-      return
-    }
-    setMagicState('sent')
-    setCooldown(MAGIC_LINK_COOLDOWN_SECONDS)
+  const primaryBtn: React.CSSProperties = {
+    width: '100%', background: 'linear-gradient(135deg, #059669, #10b981)', border: 'none', borderRadius: 10,
+    padding: '13px', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+    boxShadow: '0 0 28px rgba(16,185,129,0.22)', transition: 'opacity 0.15s',
   }
-
-  const primaryButton: React.CSSProperties = {
-    width: '100%', background: '#10b981', border: 'none', borderRadius: 12, padding: '13px', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 0 32px rgba(16,185,129,0.24)',
-  }
-
-  const secondaryButton: React.CSSProperties = {
-    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '12px', fontSize: 14, fontWeight: 500, cursor: 'pointer', background: 'rgba(255,255,255,0.04)', color: '#e2e8f0',
+  const oauthBtn: React.CSSProperties = {
+    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+    border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '11px',
+    fontSize: 14, fontWeight: 500, cursor: 'pointer', background: 'rgba(255,255,255,0.04)', color: '#e2e8f0',
+    transition: 'background 0.15s',
   }
 
   return (
     <>
-      <div style={{ marginBottom: 22 }}>
-        <h1 style={{ color: '#f0fdf8', fontSize: 26, fontWeight: 700, letterSpacing: '-0.03em', marginBottom: 6, lineHeight: 1.2 }}>
-          Secure access to SafariCharge
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ color: '#f0fdf8', fontSize: 24, fontWeight: 700, letterSpacing: '-0.03em', marginBottom: 6, lineHeight: 1.2 }}>
+          {mode === 'signin' ? 'Sign in to SafariCharge' : 'Create your account'}
         </h1>
-        <p style={{ color: 'rgba(255,255,255,0.48)', fontSize: 14, lineHeight: 1.55 }}>
-          Sign in to continue to the renewable energy intelligence workspace. Sessions automatically expire after 15 minutes for security.
+        <p style={{ color: 'rgba(255,255,255,0.42)', fontSize: 13, lineHeight: 1.55 }}>
+          {mode === 'signin'
+            ? 'Sessions expire after 15 minutes of inactivity for security.'
+            : 'Clean energy professionals workspace. Your details personalise your experience.'}
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
-        {['signin', 'register', 'magic'].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => { setMode(tab as Mode); resetMessages() }}
-            style={{ borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)', padding: '10px 8px', fontSize: 12, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', background: mode === tab ? 'rgba(16,185,129,0.16)' : 'rgba(255,255,255,0.03)', color: mode === tab ? '#d1fae5' : 'rgba(255,255,255,0.45)' }}
-          >
-            {tab === 'signin' ? 'Sign in' : tab === 'register' ? 'Create account' : 'Magic link'}
+      {/* Tab switcher */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 18 }}>
+        {(['signin', 'register'] as Mode[]).map(t => (
+          <button key={t} onClick={() => { setMode(t); reset() }} style={{
+            borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)', padding: '9px',
+            fontSize: 12, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase',
+            background: mode === t ? 'rgba(16,185,129,0.18)' : 'rgba(255,255,255,0.03)',
+            color: mode === t ? '#d1fae5' : 'rgba(255,255,255,0.4)', cursor: 'pointer',
+          }}>
+            {t === 'signin' ? 'Sign in' : 'Create account'}
           </button>
         ))}
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
-        <button onClick={() => handleOAuth('google')} disabled={!!oauthLoading || loading} style={{ ...secondaryButton, opacity: oauthLoading && oauthLoading !== 'google' ? 0.45 : 1 }}>
-          {oauthLoading === 'google' ? <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} /> : <GoogleIcon />} Continue with Google
+      {/* OAuth buttons */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+        <button onClick={() => handleOAuth('google')} disabled={!!oauthLoading || loading} style={{ ...oauthBtn, opacity: oauthLoading && oauthLoading !== 'google' ? 0.45 : 1 }}>
+          {oauthLoading === 'google' ? <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} /> : <GoogleIcon />}
+          Continue with Google
         </button>
-        <button onClick={() => handleOAuth('azure')} disabled={!!oauthLoading || loading} style={{ ...secondaryButton, opacity: oauthLoading && oauthLoading !== 'azure' ? 0.45 : 1 }}>
-          {oauthLoading === 'azure' ? <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} /> : <MicrosoftIcon />} Continue with Microsoft
+        <button onClick={() => handleOAuth('azure')} disabled={!!oauthLoading || loading} style={{ ...oauthBtn, opacity: oauthLoading && oauthLoading !== 'azure' ? 0.45 : 1 }}>
+          {oauthLoading === 'azure' ? <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} /> : <MicrosoftIcon />}
+          Continue with Microsoft
         </button>
       </div>
 
       <Divider />
 
+      {error && <p style={{ color: '#fca5a5', fontSize: 13, marginBottom: 10 }}>{error}</p>}
+      {success && <p style={{ color: '#86efac', fontSize: 13, marginBottom: 10 }}>{success}</p>}
+
       {mode === 'signin' && (
-        <form onSubmit={handlePasswordSignIn} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <Field id="signin-email" label="Work email" type="email" autoComplete="email" placeholder="name@company.com" value={email} onChange={(e: any) => setEmail(e.target.value)} icon={<Mail size={16} />} required />
-          <Field id="signin-password" label="Password" type="password" autoComplete="current-password" placeholder="Enter your password" value={password} onChange={(e: any) => setPassword(e.target.value)} icon={<LockKeyhole size={16} />} required />
-          {error && <p style={{ color: '#fca5a5', fontSize: 13 }}>{error}</p>}
-          {success && <p style={{ color: '#86efac', fontSize: 13 }}>{success}</p>}
-          <button type="submit" disabled={loading || !!oauthLoading} style={{ ...primaryButton, opacity: loading ? 0.7 : 1 }}>
+        <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+          <Field id="email" label="Work email" type="email" autoComplete="email" placeholder="name@company.com" value={email} onChange={(e: any) => setEmail(e.target.value)} icon={<Mail size={15} />} required />
+          <div>
+            <Field id="password" label="Password" type="password" autoComplete="current-password" placeholder="Your password" value={password} onChange={(e: any) => setPassword(e.target.value)} icon={<LockKeyhole size={15} />} required />
+            <div style={{ textAlign: 'right', marginTop: 6 }}>
+              <Link href="/forgot-password" style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12, textDecoration: 'none' }}>Forgot password?</Link>
+            </div>
+          </div>
+          <button type="submit" disabled={loading || !!oauthLoading} style={{ ...primaryBtn, opacity: loading ? 0.7 : 1 }}>
             {loading ? <><Loader2 style={{ width: 15, height: 15, animation: 'spin 1s linear infinite' }} />Signing in…</> : 'Sign in to dashboard'}
           </button>
         </form>
       )}
 
       {mode === 'register' && (
-        <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <Field id="full-name" label="Full name" type="text" autoComplete="name" placeholder="Jane Njeri" value={fullName} onChange={(e: any) => setFullName(e.target.value)} icon={<UserRound size={16} />} required />
-          <Field id="work-org" label="Organization" type="text" autoComplete="organization" placeholder="SafariCharge Energy" value={organization} onChange={(e: any) => setOrganization(e.target.value)} icon={<Building2 size={16} />} required />
-          <Field id="phone" label="Phone number" type="tel" autoComplete="tel" placeholder="+254 700 000 000" value={phone} onChange={(e: any) => setPhone(e.target.value)} icon={<Phone size={16} />} required />
-          <Field id="register-email" label="Email address" type="email" autoComplete="email" placeholder="name@company.com" value={email} onChange={(e: any) => setEmail(e.target.value)} icon={<Mail size={16} />} required />
-          <Field id="register-password" label="Password" type="password" autoComplete="new-password" placeholder="Minimum 8 characters" value={password} onChange={(e: any) => setPassword(e.target.value)} icon={<LockKeyhole size={16} />} required />
-          <Field id="confirm-password" label="Confirm password" type="password" autoComplete="new-password" placeholder="Re-enter password" value={confirmPassword} onChange={(e: any) => setConfirmPassword(e.target.value)} icon={<LockKeyhole size={16} />} required />
-          {error && <p style={{ color: '#fca5a5', fontSize: 13 }}>{error}</p>}
-          {success && <p style={{ color: '#86efac', fontSize: 13 }}>{success}</p>}
-          <button type="submit" disabled={loading || !!oauthLoading} style={{ ...primaryButton, opacity: loading ? 0.7 : 1 }}>
-            {loading ? <><Loader2 style={{ width: 15, height: 15, animation: 'spin 1s linear infinite' }} />Creating account…</> : 'Create secure account'}
+        <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+          <Field id="full-name" label="Full name" type="text" autoComplete="name" placeholder="Jane Njeri" value={fullName} onChange={(e: any) => setFullName(e.target.value)} icon={<UserRound size={15} />} required />
+          <Field id="organization" label="Organisation" type="text" autoComplete="organization" placeholder="e.g. Kenya Power, KETRACO, NGO" value={organization} onChange={(e: any) => setOrganization(e.target.value)} icon={<Building2 size={15} />} required />
+          <Field id="phone" label="Phone (optional)" type="tel" autoComplete="tel" placeholder="+254 700 000 000" value={phone} onChange={(e: any) => setPhone(e.target.value)} icon={<Phone size={15} />} />
+          <Field id="reg-email" label="Work email" type="email" autoComplete="email" placeholder="name@company.com" value={email} onChange={(e: any) => setEmail(e.target.value)} icon={<Mail size={15} />} required />
+          <Field id="reg-password" label="Password" type="password" autoComplete="new-password" placeholder="Min. 8 characters" value={password} onChange={(e: any) => setPassword(e.target.value)} icon={<LockKeyhole size={15} />} required />
+          <Field id="confirm-password" label="Confirm password" type="password" autoComplete="new-password" placeholder="Re-enter password" value={confirmPassword} onChange={(e: any) => setConfirmPassword(e.target.value)} icon={<LockKeyhole size={15} />} required />
+          <button type="submit" disabled={loading || !!oauthLoading} style={{ ...primaryBtn, opacity: loading ? 0.7 : 1 }}>
+            {loading ? <><Loader2 style={{ width: 15, height: 15, animation: 'spin 1s linear infinite' }} />Creating account…</> : 'Create account'}
           </button>
-          <p style={{ color: 'rgba(255,255,255,0.26)', fontSize: 12, lineHeight: 1.5 }}>
-            Your professional details help us personalise simulations, project recommendations, and future account provisioning.
+          <p style={{ color: 'rgba(255,255,255,0.22)', fontSize: 11.5, lineHeight: 1.55 }}>
+            By creating an account you agree to SafariCharge&apos;s terms of service and privacy policy.
           </p>
-        </form>
-      )}
-
-      {mode === 'magic' && (
-        <form onSubmit={handleMagicLink} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <Field id="magic-name" label="Full name" type="text" autoComplete="name" placeholder="Optional but recommended" value={fullName} onChange={(e: any) => setFullName(e.target.value)} icon={<UserRound size={16} />} />
-          <Field id="magic-org" label="Organization" type="text" autoComplete="organization" placeholder="Optional but recommended" value={organization} onChange={(e: any) => setOrganization(e.target.value)} icon={<Building2 size={16} />} />
-          <Field id="magic-phone" label="Phone number" type="tel" autoComplete="tel" placeholder="Optional but recommended" value={phone} onChange={(e: any) => setPhone(e.target.value)} icon={<Phone size={16} />} />
-          <Field id="magic-email" label="Work email" type="email" autoComplete="email" placeholder="name@company.com" value={email} onChange={(e: any) => setEmail(e.target.value)} icon={<Mail size={16} />} required />
-          {error && <p style={{ color: '#fca5a5', fontSize: 13 }}>{error}</p>}
-          {success && <p style={{ color: '#86efac', fontSize: 13 }}>{success}</p>}
-          {magicState === 'sent' && <p style={{ color: '#86efac', fontSize: 13 }}>Magic link sent to {email}. Check your inbox to continue.</p>}
-          <button type="submit" disabled={magicState === 'loading' || !!oauthLoading || cooldown > 0} style={{ ...primaryButton, opacity: (magicState === 'loading' || cooldown > 0) ? 0.7 : 1 }}>
-            {magicState === 'loading' ? <><Loader2 style={{ width: 15, height: 15, animation: 'spin 1s linear infinite' }} />Sending…</> : cooldown > 0 ? `Wait ${cooldown}s to resend` : <><Mail style={{ width: 15, height: 15 }} />Send secure magic link</>}
-          </button>
         </form>
       )}
     </>
@@ -323,34 +247,30 @@ export default function LoginPage() {
         html, body { overflow: hidden; height: 100%; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
-
       <div style={{ position: 'fixed', inset: 0, background: '#03070f', fontFamily: "'Inter', system-ui, sans-serif", display: 'flex', flexDirection: 'column' }}>
         <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px)', backgroundSize: '64px 64px', pointerEvents: 'none' }} />
-        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 55% 45% at 50% 0%, rgba(16,185,129,0.14) 0%, transparent 70%)', pointerEvents: 'none' }} />
-
-        <header style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', height: '60px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 55% 45% at 50% 0%, rgba(16,185,129,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <header style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', height: 60, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <svg width="24" height="24" viewBox="0 0 28 28" fill="none" aria-label="SafariCharge">
               <circle cx="14" cy="14" r="13" stroke="rgba(16,185,129,0.35)" strokeWidth="1" />
               <path d="M14 7 L17.5 13 L21 13 L14 21 L16 15 L12 15 Z" fill="#10b981" opacity="0.9" />
               <circle cx="14" cy="14" r="2" fill="#10b981" />
             </svg>
-            <span style={{ color: '#e2e8f0', fontWeight: 600, fontSize: '14px', letterSpacing: '-0.01em' }}>SafariCharge</span>
+            <span style={{ color: '#e2e8f0', fontWeight: 600, fontSize: 14, letterSpacing: '-0.01em' }}>SafariCharge</span>
           </div>
-          <Link href="/landing" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'rgba(255,255,255,0.38)', fontSize: '13px', textDecoration: 'none' }}>
+          <Link href="/landing" style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.35)', fontSize: 13, textDecoration: 'none' }}>
             <ArrowLeft width={14} height={14} /> Back to home
           </Link>
         </header>
-
-        <div style={{ position: 'relative', zIndex: 10, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-          <div style={{ width: '100%', maxWidth: '520px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.025)', backdropFilter: 'blur(24px)', boxShadow: '0 32px 80px rgba(0,0,0,0.45)', padding: '36px 32px' }}>
-            <Suspense fallback={<div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '14px' }}>Loading…</div>}>
+        <div style={{ position: 'relative', zIndex: 10, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', overflowY: 'auto' }}>
+          <div style={{ width: '100%', maxWidth: 480, borderRadius: 18, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.025)', backdropFilter: 'blur(24px)', boxShadow: '0 32px 80px rgba(0,0,0,0.45)', padding: '32px 28px' }}>
+            <Suspense fallback={<div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>Loading…</div>}>
               <LoginForm />
             </Suspense>
           </div>
         </div>
-
-        <footer style={{ position: 'relative', zIndex: 10, textAlign: 'center', padding: '14px', borderTop: '1px solid rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.18)', fontSize: '12px' }}>
+        <footer style={{ position: 'relative', zIndex: 10, textAlign: 'center', padding: '12px', borderTop: '1px solid rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.16)', fontSize: 12 }}>
           © {new Date().getFullYear()} SafariCharge · Secure access for clean energy professionals
         </footer>
       </div>
