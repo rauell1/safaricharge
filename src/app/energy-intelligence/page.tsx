@@ -590,6 +590,7 @@ export default function EnergyIntelligencePage() {
 
   return (
     <DashboardLayout activeSection="energy-intelligence">
+      <main className="flex-1 overflow-y-auto">
       {/* ─── Hero ────────────────────────────────────────────────────── */}
       <div className="px-4 sm:px-6 pt-6">
         <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-gradient-to-br from-[#0f172a] via-[#0c1324] to-[#0a0f1d] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
@@ -904,6 +905,7 @@ export default function EnergyIntelligencePage() {
           <KpiCard label="Grid Export" value={gridExportKwh.toFixed(1)} unit="kWh" color="var(--solar)" />
         </div>
       </div>
+      </main>
     </DashboardLayout>
   );
 }

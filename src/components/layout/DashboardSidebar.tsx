@@ -42,7 +42,8 @@ export type DashboardSection =
   | 'recommendation'
   | 'ai-assistant'
   | 'energy-intelligence'
-  | 'financial-model';
+  | 'financial-model'
+  | 'sizing';
 
 export interface SidebarContextMetric {
   label: string;
@@ -85,6 +86,7 @@ export function DashboardSidebar({
     if (!pathname) return 'dashboard';
     if (pathname.startsWith('/energy-intelligence'))                               return 'energy-intelligence';
     if (pathname.startsWith('/financial'))                                         return 'financial-model';
+    if (pathname.startsWith('/sizing'))                                            return 'sizing';
     if (pathname.startsWith('/scenarios'))                                         return 'scenarios';
     if (pathname.startsWith('/demo/simulation') || pathname.includes('simulation')) return 'simulation';
     if (pathname.includes('configuration'))                                        return 'configuration';
