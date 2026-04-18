@@ -38,7 +38,7 @@ DVR response times (milliseconds):
 | 80% Dip | 1.340 ms | 1.18 ms | 1.293 ms | 1.271 ms |
 | S-L-G Fault | 0.518 ms | 0.120 ms | 0.517 ms | 0.385 ms |
 
-All measured response times are below the industry expectation of **<0.5 cycle (<10 ms at 50 Hz)**.
+All measured response times are well below **10 ms**, satisfying the industry expectation of response within **<0.5 cycle at 50 Hz**.
 
 ## 4. Harmonic Distortion (THD) Reduction
 
