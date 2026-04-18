@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useMemo, useState } from 'react'
 import { ArrowLeft, Loader2, LockKeyhole, Mail, UserRound, Building2, Phone } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -116,8 +116,7 @@ function LoginForm() {
     setLoading(true)
     const supabase = createClient()
     const normalizedEmail = email.trim().toLowerCase()
-    // Step 1: create the auth user with metadata
-    const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+    const { error: signUpErr } = await supabase.auth.signUp({
       email: normalizedEmail,
       password,
       options: {
@@ -127,21 +126,9 @@ function LoginForm() {
     })
     if (signUpErr) { setError(signUpErr.message || 'Unable to create your account right now.'); setLoading(false); return }
 
-    // Step 2: persist profile via server-side API route (uses service role, bypasses RLS)
-    const userId = signUpData.user?.id
-    if (userId) {
-      const res = await fetch('/api/profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: userId, email: normalizedEmail, full_name: fullName.trim(), phone: phone.trim() || null, organization: organization.trim() }),
-      })
-      if (!res.ok) {
-        setError('Account created but profile save failed. You can still sign in — your profile will be updated on first login.')
-        setLoading(false)
-        return
-      }
-    }
-
+    // Profile is upserted in /auth/callback after the user confirms their email.
+    // Do NOT call /api/profile here — the user row does not exist in auth.users yet
+    // and the FK constraint would cause a 500.
     setSuccess('Account created! Check your email to confirm, then sign in.')
     setMode('signin')
     setPassword(''); setConfirmPassword(''); setFullName(''); setPhone(''); setOrganization('')
@@ -174,7 +161,6 @@ function LoginForm() {
         </p>
       </div>
 
-      {/* Tab switcher */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 18 }}>
         {(['signin', 'register'] as Mode[]).map(t => (
           <button key={t} onClick={() => { setMode(t); reset() }} style={{
@@ -188,7 +174,6 @@ function LoginForm() {
         ))}
       </div>
 
-      {/* OAuth buttons */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
         <button onClick={() => handleOAuth('google')} disabled={!!oauthLoading || loading} style={{ ...oauthBtn, opacity: oauthLoading && oauthLoading !== 'google' ? 0.45 : 1 }}>
           {oauthLoading === 'google' ? <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} /> : <GoogleIcon />}
