@@ -12,6 +12,27 @@
 | **TypeScript files** | ? |
 <!-- END AUTO-UPDATED -->
 
+## Authentication
+
+SafariCharge now uses Supabase magic links exclusively—no passwords or NextAuth flows. To sign in, go to `/login`, enter your email, and click “Send Login Link.” Supabase sends a magic link that redirects to `/auth/callback`, where the session is exchanged and a profile row is ensured.
+
+### Profiles table
+
+Create this table in Supabase to track subscription state:
+
+```sql
+create table profiles (
+  id uuid references auth.users on delete cascade,
+  email text,
+  subscription_status text default 'inactive',
+  plan text default 'free',
+  created_at timestamp default now(),
+  primary key (id)
+);
+```
+
+Dashboard access requires an authenticated session and an `active` `subscription_status`; otherwise users are redirected to `/pricing`.
+
 
 
 

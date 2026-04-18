@@ -1,34 +1,73 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ModularDashboardDemo from '@/app/demo/page'
 import { createClient } from '@/lib/supabase'
 
 export default function DashboardPage() {
   const router = useRouter()
+  const [isAuthorized, setIsAuthorized] = useState(false)
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const supabase = createClient()
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
+    let mounted = true
 
-        if (!session) {
-          router.replace('/login')
-        }
-      } catch {
-        router.replace('/login')
+    const checkAuthAndSubscription = async () => {
+      const supabase = createClient()
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
+      if (sessionError || !session) {
+        router.replace('/')
+        return
       }
-      // Optionally check subscription:
-      // const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
-      // if (profile?.subscription_status !== 'active') { window.location.href = '/pricing' }
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('subscription_status, email')
+        .eq('id', session.user.id)
+        .maybeSingle()
+
+      if (profileError) {
+        router.replace('/')
+        return
+      }
+
+      if (!profile) {
+        const { error: insertError } = await supabase.from('profiles').insert({
+          id: session.user.id,
+          email: session.user.email ?? '',
+          subscription_status: 'inactive',
+          plan: 'free',
+        })
+        if (insertError) {
+          router.replace('/')
+          return
+        }
+        router.replace('/pricing')
+        return
+      }
+
+      if (profile.subscription_status !== 'active') {
+        router.replace('/pricing')
+        return
+      }
+
+      if (mounted) {
+        setIsAuthorized(true)
+      }
     }
 
-    void checkAuth()
+    void checkAuthAndSubscription()
+
+    return () => {
+      mounted = false
+    }
   }, [router])
+
+  if (!isAuthorized) return null
 
   return <ModularDashboardDemo />
 }
