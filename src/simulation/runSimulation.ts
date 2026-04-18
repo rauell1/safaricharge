@@ -7,6 +7,7 @@ import {
   simulateEVFleet,
   type EVFleetConfig,
 } from './evMobilityEngine';
+import { defaultInverterConfig, simulateInverter } from './inverterEngine';
 
 export interface EVSpecs {
   ev1: { drainRate: number; cap: number; onboard: number };
@@ -39,19 +40,14 @@ export interface SolarSimulationResult {
   ev2Soc: number;
   gridImport: number;
   gridExport: number;
+  inverterEfficiency: number;
+  inverterClippingKw: number;
+  acCableLossKw: number;
 }
 
 /** Minimum V2G export power below which we treat discharge as zero (avoids
  *  amplified inverter-efficiency losses on trivial V2G contributions). */
 const V2G_DEADBAND_KW = 0.05;
-
-const getInverterEfficiency = (loadFraction: number): number => {
-  if (loadFraction <= 0.05) return 0.82;
-  if (loadFraction <= 0.20) return 0.93;
-  if (loadFraction <= 0.60) return 0.97;
-  if (loadFraction <= 0.90) return 0.96;
-  return 0.94;
-};
 
 const getBatteryEfficiency = (rateFraction: number): number => {
   return Math.max(0.85, 0.95 - 0.10 * Math.min(1.0, rateFraction));
@@ -193,12 +189,15 @@ export const runSolarSimulation = (
   }
 
   // ── Solar through inverter ────────────────────────────────────────────────
-  const inverterEff = getInverterEfficiency(totalLoad / systemConfig.inverterKw);
+  const inverterConfig = defaultInverterConfig();
   const dcLoss = solarConstrainedByInverter * DC_CABLE_LOSS_FRACTION;
   const solarAfterDc = Math.max(0, solarConstrainedByInverter - dcLoss);
-  const solarAfterInverter = solarAfterDc * inverterEff;
-  const acLoss = solarAfterInverter * AC_CABLE_LOSS_FRACTION;
-  const effectiveSolar = Math.max(0, solarAfterInverter - acLoss);
+  const inverterResult = simulateInverter(solarAfterDc, {
+    ...inverterConfig,
+    ratedKw: systemConfig.inverterKw,
+    maxGridExportKw: systemConfig.inverterKw,
+  });
+  const effectiveSolar = Math.max(0, inverterResult.acOutputKw - inverterResult.acCableLossKw);
   const solarLossKw = Math.max(0, rawSolar - effectiveSolar);
 
   if (ev1Load > 0) prevEv1Soc = Math.min(100, prevEv1Soc + (ev1Load * actualTimeStep / evSpecs.ev1.cap * 100));
@@ -295,5 +294,8 @@ export const runSolarSimulation = (
     batKwh: Math.max(0, Math.min(effectiveCapacity, newBatKwh)),
     ev1Soc: prevEv1Soc,
     ev2Soc: prevEv2Soc,
+    inverterEfficiency: inverterResult.efficiency,
+    inverterClippingKw: inverterResult.clippingLossKw,
+    acCableLossKw: inverterResult.acCableLossKw,
   };
 };
