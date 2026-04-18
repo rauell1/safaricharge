@@ -196,7 +196,7 @@ export default function LoginPage() {
       {/* ── Right panel ── */}
       <main className="flex-1 flex flex-col relative z-10">
         <header
-          className="flex items-center justify-between px-7 py-5 lg:px-12 lg:py-6"
+          className="flex items-center justify-between px-6 sm:px-10 lg:px-12 py-5 lg:py-6 w-full max-w-[520px] mx-auto"
           style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
         >
           <Link href="/landing" className="flex items-center gap-2.5">
@@ -217,8 +217,8 @@ export default function LoginPage() {
           </Link>
         </header>
 
-        <div className="flex-1 flex items-center justify-center px-7 py-14">
-          <div className="w-full max-w-[400px]">
+        <div className="flex-1 flex items-center justify-center px-6 sm:px-10 lg:px-12 py-14">
+          <div className="w-full max-w-[480px] rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] backdrop-blur-xl shadow-[0_24px_80px_rgba(0,0,0,0.38)] px-6 sm:px-8 py-8 sm:py-10 space-y-6">
 
             {!SIGN_IN_ENABLED ? (
               /* ── Disabled / bypass state ── */
