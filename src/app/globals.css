@@ -3,6 +3,28 @@
 
 /* ─── Design tokens ─────────────────────────────────────────── */
 :root {
+  /* Shadcn menu + surface tokens */
+  --background: 222 32% 6%;
+  --foreground: 210 40% 96%;
+  --card: 222 28% 10%;
+  --card-foreground: 210 36% 92%;
+  --popover: 222 30% 12%;
+  --popover-foreground: 210 36% 92%;
+  --primary: 152 66% 42%;
+  --primary-foreground: 144 86% 96%;
+  --secondary: 220 20% 18%;
+  --secondary-foreground: 213 32% 88%;
+  --muted: 218 16% 22%;
+  --muted-foreground: 214 22% 72%;
+  --accent: 44 95% 52%;
+  --accent-foreground: 219 33% 10%;
+  --destructive: 0 72% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border-color: 220 18% 26%;
+  --input: 220 18% 22%;
+  --ring: 152 66% 42%;
+  --radius: 0.875rem;
+
   /* Surfaces */
   --bg-primary:     #080d18;
   --bg-secondary:   #0d1424;
@@ -92,6 +114,10 @@ html, body {
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
+main, section, article, header, footer {
+  min-width: 0;
+}
+
 /* ─── Typography utilities ───────────────────────────────────── */
 .tabular {
   font-variant-numeric: tabular-nums;
@@ -102,9 +128,43 @@ h1, h2, h3, h4 {
   letter-spacing: -0.02em;
 }
 
+p, li {
+  overflow-wrap: break-word;
+}
+
 .prose-comfortable {
   max-width: 60ch;
   line-height: 1.7;
+}
+
+.page-shell {
+  width: min(1400px, 100% - 32px);
+  margin: 0 auto;
+  padding: 24px 16px 32px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (min-width: 640px) {
+  .page-shell {
+    width: min(1400px, 100% - 48px);
+    padding: 28px 20px 36px;
+    gap: 28px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-shell {
+    width: min(1400px, 100% - 80px);
+    padding: 32px 28px 44px;
+    gap: 32px;
+  }
+}
+
+.page-shell * {
+  overflow-wrap: break-word;
 }
 
 /* ─── Card surface ───────────────────────────────────────────── */
@@ -129,6 +189,30 @@ h1, h2, h3, h4 {
     0 4px 6px rgba(0,0,0,0.45),
     0 12px 24px rgba(0,0,0,0.3),
     0 0 0 1px var(--border-strong);
+}
+
+/* ─── Overlay menus/dropdowns ─────────────────────────────────── */
+[data-slot='dropdown-menu-content'],
+[data-slot='dropdown-menu-sub-content'],
+[data-slot='context-menu-content'],
+[data-slot='context-menu-sub-content'],
+[data-slot='menubar-content'],
+[data-slot='menubar-sub-content'],
+[data-slot='navigation-menu-content'],
+[data-slot='select-content'],
+[data-slot='popover-content'] {
+  background-color: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 14px 48px rgba(0,0,0,0.32), 0 2px 12px rgba(0,0,0,0.2);
+  backdrop-filter: blur(14px) saturate(140%);
+  z-index: 60;
+}
+
+[data-slot='dropdown-menu-content']::backdrop,
+[data-slot='select-content']::backdrop,
+[data-slot='popover-content']::backdrop {
+  background: transparent;
 }
 
 /* ─── Skeleton shimmer ───────────────────────────────────────── */
