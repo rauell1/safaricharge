@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 116 | `rollback/merge-pull-request-217-from-rauell1-co-2026-04-18-2dcacf8` | `2dcacf8` | Merge pull request #217 from rauell1/copilot/fix-damaged-lockfile | 2026-04-18 |
 | 115 | `rollback/merge-pull-request-216-from-rauell1-co-2026-04-18-8407f30` | `8407f30` | Merge pull request #216 from rauell1/copilot/add-energy-intelligence-page | 2026-04-18 |
 | 114 | `rollback/merge-pull-request-215-from-rauell1-co-2026-04-18-64fd1b6` | `64fd1b6` | Merge pull request #215 from rauell1/copilot/add-financial-modeling-engine | 2026-04-18 |
 | 113 | `rollback/merge-pull-request-214-from-rauell1-co-2026-04-18-1f1b43c` | `1f1b43c` | Merge pull request #214 from rauell1/copilot/feat-ev-mobility-simulation-engine | 2026-04-18 |
@@ -1215,6 +1216,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/merge-pull-request-216-from-rauell1-co-2026-04-18-8407f30`
 - **Commit**: `8407f30f414cc3757241baf0e85b4b3562497c0a`
 - **Subject**: Merge pull request #216 from rauell1/copilot/add-energy-intelligence-page
+- **Date**: 2026-04-18
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #116 — `rollback/merge-pull-request-217-from-rauell1-co-2026-04-18-2dcacf8`
+
+- **Branch**: `rollback/merge-pull-request-217-from-rauell1-co-2026-04-18-2dcacf8`
+- **Commit**: `2dcacf801117e3518a82f1042054eef3cba96e65`
+- **Subject**: Merge pull request #217 from rauell1/copilot/fix-damaged-lockfile
 - **Date**: 2026-04-18
 - **Auto-generated**: yes (by update-rollback.yml)
 
