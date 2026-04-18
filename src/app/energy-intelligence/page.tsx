@@ -603,7 +603,7 @@ export default function EnergyIntelligencePage() {
           />
           <div className="relative px-5 sm:px-8 py-7 sm:py-8">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="space-y-4 max-w-2xl">
+              <div className="space-y-4 max-w-2xl min-w-0 flex-1">
                 <div className="flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
                   <span className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-white/5 px-3 py-1 text-[var(--text-primary)]/90">
                     <Zap className="h-3.5 w-3.5 text-[var(--solar)]" />
@@ -653,7 +653,7 @@ export default function EnergyIntelligencePage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-3 w-full lg:max-w-md">
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-3 w-full lg:w-auto lg:flex-none lg:max-w-md">
                 {heroCards.map((card) => (
                   <div
                     key={card.title}
