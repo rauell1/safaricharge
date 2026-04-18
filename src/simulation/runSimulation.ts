@@ -69,6 +69,10 @@ const getEVTaperedRate = (soc: number, maxRate: number): number => {
 
 const DC_CABLE_LOSS_FRACTION = 0.015;
 const AC_CABLE_LOSS_FRACTION = 0.01;
+const DEFAULT_GRID_NODE_CABLE_LENGTH_M = 1;
+const DEFAULT_GRID_NODE_CABLE_MM2 = 95;
+const DEFAULT_GRID_TARIFF_KES_PER_KWH = 23;
+const DEFAULT_EXPORT_TARIFF_KES_PER_KWH = 5;
 
 export const runSolarSimulation = (
   t: number,
@@ -254,8 +258,8 @@ export const runSolarSimulation = (
     loadKw: totalLoad,
     generationKw: augmentedSolar,
     voltageKv: 0.4,
-    cableLengthM: 1,
-    cableMm2: 95,
+    cableLengthM: DEFAULT_GRID_NODE_CABLE_LENGTH_M,
+    cableMm2: DEFAULT_GRID_NODE_CABLE_MM2,
   };
   const gridNodes = financialConfig?.gridNodes?.length ? financialConfig.gridNodes : [fallbackNode];
   const gridConfig: GridConfig = {
@@ -265,8 +269,9 @@ export const runSolarSimulation = (
   };
   const gridResult = simulatePowerFlow(gridNodes, gridConfig);
 
-  const gridTariffKesPerKwh = financialConfig?.gridTariffKesPerKwh ?? 23;
-  const gridExportTariffKesPerKwh = financialConfig?.gridExportTariffKesPerKwh ?? 5;
+  const gridTariffKesPerKwh = financialConfig?.gridTariffKesPerKwh ?? DEFAULT_GRID_TARIFF_KES_PER_KWH;
+  const gridExportTariffKesPerKwh =
+    financialConfig?.gridExportTariffKesPerKwh ?? DEFAULT_EXPORT_TARIFF_KES_PER_KWH;
   const baselineGridOnlyCostKes = totalLoad * actualTimeStep * gridTariffKesPerKwh;
   const actualGridCostKes =
     gridImport * actualTimeStep * gridTariffKesPerKwh -

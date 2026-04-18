@@ -13,6 +13,10 @@ export interface GridConfig {
   inertiaConstantS: number;
   prevFrequencyHz: number;
   dtSeconds: number;
+  batteryCapacityKwh?: number;
+  initialBatteryKwh?: number;
+  maxBatteryChargeKw?: number;
+  maxBatteryDischargeKw?: number;
 }
 
 export interface GridResult {
@@ -23,6 +27,7 @@ export interface GridResult {
   totalGenerationKw: number;
   totalLoadKw: number;
   netGridImportKw: number;
+  batteryStateKwh: number;
 }
 
 const COPPER_RESISTIVITY_OHM_M = 1.72e-8;
@@ -47,7 +52,14 @@ export function simulatePowerFlow(nodes: GridNode[], config: GridConfig): GridRe
   let gridImportKw = 0;
   let gridExportKw = 0;
 
-  const batteryStateKwh = 0;
+  const batteryCapacityKwh = Math.max(0, config.batteryCapacityKwh ?? 0);
+  let batteryStateKwh = Math.min(
+    batteryCapacityKwh,
+    Math.max(0, config.initialBatteryKwh ?? 0),
+  );
+  const maxBatteryChargeKw = Math.max(0, config.maxBatteryChargeKw ?? Number.POSITIVE_INFINITY);
+  const maxBatteryDischargeKw = Math.max(0, config.maxBatteryDischargeKw ?? Number.POSITIVE_INFINITY);
+  const dtHours = dtSeconds / 3600;
 
   for (const node of nodes) {
     const loadKw = Math.max(0, node.loadKw);
@@ -73,12 +85,19 @@ export function simulatePowerFlow(nodes: GridNode[], config: GridConfig): GridRe
     if (generationKw >= loadKw) {
       solarDispatchKw += loadKw;
       const surplusKw = generationKw - loadKw;
-      gridExportKw += surplusKw;
+      const availableStorageKwh = Math.max(0, batteryCapacityKwh - batteryStateKwh);
+      const chargeKw = Math.min(surplusKw, maxBatteryChargeKw, safeDivision(availableStorageKwh, dtHours));
+      batteryStateKwh += chargeKw * dtHours;
+      gridExportKw += Math.max(0, surplusKw - chargeKw);
     } else {
       solarDispatchKw += generationKw;
       const deficitKw = loadKw - generationKw;
-      const batteryAvailableKw = Math.max(0, batteryStateKwh * (3600 / dtSeconds));
+      const batteryAvailableKw = Math.min(
+        maxBatteryDischargeKw,
+        Math.max(0, safeDivision(batteryStateKwh, dtHours)),
+      );
       const dischargedKw = Math.min(deficitKw, batteryAvailableKw);
+      batteryStateKwh = Math.max(0, batteryStateKwh - dischargedKw * dtHours);
       batteryDispatchKw += dischargedKw;
       gridImportKw += Math.max(0, deficitKw - dischargedKw);
     }
@@ -100,6 +119,7 @@ export function simulatePowerFlow(nodes: GridNode[], config: GridConfig): GridRe
     totalGenerationKw,
     totalLoadKw,
     netGridImportKw,
+    batteryStateKwh,
   };
 }
 
@@ -110,5 +130,7 @@ export function defaultGridConfig(): GridConfig {
     inertiaConstantS: 5,
     prevFrequencyHz: 50,
     dtSeconds: 60,
+    batteryCapacityKwh: 0,
+    initialBatteryKwh: 0,
   };
 }

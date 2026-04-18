@@ -22,6 +22,10 @@ const configSchema = z.object({
   inertiaConstantS: z.number().positive().default(5),
   prevFrequencyHz: z.number().default(50),
   dtSeconds: z.number().positive(),
+  batteryCapacityKwh: z.number().nonnegative().optional(),
+  initialBatteryKwh: z.number().nonnegative().optional(),
+  maxBatteryChargeKw: z.number().nonnegative().optional(),
+  maxBatteryDischargeKw: z.number().nonnegative().optional(),
 }) satisfies z.ZodType<GridConfig>;
 
 const bodySchema = z.object({
