@@ -8,6 +8,24 @@ const PUBLIC_PREFIXES: string[] = ['/auth/', '/api/', '/forgot-password', '/sign
 
 const SESSION_TTL_MS = 15 * 60 * 1000
 const SESSION_TOUCH_COOKIE = 'sc_last_seen'
+const AUTH_VALIDATED_AT_COOKIE = 'sc_auth_checked_at'
+const AUTH_VALIDATION_WINDOW_MS = Number(process.env.AUTH_VALIDATION_WINDOW_MS ?? 60_000)
+const AUTH_TIMING_DEBUG = process.env.AUTH_TIMING_DEBUG === '1'
+
+function withTimingHeaders(response: NextResponse, metrics: Record<string, number>) {
+  const entries = Object.entries(metrics)
+  if (entries.length === 0) return response
+
+  response.headers.set(
+    'Server-Timing',
+    entries.map(([name, duration]) => `${name};dur=${duration.toFixed(1)}`).join(', ')
+  )
+  if (typeof metrics.total === 'number') {
+    response.headers.set('x-auth-middleware-ms', metrics.total.toFixed(1))
+  }
+
+  return response
+}
 
 function isPublic(pathname: string): boolean {
   if (PUBLIC_EXACT.has(pathname)) return true
@@ -15,6 +33,7 @@ function isPublic(pathname: string): boolean {
 }
 
 export async function middleware(request: NextRequest) {
+  const middlewareStart = Date.now()
   const { pathname } = request.nextUrl
   if (isPublic(pathname)) return NextResponse.next()
 
@@ -22,8 +41,10 @@ export async function middleware(request: NextRequest) {
   // Do this BEFORE the Supabase getUser() call. If the session has expired
   // we can redirect immediately without making any network request at all.
   const now = Date.now()
+  const ttlCheckStart = Date.now()
   const lastSeen = Number(request.cookies.get(SESSION_TOUCH_COOKIE)?.value || '0')
   const isExpired = !lastSeen || now - lastSeen > SESSION_TTL_MS
+  const ttlCheckMs = Date.now() - ttlCheckStart
 
   if (isExpired) {
     // No need to call signOut() here — the Supabase session will expire
@@ -35,13 +56,20 @@ export async function middleware(request: NextRequest) {
     loginUrl.searchParams.set('reason', 'session_expired')
     const response = NextResponse.redirect(loginUrl)
     response.cookies.delete(SESSION_TOUCH_COOKIE)
-    return response
+    const totalMs = Date.now() - middlewareStart
+    if (AUTH_TIMING_DEBUG) {
+      console.info(`[auth-timing][middleware] expired_session ttl=${ttlCheckMs}ms total=${totalMs}ms path=${pathname}`)
+    }
+    return withTimingHeaders(response, {
+      ttl_check: ttlCheckMs,
+      total: totalMs,
+    })
   }
 
   // ── Single Supabase getUser() call ───────────────────────────────────────
-  // Called only when the TTL cookie is present and valid. Uses getSession()
-  // first to avoid an unnecessary network hit when the JWT is still fresh;
-  // falls back to getUser() (server-side token validation) only when needed.
+  // Called only when the TTL cookie is present and valid. We use getSession()
+  // every request (cookie-backed, typically cheap) and only perform remote
+  // getUser() validation periodically to reduce auth latency.
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -63,14 +91,60 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // getUser() makes one network call to validate the JWT with Supabase.
-  // This is the only remote call in the hot path.
-  const { data: { user }, error } = await supabase.auth.getUser()
+  const getSessionStart = Date.now()
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+  const getSessionMs = Date.now() - getSessionStart
 
-  if (error || !user) {
+  if (sessionError || !session?.user) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('next', pathname)
-    return NextResponse.redirect(loginUrl)
+    const response = NextResponse.redirect(loginUrl)
+    const totalMs = Date.now() - middlewareStart
+    if (AUTH_TIMING_DEBUG) {
+      console.info(`[auth-timing][middleware] unauthenticated get_session=${getSessionMs}ms total=${totalMs}ms path=${pathname}`)
+    }
+    return withTimingHeaders(response, {
+      ttl_check: ttlCheckMs,
+      supabase_get_session: getSessionMs,
+      total: totalMs,
+    })
+  }
+
+  const lastValidatedAt = Number(request.cookies.get(AUTH_VALIDATED_AT_COOKIE)?.value || '0')
+  const needsServerValidation =
+    !lastValidatedAt ||
+    now - lastValidatedAt > AUTH_VALIDATION_WINDOW_MS
+
+  let getUserMs = 0
+  if (needsServerValidation) {
+    // getUser() performs remote JWT validation with Supabase.
+    const getUserStart = Date.now()
+    const { data: { user }, error } = await supabase.auth.getUser()
+    getUserMs = Date.now() - getUserStart
+
+    if (error || !user) {
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('next', pathname)
+      const response = NextResponse.redirect(loginUrl)
+      const totalMs = Date.now() - middlewareStart
+      if (AUTH_TIMING_DEBUG) {
+        console.info(`[auth-timing][middleware] invalid_user get_session=${getSessionMs}ms get_user=${getUserMs}ms total=${totalMs}ms path=${pathname}`)
+      }
+      return withTimingHeaders(response, {
+        ttl_check: ttlCheckMs,
+        supabase_get_session: getSessionMs,
+        supabase_get_user: getUserMs,
+        total: totalMs,
+      })
+    }
+
+    supabaseResponse.cookies.set(AUTH_VALIDATED_AT_COOKIE, String(now), {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: true,
+      path: '/',
+      maxAge: Math.max(30, Math.floor(AUTH_VALIDATION_WINDOW_MS / 1000)),
+    })
   }
 
   // Touch the TTL cookie so active users never get logged out mid-session.
@@ -82,7 +156,30 @@ export async function middleware(request: NextRequest) {
     maxAge: 15 * 60,
   })
 
-  return supabaseResponse
+  const totalMs = Date.now() - middlewareStart
+  if (AUTH_TIMING_DEBUG) {
+    if (needsServerValidation) {
+      console.info(`[auth-timing][middleware] ok get_session=${getSessionMs}ms get_user=${getUserMs}ms total=${totalMs}ms path=${pathname}`)
+    } else {
+      console.info(`[auth-timing][middleware] ok get_session=${getSessionMs}ms validation=skipped total=${totalMs}ms path=${pathname}`)
+    }
+  }
+
+  return withTimingHeaders(
+    supabaseResponse,
+    needsServerValidation
+      ? {
+          ttl_check: ttlCheckMs,
+          supabase_get_session: getSessionMs,
+          supabase_get_user: getUserMs,
+          total: totalMs,
+        }
+      : {
+          ttl_check: ttlCheckMs,
+          supabase_get_session: getSessionMs,
+          total: totalMs,
+        }
+  )
 }
 
 export const config = {

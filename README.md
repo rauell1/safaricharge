@@ -33,6 +33,43 @@ create table profiles (
 
 Dashboard access requires an authenticated session and an `active` `subscription_status`; otherwise users are redirected to `/pricing`.
 
+## Auth Performance Tuning
+
+SafariCharge includes auth-path timing instrumentation and a tunable server-side validation cadence to improve sign-in speed while preserving session safety.
+
+### Environment variables
+
+- `AUTH_VALIDATION_WINDOW_MS`
+  - Controls how often middleware performs remote Supabase token validation (`getUser`) after a successful session check.
+  - Default: `60000` (60 seconds).
+  - Recommended range: `30000` to `120000`.
+  - Lower values increase security strictness and network calls; higher values reduce auth-check overhead and improve navigation responsiveness.
+
+- `AUTH_TIMING_DEBUG`
+  - Set to `1` to print per-request auth timing logs in server output.
+  - Leave unset (or `0`) in normal operation.
+
+### Runtime timing headers
+
+When authentication paths execute, responses include timing headers:
+
+- `Server-Timing`
+  - Middleware metrics: `ttl_check`, `supabase_get_session`, optional `supabase_get_user`, `total`
+  - Callback metrics: `exchange_code_for_session`, `profile_upsert`, optional `onboarding_check`, `total`
+
+- `x-auth-middleware-ms`
+  - Total middleware auth-gate time in milliseconds.
+
+- `x-auth-callback-ms`
+  - Total `/auth/callback` handler time in milliseconds.
+
+### How to verify improvements
+
+1. Open browser DevTools, then Network.
+2. Sign in using your normal flow.
+3. Open requests for `/auth/callback` and the first protected route load.
+4. Compare `Server-Timing`, `x-auth-callback-ms`, and `x-auth-middleware-ms` before and after tuning `AUTH_VALIDATION_WINDOW_MS`.
+
 
 
 
