@@ -15,7 +15,7 @@ export default function DashboardPage() {
     const init = async () => {
       const supabase = createClient()
 
-      // Use getUser() — validates JWT against Supabase server, never returns stale cache
+      // Validate session server-side — never stale
       const { data: { user }, error: userError } = await supabase.auth.getUser()
 
       if (userError || !user) {
@@ -23,36 +23,19 @@ export default function DashboardPage() {
         return
       }
 
-      // Fetch or create profile
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('subscription_status, plan')
-        .eq('id', user.id)
-        .maybeSingle()
-
-      if (profileError) {
-        // DB error — still let them in rather than looping
-        if (mounted) setIsAuthorized(true)
-        return
-      }
-
-      if (!profile) {
-        // First sign-in: create profile, then let them in
-        await supabase.from('profiles').insert({
+      // Ensure a profile row exists for this user (fire-and-forget, don't block)
+      supabase.from('profiles').upsert(
+        {
           id: user.id,
           email: user.email ?? '',
           subscription_status: 'inactive',
           plan: 'free',
-        })
-        // New users go to pricing to choose a plan,
-        // but don't loop — pricing is a one-way trip
-        if (mounted) router.replace('/pricing')
-        return
-      }
+        },
+        { onConflict: 'id', ignoreDuplicates: true }
+      ).then(() => { /* no-op — profile creation is best-effort */ })
 
-      // All authenticated users with an existing profile can use the dashboard.
-      // Subscription gating is handled inside the dashboard per-feature,
-      // not as a hard redirect that causes loops.
+      // All authenticated users go straight to the dashboard.
+      // Payment / subscription gating will be added later per-feature.
       if (mounted) setIsAuthorized(true)
     }
 
@@ -73,8 +56,8 @@ export default function DashboardPage() {
         fontSize: '14px',
         gap: '10px',
       }}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-          style={{ animation: 'spin 1s linear infinite' }}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
           <path d="M21 12a9 9 0 1 1-6.219-8.56" />
         </svg>
         Loading dashboard…
