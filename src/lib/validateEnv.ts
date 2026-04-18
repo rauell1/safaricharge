@@ -26,6 +26,27 @@ const ENV_SPECS: EnvSpec[] = [
     description:
       'Prisma database connection string (e.g. file:./dev.db or a PostgreSQL URL). Defaults to SQLite dev db when absent.',
   },
+  // ─── Supabase ──────────────────────────────────────────────────────────────
+  // Both vars are required for the /api/profile upsert (and any other route
+  // that builds a server-side Supabase admin client).
+  // NEXT_PUBLIC_SUPABASE_URL must also be present in every environment scope
+  // (Production + Preview) in the Vercel dashboard.
+  // SUPABASE_SERVICE_ROLE_KEY is a server-only secret — never expose it to
+  // the client. It must be set in *all* Vercel environment scopes (Production,
+  // Preview, Development) or the profile POST route will return 500.
+  {
+    name: 'NEXT_PUBLIC_SUPABASE_URL',
+    required: isProduction,
+    description:
+      'Supabase project URL (e.g. https://<ref>.supabase.co). Required for the admin client in server-side routes.',
+  },
+  {
+    name: 'SUPABASE_SERVICE_ROLE_KEY',
+    required: true, // required in every environment — server-side admin client
+    description:
+      'Supabase service-role key for server-side admin operations (bypasses RLS). Set this in ALL Vercel environment scopes (Production, Preview, Development).',
+  },
+  // ─── Other optional vars ───────────────────────────────────────────────────
   {
     name: 'GEMINI_API_KEY',
     required: false,
