@@ -241,6 +241,8 @@
 
 
 
+
+
 SafariCharge is a **Next.js 16 + TypeScript** energy simulation and optimization dashboard for solar, battery storage, grid interaction, and EV charging.
 
 It combines:
