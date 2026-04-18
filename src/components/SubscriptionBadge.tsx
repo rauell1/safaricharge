@@ -25,7 +25,13 @@ export function SubscriptionBadge() {
           return
         }
 
-        const { data } = await supabase.from('profiles').select('plan').eq('id', session.user.id).maybeSingle()
+        const { data, error } = await supabase.from('profiles').select('plan').eq('id', session.user.id).maybeSingle()
+
+        if (error) {
+          console.error('Failed to load subscription plan', error)
+          setPlan(DEFAULT_PLAN)
+          return
+        }
 
         const safePlan = data?.plan
         if (safePlan === 'pro' || safePlan === 'enterprise' || safePlan === 'free') {

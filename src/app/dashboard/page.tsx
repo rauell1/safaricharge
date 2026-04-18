@@ -1,10 +1,13 @@
 'use client'
 
 import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import ModularDashboardDemo from '@/app/demo/page'
 import { createClient } from '@/lib/supabase'
 
 export default function DashboardPage() {
+  const router = useRouter()
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -14,10 +17,10 @@ export default function DashboardPage() {
         } = await supabase.auth.getSession()
 
         if (!session) {
-          window.location.href = '/login'
+          router.replace('/login')
         }
       } catch {
-        window.location.href = '/login'
+        router.replace('/login')
       }
       // Optionally check subscription:
       // const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
@@ -25,7 +28,7 @@ export default function DashboardPage() {
     }
 
     void checkAuth()
-  }, [])
+  }, [router])
 
   return <ModularDashboardDemo />
 }

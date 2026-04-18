@@ -70,7 +70,13 @@ export default function PricingPage() {
           return
         }
 
-        const { data } = await supabase.from('profiles').select('plan').eq('id', session.user.id).maybeSingle()
+        const { data, error } = await supabase.from('profiles').select('plan').eq('id', session.user.id).maybeSingle()
+
+        if (error) {
+          console.error('Failed to load pricing subscription status', error)
+          setPlan('free')
+          return
+        }
 
         const safePlan = data?.plan
         if (safePlan === 'free' || safePlan === 'pro' || safePlan === 'enterprise') {

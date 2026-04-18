@@ -24,8 +24,8 @@ create policy "Users can update own profile"
 -- Service role can upsert (for callback handler)
 create policy "Service role can upsert profiles"
   on public.profiles for all
-  using (true)
-  with check (true);
+  using (auth.role() = 'service_role')
+  with check (auth.role() = 'service_role');
 
 -- Auto-update updated_at
 create or replace function public.handle_updated_at()

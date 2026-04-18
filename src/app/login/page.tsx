@@ -25,7 +25,7 @@ export default function LoginPage() {
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email: trimmedEmail,
       options: {
-        emailRedirectTo: 'https://sc-solar-dashboard.vercel.app/dashboard',
+        emailRedirectTo: `${window.location.origin}/dashboard`,
       },
     })
 

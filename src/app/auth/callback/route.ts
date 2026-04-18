@@ -11,15 +11,20 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error && data.user) {
-      await supabase.from('profiles').upsert(
+      const { error: profileError } = await supabase.from('profiles').upsert(
         {
           id: data.user.id,
           email: data.user.email,
           subscription_status: 'inactive',
           plan: 'free',
         },
+        // Keep existing rows unchanged on repeat logins.
         { onConflict: 'id', ignoreDuplicates: true }
       )
+
+      if (profileError) {
+        return NextResponse.redirect(`${origin}/login?error=profile_upsert_failed`)
+      }
 
       return NextResponse.redirect(`${origin}${next}`)
     }
