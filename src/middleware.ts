@@ -43,7 +43,9 @@ export async function middleware(request: NextRequest) {
   const now = Date.now()
   const ttlCheckStart = Date.now()
   const lastSeen = Number(request.cookies.get(SESSION_TOUCH_COOKIE)?.value || '0')
-  const isExpired = !lastSeen || now - lastSeen > SESSION_TTL_MS
+  // A missing cookie is expected right after fresh sign-in. Treat only a
+  // present-but-stale cookie as expired.
+  const isExpired = lastSeen > 0 && now - lastSeen > SESSION_TTL_MS
   const ttlCheckMs = Date.now() - ttlCheckStart
 
   if (isExpired) {
