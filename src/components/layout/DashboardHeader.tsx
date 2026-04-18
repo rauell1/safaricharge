@@ -26,6 +26,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { SubscriptionBadge } from '@/components/SubscriptionBadge';
 
 interface DashboardHeaderProps {
   currentDate: Date;
@@ -178,6 +179,8 @@ export function DashboardHeader({
 
         {/* Right: actions */}
         <div className="flex items-center gap-2 flex-wrap justify-end">
+          <SubscriptionBadge />
+
           {/* Get Recommendation */}
           {onRecommendationClick && (
             <button
