@@ -54,4 +54,7 @@ export type SimulationMinuteRecord = {
   ev2LoadKWh: number;
   gridImportKWh: number;
   gridExportKWh: number;
+  gridFrequencyHz?: number;
+  gridLineLossKw?: number;
+  cumulativeSavingsKes?: number;
 };
