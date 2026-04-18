@@ -1,15 +1,28 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { CheckCircle2, Loader2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 
 type AuthState = 'idle' | 'loading' | 'sent'
 
 export default function LoginPage() {
+  const searchParams = useSearchParams()
+  const nextPath = useMemo(() => searchParams.get('next') ?? '/dashboard', [searchParams])
+  const initialError = useMemo(() => {
+    const errorParam = searchParams.get('error')
+    if (errorParam === 'auth_failed') {
+      return 'We could not verify that login link. Please request a new one.'
+    }
+    if (errorParam === 'profile_upsert_failed') {
+      return 'We could not finish setting up your profile. Please try again.'
+    }
+    return ''
+  }, [searchParams])
   const [email, setEmail] = useState('')
-  const [error, setError] = useState('')
+  const [error, setError] = useState(initialError)
   const [state, setState] = useState<AuthState>('idle')
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -24,7 +37,7 @@ export default function LoginPage() {
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email: trimmedEmail,
       options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
       },
     })
 
