@@ -328,6 +328,7 @@ export default function LandingPage() {
           <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 mb-14">
             <Link
               href="/demo"
+              aria-label="Open demo dashboard"
               className="group inline-flex items-center gap-2 font-semibold text-sm px-7 py-3.5 rounded-xl bg-[#10b981] text-white shadow-[0_0_40px_rgba(16,185,129,0.3)] hover:bg-[#059669] hover:shadow-[0_0_56px_rgba(16,185,129,0.45)] transition-all"
             >
               Open dashboard <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
@@ -403,7 +404,7 @@ export default function LandingPage() {
           </div>
 
           <div className="relative">
-            <div className="absolute left-8 top-2 bottom-2 hidden sm:block" style={{ width: '1px', background: 'rgba(16,185,129,0.3)' }} />
+            <div aria-hidden className="absolute left-8 top-2 bottom-2 hidden sm:block" style={{ width: '1px', background: 'rgba(16,185,129,0.3)' }} />
             <div className="space-y-10">
               {steps.map((step, index) => (
                 <div key={step.title} className="grid sm:grid-cols-[90px_1fr] gap-5 sm:gap-8 items-start">
@@ -643,11 +644,8 @@ export default function LandingPage() {
             <p className="font-semibold mb-3" style={{ color: '#e2e8f0' }}>Links</p>
             <div className="space-y-2">
               <Link href="/demo" className="inline-flex items-center gap-1.5 hover:text-white/65 transition-colors">Dashboard</Link>
-              <br />
               <a href="#features" className="inline-flex items-center gap-1.5 hover:text-white/65 transition-colors">Features</a>
-              <br />
               <a href="#pricing" className="inline-flex items-center gap-1.5 hover:text-white/65 transition-colors">Pricing</a>
-              <br />
               <a
                 href="https://github.com/rauell1/safaricharge"
                 target="_blank"
