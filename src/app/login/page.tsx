@@ -100,11 +100,25 @@ function LoginForm() {
   }
 
   const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault(); reset(); setLoading(true)
+    e.preventDefault()
+    reset()
+    setLoading(true)
     const supabase = createClient()
-    const { error: signInErr } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password })
-    if (signInErr) { setError(signInErr.message || 'Unable to sign in. Check your email and password.'); setLoading(false); return }
-    router.replace(nextPath); router.refresh()
+    const { error: signInErr } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    })
+    if (signInErr) {
+      setError(signInErr.message || 'Unable to sign in. Check your email and password.')
+      setLoading(false)
+      return
+    }
+    // Use router.push() only — do NOT call router.refresh() here.
+    // refresh() fires before the navigation completes and causes a race
+    // condition where the middleware sees no session cookie yet, triggering
+    // a redirect back to /login. The session cookie is already set by
+    // signInWithPassword; the next page load will pick it up automatically.
+    router.push(nextPath)
   }
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -125,10 +139,6 @@ function LoginForm() {
       },
     })
     if (signUpErr) { setError(signUpErr.message || 'Unable to create your account right now.'); setLoading(false); return }
-
-    // Profile is upserted in /auth/callback after the user confirms their email.
-    // Do NOT call /api/profile here — the user row does not exist in auth.users yet
-    // and the FK constraint would cause a 500.
     setSuccess('Account created! Check your email to confirm, then sign in.')
     setMode('signin')
     setPassword(''); setConfirmPassword(''); setFullName(''); setPhone(''); setOrganization('')

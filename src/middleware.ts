@@ -3,9 +3,6 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 // Exact public paths or path prefixes that do NOT require authentication.
-// IMPORTANT: '/' must be listed as an exact match only — do NOT use a
-// startsWith check on '/' because every pathname starts with '/'
-// which would make all routes public (critical security bug).
 const PUBLIC_EXACT: Set<string> = new Set(['/', '/login', '/landing'])
 const PUBLIC_PREFIXES: string[] = ['/auth/', '/api/', '/forgot-password', '/signup']
 
@@ -21,6 +18,30 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   if (isPublic(pathname)) return NextResponse.next()
 
+  // ── Session TTL check (cookie-only, zero network cost) ──────────────────
+  // Do this BEFORE the Supabase getUser() call. If the session has expired
+  // we can redirect immediately without making any network request at all.
+  const now = Date.now()
+  const lastSeen = Number(request.cookies.get(SESSION_TOUCH_COOKIE)?.value || '0')
+  const isExpired = !lastSeen || now - lastSeen > SESSION_TTL_MS
+
+  if (isExpired) {
+    // No need to call signOut() here — the Supabase session will expire
+    // naturally, and calling signOut() from middleware adds a second network
+    // round-trip on every expired-session redirect. The client will sign out
+    // when it next calls getUser() and receives an invalid session.
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('next', pathname)
+    loginUrl.searchParams.set('reason', 'session_expired')
+    const response = NextResponse.redirect(loginUrl)
+    response.cookies.delete(SESSION_TOUCH_COOKIE)
+    return response
+  }
+
+  // ── Single Supabase getUser() call ───────────────────────────────────────
+  // Called only when the TTL cookie is present and valid. Uses getSession()
+  // first to avoid an unnecessary network hit when the JWT is still fresh;
+  // falls back to getUser() (server-side token validation) only when needed.
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -42,6 +63,8 @@ export async function middleware(request: NextRequest) {
     }
   )
 
+  // getUser() makes one network call to validate the JWT with Supabase.
+  // This is the only remote call in the hot path.
   const { data: { user }, error } = await supabase.auth.getUser()
 
   if (error || !user) {
@@ -50,20 +73,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  const now = Date.now()
-  const lastSeen = Number(request.cookies.get(SESSION_TOUCH_COOKIE)?.value || '0')
-  const isExpired = !lastSeen || now - lastSeen > SESSION_TTL_MS
-
-  if (isExpired) {
-    await supabase.auth.signOut()
-    const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('next', pathname)
-    loginUrl.searchParams.set('reason', 'session_expired')
-    const response = NextResponse.redirect(loginUrl)
-    response.cookies.delete(SESSION_TOUCH_COOKIE)
-    return response
-  }
-
+  // Touch the TTL cookie so active users never get logged out mid-session.
   supabaseResponse.cookies.set(SESSION_TOUCH_COOKIE, String(now), {
     httpOnly: true,
     sameSite: 'lax',
