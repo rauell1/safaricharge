@@ -3,11 +3,12 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
 
 /**
- * IMPORTANT: adminSupabase is intentionally created *inside* the GET handler,
- * not at module scope. Vercel evaluates module-level code during cold-start
- * before env vars are injected, so a module-scope createClient() receives
- * undefined for URL and key — causing every upsert to fail with a 500.
- * Moving it inside the handler guarantees env vars are read at request time.
+ * GET /auth/callback
+ * Exchanges the OAuth / magic-link code for a session, upserts the profile
+ * row with service-role (bypasses RLS), then redirects to the next path.
+ *
+ * adminSupabase is created inside the handler — not at module scope — so env
+ * vars are always read at request time after Vercel has injected them.
  */
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -20,17 +21,27 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error && data.user) {
-      // Instantiate inside the handler — always reads live env vars.
-      const adminSupabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        { auth: { autoRefreshToken: false, persistSession: false } }
-      )
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+      // Guard against missing env vars — fail gracefully instead of throwing.
+      if (!supabaseUrl || !serviceRoleKey) {
+        console.error('[auth/callback] Missing Supabase env vars — skipping profile upsert')
+        const response = NextResponse.redirect(`${origin}${safeNext}`)
+        response.cookies.set('sc_last_seen', String(Date.now()), {
+          httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: 15 * 60,
+        })
+        return response
+      }
+
+      const adminSupabase = createClient(supabaseUrl, serviceRoleKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      })
 
       const metadata = data.user.user_metadata ?? {}
       const isOAuth = data.user.app_metadata?.provider !== 'email'
 
-      // Always upsert with service role — never fails due to RLS
+      // Always upsert with service role — never fails due to RLS.
       await adminSupabase.from('profiles').upsert(
         {
           id: data.user.id,
@@ -44,7 +55,7 @@ export async function GET(request: Request) {
         { onConflict: 'id', ignoreDuplicates: false }
       )
 
-      // Check if this OAuth user still needs to complete their profile
+      // OAuth users who haven't filled in their profile yet go to onboarding.
       if (isOAuth) {
         const { data: profile } = await adminSupabase
           .from('profiles')

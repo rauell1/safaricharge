@@ -1,18 +1,19 @@
-import { start } from "workflow/api";
-import { handleUserSignup } from "../../../../workflows/user-signup";
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server'
 
-export async function POST(request: Request) {
-  const body = await request.json();
-  const { email } = body;
-
-  if (!email || typeof email !== "string" || !email.includes("@")) {
-    return NextResponse.json({ error: "A valid email address is required" }, { status: 400 });
-  }
-
-  await start(handleUserSignup, [email]);
-
-  return NextResponse.json({
-    message: "User signup workflow started",
-  });
+/**
+ * POST /api/signup — REMOVED
+ *
+ * This route previously used the service-role admin API to create users
+ * server-side, but it was never called by the application. The login page
+ * uses supabase.auth.signUp() directly on the client, which is the correct
+ * approach for email-confirmation flows.
+ *
+ * The route is replaced with a clear 410 Gone response so that any stale
+ * clients or external callers receive an explicit signal rather than a 404.
+ */
+export async function POST() {
+  return NextResponse.json(
+    { error: 'This endpoint has been removed. Use the standard Supabase signUp flow.' },
+    { status: 410 }
+  )
 }
