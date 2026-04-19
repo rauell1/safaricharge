@@ -42,7 +42,7 @@ if not os.path.exists(readme_path):
         f.write('# SafariCharge\n\nSolar monitoring dashboard (Next.js + Prisma).\n')
     print('README.md did not exist — created stub.')
 
-with open(readme_path, 'r') as f:
+with open(readme_path, 'r', encoding='utf-8') as f:
     content = f.read()
 
 # Remove any existing auto-updated block (between the markers)
@@ -66,7 +66,7 @@ lines.insert(insert_at, '')
 lines.insert(insert_at + 1, BANNER.rstrip())
 lines.insert(insert_at + 2, '')
 
-with open(readme_path, 'w') as f:
+with open(readme_path, 'w', encoding='utf-8') as f:
     f.write('\n'.join(lines))
 
 print(f'README.md updated — commit {last_short} by {last_author}')

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
+    "typecheck": "tsc --noEmit",
     "start": "NODE_ENV=production node .next/standalone/server.js 2>&1 | tee server.log",
     "lint": "eslint .",
     "test": "vitest run",
@@ -17,7 +18,13 @@
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
     "map": "node scripts/generate-codebase-map.js",
-    "map:full": "node scripts/generate-codebase-map.js --full"
+    "map:full": "node scripts/generate-codebase-map.js --full",
+    "workflow:local": "node scripts/run-workflow-local.mjs all",
+    "workflow:local:all": "node scripts/run-workflow-local.mjs all",
+    "workflow:local:ci": "node scripts/run-workflow-local.mjs ci",
+    "workflow:local:readme": "node scripts/run-workflow-local.mjs readme",
+    "workflow:local:codebase-map": "node scripts/run-workflow-local.mjs codebase-map",
+    "workflow:local:rollback": "node scripts/run-workflow-local.mjs rollback"
   },
   "dependencies": {
     "@dnd-kit/sortable": "^10.0.0",

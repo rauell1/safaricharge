@@ -18,27 +18,51 @@ commit   = os.environ.get('LAST_COMMIT', 'unknown')[:8]
 author   = os.environ.get('LAST_AUTHOR', 'unknown')
 date     = os.environ.get('LAST_DATE', 'unknown')
 branch   = os.environ.get('BRANCH', 'main')
-now      = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
+now      = datetime.datetime.now(datetime.UTC).strftime('%Y-%m-%d %H:%M UTC')
 
 
 def tree_lines(path, depth=3):
     """Return directory tree string; falls back gracefully if tree is missing."""
     if not os.path.isdir(path):
         return f'({path} not found)'
+
+    def _portable_tree(start_path, max_depth):
+        lines = [start_path + '/']
+
+        def _walk(current_path, level):
+            if level >= max_depth:
+                return
+            try:
+                entries = sorted(os.listdir(current_path))
+            except Exception:
+                return
+
+            for entry in entries:
+                if entry in {'node_modules', '.git', '.next'}:
+                    continue
+                if entry.endswith('.tsbuildinfo') or entry.endswith('.lock') or entry == 'package-lock.json':
+                    continue
+
+                full = os.path.join(current_path, entry)
+                rel_depth = level + 1
+                lines.append('  ' * rel_depth + entry + ('/' if os.path.isdir(full) else ''))
+                if os.path.isdir(full):
+                    _walk(full, rel_depth)
+
+        _walk(start_path, 0)
+        return '\n'.join(lines)
+
     try:
         r = subprocess.run(
             ['tree', path, '--dirsfirst', f'-L{depth}',
              '-I', 'node_modules|*.tsbuildinfo|*.lock|package-lock.json'],
             capture_output=True, text=True, check=False
         )
-        return r.stdout.strip() or f'({path} empty)'
+        if r.returncode == 0 and r.stdout.strip():
+            return r.stdout.strip()
+        return _portable_tree(path, depth)
     except FileNotFoundError:
-        # tree binary not installed — fall back to a simple ls-style listing
-        try:
-            entries = sorted(os.listdir(path))
-            return path + '/\n' + '\n'.join(f'  {e}' for e in entries[:60])
-        except Exception:
-            return '(directory listing unavailable)'
+        return _portable_tree(path, depth)
 
 
 def file_sizes(path):
@@ -274,7 +298,15 @@ forecasting/
     lib_table=lib_table, stores_table=stores_table,
 )
 
-with open('CODEBASE_MAP.md', 'w') as fh:
+doc = (
+    doc.replace('—', '-')
+       .replace('·', '-')
+       .replace('’', "'")
+       .replace('“', '"')
+       .replace('”', '"')
+)
+
+with open('CODEBASE_MAP.md', 'w', encoding='utf-8') as fh:
     fh.write(doc)
 
 print('CODEBASE_MAP.md written successfully ({} chars)'.format(len(doc)))

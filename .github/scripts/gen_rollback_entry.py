@@ -13,7 +13,7 @@ subject     = os.environ.get('SUBJECT', '')
 branch_name = os.environ.get('BRANCH_NAME', '')
 
 rollback_path = 'ROLLBACK.md'
-with open(rollback_path, 'r') as f:
+with open(rollback_path, 'r', encoding='utf-8') as f:
     content = f.read()
 
 # Idempotency check — if this branch is already recorded, do nothing
@@ -63,7 +63,7 @@ if content.endswith('*This file is maintained manually after each major change s
 else:
     content += detail
 
-with open(rollback_path, 'w') as f:
+with open(rollback_path, 'w', encoding='utf-8') as f:
     f.write(content)
 
 print(f'ROLLBACK.md updated — added snapshot #{next_num}: {branch_name} @ {sha_short}')

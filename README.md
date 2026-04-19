@@ -5,12 +5,26 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`unknown`](https://github.com/rauell1/safaricharge/commit/) by unknown |
-| **Date** | unknown |
-| **Message** |  |
-| **Total commits** | ? |
-| **TypeScript files** | ? |
+| **Last commit** | [`a5a5129`](https://github.com/rauell1/safaricharge/commit/a5a512995c47528202e8ae42c8b85b8e3891cc1e) by Roy Okola Otieno |
+| **Date** | 2026-04-19 |
+| **Message** | feat: implement authentication middleware for session management and user validation |
+| **Total commits** | 1174 |
+| **TypeScript files** | 227 |
 <!-- END AUTO-UPDATED -->
+
+
+
+
+
+## Local Workflow Fallbacks
+
+When GitHub Actions is unavailable (for example billing/spending limits), run workflow equivalents locally:
+
+- `npm run workflow:local:readme` - mirrors `update-readme.yml`
+- `npm run workflow:local:codebase-map` - mirrors `update-codebase-map.yml`
+- `npm run workflow:local:rollback` - mirrors `update-rollback.yml`
+- `npm run workflow:local:ci` - mirrors `ci.yml` (`typecheck` + `build`)
+- `npm run workflow:local:all` - runs all of the above in sequence
 
 ## Authentication
 
