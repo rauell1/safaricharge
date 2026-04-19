@@ -2,12 +2,15 @@ name: Update Codebase Map
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
     paths-ignore:
       - 'CODEBASE_MAP.md'
       - 'README.md'
       - 'ROLLBACK.md'
       - '.github/**'
+  workflow_dispatch:
+  schedule:
+    - cron: '27 3 * * *'
 
 # One run at a time per branch; cancel any queued duplicate.
 concurrency:
@@ -17,6 +20,7 @@ concurrency:
 jobs:
   update-map:
     name: Regenerate CODEBASE_MAP.md
+    if: github.ref_name == github.event.repository.default_branch || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -29,6 +33,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.repository.default_branch }}
 
       - name: Install tree
         run: |

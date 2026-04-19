@@ -40,7 +40,7 @@ const HOURS_PER_TICK   = 24 / TICKS_PER_DAY; // ~3.43 simulated minutes/tick
  *                   faster wall-clock; cable animation speed is a separate
  *                   cosmetic concern handled in SimulationNodes.
  */
-export function useDemoEnergySystem() {
+export function useDemoEnergySystem(enabled = true) {
   const fullSystemConfig = useEnergySystemStore((s) => s.fullSystemConfig);
   const systemMode = useEnergySystemStore((s) => s.systemConfig.systemMode);
   const gridOutageEnabled = useEnergySystemStore((s) => s.systemConfig.gridOutageEnabled);
@@ -123,12 +123,12 @@ export function useDemoEnergySystem() {
       );
     }
 
-    // Paused — do not start an interval
-    if (!isAutoMode) return;
+    // Paused or disabled — do not start an interval.
+    if (!enabled || !isAutoMode) return;
 
     // Speed-scaled interval: 1× = 100 ms, 10× = 10 ms, 0.25× = 400 ms
     const intervalMs = Math.max(16, BASE_INTERVAL_MS / simSpeed);
     const id = setInterval(runTick, intervalMs);
     return () => clearInterval(id);
-  }, [isAutoMode, simSpeed, runTick]);
+  }, [enabled, isAutoMode, simSpeed, runTick]);
 }

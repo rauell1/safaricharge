@@ -317,6 +317,7 @@ const initialAccumulators: Accumulators = {
 };
 
 const MAX_SCENARIOS = 20;
+const MAX_MINUTE_DATA_POINTS = 420 * 30;
 
 // ── Validation helper ─────────────────────────────────────────────────────────
 
@@ -398,9 +399,16 @@ export const useEnergySystemStore = create<EnergySystemState>()(
     })),
 
   addMinuteData: (data) =>
-    set((state) => ({
-      minuteData: [...state.minuteData, data],
-    })),
+    set((state) => {
+      const minuteData = [...state.minuteData, data];
+      if (minuteData.length <= MAX_MINUTE_DATA_POINTS) {
+        return { minuteData };
+      }
+
+      return {
+        minuteData: minuteData.slice(minuteData.length - MAX_MINUTE_DATA_POINTS),
+      };
+    }),
 
   setSimulationState: (updates) => set(updates),
 

@@ -2,9 +2,10 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
-    branches: [main]
+    branches: ['**']
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -16,6 +17,10 @@ jobs:
   # ─────────────────────────────────────────────
   typecheck:
     name: Type-check
+    if: |
+      (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) ||
+      (github.event_name == 'pull_request' && github.base_ref == github.event.repository.default_branch) ||
+      (github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
@@ -44,6 +49,10 @@ jobs:
   # ─────────────────────────────────────────────
   build:
     name: Build
+    if: |
+      (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) ||
+      (github.event_name == 'pull_request' && github.base_ref == github.event.repository.default_branch) ||
+      (github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     needs: [typecheck]
     env:

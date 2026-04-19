@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable */
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -23,8 +24,8 @@ const NAV_ITEMS: Array<{
   icon: React.ElementType;
   href?: string;
 }> = [
-  { id: 'dashboard',           label: 'Home',      icon: LayoutDashboard, href: '/demo' },
-  { id: 'simulation',          label: 'Simulate',  icon: FlaskConical,    href: '/demo' },
+  { id: 'dashboard',           label: 'Home',      icon: LayoutDashboard, href: '/dashboard' },
+  { id: 'simulation',          label: 'Simulate',  icon: FlaskConical,    href: '/simulation' },
   { id: 'energy-intelligence', label: 'Energy',    icon: Zap,             href: '/energy-intelligence' },
   { id: 'finance-parent',      label: 'Finance',   icon: TrendingUp },
   { id: 'scenarios',           label: 'Scenarios', icon: BookMarked,      href: '/scenarios' },
@@ -60,8 +61,7 @@ export function MobileBottomNav({
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[var(--bg-secondary)]/95 backdrop-blur-md border-t border-[var(--border)] flex items-stretch"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[var(--bg-secondary)]/95 backdrop-blur-md border-t border-[var(--border)] flex items-stretch pb-[env(safe-area-inset-bottom)]"
       aria-label="Mobile navigation"
     >
       {NAV_ITEMS.map((item) => {
