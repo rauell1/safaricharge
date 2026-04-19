@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 126 | `rollback/refactor-code-structure-for-improved-r-2026-04-19-8c6f6f1` | `8c6f6f1` | Refactor code structure for improved readability and maintainability | 2026-04-19 |
 | 125 | `rollback/feat-implement-authentication-middlewa-2026-04-19-a5a5129` | `a5a5129` | feat: implement authentication middleware for session management and user validation | 2026-04-19 |
 | 124 | `rollback/fix-remove-flex-direction-column-from-2026-04-18-53841af` | `53841af` | fix: remove flex-direction column from .page-shell to restore horizontal text flow | 2026-04-18 |
 | 123 | `rollback/fix-clean-magic-link-login-page-full-v-2026-04-18-9aef114` | `9aef114` | fix: clean magic-link login page — full viewport, no scroll, back-to-home link | 2026-04-18 |
@@ -1315,6 +1316,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/feat-implement-authentication-middlewa-2026-04-19-a5a5129`
 - **Commit**: `a5a512995c47528202e8ae42c8b85b8e3891cc1e`
 - **Subject**: feat: implement authentication middleware for session management and user validation
+- **Date**: 2026-04-19
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #126 — `rollback/refactor-code-structure-for-improved-r-2026-04-19-8c6f6f1`
+
+- **Branch**: `rollback/refactor-code-structure-for-improved-r-2026-04-19-8c6f6f1`
+- **Commit**: `8c6f6f15de5f44d5a9dc070102e5e121c4d2ced1`
+- **Subject**: Refactor code structure for improved readability and maintainability
 - **Date**: 2026-04-19
 - **Auto-generated**: yes (by update-rollback.yml)
 
