@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 127 | `rollback/fix-add-packagemanager-field-to-packag-2026-04-19-ad059e8` | `ad059e8` | fix: add packageManager field to package.json | 2026-04-19 |
 | 126 | `rollback/refactor-code-structure-for-improved-r-2026-04-19-8c6f6f1` | `8c6f6f1` | Refactor code structure for improved readability and maintainability | 2026-04-19 |
 | 125 | `rollback/feat-implement-authentication-middlewa-2026-04-19-a5a5129` | `a5a5129` | feat: implement authentication middleware for session management and user validation | 2026-04-19 |
 | 124 | `rollback/fix-remove-flex-direction-column-from-2026-04-18-53841af` | `53841af` | fix: remove flex-direction column from .page-shell to restore horizontal text flow | 2026-04-18 |
@@ -1325,6 +1326,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/refactor-code-structure-for-improved-r-2026-04-19-8c6f6f1`
 - **Commit**: `8c6f6f15de5f44d5a9dc070102e5e121c4d2ced1`
 - **Subject**: Refactor code structure for improved readability and maintainability
+- **Date**: 2026-04-19
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #127 — `rollback/fix-add-packagemanager-field-to-packag-2026-04-19-ad059e8`
+
+- **Branch**: `rollback/fix-add-packagemanager-field-to-packag-2026-04-19-ad059e8`
+- **Commit**: `ad059e83361a62537b46b1ec4779b8facff78492`
+- **Subject**: fix: add packageManager field to package.json
 - **Date**: 2026-04-19
 - **Auto-generated**: yes (by update-rollback.yml)
 
