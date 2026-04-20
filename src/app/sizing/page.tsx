@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import presetsData from '../../../forecasting/kenya-irradiance-presets.json';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,7 +23,7 @@ import {
   type SimulatorSizingPayload,
   type SystemType,
 } from '@/lib/pv-sizing';
-import { PageContainer, SectionHeader, ContentGrid, FormSection } from '@/components/layout/PageContainer';
+import { PageContainer, SectionHeader, ContentGrid } from '@/components/layout/PageContainer';
 
 type KenyaIrradiancePresetsFile = {
   source: {
@@ -91,6 +90,7 @@ export default function SizingPage() {
           description="Kenya county irradiance presets. Estimate system capacity and load a scenario into the simulator."
         />
         <ContentGrid columns={2} gap="lg">
+          <Card className="dashboard-card">
           <CardHeader>
             <CardTitle>System Inputs</CardTitle>
           </CardHeader>
@@ -195,6 +195,5 @@ export default function SizingPage() {
         </ContentGrid>
       </div>
     </PageContainer>
-  );
   );
 }
