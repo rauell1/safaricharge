@@ -240,8 +240,7 @@ function DetailDrawer({ scenario, baseline, onClose, onLoad, onDuplicate, onDele
      * via the CSS variable fallback and the full screen is covered as expected.
      */
     <div
-      className="fixed inset-y-0 right-0 z-50 flex items-end md:items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-      style={{ left: 'var(--sidebar-width, 0px)' }}
+      className="fixed inset-y-0 right-0 left-0 md:left-[var(--sidebar-width)] z-50 flex items-end md:items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <div

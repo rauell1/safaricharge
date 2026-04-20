@@ -151,11 +151,11 @@ export function DashboardSidebar({
   }> = [
     { id: 'dashboard',           label: 'Dashboard',              icon: LayoutDashboard,  href: '/dashboard', description: 'Live operations overview' },
     { id: 'simulation',          label: 'Simulation',             icon: FlaskConical,     href: '/simulation', description: 'Run and inspect system behavior' },
-    { id: 'configuration',       label: 'System Config',          icon: SlidersHorizontal, description: 'Tune solar, battery and EV settings' },
+    { id: 'configuration',       label: 'System Config',          icon: SlidersHorizontal, href: '/configuration', description: 'Tune solar, battery and EV settings' },
     { id: 'energy-intelligence', label: 'Energy Intelligence',    icon: Zap,              href: '/energy-intelligence', description: 'AI analysis of energy performance' },
     { id: 'scenarios',           label: 'Scenarios',              icon: BookMarked,       href: '/scenarios', description: 'Saved cases and comparisons' },
-    { id: 'recommendation',      label: 'Recommendations',        icon: Lightbulb,        description: 'Sizing and optimization guidance' },
-    { id: 'ai-assistant',        label: 'AI Assistant',           icon: Bot,              description: 'Ask questions about system data' },
+    { id: 'recommendation',      label: 'Recommendations',        icon: Lightbulb,        href: '/recommendation', description: 'Sizing and optimization guidance' },
+    { id: 'ai-assistant',        label: 'AI Assistant',           icon: Bot,              href: '/ai-assistant', description: 'Ask questions about system data' },
   ];
 
   const financeNavItems: Array<{

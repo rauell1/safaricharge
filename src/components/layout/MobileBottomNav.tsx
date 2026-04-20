@@ -29,8 +29,8 @@ const NAV_ITEMS: Array<{
   { id: 'energy-intelligence', label: 'Energy',    icon: Zap,             href: '/energy-intelligence' },
   { id: 'finance-parent',      label: 'Finance',   icon: TrendingUp },
   { id: 'scenarios',           label: 'Scenarios', icon: BookMarked,      href: '/scenarios' },
-  { id: 'recommendation',      label: 'Recs',      icon: Lightbulb,       href: '/demo' },
-  { id: 'ai-assistant',        label: 'AI',        icon: Bot,             href: '/demo' },
+  { id: 'recommendation',      label: 'Recs',      icon: Lightbulb,       href: '/recommendation' },
+  { id: 'ai-assistant',        label: 'AI',        icon: Bot,             href: '/ai-assistant' },
 ];
 
 const FINANCE_CHILD_ITEMS: Array<{
@@ -163,16 +163,6 @@ export function MobileBottomNav({
                   </div>
                 )}
               </>
-            ) : item.href === '/demo' ? (
-              <button
-                type="button"
-                onClick={() => onSectionChange?.(item.id)}
-                className="flex-1 flex items-stretch focus:outline-none active:bg-[var(--bg-card-muted)]/40 transition-colors"
-                aria-label={item.label}
-                aria-current={isActive ? 'page' : undefined}
-              >
-                {inner}
-              </button>
             ) : (
               <Link
                 href={item.href}
