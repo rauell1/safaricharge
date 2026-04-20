@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 132 | `rollback/merge-branch-main-of-https-github-com-2026-04-20-aea790d` | `aea790d` | Merge branch 'main' of https://github.com/rauell1/safaricharge | 2026-04-20 |
 | 131 | `rollback/merge-branch-main-of-https-github-com-2026-04-20-53993a8` | `53993a8` | Merge branch 'main' of https://github.com/rauell1/safaricharge | 2026-04-20 |
 | 130 | `rollback/merge-branch-main-of-https-github-com-2026-04-20-b49f481` | `b49f481` | Merge branch 'main' of https://github.com/rauell1/safaricharge | 2026-04-20 |
 | 129 | `rollback/feat-refactor-sizingpage-layout-and-in-2026-04-20-e479bc6` | `e479bc6` | feat: Refactor SizingPage layout and introduce new form components | 2026-04-20 |
@@ -1374,6 +1375,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 - **Branch**: `rollback/merge-branch-main-of-https-github-com-2026-04-20-53993a8`
 - **Commit**: `53993a8ba053dac28d16007807bbcbf05c86d601`
+- **Subject**: Merge branch 'main' of https://github.com/rauell1/safaricharge
+- **Date**: 2026-04-20
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #132 — `rollback/merge-branch-main-of-https-github-com-2026-04-20-aea790d`
+
+- **Branch**: `rollback/merge-branch-main-of-https-github-com-2026-04-20-aea790d`
+- **Commit**: `aea790dced89aa58b17fae4b1684dc10ee1077cc`
 - **Subject**: Merge branch 'main' of https://github.com/rauell1/safaricharge
 - **Date**: 2026-04-20
 - **Auto-generated**: yes (by update-rollback.yml)
