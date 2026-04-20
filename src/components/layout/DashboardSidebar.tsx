@@ -247,7 +247,7 @@ export function DashboardSidebar({
                       )}
                     >
                       {item.href ? (
-                        <Link href={item.href} prefetch={false} className="w-full">
+                        <Link href={item.href} className="w-full">
                           {inner}
                         </Link>
                       ) : (
@@ -312,7 +312,7 @@ export function DashboardSidebar({
                       )}
                     >
                       {item.href ? (
-                        <Link href={item.href} prefetch={false} className="w-full">
+                        <Link href={item.href} className="w-full">
                           {inner}
                         </Link>
                       ) : (

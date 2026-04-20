@@ -607,11 +607,11 @@ export default function FinancialPage() {
                 </div>
                 <div>
                   <p className="text-base font-semibold text-[var(--text-primary)]">
-                    Configure &amp; Calculate
+                    Ready to run the model
                   </p>
                   <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-xs">
-                    Adjust inputs on the left, then click <strong>Calculate</strong> to run the
-                    financial model.
+                    Update the inputs on the left, then click <strong>Calculate</strong> to generate
+                    projected cash flow, NPV, and payback metrics.
                   </p>
                 </div>
                 {loading && (

@@ -653,11 +653,11 @@ export default function EnergyIntelligencePage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-3 w-full lg:w-auto lg:flex-none lg:max-w-md">
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-3 w-full lg:w-[26rem] lg:min-w-[22rem] lg:flex-none">
                 {heroCards.map((card) => (
                   <div
                     key={card.title}
-                    className="rounded-xl border border-[var(--border)] bg-white/5 backdrop-blur-sm p-4 shadow-sm"
+                    className="min-w-0 rounded-xl border border-[var(--border)] bg-white/5 backdrop-blur-sm p-4 shadow-sm"
                   >
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
                       {card.title}

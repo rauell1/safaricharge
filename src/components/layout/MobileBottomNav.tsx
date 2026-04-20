@@ -149,7 +149,6 @@ export function MobileBottomNav({
                         <Link
                           key={child.id}
                           href={child.href ?? '/financial'}
-                          prefetch={false}
                           className={cn(
                             'block w-full rounded-lg px-3 py-2 text-left text-xs transition-colors',
                             isChildActive
@@ -177,7 +176,6 @@ export function MobileBottomNav({
             ) : (
               <Link
                 href={item.href}
-                prefetch={false}
                 className="flex-1 flex items-stretch focus:outline-none active:bg-[var(--bg-card-muted)]/40 transition-colors"
                 aria-label={item.label}
                 aria-current={isActive ? 'page' : undefined}
