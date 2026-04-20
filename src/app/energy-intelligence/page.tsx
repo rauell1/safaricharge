@@ -616,11 +616,11 @@ export default function EnergyIntelligencePage() {
                     EV fleet charging
                   </span>
                 </div>
-                <div className="w-full min-w-[20rem] space-y-2 lg:min-w-[28rem]">
+                <div className="sc-readable-copy space-y-2">
                   <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight">
                     Energy Storage Insights
                   </h1>
-                  <p className="max-w-xl text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed break-normal whitespace-normal">
+                  <p className="text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed break-normal whitespace-normal">
                     Grid performance, storage operations, and EV charging stitched together at 15-minute resolution.
                     Tune the scenario, watch the chart respond, and keep resilience in view.
                   </p>

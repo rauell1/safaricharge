@@ -174,6 +174,25 @@ p, li {
   word-break: normal;
 }
 
+/* Hard safety rails for stubborn narrow-column text collapse */
+.sc-readable-copy {
+  display: block !important;
+  width: min(100%, 40rem) !important;
+  max-width: 40rem !important;
+  min-width: 18rem !important;
+  white-space: normal !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+.sc-readable-panel {
+  display: block !important;
+  width: min(100%, 24rem) !important;
+  max-width: 24rem !important;
+  min-width: 18rem !important;
+  align-self: center !important;
+}
+
 /* ─── Card surface ───────────────────────────────────────────── */
 .dashboard-card {
   background: var(--bg-card);

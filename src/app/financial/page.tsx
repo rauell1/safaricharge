@@ -605,11 +605,11 @@ export default function FinancialPage() {
                 <div className="h-16 w-16 rounded-full bg-[var(--battery-soft)] flex items-center justify-center">
                   <Calculator className="h-7 w-7 text-[var(--battery)]" />
                 </div>
-                <div className="w-full max-w-sm">
+                <div className="sc-readable-panel">
                   <p className="text-base font-semibold text-[var(--text-primary)]">
                     Ready to run the model
                   </p>
-                  <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-xs">
+                  <p className="text-sm text-[var(--text-secondary)] mt-1">
                     Update the inputs on the left, then click <strong>Calculate</strong> to generate
                     projected cash flow, NPV, and payback metrics.
                   </p>
