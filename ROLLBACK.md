@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 138 | `rollback/fix-routes-add-missing-ai-assistant-re-2026-04-20-0fa6f35` | `0fa6f35` | fix(routes): add missing ai-assistant recommendation and configuration pages | 2026-04-20 |
 | 137 | `rollback/merge-branch-main-of-https-github-com-2026-04-20-4cdb3f7` | `4cdb3f7` | Merge branch 'main' of https://github.com/rauell1/safaricharge | 2026-04-20 |
 | 136 | `rollback/merge-branch-main-of-https-github-com-2026-04-20-d69ba90` | `d69ba90` | Merge branch 'main' of https://github.com/rauell1/safaricharge | 2026-04-20 |
 | 135 | `rollback/fix-layout-harden-hero-and-planner-col-2026-04-20-40a5c17` | `40a5c17` | fix(layout): harden hero and planner column widths to prevent text collapse | 2026-04-20 |
@@ -1435,6 +1436,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/merge-branch-main-of-https-github-com-2026-04-20-4cdb3f7`
 - **Commit**: `4cdb3f7dfa9eeba19c6a55446e12df326decc2a5`
 - **Subject**: Merge branch 'main' of https://github.com/rauell1/safaricharge
+- **Date**: 2026-04-20
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #138 — `rollback/fix-routes-add-missing-ai-assistant-re-2026-04-20-0fa6f35`
+
+- **Branch**: `rollback/fix-routes-add-missing-ai-assistant-re-2026-04-20-0fa6f35`
+- **Commit**: `0fa6f351ca0caf9bd8fb881c9196bb97ad5cdf8f`
+- **Subject**: fix(routes): add missing ai-assistant recommendation and configuration pages
 - **Date**: 2026-04-20
 - **Auto-generated**: yes (by update-rollback.yml)
 
