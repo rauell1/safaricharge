@@ -605,7 +605,7 @@ export default function FinancialPage() {
                 <div className="h-16 w-16 rounded-full bg-[var(--battery-soft)] flex items-center justify-center">
                   <Calculator className="h-7 w-7 text-[var(--battery)]" />
                 </div>
-                <div>
+                <div className="w-full max-w-xs">
                   <p className="text-base font-semibold text-[var(--text-primary)]">
                     Ready to run the model
                   </p>

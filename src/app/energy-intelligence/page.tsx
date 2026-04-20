@@ -603,7 +603,7 @@ export default function EnergyIntelligencePage() {
           />
           <div className="relative px-5 sm:px-8 py-7 sm:py-8">
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,26rem)] lg:items-center">
-              <div className="min-w-0 max-w-none lg:max-w-2xl space-y-4">
+              <div className="w-full min-w-0 max-w-none space-y-4 lg:max-w-2xl">
                 <div className="flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
                   <span className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-white/5 px-3 py-1 text-[var(--text-primary)]/90">
                     <Zap className="h-3.5 w-3.5 text-[var(--solar)]" />
@@ -616,7 +616,7 @@ export default function EnergyIntelligencePage() {
                     EV fleet charging
                   </span>
                 </div>
-                <div className="space-y-2">
+                <div className="w-full space-y-2">
                   <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight">
                     Energy Storage Insights
                   </h1>
