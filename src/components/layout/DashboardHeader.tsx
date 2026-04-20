@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   Calendar,
@@ -37,6 +37,16 @@ interface DashboardHeaderProps {
   onSaveScenario?: (name: string) => void;
   locationName?: string;
   notificationCount?: number;
+  notifications?: HeaderNotification[];
+}
+
+export interface HeaderNotification {
+  id: string;
+  title: string;
+  description: string;
+  level?: 'info' | 'warning' | 'critical';
+  actionLabel?: string;
+  onAction?: () => void;
 }
 
 export function DashboardHeader({
@@ -48,9 +58,11 @@ export function DashboardHeader({
   onSaveScenario,
   locationName = 'Nairobi',
   notificationCount = 0,
+  notifications = [],
 }: DashboardHeaderProps) {
   const [saveOpen, setSaveOpen] = useState(false);
   const [scenarioName, setScenarioName] = useState('');
+  const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(new Set());
 
   const dateLabel = currentDate.toLocaleDateString('en-US', {
     weekday: 'long',
@@ -69,6 +81,28 @@ export function DashboardHeader({
     onSaveScenario?.(name);
     setScenarioName('');
     setSaveOpen(false);
+  };
+
+  const unreadNotifications = useMemo(
+    () => notifications.filter((n) => !readNotificationIds.has(n.id)),
+    [notifications, readNotificationIds]
+  );
+
+  const effectiveNotificationCount = notifications.length > 0
+    ? unreadNotifications.length
+    : notificationCount;
+
+  const markAllAsRead = () => {
+    if (notifications.length === 0) return;
+    setReadNotificationIds(new Set(notifications.map((n) => n.id)));
+  };
+
+  const markAsRead = (id: string) => {
+    setReadNotificationIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
   };
 
   /* ── shared icon-button class ── */
@@ -241,10 +275,10 @@ export function DashboardHeader({
               <button
                 className={iconBtn}
                 style={iconBtnStyle}
-                aria-label={`Notifications (${notificationCount})`}
+                aria-label={`Notifications (${effectiveNotificationCount})`}
               >
                 <Bell className="h-4 w-4" />
-                {notificationCount > 0 && (
+                {effectiveNotificationCount > 0 && (
                   <Badge
                     className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-[10px] font-bold rounded-full border-2"
                     style={{
@@ -253,7 +287,7 @@ export function DashboardHeader({
                       borderColor: 'var(--bg-secondary)',
                     }}
                   >
-                    {notificationCount > 9 ? '9+' : notificationCount}
+                    {effectiveNotificationCount > 9 ? '9+' : effectiveNotificationCount}
                   </Badge>
                 )}
               </button>
@@ -266,12 +300,67 @@ export function DashboardHeader({
                 color: 'var(--text-primary)',
               }}
             >
-              <p className="text-sm font-semibold mb-1">Notifications</p>
-              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                {notificationCount === 0
-                  ? 'No new notifications'
-                  : `${notificationCount} new notification${notificationCount > 1 ? 's' : ''}`}
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold">Notifications</p>
+                {unreadNotifications.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={markAllAsRead}
+                    className="text-[11px] font-medium text-[var(--battery)] hover:opacity-80"
+                  >
+                    Mark all read
+                  </button>
+                )}
+              </div>
+
+              {notifications.length === 0 ? (
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  No notifications yet.
+                </p>
+              ) : unreadNotifications.length === 0 ? (
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  You are all caught up.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {unreadNotifications.slice(0, 6).map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2"
+                    >
+                      <p className="text-xs font-semibold text-[var(--text-primary)]">
+                        {item.title}
+                      </p>
+                      <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+                        {item.description}
+                      </p>
+                      {(item.actionLabel || true) && (
+                        <div className="mt-2 flex items-center gap-2">
+                          {item.actionLabel && item.onAction && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                item.onAction?.();
+                                markAsRead(item.id);
+                              }}
+                              className="text-[11px] font-medium text-[var(--battery)] hover:opacity-80"
+                            >
+                              {item.actionLabel}
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => markAsRead(item.id)}
+                            className="text-[11px] font-medium text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
+                          >
+                            Dismiss
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </PopoverContent>
           </Popover>
 

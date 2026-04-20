@@ -575,6 +575,66 @@ function DemoDashboardView({
     alert('Chart export is available from the report modal in the dashboard view.');
   }, []);
 
+  const headerNotifications = useMemo(() => {
+    const items: Array<{
+      id: string;
+      title: string;
+      description: string;
+      actionLabel?: string;
+      onAction?: () => void;
+    }> = [];
+
+    if (!isAutoMode) {
+      items.push({
+        id: 'manual-mode',
+        title: 'Manual mode enabled',
+        description: 'Automation is paused. Some optimizations are not being applied.',
+        actionLabel: 'Open Simulation',
+        onAction: () => onNavigateSection('simulation'),
+      });
+    }
+
+    if (minuteData.length < 24) {
+      items.push({
+        id: 'warmup',
+        title: 'Simulation warming up',
+        description: 'Live results become more stable after more time-step data is collected.',
+        actionLabel: 'View Live Results',
+        onAction: () => onNavigateSection('financial'),
+      });
+    }
+
+    if ((batteryNode.soc ?? 100) < 20) {
+      items.push({
+        id: 'battery-low',
+        title: 'Battery charge is low',
+        description: `Current SoC is ${(batteryNode.soc ?? 0).toFixed(0)}%. Consider adjusting charge strategy.`,
+        actionLabel: 'Get Recommendation',
+        onAction: () => onNavigateSection('recommendation'),
+      });
+    }
+
+    if ((stats.totalGridImportKWh ?? 0) > (stats.totalSolarKWh ?? 0) * 0.8 && minuteData.length > 0) {
+      items.push({
+        id: 'grid-heavy',
+        title: 'High grid dependency detected',
+        description: 'Grid imports are high relative to solar production in this run.',
+        actionLabel: 'Review Config',
+        onAction: () => onNavigateSection('configuration'),
+      });
+    }
+
+    if (items.length === 0) {
+      items.push({
+        id: 'all-good',
+        title: 'System status normal',
+        description: 'No immediate action required. Performance indicators are within expected range.',
+      });
+    }
+
+    return items;
+  }, [batteryNode.soc, isAutoMode, minuteData.length, onNavigateSection, stats.totalGridImportKWh, stats.totalSolarKWh]);
+
   return (
     <>
       <style jsx global>{`
@@ -598,7 +658,7 @@ function DemoDashboardView({
           onDownload={() => setIsReportOpen(true)}
           onSaveScenario={handleSaveScenario}
           locationName={activeLocation.displayName}
-          notificationCount={3}
+          notifications={headerNotifications}
         />
 
         <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">

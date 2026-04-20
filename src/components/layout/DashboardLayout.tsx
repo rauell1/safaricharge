@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { DashboardSidebar, type DashboardSection, type SidebarContextMetric } from './DashboardSidebar';
 import { MobileBottomNav } from './MobileBottomNav';
@@ -18,6 +19,30 @@ export function DashboardLayout({
   onSectionChange,
   contextualMetrics = [],
 }: DashboardLayoutProps) {
+  const router = useRouter();
+
+  useEffect(() => {
+    const routes = [
+      '/dashboard',
+      '/simulation',
+      '/configuration',
+      '/energy-intelligence',
+      '/scenarios',
+      '/recommendation',
+      '/ai-assistant',
+      '/live-results',
+      '/financial',
+    ];
+
+    routes.forEach((route) => {
+      try {
+        router.prefetch(route);
+      } catch {
+        // Ignore prefetch failures; navigation still works via normal routing.
+      }
+    });
+  }, [router]);
+
   return (
     <SidebarProvider defaultOpen={true}>
       {/* Bottom tab bar — mobile only, rendered outside the flex row so it
