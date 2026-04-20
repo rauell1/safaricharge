@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 134 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-20-a81706d` | `a81706d` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-04-20 |
 | 133 | `rollback/merge-branch-main-of-https-github-com-2026-04-20-f6b8a09` | `f6b8a09` | Merge branch 'main' of https://github.com/rauell1/safaricharge | 2026-04-20 |
 | 132 | `rollback/merge-branch-main-of-https-github-com-2026-04-20-aea790d` | `aea790d` | Merge branch 'main' of https://github.com/rauell1/safaricharge | 2026-04-20 |
 | 131 | `rollback/merge-branch-main-of-https-github-com-2026-04-20-53993a8` | `53993a8` | Merge branch 'main' of https://github.com/rauell1/safaricharge | 2026-04-20 |
@@ -1395,6 +1396,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/merge-branch-main-of-https-github-com-2026-04-20-f6b8a09`
 - **Commit**: `f6b8a0936136194313debf373a3e5621af8219fd`
 - **Subject**: Merge branch 'main' of https://github.com/rauell1/safaricharge
+- **Date**: 2026-04-20
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #134 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-20-a81706d`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-20-a81706d`
+- **Commit**: `a81706d01bad85de8819bf4bc5e50635508a845b`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-04-20
 - **Auto-generated**: yes (by update-rollback.yml)
 
