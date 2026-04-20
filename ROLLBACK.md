@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 137 | `rollback/merge-branch-main-of-https-github-com-2026-04-20-4cdb3f7` | `4cdb3f7` | Merge branch 'main' of https://github.com/rauell1/safaricharge | 2026-04-20 |
 | 136 | `rollback/merge-branch-main-of-https-github-com-2026-04-20-d69ba90` | `d69ba90` | Merge branch 'main' of https://github.com/rauell1/safaricharge | 2026-04-20 |
 | 135 | `rollback/fix-layout-harden-hero-and-planner-col-2026-04-20-40a5c17` | `40a5c17` | fix(layout): harden hero and planner column widths to prevent text collapse | 2026-04-20 |
 | 134 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-20-a81706d` | `a81706d` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-04-20 |
@@ -1424,6 +1425,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 - **Branch**: `rollback/merge-branch-main-of-https-github-com-2026-04-20-d69ba90`
 - **Commit**: `d69ba90caf66483829cd5aa997967b807196b275`
+- **Subject**: Merge branch 'main' of https://github.com/rauell1/safaricharge
+- **Date**: 2026-04-20
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #137 — `rollback/merge-branch-main-of-https-github-com-2026-04-20-4cdb3f7`
+
+- **Branch**: `rollback/merge-branch-main-of-https-github-com-2026-04-20-4cdb3f7`
+- **Commit**: `4cdb3f7dfa9eeba19c6a55446e12df326decc2a5`
 - **Subject**: Merge branch 'main' of https://github.com/rauell1/safaricharge
 - **Date**: 2026-04-20
 - **Auto-generated**: yes (by update-rollback.yml)
