@@ -17,6 +17,7 @@ function computeDailySolarKwh(performanceRatio: number): number {
     loadProfiles: {},
     evIsHome: {},
     solarMultiplier: 1,
+    monthIndex: 0,
   };
 
   const solarData: SolarData = {

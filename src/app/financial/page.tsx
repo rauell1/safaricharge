@@ -24,6 +24,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { KpiCard } from '@/components/charts/KpiCard';
+import { PageContainer, SectionHeader, ContentGrid, FormSection } from '@/components/layout/PageContainer';
 import type { FinancialSnapshot } from '@/lib/financial-dashboard';
 
 /** Years between battery replacements (LFP/NMC typical cycle life at ~80% DoD) */

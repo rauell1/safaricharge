@@ -89,6 +89,8 @@ export interface DayScenario {
   evIsHome: Record<string, boolean>;
   /** Daily solar-generation multiplier (weather perturbation 0.5–1.05). */
   solarMultiplier: number;
+  /** Simulated calendar month (0-based, JS Date-compatible). */
+  monthIndex: number;
 }
 
 /** Result returned by calculateInstantPhysics for each tick. */
@@ -177,7 +179,13 @@ export function generateDayScenario(
   // Solar multiplier: clear (1.0), partial cloud (0.65–0.9), overcast (0.4–0.65)
   const solarMultiplier = dailyRandom(date, 42, 0.55, 1.05);
 
-  return { totalLoadHourlyKw, loadProfiles, evIsHome, solarMultiplier };
+  return {
+    totalLoadHourlyKw,
+    loadProfiles,
+    evIsHome,
+    solarMultiplier,
+    monthIndex: date.getMonth(),
+  };
 }
 
 function buildLoadProfile(
@@ -288,7 +296,7 @@ export function calculateInstantPhysics(
   // ------------------------------------------------------------------
   // 1. Solar generation — use monthly avg kWh/kWp if available
   // ------------------------------------------------------------------
-  const month = new Date().getMonth(); // 0-based
+  const month = scenario.monthIndex;
   const monthlyTemp = solarData.monthlyAvgTemp?.[month] ?? 25;
 
   const irradianceFrac = solarFraction(timeOfDay);

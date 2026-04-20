@@ -24,6 +24,7 @@ import {
   type SimulatorSizingPayload,
   type SystemType,
 } from '@/lib/pv-sizing';
+import { PageContainer, SectionHeader, ContentGrid, FormSection } from '@/components/layout/PageContainer';
 
 type KenyaIrradiancePresetsFile = {
   source: {
@@ -83,19 +84,13 @@ export default function SizingPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[var(--bg-primary)] px-4 py-8 lg:px-8">
-      <div className="mx-auto max-w-5xl space-y-6">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-[var(--text-primary)]">PV Sizing Calculator</h1>
-            <p className="text-sm text-[var(--text-secondary)]">Kenya county irradiance presets with simulator handoff</p>
-          </div>
-          <Link href="/">
-            <Button variant="outline">Back to Dashboard</Button>
-          </Link>
-        </div>
-
-        <Card className="dashboard-card">
+    <PageContainer maxWidth="xl" padding="lg">
+      <div className="space-y-8">
+        <SectionHeader
+          title="PV Sizing Calculator"
+          description="Kenya county irradiance presets. Estimate system capacity and load a scenario into the simulator."
+        />
+        <ContentGrid columns={2} gap="lg">
           <CardHeader>
             <CardTitle>System Inputs</CardTitle>
           </CardHeader>
@@ -197,7 +192,9 @@ export default function SizingPage() {
             </p>
           </CardContent>
         </Card>
+        </ContentGrid>
       </div>
-    </main>
+    </PageContainer>
+  );
   );
 }

@@ -142,12 +142,12 @@ export function DashboardHeader({
         }}
       >
         {/* Left: trigger + date + location */}
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           <SidebarTrigger
             className={iconBtn}
             style={iconBtnStyle}
           />
-          <div className="space-y-1 min-w-0">
+          <div className="space-y-1 min-w-0 flex-1">
             <div
               className="flex items-center gap-2 text-sm font-semibold truncate"
               style={{ color: 'var(--text-primary)' }}
@@ -161,7 +161,7 @@ export function DashboardHeader({
             </div>
 
             <span
-              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer transition-all hover:opacity-80"
               style={{
                 background: 'var(--solar-soft)',
                 border: '1px solid rgba(245,158,11,0.20)',
@@ -172,13 +172,13 @@ export function DashboardHeader({
               aria-label={`Change location: ${locationName}`}
             >
               <MapPin className="h-3 w-3" />
-              {locationName}
+              <span className="truncate">{locationName}</span>
             </span>
           </div>
         </div>
 
         {/* Right: actions */}
-        <div className="flex items-center gap-2 flex-wrap justify-end">
+        <div className="flex items-center gap-2 md:gap-1 flex-wrap justify-end md:justify-start">
           <SubscriptionBadge />
 
           {/* Get Recommendation */}

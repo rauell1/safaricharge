@@ -57,34 +57,44 @@ export function resampleTo5MinBuckets(
     }
   }
 
-  // Convert accumulators → averaged values, or null for empty buckets
-  const raw: (GraphDataPoint | null)[] = buckets.map((acc, i) => {
-    if (acc === null) return null;
+  const result: GraphDataPoint[] = new Array(SLOT_COUNT);
+  let firstKnownIdx = -1;
+  let lastSolar = 0;
+  let lastLoad = 0;
+  let lastBatSoc = 0;
+
+  // Build points and forward-fill trailing gaps after first known point.
+  for (let i = 0; i < SLOT_COUNT; i++) {
     const timeOfDay = (i * SLOT_MINUTES) / 60;
-    return {
-      timeOfDay,
-      solar: acc.solarSum / acc.count,
-      load: acc.loadSum / acc.count,
-      batSoc: acc.socSum / acc.count,
+    const acc = buckets[i];
+    if (acc) {
+      lastSolar = acc.solarSum / acc.count;
+      lastLoad = acc.loadSum / acc.count;
+      lastBatSoc = acc.socSum / acc.count;
+      if (firstKnownIdx === -1) firstKnownIdx = i;
+      result[i] = { timeOfDay, solar: lastSolar, load: lastLoad, batSoc: lastBatSoc };
+    } else if (firstKnownIdx !== -1) {
+      result[i] = { timeOfDay, solar: lastSolar, load: lastLoad, batSoc: lastBatSoc };
+    }
+  }
+
+  // Back-fill leading gaps (simulation hasn't reached those slots yet).
+  if (firstKnownIdx === -1) {
+    for (let i = 0; i < SLOT_COUNT; i++) {
+      result[i] = { timeOfDay: (i * SLOT_MINUTES) / 60, solar: 0, load: 0, batSoc: 50 };
+    }
+    return result;
+  }
+
+  const firstKnown = result[firstKnownIdx];
+  for (let i = 0; i < firstKnownIdx; i++) {
+    result[i] = {
+      timeOfDay: (i * SLOT_MINUTES) / 60,
+      solar: firstKnown.solar,
+      load: firstKnown.load,
+      batSoc: firstKnown.batSoc,
     };
-  });
-
-  // Forward-fill empty slots using last known value, then back-fill leading gaps
-  let last: GraphDataPoint | null = null;
-  const filled: (GraphDataPoint | null)[] = raw.map((pt, i) => {
-    if (pt !== null) { last = pt; return pt; }
-    if (last !== null) return { ...last, timeOfDay: (i * SLOT_MINUTES) / 60 };
-    return null; // still leading gap
-  });
-
-  // Back-fill leading gaps (simulation hasn't reached those slots yet)
-  let firstKnown: GraphDataPoint | null = null;
-  for (const pt of filled) { if (pt !== null) { firstKnown = pt; break; } }
-  const result: GraphDataPoint[] = filled.map((pt, i) => {
-    if (pt !== null) return pt;
-    const base = firstKnown ?? { timeOfDay: 0, solar: 0, load: 0, batSoc: 50 };
-    return { ...base, timeOfDay: (i * SLOT_MINUTES) / 60 };
-  });
+  }
 
   return result;
 }
@@ -104,7 +114,7 @@ export function resampleTo5MinBucketsProgressive(
   let lastReal = 0;
   for (let i = 0; i < minuteData.length; i++) {
     const tod = minutePointToTimeOfDay(minuteData[i]);
-    const slotIdx = Math.min(SLOT_COUNT - 1, Math.floor((tod * 60) / 5));
+    const slotIdx = Math.min(SLOT_COUNT - 1, Math.floor((tod * 60) / SLOT_MINUTES));
     if (slotIdx > lastReal) lastReal = slotIdx;
   }
   // Return slots 0..lastReal + a few extra for smooth trailing edge

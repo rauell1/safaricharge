@@ -110,6 +110,13 @@ export interface Accumulators {
   feedInEarnings: number;
 }
 
+export interface SimulationTickUpdate {
+  nodeUpdates: Partial<Record<NodeType, Partial<EnergyNode>>>;
+  flows: EnergyFlow[];
+  minutePoint: MinuteDataPoint;
+  accumulatorDeltas: Partial<Accumulators>;
+}
+
 // Time range filter options
 export type TimeRange = 'today' | 'week' | 'month' | 'year' | 'all';
 
@@ -236,6 +243,7 @@ interface EnergySystemState {
   setTimeRange: (range: TimeRange) => void;
   updateAccumulators: (updates: Partial<Accumulators>) => void;
   addMinuteData: (data: MinuteDataPoint) => void;
+  applySimulationTick: (update: SimulationTickUpdate) => void;
   setSimulationState: (updates: {
     currentDate?: Date;
     timeOfDay?: number;
@@ -400,13 +408,55 @@ export const useEnergySystemStore = create<EnergySystemState>()(
 
   addMinuteData: (data) =>
     set((state) => {
-      const minuteData = [...state.minuteData, data];
-      if (minuteData.length <= MAX_MINUTE_DATA_POINTS) {
-        return { minuteData };
+      if (state.minuteData.length < MAX_MINUTE_DATA_POINTS) {
+        return { minuteData: [...state.minuteData, data] };
       }
 
+      // Keep only the most recent N-1 points, then append the newest point.
+      // This avoids creating an oversized temporary array on overflow.
       return {
-        minuteData: minuteData.slice(minuteData.length - MAX_MINUTE_DATA_POINTS),
+        minuteData: [
+          ...state.minuteData.slice(state.minuteData.length - (MAX_MINUTE_DATA_POINTS - 1)),
+          data,
+        ],
+      };
+    }),
+
+  applySimulationTick: (update) =>
+    set((state) => {
+      const nextNodes = { ...state.nodes };
+      for (const [nodeType, nodeUpdate] of Object.entries(update.nodeUpdates) as [NodeType, Partial<EnergyNode>][]) {
+        if (!nodeUpdate) continue;
+        nextNodes[nodeType] = {
+          ...nextNodes[nodeType],
+          ...nodeUpdate,
+        };
+      }
+
+      const minuteData =
+        state.minuteData.length < MAX_MINUTE_DATA_POINTS
+          ? [...state.minuteData, update.minutePoint]
+          : [
+              ...state.minuteData.slice(state.minuteData.length - (MAX_MINUTE_DATA_POINTS - 1)),
+              update.minutePoint,
+            ];
+
+      const accumulators: Accumulators = {
+        solar: state.accumulators.solar + (update.accumulatorDeltas.solar ?? 0),
+        savings: state.accumulators.savings + (update.accumulatorDeltas.savings ?? 0),
+        gridImport: state.accumulators.gridImport + (update.accumulatorDeltas.gridImport ?? 0),
+        carbonOffset: state.accumulators.carbonOffset + (update.accumulatorDeltas.carbonOffset ?? 0),
+        batDischargeKwh:
+          state.accumulators.batDischargeKwh + (update.accumulatorDeltas.batDischargeKwh ?? 0),
+        feedInEarnings:
+          state.accumulators.feedInEarnings + (update.accumulatorDeltas.feedInEarnings ?? 0),
+      };
+
+      return {
+        nodes: nextNodes,
+        flows: update.flows,
+        minuteData,
+        accumulators,
       };
     }),
 
