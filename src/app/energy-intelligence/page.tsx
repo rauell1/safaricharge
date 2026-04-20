@@ -602,8 +602,8 @@ export default function EnergyIntelligencePage() {
             }}
           />
           <div className="relative px-5 sm:px-8 py-7 sm:py-8">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="space-y-4 max-w-2xl min-w-0 flex-1">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,26rem)] lg:items-center">
+              <div className="min-w-0 max-w-none lg:max-w-2xl space-y-4">
                 <div className="flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
                   <span className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-white/5 px-3 py-1 text-[var(--text-primary)]/90">
                     <Zap className="h-3.5 w-3.5 text-[var(--solar)]" />
@@ -620,7 +620,7 @@ export default function EnergyIntelligencePage() {
                   <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight">
                     Energy Storage Insights
                   </h1>
-                  <p className="text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed max-w-xl">
+                  <p className="max-w-xl text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed break-normal whitespace-normal">
                     Grid performance, storage operations, and EV charging stitched together at 15-minute resolution.
                     Tune the scenario, watch the chart respond, and keep resilience in view.
                   </p>
@@ -653,17 +653,17 @@ export default function EnergyIntelligencePage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-3 w-full lg:w-[26rem] lg:min-w-[22rem] lg:flex-none">
+              <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 lg:w-[26rem] lg:min-w-[22rem]">
                 {heroCards.map((card) => (
                   <div
                     key={card.title}
                     className="min-w-0 rounded-xl border border-[var(--border)] bg-white/5 backdrop-blur-sm p-4 shadow-sm"
                   >
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
+                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] break-normal whitespace-normal">
                       {card.title}
                     </p>
-                    <p className="text-lg font-bold text-[var(--text-primary)] tabular-nums">{card.value}</p>
-                    <p className="text-xs text-[var(--text-secondary)] mt-1.5">{card.hint}</p>
+                    <p className="text-lg font-bold text-[var(--text-primary)] tabular-nums break-normal whitespace-normal">{card.value}</p>
+                    <p className="mt-1.5 text-xs text-[var(--text-secondary)] break-normal whitespace-normal">{card.hint}</p>
                   </div>
                 ))}
               </div>
