@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 129 | `rollback/feat-refactor-sizingpage-layout-and-in-2026-04-20-e479bc6` | `e479bc6` | feat: Refactor SizingPage layout and introduce new form components | 2026-04-20 |
 | 128 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-20-33ad9ef` | `33ad9ef` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-04-20 |
 | 127 | `rollback/fix-add-packagemanager-field-to-packag-2026-04-19-ad059e8` | `ad059e8` | fix: add packageManager field to package.json | 2026-04-19 |
 | 126 | `rollback/refactor-code-structure-for-improved-r-2026-04-19-8c6f6f1` | `8c6f6f1` | Refactor code structure for improved readability and maintainability | 2026-04-19 |
@@ -1345,6 +1346,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-20-33ad9ef`
 - **Commit**: `33ad9efa563841aeaa85b14b9200a2d39ee5231e`
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-04-20
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #129 — `rollback/feat-refactor-sizingpage-layout-and-in-2026-04-20-e479bc6`
+
+- **Branch**: `rollback/feat-refactor-sizingpage-layout-and-in-2026-04-20-e479bc6`
+- **Commit**: `e479bc6ac1163a17586fbb733f198af9ea7860d0`
+- **Subject**: feat: Refactor SizingPage layout and introduce new form components
 - **Date**: 2026-04-20
 - **Auto-generated**: yes (by update-rollback.yml)
 
