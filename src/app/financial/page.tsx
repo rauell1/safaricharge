@@ -284,9 +284,9 @@ export default function FinancialPage() {
       </div>
 
       <div className="px-4 sm:px-6 pb-10 mt-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(24rem,1fr)]">
           {/* ═══ Left: Inputs ════════════════════════════════════════ */}
-          <div className="space-y-4">
+          <div className="w-full min-w-0 space-y-4">
             <Card className="dashboard-card">
               <CardHeader className="px-4 sm:px-6 pt-4 pb-2 flex flex-row items-center gap-2">
                 <Calculator className="h-4 w-4 text-[var(--battery)]" />
@@ -601,11 +601,11 @@ export default function FinancialPage() {
                 </Card>
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
+              <div className="flex w-full flex-col items-center justify-center gap-4 py-24 text-center">
                 <div className="h-16 w-16 rounded-full bg-[var(--battery-soft)] flex items-center justify-center">
                   <Calculator className="h-7 w-7 text-[var(--battery)]" />
                 </div>
-                <div className="w-full max-w-xs">
+                <div className="w-full max-w-sm">
                   <p className="text-base font-semibold text-[var(--text-primary)]">
                     Ready to run the model
                   </p>
