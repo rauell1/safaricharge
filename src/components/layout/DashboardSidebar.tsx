@@ -131,6 +131,7 @@ export function DashboardSidebar({
     if (activeSection && activeSection !== 'dashboard') return activeSection;
     if (!pathname) return 'dashboard';
     if (pathname.startsWith('/energy-intelligence'))                               return 'energy-intelligence';
+    if (pathname.startsWith('/live-results'))                                      return 'financial';
     if (pathname.startsWith('/financial'))                                         return 'financial-model';
     if (pathname.startsWith('/scenarios'))                                         return 'scenarios';
     if (pathname.startsWith('/demo/simulation') || pathname.includes('simulation')) return 'simulation';
@@ -165,7 +166,7 @@ export function DashboardSidebar({
     href?: string;
     description?: string;
   }> = [
-    { id: 'financial',       label: 'Live Results', icon: DollarSign, description: 'Uses your running simulation data' },
+    { id: 'financial',       label: 'Live Results', icon: DollarSign, href: '/live-results', description: 'Uses your running simulation data' },
     { id: 'financial-model', label: 'Planner',      icon: TrendingUp, href: '/financial', description: 'Standalone what-if model' },
   ];
 

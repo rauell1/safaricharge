@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   FlaskConical,
@@ -38,7 +38,7 @@ const FINANCE_CHILD_ITEMS: Array<{
   label: string;
   href?: string;
 }> = [
-  { id: 'financial', label: 'Live Results' },
+  { id: 'financial', label: 'Live Results', href: '/live-results' },
   { id: 'financial-model', label: 'Planner', href: '/financial' },
 ];
 
@@ -51,7 +51,6 @@ export function MobileBottomNav({
   activeSection = 'dashboard',
   onSectionChange,
 }: MobileBottomNavProps) {
-  const router = useRouter();
   const pathname = usePathname();
   const [isFinanceMenuOpen, setIsFinanceMenuOpen] = useState(false);
 
@@ -69,7 +68,8 @@ export function MobileBottomNav({
         const isFinanceActive =
           activeSection === 'financial' ||
           activeSection === 'financial-model' ||
-          !!pathname?.startsWith('/financial');
+          !!pathname?.startsWith('/financial') ||
+          !!pathname?.startsWith('/live-results');
         const isActive = isFinanceParent
           ? isFinanceActive || isFinanceMenuOpen
           : activeSection === item.id ||
@@ -119,31 +119,6 @@ export function MobileBottomNav({
                       const isChildActive =
                         activeSection === child.id ||
                         (!!child.href && !!pathname?.startsWith(child.href));
-
-                      if (child.id === 'financial') {
-                        return (
-                          <button
-                            key={child.id}
-                            type="button"
-                            className={cn(
-                              'w-full rounded-lg px-3 py-2 text-left text-xs transition-colors',
-                              isChildActive
-                                ? 'bg-[var(--bg-card)] text-[var(--battery)]'
-                                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-card-muted)]'
-                            )}
-                            onClick={() => {
-                              setIsFinanceMenuOpen(false);
-                              if (pathname?.startsWith('/demo') && onSectionChange) {
-                                onSectionChange('financial');
-                                return;
-                              }
-                              router.push('/demo');
-                            }}
-                          >
-                            {child.label}
-                          </button>
-                        );
-                      }
 
                       return (
                         <Link
