@@ -34,6 +34,7 @@ import {
 import { useEnergySystemStore, type SavedScenario, type FinancialSnapshot, type LocationCoordinatesSnapshot } from '@/stores/energySystemStore';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
+import { clearExternalUploadActive, markExternalUploadActive } from '@/lib/external-upload-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -150,6 +151,8 @@ function RenameCell({ id, name, isBaseline, onRename, onDetailClick }: RenameCel
           }}
           onBlur={commit}
           autoFocus
+          title="Rename scenario"
+          placeholder="Rename scenario"
           className="bg-[var(--bg-card-muted)] border border-[var(--border)] text-[var(--text-primary)] text-sm rounded px-2 py-0.5 w-40 focus:outline-none focus:ring-1 focus:ring-[var(--solar)]"
         />
       </span>
@@ -342,21 +345,30 @@ function ImportDialog({ open, onOpenChange, onImport }: ImportDialogProps) {
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    markExternalUploadActive(true);
     const reader = new FileReader();
     reader.onload = (ev) => {
       const result = ev.target?.result;
       if (typeof result === 'string') setText(result);
+      clearExternalUploadActive();
+    };
+    reader.onerror = () => {
+      clearExternalUploadActive();
     };
     reader.readAsText(file);
     e.target.value = '';
   };
 
   const handleSubmit = () => {
+    markExternalUploadActive(true);
     onImport(text.trim());
+    clearExternalUploadActive();
     setText('');
   };
 
   const handleClose = () => {
+    clearExternalUploadActive();
     setText('');
     onOpenChange(false);
   };
@@ -379,6 +391,8 @@ function ImportDialog({ open, onOpenChange, onImport }: ImportDialogProps) {
             ref={fileRef}
             type="file"
             accept="application/json,.json"
+            title="Upload scenario JSON file"
+            aria-label="Upload scenario JSON file"
             className="hidden"
             onChange={handleFile}
           />

@@ -2,7 +2,6 @@
 /* eslint-disable */
 
 import React, { useMemo, useState } from 'react';
-import Image from 'next/image';
 import {
   LayoutDashboard,
   FlaskConical,
@@ -63,9 +62,6 @@ const TONE: Record<SidebarContextMetric['tone'], { dot: string; bg: string; text
   ev:      { dot: 'bg-[var(--ev)]',       bg: 'bg-[var(--ev-soft)]',          text: 'text-[var(--ev)]' },
   neutral: { dot: 'bg-[var(--text-muted)]', bg: 'bg-[var(--bg-card-muted)]', text: 'text-[var(--text-secondary)]' },
 };
-
-const LOGO_URL =
-  'https://drive.google.com/uc?export=view&id=17VYQ0H4enZMSZGs9SeH5xTPaOsnQjdrM';
 
 // ── Governance section — lazy: hooks only mount when panel is open ─────────────
 // Keeps useEnergyNode / useMinuteData out of the top-level sidebar render
@@ -180,14 +176,10 @@ export function DashboardSidebar({
         className="px-4 py-5 border-b border-[var(--border)]"
       >
         <div className="flex items-center justify-center">
-          <Image
-            src={LOGO_URL}
+          <img
+            src="/logo.png"
             alt="SafariCharge"
-            width={176}
-            height={68}
-            priority
-            unoptimized
-            className="object-contain w-full max-w-[176px] h-auto"
+            className="h-20 w-auto object-contain"
           />
         </div>
       </SidebarHeader>

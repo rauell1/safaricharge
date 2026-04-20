@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { markExternalUploadActive, clearExternalUploadActive } from '@/lib/external-upload-guard';
 import { SOLAR_COMPONENT_CATALOG, type SolarComponentCategory, type SolarComponentEntry } from '@/lib/solar-component-catalog';
 
 type SolarComponentLibraryProps = {
@@ -126,6 +127,7 @@ export function SolarComponentLibrary({ standalone = false }: SolarComponentLibr
   }, [isMobile, selected?.id]);
 
   const submitUploads = async () => {
+    markExternalUploadActive(true);
     setStatus('Uploading...');
     const formData = new FormData();
 
@@ -139,21 +141,25 @@ export function SolarComponentLibrary({ standalone = false }: SolarComponentLibr
       });
     }
 
-    const response = await fetch('/api/component-library', {
-      method: 'POST',
-      body: formData,
-    });
+    try {
+      const response = await fetch('/api/component-library', {
+        method: 'POST',
+        body: formData,
+      });
 
-    if (!response.ok) {
-      setStatus('Upload failed. Please check the JSON format and file types.');
-      return;
+      if (!response.ok) {
+        setStatus('Upload failed. Please check the JSON format and file types.');
+        return;
+      }
+
+      const payload = await response.json();
+      setStatus(`Uploaded ${payload.uploadedFiles} file(s), imported ${payload.importedCount} catalog entries.`);
+      setImportJson('');
+      setFiles(null);
+      await refresh();
+    } finally {
+      clearExternalUploadActive();
     }
-
-    const payload = await response.json();
-    setStatus(`Uploaded ${payload.uploadedFiles} file(s), imported ${payload.importedCount} catalog entries.`);
-    setImportJson('');
-    setFiles(null);
-    await refresh();
   };
 
   void categoryCounts;
@@ -273,10 +279,10 @@ export function SolarComponentLibrary({ standalone = false }: SolarComponentLibr
                   </div>
                 ) : (
                   filtered.map((entry) => (
-                    <button
+                    <div
                       key={entry.id}
                       onClick={() => setSelectedId(entry.id)}
-                      className={`w-full rounded-2xl border px-4 py-3 text-left transition-all ${selected?.id === entry.id ? 'border-[var(--battery)] bg-[var(--battery-soft)] shadow-[0_12px_30px_rgba(16,185,129,0.12)]' : 'border-[var(--border)] bg-[var(--bg-card)] hover:border-[var(--border-hover)] hover:bg-[var(--bg-card-hover)]'}`}
+                      className={`w-full rounded-2xl border px-4 py-3 text-left transition-all cursor-pointer ${selected?.id === entry.id ? 'border-[var(--battery)] bg-[var(--battery-soft)] shadow-[0_12px_30px_rgba(16,185,129,0.12)]' : 'border-[var(--border)] bg-[var(--bg-card)] hover:border-[var(--border-hover)] hover:bg-[var(--bg-card-hover)]'}`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 space-y-1">
@@ -305,7 +311,7 @@ export function SolarComponentLibrary({ standalone = false }: SolarComponentLibr
                           <span className="text-[10px] text-[var(--text-tertiary)]">{selected?.id === entry.id ? 'Selected' : 'Tap to inspect'}</span>
                         </div>
                       </div>
-                    </button>
+                    </div>
                   ))
                 )}
               </div>
@@ -398,6 +404,8 @@ export function SolarComponentLibrary({ standalone = false }: SolarComponentLibr
                 <input
                   type="file"
                   multiple
+                  title="Upload component library files"
+                  aria-label="Upload component library files"
                   onChange={(event) => setFiles(event.target.files)}
                   className="block w-full text-xs text-[var(--text-secondary)]"
                 />
