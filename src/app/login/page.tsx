@@ -36,9 +36,9 @@ function MicrosoftIcon() {
 function Divider() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '6px 0' }}>
-      <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
-      <span style={{ color: 'rgba(255,255,255,0.26)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>or continue with email</span>
-      <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+      <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+      <span style={{ color: 'var(--text-tertiary)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>or continue with email</span>
+      <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
     </div>
   )
 }
@@ -46,15 +46,15 @@ function Divider() {
 function Field({ id, label, icon, ...props }: any) {
   return (
     <div>
-      <label htmlFor={id} style={{ display: 'block', color: 'rgba(255,255,255,0.44)', fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>
+      <label htmlFor={id} style={{ display: 'block', color: 'var(--text-secondary)', fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>
         {label}
       </label>
       <div style={{ position: 'relative' }}>
-        <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.28)', pointerEvents: 'none' }}>{icon}</div>
+        <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>{icon}</div>
         <input
           id={id}
           {...props}
-          style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.11)', borderRadius: 10, padding: '11px 14px 11px 42px', color: '#e2e8f0', fontSize: 14, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' }}
+          style={{ width: '100%', background: 'var(--bg-card-muted)', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 14px 11px 42px', color: 'var(--text-primary)', fontSize: 14, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' }}
         />
       </div>
     </div>
@@ -155,18 +155,18 @@ function LoginForm() {
   }
   const oauthBtn: React.CSSProperties = {
     width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-    border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '11px',
-    fontSize: 14, fontWeight: 500, cursor: 'pointer', background: 'rgba(255,255,255,0.04)', color: '#e2e8f0',
+    border: '1px solid var(--border)', borderRadius: 10, padding: '11px',
+    fontSize: 14, fontWeight: 500, cursor: 'pointer', background: 'var(--bg-card-muted)', color: 'var(--text-primary)',
     transition: 'background 0.15s',
   }
 
   return (
     <>
       <div style={{ marginBottom: 20 }}>
-        <h1 style={{ color: '#f0fdf8', fontSize: 24, fontWeight: 700, letterSpacing: '-0.03em', marginBottom: 6, lineHeight: 1.2 }}>
+        <h1 style={{ color: 'var(--text-primary)', fontSize: 24, fontWeight: 700, letterSpacing: '-0.03em', marginBottom: 6, lineHeight: 1.2 }}>
           {mode === 'signin' ? 'Sign in to SafariCharge' : 'Create your account'}
         </h1>
-        <p style={{ color: 'rgba(255,255,255,0.42)', fontSize: 13, lineHeight: 1.55 }}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.55 }}>
           {mode === 'signin'
             ? 'Sessions expire after 15 minutes of inactivity for security.'
             : 'Clean energy professionals workspace. Your details personalise your experience.'}
@@ -176,10 +176,10 @@ function LoginForm() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 18 }}>
         {(['signin', 'register'] as Mode[]).map(t => (
           <button key={t} onClick={() => { setMode(t); reset() }} style={{
-            borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)', padding: '9px',
+            borderRadius: 8, border: '1px solid var(--border)', padding: '9px',
             fontSize: 12, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase',
             background: mode === t ? 'rgba(16,185,129,0.18)' : 'rgba(255,255,255,0.03)',
-            color: mode === t ? '#d1fae5' : 'rgba(255,255,255,0.4)', cursor: 'pointer',
+            color: mode === t ? '#d1fae5' : 'var(--text-secondary)', cursor: 'pointer',
           }}>
             {t === 'signin' ? 'Sign in' : 'Create account'}
           </button>
@@ -208,7 +208,7 @@ function LoginForm() {
           <div>
             <Field id="password" label="Password" type="password" autoComplete="current-password" placeholder="Your password" value={password} onChange={(e: any) => setPassword(e.target.value)} icon={<LockKeyhole size={15} />} required />
             <div style={{ textAlign: 'right', marginTop: 6 }}>
-              <Link href="/forgot-password" style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12, textDecoration: 'none' }}>Forgot password?</Link>
+              <Link href="/forgot-password" style={{ color: 'var(--text-tertiary)', fontSize: 12, textDecoration: 'none' }}>Forgot password?</Link>
             </div>
           </div>
           <button type="submit" disabled={loading || !!oauthLoading} style={{ ...primaryBtn, opacity: loading ? 0.7 : 1 }}>
@@ -228,7 +228,7 @@ function LoginForm() {
           <button type="submit" disabled={loading || !!oauthLoading} style={{ ...primaryBtn, opacity: loading ? 0.7 : 1 }}>
             {loading ? <><Loader2 style={{ width: 15, height: 15, animation: 'spin 1s linear infinite' }} />Creating account…</> : 'Create account'}
           </button>
-          <p style={{ color: 'rgba(255,255,255,0.22)', fontSize: 11.5, lineHeight: 1.55 }}>
+          <p style={{ color: 'var(--text-tertiary)', fontSize: 11.5, lineHeight: 1.55 }}>
             By creating an account you agree to SafariCharge&apos;s terms of service and privacy policy.
           </p>
         </form>
@@ -244,26 +244,26 @@ export default function LoginPage() {
         html, body { overflow: hidden; height: 100%; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
-      <div style={{ position: 'fixed', inset: 0, background: '#03070f', fontFamily: "'Inter', system-ui, sans-serif", display: 'flex', flexDirection: 'column' }}>
+      <div style={{ position: 'fixed', inset: 0, background: 'var(--bg-primary)', fontFamily: "'Inter', system-ui, sans-serif", display: 'flex', flexDirection: 'column' }}>
         <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px)', backgroundSize: '64px 64px', pointerEvents: 'none' }} />
         <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 55% 45% at 50% 0%, rgba(16,185,129,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
-        <header style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', height: 60, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <header style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', height: 60, borderBottom: '1px solid var(--border)' }}>
           <BrandLogo href="/landing" size="sm" />
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <ThemeToggle />
-            <Link href="/landing" style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.35)', fontSize: 13, textDecoration: 'none' }}>
+            <Link href="/landing" style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-tertiary)', fontSize: 13, textDecoration: 'none' }}>
               <ArrowLeft width={14} height={14} /> Back to home
             </Link>
           </div>
         </header>
         <div style={{ position: 'relative', zIndex: 10, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', overflowY: 'auto' }}>
-          <div style={{ width: '100%', maxWidth: 480, borderRadius: 18, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.025)', backdropFilter: 'blur(24px)', boxShadow: '0 32px 80px rgba(0,0,0,0.45)', padding: '32px 28px' }}>
-            <Suspense fallback={<div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>Loading…</div>}>
+          <div style={{ width: '100%', maxWidth: 480, borderRadius: 18, border: '1px solid var(--border)', background: 'var(--bg-card-muted)', backdropFilter: 'blur(24px)', boxShadow: '0 32px 80px rgba(0,0,0,0.18)', padding: '32px 28px' }}>
+            <Suspense fallback={<div style={{ color: 'var(--text-tertiary)', fontSize: 14 }}>Loading…</div>}>
               <LoginForm />
             </Suspense>
           </div>
         </div>
-        <footer style={{ position: 'relative', zIndex: 10, textAlign: 'center', padding: '12px', borderTop: '1px solid rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.16)', fontSize: 12 }}>
+        <footer style={{ position: 'relative', zIndex: 10, textAlign: 'center', padding: '12px', borderTop: '1px solid var(--border)', color: 'var(--text-tertiary)', fontSize: 12 }}>
           © {new Date().getFullYear()} SafariCharge · Secure access for clean energy professionals
         </footer>
       </div>
