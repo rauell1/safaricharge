@@ -1,10 +1,13 @@
 'use client';
 
+import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import {
   Sun, Zap, BarChart3, Battery, ArrowRight, Shield,
   Globe, TrendingDown, Check, Activity, ChevronRight, Cpu, Leaf, Quote, ArrowUpRight,
 } from 'lucide-react';
+import { BrandLogo } from '@/components/brand-logo';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 const features = [
   {
@@ -143,10 +146,22 @@ const testimonials = [
 ];
 
 export default function LandingPage() {
+  const { resolvedTheme } = useTheme();
+  const isLight = resolvedTheme === 'light';
+
+  const shell = {
+    pageBg: isLight ? 'var(--site-page-bg)' : '#03070f',
+    pageFg: isLight ? 'var(--site-page-fg)' : '#f8fafc',
+    muted: isLight ? 'var(--site-page-muted)' : 'rgba(255,255,255,0.45)',
+    soft: isLight ? 'var(--site-page-soft)' : 'rgba(255,255,255,0.2)',
+    border: isLight ? 'var(--site-page-border)' : 'rgba(255,255,255,0.05)',
+    surface: isLight ? 'var(--site-page-surface)' : 'rgba(255,255,255,0.02)',
+  };
+
   return (
     <div
       className="min-h-screen text-white antialiased"
-      style={{ background: '#03070f', fontFamily: "'Inter', system-ui, sans-serif" }}
+      style={{ background: shell.pageBg, color: shell.pageFg, fontFamily: "'Inter', system-ui, sans-serif" }}
     >
       <style jsx>{`
         @keyframes proPulse {
@@ -172,8 +187,9 @@ export default function LandingPage() {
         aria-hidden
         className="pointer-events-none fixed inset-0 z-0"
         style={{
-          backgroundImage:
-            'linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px)',
+          backgroundImage: isLight
+            ? 'linear-gradient(rgba(16,185,129,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.05) 1px, transparent 1px)'
+            : 'linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px)',
           backgroundSize: '80px 80px',
         }}
       />
@@ -183,7 +199,9 @@ export default function LandingPage() {
         className="pointer-events-none fixed inset-x-0 top-0 z-0"
         style={{
           height: '50vh',
-          background: 'radial-gradient(ellipse 60% 40% at 50% -5%, rgba(16,185,129,0.18) 0%, transparent 70%)',
+          background: isLight
+            ? 'radial-gradient(ellipse 60% 40% at 50% -5%, rgba(16,185,129,0.12) 0%, transparent 70%)'
+            : 'radial-gradient(ellipse 60% 40% at 50% -5%, rgba(16,185,129,0.18) 0%, transparent 70%)',
         }}
       />
 
@@ -191,21 +209,14 @@ export default function LandingPage() {
       <header
         className="fixed top-0 inset-x-0 z-50"
         style={{
-          background: 'rgba(3,7,15,0.8)',
+          background: isLight ? 'rgba(255,255,255,0.82)' : 'rgba(3,7,15,0.8)',
           backdropFilter: 'blur(24px) saturate(180%)',
           WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-          borderBottom: '1px solid rgba(255,255,255,0.05)',
+          borderBottom: `1px solid ${shell.border}`,
         }}
       >
         <div className="mx-auto max-w-7xl px-6 sm:px-10 h-16 flex items-center justify-between">
-          <Link href="/landing" className="flex items-center gap-2.5">
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-label="SafariCharge logo">
-              <circle cx="14" cy="14" r="13" stroke="rgba(16,185,129,0.35)" strokeWidth="1" />
-              <path d="M14 7 L17.5 13 L21 13 L14 21 L16 15 L12 15 Z" fill="#10b981" opacity="0.9" />
-              <circle cx="14" cy="14" r="2" fill="#10b981" />
-            </svg>
-            <span className="font-semibold text-sm tracking-tight" style={{ color: '#e2e8f0' }}>SafariCharge</span>
-          </Link>
+          <BrandLogo href="/landing" />
 
           <nav className="hidden md:flex items-center gap-1">
             {[
@@ -227,6 +238,7 @@ export default function LandingPage() {
           </nav>
 
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Link
               href="/demo"
               className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-lg text-white/55 border border-white/10 hover:text-white/90 hover:border-white/20 transition-colors"
@@ -252,7 +264,7 @@ export default function LandingPage() {
             <span
               className="inline-flex items-center gap-2 text-xs font-semibold px-3.5 py-1.5 rounded-full"
               style={{
-                background: 'rgba(16,185,129,0.08)',
+                background: isLight ? 'rgba(16,185,129,0.10)' : 'rgba(16,185,129,0.08)',
                 border: '1px solid rgba(16,185,129,0.22)',
                 color: '#34d399',
               }}
@@ -271,7 +283,7 @@ export default function LandingPage() {
             style={{
               fontSize: 'clamp(2.8rem, 7vw, 5.5rem)',
               letterSpacing: '-0.04em',
-              color: '#f0fdf8',
+              color: isLight ? '#102418' : '#f0fdf8',
             }}
           >
             Solar intelligence
@@ -292,7 +304,7 @@ export default function LandingPage() {
             className="text-center lg:text-left mx-auto lg:mx-0 mb-10"
             style={{
               fontSize: 'clamp(1rem, 2vw, 1.15rem)',
-              color: 'rgba(255,255,255,0.45)',
+              color: shell.muted,
               maxWidth: '52ch',
               lineHeight: 1.75,
             }}
@@ -310,16 +322,16 @@ export default function LandingPage() {
                   key={kpi.label}
                   className="rounded-2xl p-4"
                   style={{
-                    background: 'rgba(255,255,255,0.02)',
+                    background: shell.surface,
                     border: '1px solid rgba(16,185,129,0.15)',
                     boxShadow: '0 0 24px rgba(16,185,129,0.08)',
                   }}
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>{kpi.label}</span>
+                    <span className="text-xs" style={{ color: shell.muted }}>{kpi.label}</span>
                     <Icon className="w-4 h-4" style={{ color: '#10b981' }} />
                   </div>
-                  <div className="text-lg font-semibold" style={{ color: '#f0fdf8', letterSpacing: '-0.02em' }}>{kpi.value}</div>
+                  <div className="text-lg font-semibold" style={{ color: shell.pageFg, letterSpacing: '-0.02em' }}>{kpi.value}</div>
                 </div>
               );
             })}
@@ -342,7 +354,7 @@ export default function LandingPage() {
           </div>
 
           {/* Trust line */}
-          <p className="text-center lg:text-left text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>
+          <p className="text-center lg:text-left text-xs" style={{ color: shell.soft }}>
             Built for Nairobi&rsquo;s C&amp;I solar sites · KPLC TOU-aware · Open source
           </p>
         </div>
@@ -351,18 +363,18 @@ export default function LandingPage() {
       {/* ── Stats ── */}
       <section
         id="stats"
-        style={{ borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+        style={{ borderTop: `1px solid ${shell.border}`, borderBottom: `1px solid ${shell.border}` }}
       >
         <div className="mx-auto max-w-7xl">
           <div
             className="grid grid-cols-2 md:grid-cols-4"
-            style={{ borderLeft: '1px solid rgba(255,255,255,0.05)' }}
+            style={{ borderLeft: `1px solid ${shell.border}` }}
           >
             {stats.map((s) => (
               <div
                 key={s.label}
                 className="py-12 px-8 text-center"
-                style={{ borderRight: '1px solid rgba(255,255,255,0.05)' }}
+                style={{ borderRight: `1px solid ${shell.border}` }}
               >
                 <div
                   className="font-black tabular-nums mb-1"
@@ -374,8 +386,8 @@ export default function LandingPage() {
                 >
                   {s.value}
                 </div>
-                <div className="text-sm font-medium mb-1" style={{ color: 'rgba(255,255,255,0.65)' }}>{s.label}</div>
-                <div className="text-xs mb-3" style={{ color: 'rgba(255,255,255,0.28)' }}>{s.sub}</div>
+                <div className="text-sm font-medium mb-1" style={{ color: isLight ? '#274233' : 'rgba(255,255,255,0.65)' }}>{s.label}</div>
+                <div className="text-xs mb-3" style={{ color: shell.soft }}>{s.sub}</div>
                 <svg className="mx-auto" width="64" height="20" viewBox="0 0 60 20" fill="none" aria-hidden>
                   <polyline points={s.sparkline} fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>

@@ -4,6 +4,8 @@ import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Building2, Loader2, Phone, UserRound } from 'lucide-react'
+import { BrandLogo } from '@/components/brand-logo'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 function Field({ id, label, icon, ...props }: any) {
   return (
@@ -95,14 +97,8 @@ export default function OnboardingPage() {
         <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px)', backgroundSize: '64px 64px', pointerEvents: 'none' }} />
         <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 55% 45% at 50% 0%, rgba(16,185,129,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
         <header style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', padding: '0 24px', height: 60, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <svg width="22" height="22" viewBox="0 0 28 28" fill="none" aria-label="SafariCharge">
-              <circle cx="14" cy="14" r="13" stroke="rgba(16,185,129,0.35)" strokeWidth="1" />
-              <path d="M14 7 L17.5 13 L21 13 L14 21 L16 15 L12 15 Z" fill="#10b981" opacity="0.9" />
-              <circle cx="14" cy="14" r="2" fill="#10b981" />
-            </svg>
-            <span style={{ color: '#e2e8f0', fontWeight: 600, fontSize: 14 }}>SafariCharge</span>
-          </div>
+          <BrandLogo href="/landing" size="sm" />
+          <ThemeToggle />
         </header>
         <div style={{ position: 'relative', zIndex: 10, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
           <div style={{ width: '100%', maxWidth: 440, borderRadius: 18, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.025)', backdropFilter: 'blur(24px)', boxShadow: '0 32px 80px rgba(0,0,0,0.45)', padding: '32px 28px' }}>

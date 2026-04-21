@@ -2,6 +2,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
 import { Inter } from "next/font/google";
 import type { Metadata } from "next";
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 const inter = Inter({
@@ -32,7 +33,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} overflow-x-hidden`}>
+    <html lang="en" className={`${inter.variable} overflow-x-hidden`} suppressHydrationWarning>
       <head>
         {/* SVG favicon — scales perfectly from 16px to 256px */}
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -43,9 +44,11 @@ export default function RootLayout({
         <meta name="msapplication-TileColor" content="#01696f" />
       </head>
       <body className={`${inter.className} overflow-x-hidden`}>
-        {children}
-        <Analytics />
-        <SpeedInsights />
+        <ThemeProvider>
+          {children}
+          <Analytics />
+          <SpeedInsights />
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -100,6 +100,61 @@
   /* --font-inter is injected by src/app/layout.tsx via next/font */
   --font-sans:    var(--font-inter), system-ui, -apple-system, sans-serif;
   --font-display: var(--font-inter), system-ui, sans-serif;
+
+  /* Shared website shell tokens */
+  --site-page-bg: #03070f;
+  --site-page-fg: #f8fafc;
+  --site-page-muted: rgba(255,255,255,0.42);
+  --site-page-soft: rgba(255,255,255,0.16);
+  --site-page-border: rgba(255,255,255,0.05);
+  --site-page-surface: rgba(255,255,255,0.025);
+}
+
+.light {
+  color-scheme: light;
+
+  --background: 210 40% 98%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  --primary: 152 66% 34%;
+  --primary-foreground: 144 86% 96%;
+  --secondary: 210 40% 94%;
+  --secondary-foreground: 222 47% 11%;
+  --muted: 210 40% 94%;
+  --muted-foreground: 215 16% 42%;
+  --accent: 44 95% 48%;
+  --accent-foreground: 219 33% 10%;
+  --border-color: 214 32% 86%;
+  --input: 214 32% 90%;
+
+  --bg-primary: #f5f7f4;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8faf8;
+  --bg-card-muted: rgba(7,18,14,0.04);
+
+  --border: rgba(7,18,14,0.10);
+  --border-strong: rgba(7,18,14,0.16);
+  --border-hover: rgba(7,18,14,0.22);
+
+  --text-primary: #102418;
+  --text-secondary: #4b6356;
+  --text-tertiary: #6b7f74;
+  --text-muted: #8b9b92;
+
+  --site-page-bg: #f5f7f4;
+  --site-page-fg: #102418;
+  --site-page-muted: rgba(16,36,24,0.68);
+  --site-page-soft: rgba(16,36,24,0.18);
+  --site-page-border: rgba(16,36,24,0.10);
+  --site-page-surface: rgba(255,255,255,0.86);
+}
+
+.dark {
+  color-scheme: dark;
 }
 
 /* ─── Base ───────────────────────────────────────────────────── */
@@ -112,6 +167,10 @@ html, body {
   overflow-x: hidden;
   width: 100%;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+body {
+  background: var(--bg-primary);
 }
 
 main, section, article, header, footer {

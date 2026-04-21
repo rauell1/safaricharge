@@ -27,6 +27,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { SubscriptionBadge } from '@/components/SubscriptionBadge';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 interface DashboardHeaderProps {
   currentDate: Date;
@@ -214,6 +215,7 @@ export function DashboardHeader({
         {/* Right: actions */}
         <div className="flex items-center gap-2 md:gap-1 flex-wrap justify-end md:justify-start">
           <SubscriptionBadge />
+          <ThemeToggle />
 
           {/* Get Recommendation */}
           {onRecommendationClick && (
