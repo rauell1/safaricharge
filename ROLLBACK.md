@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 141 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-21-928e688` | `928e688` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-04-21 |
 | 140 | `rollback/feat-implement-animatedloadingstate-co-2026-04-20-57fafc6` | `57fafc6` | feat: implement AnimatedLoadingState component and refactor loading screens to use it feat: add external upload guard with session storage management feat: enhance DashboardLayout with external upload notifications and state management fix: update DashboardSidebar logo implementation | 2026-04-20 |
 | 139 | `rollback/merge-branch-main-of-https-github-com-2026-04-20-2ba304b` | `2ba304b` | Merge branch 'main' of https://github.com/rauell1/safaricharge | 2026-04-20 |
 | 138 | `rollback/fix-routes-add-missing-ai-assistant-re-2026-04-20-0fa6f35` | `0fa6f35` | fix(routes): add missing ai-assistant recommendation and configuration pages | 2026-04-20 |
@@ -1466,6 +1467,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Commit**: `57fafc649e333a93437dc12534df7d0564bf59cd`
 - **Subject**: feat: implement AnimatedLoadingState component and refactor loading screens to use it feat: add external upload guard with session storage management feat: enhance DashboardLayout with external upload notifications and state management fix: update DashboardSidebar logo implementation
 - **Date**: 2026-04-20
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #141 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-21-928e688`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-21-928e688`
+- **Commit**: `928e6886483b25b40b559a6f25223edf942fd1a1`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-04-21
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
