@@ -37,8 +37,6 @@ export default function RootLayout({
       <head>
         {/* SVG favicon — scales perfectly from 16px to 256px */}
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        {/* Apple home screen icon */}
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.svg" />
         {/* Theme colour matches SafariCharge teal */}
         <meta name="theme-color" content="#01696f" />
         <meta name="msapplication-TileColor" content="#01696f" />
