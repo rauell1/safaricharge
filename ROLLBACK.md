@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 144 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-22-58a7b62` | `58a7b62` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-04-22 |
 | 143 | `rollback/merge-branch-main-of-https-github-com-2026-04-21-c31658f` | `c31658f` | Merge branch 'main' of https://github.com/rauell1/safaricharge | 2026-04-21 |
 | 142 | `rollback/feat-implement-theme-provider-and-togg-2026-04-21-91244f6` | `91244f6` | feat: implement theme provider and toggle components; update styles for light and dark modes | 2026-04-21 |
 | 141 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-21-928e688` | `928e688` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-04-21 |
@@ -1496,6 +1497,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Commit**: `c31658f913088920dd96f6e2afe587fba65ededf`
 - **Subject**: Merge branch 'main' of https://github.com/rauell1/safaricharge
 - **Date**: 2026-04-21
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #144 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-22-58a7b62`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-22-58a7b62`
+- **Commit**: `58a7b62a3525b1d75ca8c7466ef03be0415de55a`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-04-22
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
