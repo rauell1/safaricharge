@@ -25,7 +25,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { SubscriptionBadge } from '@/components/SubscriptionBadge';
-// ThemeToggle removed from header — lives in sidebar footer only
 
 interface DashboardHeaderProps {
   currentDate: Date;
@@ -160,9 +159,9 @@ export function DashboardHeader({
         </DialogContent>
       </Dialog>
 
-      {/* ── Header bar ── */}
+      {/* Header bar */}
       <header
-        className="sticky top-0 z-40 w-full flex items-center justify-between gap-2 sm:gap-4 px-3 sm:px-4 py-2.5 sm:py-3 md:px-6 md:h-[68px] flex-wrap md:flex-nowrap backdrop-blur-md"
+        className="sticky top-0 z-40 w-full flex items-center justify-between gap-2 sm:gap-4 px-3 sm:px-4 py-2.5 sm:py-3 md:px-6 md:h-[68px] flex-nowrap backdrop-blur-md"
         style={{
           background: 'var(--bg-secondary)',
           borderBottom: '1px solid var(--border)',
@@ -200,15 +199,15 @@ export function DashboardHeader({
           </div>
         </div>
 
-        {/* Right: actions — Export removed, ThemeToggle removed */}
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
+        {/* Right: actions */}
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap">
           <SubscriptionBadge />
 
           {/* Get Recommendation */}
           {onRecommendationClick && (
             <button
               onClick={onRecommendationClick}
-              className="h-9 sm:h-10 px-2.5 sm:px-4 rounded-xl flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold transition-all"
+              className="h-9 sm:h-10 px-2.5 sm:px-4 rounded-xl flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold transition-all whitespace-nowrap"
               style={{
                 background: 'var(--battery)',
                 color: '#fff',
@@ -223,7 +222,7 @@ export function DashboardHeader({
           )}
 
           <Link href="/sizing">
-            <Button variant="outline" className="h-9 sm:h-10 text-xs sm:text-sm px-2.5 sm:px-4">
+            <Button variant="outline" className="h-9 sm:h-10 text-xs sm:text-sm px-2.5 sm:px-4 whitespace-nowrap">
               PV Sizing
             </Button>
           </Link>
@@ -263,6 +262,7 @@ export function DashboardHeader({
                 boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
               }}
             >
+              {/* Notification header row */}
               <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
                 <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>Notifications</p>
                 {unreadNotifications.length > 0 && (
@@ -270,7 +270,7 @@ export function DashboardHeader({
                     type="button"
                     onClick={markAllAsRead}
                     style={{ fontSize: '0.6875rem', fontWeight: 500, color: 'var(--battery)' }}
-                    className="hover:opacity-80"
+                    className="hover:opacity-80 whitespace-nowrap"
                   >
                     Mark all read
                   </button>
@@ -280,7 +280,7 @@ export function DashboardHeader({
               {notifications.length === 0 ? (
                 <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>No notifications yet.</p>
               ) : unreadNotifications.length === 0 ? (
-                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>You are all caught up.</p>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>All caught up.</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {unreadNotifications.slice(0, 6).map((item) => (
@@ -299,12 +299,13 @@ export function DashboardHeader({
                       <p style={{ marginTop: '3px', fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                         {item.description}
                       </p>
+                      {/* Action row — always horizontal */}
                       <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                         {item.actionLabel && item.onAction && (
                           <button
                             type="button"
                             onClick={() => { item.onAction?.(); markAsRead(item.id); }}
-                            style={{ fontSize: '0.6875rem', fontWeight: 500, color: 'var(--battery)' }}
+                            style={{ fontSize: '0.6875rem', fontWeight: 500, color: 'var(--battery)', whiteSpace: 'nowrap' }}
                             className="hover:opacity-80"
                           >
                             {item.actionLabel}
@@ -313,7 +314,7 @@ export function DashboardHeader({
                         <button
                           type="button"
                           onClick={() => markAsRead(item.id)}
-                          style={{ fontSize: '0.6875rem', fontWeight: 500, color: 'var(--text-tertiary)' }}
+                          style={{ fontSize: '0.6875rem', fontWeight: 500, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}
                           className="hover:opacity-80"
                         >
                           Dismiss
@@ -351,8 +352,4 @@ export function DashboardHeader({
       </header>
     </>
   );
-}
-
-function cn(...classes: (string | undefined | false)[]) {
-  return classes.filter(Boolean).join(' ');
 }

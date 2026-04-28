@@ -162,6 +162,12 @@ export const SafariChargeAIAssistant = ({
   const liveEv1V2g  = data?.ev1V2g       ?? false;
   const liveEv2V2g  = data?.ev2V2g       ?? false;
 
+  const gridLabel = liveNetGrid > 0.1
+    ? `Import ${liveNetGrid.toFixed(1)} kW`
+    : liveNetGrid < -0.1
+      ? `Export ${Math.abs(liveNetGrid).toFixed(1)} kW`
+      : 'Grid balanced';
+
   const showChips = messages.length <= 2;
 
   return (
@@ -173,15 +179,14 @@ export const SafariChargeAIAssistant = ({
         transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
         transition: 'transform 260ms cubic-bezier(0.16, 1, 0.3, 1)',
         pointerEvents: isOpen ? 'auto' : 'none',
-        /* Ensure it stacks cleanly in both light and dark */
         boxShadow: '-8px 0 32px rgba(0,0,0,0.18)',
       }}
       aria-hidden={!isOpen}
       aria-label="AI Assistant Panel"
     >
-      {/* ── Header ── */}
+      {/* Header */}
       <div
-        className="p-4 flex justify-between items-center shadow-sm flex-shrink-0"
+        className="p-4 flex items-center justify-between shadow-sm flex-shrink-0"
         style={{
           background: 'var(--bg-card)',
           borderBottom: '1px solid var(--border)',
@@ -220,7 +225,7 @@ export const SafariChargeAIAssistant = ({
             />
             {isAutoMode ? 'Live' : 'Paused'}
           </div>
-          {/* X close button — always visible */}
+          {/* X close button */}
           <button
             onClick={onClose}
             aria-label="Close AI Assistant"
@@ -246,38 +251,51 @@ export const SafariChargeAIAssistant = ({
         </div>
       </div>
 
-      {/* ── Live status bar ── */}
+      {/* Live status bar — single row, no wrapping */}
       <div
-        className="px-4 py-2 flex gap-4 text-[10px] font-mono flex-shrink-0 flex-wrap"
+        className="px-4 py-2 flex-shrink-0"
         style={{
           background: 'var(--bg-card-muted)',
           borderBottom: '1px solid var(--border)',
-          color: 'var(--text-secondary)',
         }}
       >
-        <span style={{ color: 'var(--solar)' }}>\u2600\ufe0f {liveSolar.toFixed(1)} kW</span>
-        <span style={{ color: 'var(--ev)' }}>\ud83d\udd0b {liveBattery.toFixed(0)}%</span>
-        <span
+        <div
           style={{
-            color:
-              liveNetGrid > 0.1
-                ? 'var(--alert)'
-                : 'var(--consumption)',
+            display: 'grid',
+            gridTemplateColumns: liveEv1V2g || liveEv2V2g ? 'repeat(4, minmax(0, 1fr))' : 'repeat(3, minmax(0, 1fr))',
+            gap: '4px',
           }}
         >
-          \u26a1{' '}
-          {liveNetGrid > 0.1
-            ? `Import ${liveNetGrid.toFixed(1)} kW`
-            : liveNetGrid < -0.1
-              ? `Export ${Math.abs(liveNetGrid).toFixed(1)} kW`
-              : 'Grid balanced'}
-        </span>
-        {(liveEv1V2g || liveEv2V2g) && (
-          <span style={{ color: 'var(--warning)' }}>V2G\u2191</span>
-        )}
+          <span
+            className="flex items-center gap-1 text-[10px] font-mono whitespace-nowrap"
+            style={{ color: 'var(--solar)' }}
+          >
+            &#9728;&#65039; {liveSolar.toFixed(1)} kW
+          </span>
+          <span
+            className="flex items-center gap-1 text-[10px] font-mono whitespace-nowrap"
+            style={{ color: 'var(--ev)' }}
+          >
+            &#128267; {liveBattery.toFixed(0)}%
+          </span>
+          <span
+            className="flex items-center gap-1 text-[10px] font-mono whitespace-nowrap"
+            style={{ color: liveNetGrid > 0.1 ? 'var(--alert)' : 'var(--consumption)' }}
+          >
+            &#9889; {gridLabel}
+          </span>
+          {(liveEv1V2g || liveEv2V2g) && (
+            <span
+              className="flex items-center gap-1 text-[10px] font-mono whitespace-nowrap"
+              style={{ color: 'var(--warning)' }}
+            >
+              V2G&uarr;
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* ── Messages ── */}
+      {/* Messages */}
       <div
         className="flex-1 overflow-y-auto p-4 space-y-3"
         style={{ background: 'var(--bg-primary)' }}
@@ -313,7 +331,6 @@ export const SafariChargeAIAssistant = ({
                   ? {
                       background: 'var(--consumption)',
                       color: '#fff',
-                      /* Slightly darker user bubble in light mode for contrast */
                     }
                   : {
                       background: 'var(--bg-card)',
@@ -407,7 +424,7 @@ export const SafariChargeAIAssistant = ({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ── Input ── */}
+      {/* Input */}
       <div
         className="p-3 flex gap-2 flex-shrink-0"
         style={{
@@ -427,7 +444,6 @@ export const SafariChargeAIAssistant = ({
             background: 'var(--bg-card)',
             color: 'var(--text-primary)',
             border: '1px solid var(--border)',
-            /* Slightly taller for easier mobile tapping */
             minHeight: '40px',
           }}
         />

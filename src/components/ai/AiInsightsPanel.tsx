@@ -10,8 +10,6 @@ import { Badge } from '@/components/ui/badge';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
 import { computeEngineeringKpis } from '@/lib/engineeringKpis';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
 export type InsightSeverity = 'positive' | 'info' | 'warning' | 'critical';
 
 export interface AiInsight {
@@ -22,8 +20,6 @@ export interface AiInsight {
   detail: string;
   metric?: string;
 }
-
-// ── Insight derivation ────────────────────────────────────────────────────────
 
 function deriveInsights(
   minuteData: ReturnType<typeof useEnergySystemStore.getState>['minuteData'],
@@ -45,7 +41,6 @@ function deriveInsights(
     return insights;
   }
 
-  // ── Engineering KPIs ──────────────────────────────────────────────────────
   const durationHours = Math.max(minuteData.length / 60, 1);
   const currentMonth = new Date(currentDate).getMonth();
   const monthlyPSH = solarData.monthlyAvgKwhPerKwp[currentMonth];
@@ -66,14 +61,13 @@ function deriveInsights(
     planeIrradianceKWhPerM2: irradianceKWhPerM2 > 0 ? irradianceKWhPerM2 : undefined,
   });
 
-  // ── Performance Ratio ─────────────────────────────────────────────────────
   if (kpis.performanceRatioPct < 70) {
     insights.push({
       id: 'pr-low',
       severity: 'warning',
       category: 'efficiency',
       title: 'Performance ratio below target',
-      detail: `PR is ${kpis.performanceRatioPct.toFixed(1)}% — typical Nairobi rooftop is 75–85%. Likely causes: panel soiling, shading, or inverter clipping.`,
+      detail: `PR is ${kpis.performanceRatioPct.toFixed(1)}% (typical Nairobi rooftop is 75 to 85%). Likely causes: panel soiling, shading, or inverter clipping.`,
       metric: `${kpis.performanceRatioPct.toFixed(1)}% PR`,
     });
   } else if (kpis.performanceRatioPct >= 82) {
@@ -87,14 +81,13 @@ function deriveInsights(
     });
   }
 
-  // ── Self-Sufficiency ──────────────────────────────────────────────────────
   if (kpis.selfSufficiencyPct < 50) {
     insights.push({
       id: 'self-suff-low',
       severity: 'warning',
       category: 'grid',
       title: 'High grid dependency',
-      detail: `Only ${kpis.selfSufficiencyPct.toFixed(0)}% of load is met by solar + battery. Consider increasing battery capacity or shifting high-load appliances to midday.`,
+      detail: `Only ${kpis.selfSufficiencyPct.toFixed(0)}% of load is met by solar and battery. Consider increasing battery capacity or shifting high-load appliances to midday.`,
       metric: `${kpis.selfSufficiencyPct.toFixed(0)}% self-sufficient`,
     });
   } else if (kpis.selfSufficiencyPct >= 80) {
@@ -108,7 +101,6 @@ function deriveInsights(
     });
   }
 
-  // ── Battery SOC ───────────────────────────────────────────────────────────
   const batSoc = nodes.battery.soc ?? 50;
   if (batSoc < 15) {
     insights.push({
@@ -124,25 +116,23 @@ function deriveInsights(
       id: 'bat-full',
       severity: 'info',
       category: 'battery',
-      title: 'Battery near full — excess solar available',
+      title: 'Battery near full, excess solar available',
       detail: 'Battery is almost full and solar is still generating. If grid feed-in is enabled, excess energy can earn feed-in tariff revenue.',
       metric: `${batSoc.toFixed(0)}% SOC`,
     });
   }
 
-  // ── Battery Cycles ────────────────────────────────────────────────────────
   if (kpis.batteryCycles > 2) {
     insights.push({
       id: 'bat-cycles',
       severity: 'info',
       category: 'battery',
       title: 'High battery cycle count this session',
-      detail: `${kpis.batteryCycles.toFixed(1)} equivalent cycles accumulated. Li-ion rated ~3 000–6 000 cycles at 80% DoD — monitoring cycle accumulation preserves warranty.`,
+      detail: `${kpis.batteryCycles.toFixed(1)} equivalent cycles accumulated. Li-ion is rated 3,000 to 6,000 cycles at 80% DoD. Monitoring cycle accumulation preserves warranty.`,
       metric: `${kpis.batteryCycles.toFixed(2)} cycles`,
     });
   }
 
-  // ── Savings ───────────────────────────────────────────────────────────────
   const savingsKes = accumulators.savings;
   const peakRate = systemConfig.gridTariff.peakRate;
   const offPeakRate = systemConfig.gridTariff.offPeakRate;
@@ -158,7 +148,6 @@ function deriveInsights(
     });
   }
 
-  // ── Feed-in earnings ─────────────────────────────────────────────────────
   if (accumulators.feedInEarnings > 0) {
     insights.push({
       id: 'feed-in',
@@ -170,22 +159,19 @@ function deriveInsights(
     });
   }
 
-  // ── Carbon offset ────────────────────────────────────────────────────────
   if (accumulators.carbonOffset > 5) {
     insights.push({
       id: 'carbon',
       severity: 'positive',
       category: 'general',
       title: 'Meaningful carbon displacement',
-      detail: `${accumulators.carbonOffset.toFixed(1)} kg CO₂ avoided this session. At this rate you offset ${(accumulators.carbonOffset * 365 / (durationHours / 24)).toFixed(0)} kg/year — equivalent to planting ~${((accumulators.carbonOffset * 365 / (durationHours / 24)) / 21).toFixed(0)} trees.`,
-      metric: `${accumulators.carbonOffset.toFixed(1)} kg CO₂`,
+      detail: `${accumulators.carbonOffset.toFixed(1)} kg CO2 avoided this session. At this rate you offset ${(accumulators.carbonOffset * 365 / (durationHours / 24)).toFixed(0)} kg/year, equivalent to planting about ${((accumulators.carbonOffset * 365 / (durationHours / 24)) / 21).toFixed(0)} trees.`,
+      metric: `${accumulators.carbonOffset.toFixed(1)} kg CO2`,
     });
   }
 
   return insights;
 }
-
-// ── Styling helpers ───────────────────────────────────────────────────────────
 
 const SEVERITY_STYLES: Record<InsightSeverity, { bg: string; border: string; icon: string; badge: string }> = {
   positive: {
@@ -229,8 +215,6 @@ const CATEGORY_ICONS: Record<AiInsight['category'], React.ElementType> = {
   grid: Zap,
   general: Sparkles,
 };
-
-// ── Component ─────────────────────────────────────────────────────────────────
 
 export function AiInsightsPanel() {
   const minuteData   = useEnergySystemStore((s) => s.minuteData);
