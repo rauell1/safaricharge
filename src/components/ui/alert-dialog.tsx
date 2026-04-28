@@ -32,7 +32,11 @@ function AlertDialogOverlay({
     <AlertDialogPrimitive.Overlay
       data-slot="alert-dialog-overlay"
       className={cn(
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/60 backdrop-blur-sm",
+        // z-[199]: consistent with DialogOverlay — sits above sidebar (z-[60])
+        // and header but just below AlertDialogContent (z-[200]).
+        "data-[state=open]:animate-in data-[state=closed]:animate-out",
+        "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+        "fixed inset-0 z-[199] bg-black/60 backdrop-blur-sm",
         className
       )}
       {...props}
@@ -53,11 +57,16 @@ function AlertDialogContent({
           "data-[state=open]:animate-in data-[state=closed]:animate-out",
           "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
           "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-          "fixed top-[50%] left-[50%] z-50",
+          // ── Positioning: perfectly centred in viewport ───────────────────
+          // z-[200]: above sidebar (z-[60]), header (z-40), overlay (z-[199]).
+          // Previously z-50 which caused alerts to render BEHIND the sidebar.
+          "fixed top-[50%] left-[50%] z-[200]",
           "w-full max-w-[calc(100%-2rem)] sm:max-w-lg",
           "translate-x-[-50%] translate-y-[-50%]",
           "grid gap-4 p-6 duration-200",
-          // ── Project design tokens (replaces shadcn bg-background) ──
+          // ── Scroll safety ────────────────────────────────────────────────
+          "max-h-[90vh] sm:max-h-[85vh] overflow-y-auto",
+          // ── Theme-aware colours ──────────────────────────────────────────
           "bg-[var(--bg-card)] text-[var(--text-primary)]",
           "border border-[var(--border)]",
           "rounded-xl shadow-2xl",
