@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 159 | `rollback/fix-export-remove-pdfmake-xlsx-deps-fi-2026-04-28-1ab8c7d` | `1ab8c7d` | fix(export): remove pdfmake/xlsx deps, fix useSimulationStore 404 — use zero-dep PDF builder + jszip CSV multi-sheet | 2026-04-28 |
 | 158 | `rollback/feat-export-page-clean-navbar-fix-popu-2026-04-28-c036e8c` | `c036e8c` | feat: export page, clean navbar, fix popups, graphs zip, multi-sheet CSV | 2026-04-28 |
 | 157 | `rollback/feat-floating-ai-button-landing-light-2026-04-28-23140b0` | `23140b0` | feat: floating AI button, landing light mode, full color token compliance | 2026-04-28 |
 | 156 | `rollback/fix-toast-only-on-site-leave-seamless-2026-04-28-65961c2` | `65961c2` | fix: toast only on site-leave, seamless nav, strip sidebar descriptions | 2026-04-28 |
@@ -1645,6 +1646,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/feat-export-page-clean-navbar-fix-popu-2026-04-28-c036e8c`
 - **Commit**: `c036e8c0255dc7400690ba4e439f6f2c3bd95fa1`
 - **Subject**: feat: export page, clean navbar, fix popups, graphs zip, multi-sheet CSV
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #159 — `rollback/fix-export-remove-pdfmake-xlsx-deps-fi-2026-04-28-1ab8c7d`
+
+- **Branch**: `rollback/fix-export-remove-pdfmake-xlsx-deps-fi-2026-04-28-1ab8c7d`
+- **Commit**: `1ab8c7deabe19556d1e6e64751cd39e144f30f9d`
+- **Subject**: fix(export): remove pdfmake/xlsx deps, fix useSimulationStore 404 — use zero-dep PDF builder + jszip CSV multi-sheet
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
