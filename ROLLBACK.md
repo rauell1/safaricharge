@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 174 | `rollback/chore-placeholder-will-use-full-file-p-2026-04-28-f1c8f57` | `f1c8f57` | chore: placeholder — will use full file push | 2026-04-28 |
 | 173 | `rollback/chore-record-branch-cleanup-for-rollba-2026-04-28-bd57230` | `bd57230` | chore: record branch cleanup for rollback reference (2026-04-28) | 2026-04-28 |
 | 172 | `rollback/feat-move-pv-sizing-from-navbar-into-s-2026-04-28-0c7a21c` | `0c7a21c` | feat: move PV Sizing from navbar into System Configuration page | 2026-04-28 |
 | 171 | `rollback/feat-move-save-scenario-from-navbar-mo-2026-04-28-cdef08f` | `cdef08f` | feat: move Save Scenario from navbar modal into Scenarios page inline section | 2026-04-28 |
@@ -1795,6 +1796,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/chore-record-branch-cleanup-for-rollba-2026-04-28-bd57230`
 - **Commit**: `bd57230f9f8750f86436a84511e194745bcdde87`
 - **Subject**: chore: record branch cleanup for rollback reference (2026-04-28)
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #174 — `rollback/chore-placeholder-will-use-full-file-p-2026-04-28-f1c8f57`
+
+- **Branch**: `rollback/chore-placeholder-will-use-full-file-p-2026-04-28-f1c8f57`
+- **Commit**: `f1c8f57ffb989fb88fc987c2db506b9e6003c40d`
+- **Subject**: chore: placeholder — will use full file push
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
