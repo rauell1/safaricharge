@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 157 | `rollback/feat-floating-ai-button-landing-light-2026-04-28-23140b0` | `23140b0` | feat: floating AI button, landing light mode, full color token compliance | 2026-04-28 |
 | 156 | `rollback/fix-toast-only-on-site-leave-seamless-2026-04-28-65961c2` | `65961c2` | fix: toast only on site-leave, seamless nav, strip sidebar descriptions | 2026-04-28 |
 | 155 | `rollback/feat-default-light-mode-strict-theme-t-2026-04-28-a144876` | `a144876` | feat: default light mode, strict theme tokens, dark/light toggle in sidebar footer | 2026-04-28 |
 | 154 | `rollback/fix-mobile-sliders-icon-auto-sizing-re-2026-04-28-3f3f940` | `3f3f940` | fix: mobile sliders, icon auto-sizing, readability, persistent sim-reset toast | 2026-04-28 |
@@ -1625,6 +1626,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-toast-only-on-site-leave-seamless-2026-04-28-65961c2`
 - **Commit**: `65961c222f4a8db6f9eeacc5a4ee8080380b5d9b`
 - **Subject**: fix: toast only on site-leave, seamless nav, strip sidebar descriptions
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #157 — `rollback/feat-floating-ai-button-landing-light-2026-04-28-23140b0`
+
+- **Branch**: `rollback/feat-floating-ai-button-landing-light-2026-04-28-23140b0`
+- **Commit**: `23140b05fb1f6c8d505784b266da8189bff70b20`
+- **Subject**: feat: floating AI button, landing light mode, full color token compliance
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
