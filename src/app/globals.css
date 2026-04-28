@@ -122,8 +122,6 @@
   --icon-lg: 1.5rem;
 
   /* ── Site-shell tokens (used by landing, auth, marketing pages) ── */
-  /* These are the ONLY tokens the landing page uses — all expressed
-     in terms of the core palette above. No hardcoded hex on any page. */
   --site-page-bg:      #f5f7f4;
   --site-page-fg:      #0d1f17;
   --site-page-muted:   rgba(13,31,23,0.62);
@@ -383,6 +381,22 @@ label, caption, figcaption {
 .dark [data-slot='popover-content'] {
   border-color: rgba(255,255,255,0.08);
   box-shadow: 0 14px 48px rgba(0,0,0,0.32), 0 2px 12px rgba(0,0,0,0.2);
+}
+
+/* ─── Dialog / AlertDialog / Sheet — global safety net ──────── */
+/*
+ * Even though dialog.tsx, alert-dialog.tsx, and sheet.tsx now use
+ * bg-[var(--bg-card)] directly, this CSS block acts as a catch-all:
+ * any Radix overlay that somehow still carries the Tailwind
+ * bg-background class (e.g. a future shadcn upgrade) will be
+ * overridden here so the broken raw-HSL value can never leak through.
+ */
+[data-slot='dialog-content'],
+[data-slot='alert-dialog-content'],
+[data-slot='sheet-content'] {
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
 }
 
 /* ─── Skeleton shimmer ───────────────────────────────────────── */
