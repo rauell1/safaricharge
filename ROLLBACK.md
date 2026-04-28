@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 162 | `rollback/fix-dialog-background-border-text-toke-2026-04-28-436c0bc` | `436c0bc` | fix: dialog background/border/text tokens — use project CSS vars not shadcn bg-background | 2026-04-28 |
 | 161 | `rollback/fix-horizontal-text-alignment-in-popup-2026-04-28-4e0a0bf` | `4e0a0bf` | fix: horizontal text alignment in popups/status bars + remove long hyphens throughout | 2026-04-28 |
 | 160 | `rollback/fix-export-horizontal-card-layout-remo-2026-04-28-a6928d1` | `a6928d1` | fix(export): horizontal card layout, remove all em dashes and long hyphens | 2026-04-28 |
 | 159 | `rollback/fix-export-remove-pdfmake-xlsx-deps-fi-2026-04-28-1ab8c7d` | `1ab8c7d` | fix(export): remove pdfmake/xlsx deps, fix useSimulationStore 404 — use zero-dep PDF builder + jszip CSV multi-sheet | 2026-04-28 |
@@ -1675,6 +1676,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-horizontal-text-alignment-in-popup-2026-04-28-4e0a0bf`
 - **Commit**: `4e0a0bf7888a02dd464b8501e04e78b877fe08f7`
 - **Subject**: fix: horizontal text alignment in popups/status bars + remove long hyphens throughout
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #162 — `rollback/fix-dialog-background-border-text-toke-2026-04-28-436c0bc`
+
+- **Branch**: `rollback/fix-dialog-background-border-text-toke-2026-04-28-436c0bc`
+- **Commit**: `436c0bcb58aed3775779a2c6716659170317b470`
+- **Subject**: fix: dialog background/border/text tokens — use project CSS vars not shadcn bg-background
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
