@@ -149,12 +149,6 @@ export function DashboardHeader({
           </button>
         )}
 
-        <Link href="/sizing">
-          <Button variant="outline" className="h-9 sm:h-10 text-xs sm:text-sm px-2.5 sm:px-4 whitespace-nowrap">
-            PV Sizing
-          </Button>
-        </Link>
-
         {/* Notifications */}
         <Popover>
           <PopoverTrigger asChild>
