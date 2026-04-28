@@ -10,7 +10,7 @@ import { useEnergySystemStore } from '@/stores/energySystemStore';
 import { clearExternalUploadActive, isExternalUploadActive } from '@/lib/external-upload-guard';
 import { SIZING_SIMULATOR_STORAGE_KEY } from '@/lib/pv-sizing';
 import { SafariChargeAIAssistant } from '@/components/ai/AIAssistant';
-import { AIAssistantProvider, useAIAssistant } from '@/contexts/AIAssistantContext';
+import { useAIAssistant } from '@/contexts/AIAssistantContext';
 import {
   useEnergyNode,
   useMinuteData,
@@ -25,8 +25,16 @@ interface DashboardLayoutProps {
   contextualMetrics?: SidebarContextMetric[];
 }
 
-// ── Inner layout (consumes AI context) ──────────────────────────────────────
-function DashboardLayoutInner({
+/**
+ * DashboardLayout
+ *
+ * Consumes the AIAssistantContext that is provided by the ROOT layout
+ * (src/app/layout.tsx → <AIAssistantProvider>).  We intentionally do NOT
+ * re-wrap here — a second Provider would create a new, nested context with
+ * its own isOpen=false state, causing the AI panel to reset on every page
+ * navigation and breaking persistence across the dashboard.
+ */
+export function DashboardLayout({
   children,
   activeSection = 'dashboard',
   onSectionChange,
@@ -153,13 +161,5 @@ function DashboardLayoutInner({
         </SidebarInset>
       </div>
     </SidebarProvider>
-  );
-}
-
-export function DashboardLayout(props: DashboardLayoutProps) {
-  return (
-    <AIAssistantProvider>
-      <DashboardLayoutInner {...props} />
-    </AIAssistantProvider>
   );
 }
