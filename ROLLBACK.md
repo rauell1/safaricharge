@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 152 | `rollback/fix-resolve-turbopack-generic-syntax-e-2026-04-28-37dc261` | `37dc261` | fix: resolve Turbopack generic syntax error in AIAssistant useState | 2026-04-28 |
 | 151 | `rollback/feat-light-dark-mode-persistent-ai-pan-2026-04-28-3b9ad56` | `3b9ad56` | feat: light/dark mode, persistent AI panel & faster page transitions | 2026-04-28 |
 | 150 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-28-78b6c80` | `78b6c80` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-04-28 |
 | 149 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-27-0d642fa` | `0d642fa` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-04-27 |
@@ -1575,6 +1576,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/feat-light-dark-mode-persistent-ai-pan-2026-04-28-3b9ad56`
 - **Commit**: `3b9ad5676c4f0968254e746959736efbc5f3f12b`
 - **Subject**: feat: light/dark mode, persistent AI panel & faster page transitions
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #152 — `rollback/fix-resolve-turbopack-generic-syntax-e-2026-04-28-37dc261`
+
+- **Branch**: `rollback/fix-resolve-turbopack-generic-syntax-e-2026-04-28-37dc261`
+- **Commit**: `37dc261267d56c184a63a0302f84448789bcf716`
+- **Subject**: fix: resolve Turbopack generic syntax error in AIAssistant useState
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
