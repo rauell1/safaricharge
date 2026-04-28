@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 179 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-28-e0ba091` | `e0ba091` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-04-28 |
 | 178 | `rollback/merge-pull-request-239-from-rauell1-co-2026-04-28-df9edbe` | `df9edbe` | Merge pull request #239 from rauell1/codex/add-smart-grid-integration-layer | 2026-04-28 |
 | 177 | `rollback/fix-dark-light-mode-ai-panel-persisten-2026-04-28-a0ed489` | `a0ed489` | fix: dark/light mode, AI panel persistence, page transitions, CSS syntax | 2026-04-28 |
 | 176 | `rollback/ci-retrigger-vercel-build-fix-bad-plac-2026-04-28-30f088f` | `30f088f` | ci: retrigger Vercel build — fix bad placeholder commit f1c8f57 | 2026-04-28 |
@@ -1845,6 +1846,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/merge-pull-request-239-from-rauell1-co-2026-04-28-df9edbe`
 - **Commit**: `df9edbea75c85dcdf5f2b76a6f0729cbc4551d23`
 - **Subject**: Merge pull request #239 from rauell1/codex/add-smart-grid-integration-layer
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #179 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-28-e0ba091`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-28-e0ba091`
+- **Commit**: `e0ba0914fda929820782fdc6fd1d7214b841b2d8`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
