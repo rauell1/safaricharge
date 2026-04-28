@@ -55,6 +55,12 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 177 | `rollback/fix-dark-light-mode-ai-panel-persisten-2026-04-28-a0ed489` | `a0ed489` | fix: dark/light mode, AI panel persistence, page transitions, CSS syntax | 2026-04-28 |
+| 176 | `rollback/ci-retrigger-vercel-build-fix-bad-plac-2026-04-28-30f088f` | `30f088f` | ci: retrigger Vercel build — fix bad placeholder commit f1c8f57 | 2026-04-28 |
+| 175 | `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-04-28-f0a31bf` | `f0a31bf` | docs(auto): regenerate README.md [skip ci] | 2026-04-28 |
+| 174 | `rollback/chore-placeholder-will-use-full-file-p-2026-04-28-f1c8f57` | `f1c8f57` | chore: placeholder — will use full file push | 2026-04-28 |
+| 173 | `rollback/chore-record-branch-cleanup-for-rollba-2026-04-28-bd57230` | `bd57230` | chore: record branch cleanup for rollback reference (2026-04-28) | 2026-04-28 |
+| 172 | `rollback/feat-move-pv-sizing-from-navbar-into-s-2026-04-28-0c7a21c` | `0c7a21c` | feat: move PV Sizing from navbar into System Configuration page | 2026-04-28 |
 | 171 | `rollback/feat-move-save-scenario-from-navbar-mo-2026-04-28-cdef08f` | `cdef08f` | feat: move Save Scenario from navbar modal into Scenarios page inline section | 2026-04-28 |
 | 170 | `rollback/fix-pin-all-radix-portals-to-modal-roo-2026-04-28-43cc568` | `43cc568` | fix: pin all Radix portals to #modal-root at <body> level | 2026-04-28 |
 | 169 | `rollback/fix-remove-overflow-x-hidden-and-trans-2026-04-28-52c9631` | `52c9631` | fix: remove overflow-x-hidden and transform-creating wrappers from DashboardLayout | 2026-04-28 |
@@ -1775,6 +1781,60 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/feat-move-save-scenario-from-navbar-mo-2026-04-28-cdef08f`
 - **Commit**: `cdef08f6eee0bfe72ed19087cdfe71392dd49cf5`
 - **Subject**: feat: move Save Scenario from navbar modal into Scenarios page inline section
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #172 — `rollback/feat-move-pv-sizing-from-navbar-into-s-2026-04-28-0c7a21c`
+
+- **Branch**: `rollback/feat-move-pv-sizing-from-navbar-into-s-2026-04-28-0c7a21c`
+- **Commit**: `0c7a21c536f459cef61a50321444f9808396f359`
+- **Subject**: feat: move PV Sizing from navbar into System Configuration page
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #173 — `rollback/chore-record-branch-cleanup-for-rollba-2026-04-28-bd57230`
+
+- **Branch**: `rollback/chore-record-branch-cleanup-for-rollba-2026-04-28-bd57230`
+- **Commit**: `bd57230f9f8750f86436a84511e194745bcdde87`
+- **Subject**: chore: record branch cleanup for rollback reference (2026-04-28)
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #174 — `rollback/chore-placeholder-will-use-full-file-p-2026-04-28-f1c8f57`
+
+- **Branch**: `rollback/chore-placeholder-will-use-full-file-p-2026-04-28-f1c8f57`
+- **Commit**: `f1c8f57ffb989fb88fc987c2db506b9e6003c40d`
+- **Subject**: chore: placeholder — will use full file push
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #175 — `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-04-28-f0a31bf`
+
+- **Branch**: `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-04-28-f0a31bf`
+- **Commit**: `f0a31bf0adb5cd6910b380c18f2c37fea8ff0b15`
+- **Subject**: docs(auto): regenerate README.md [skip ci]
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #176 — `rollback/ci-retrigger-vercel-build-fix-bad-plac-2026-04-28-30f088f`
+
+- **Branch**: `rollback/ci-retrigger-vercel-build-fix-bad-plac-2026-04-28-30f088f`
+- **Commit**: `30f088fbc4c3730906466d2306b78cab48aee29e`
+- **Subject**: ci: retrigger Vercel build — fix bad placeholder commit f1c8f57
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #177 — `rollback/fix-dark-light-mode-ai-panel-persisten-2026-04-28-a0ed489`
+
+- **Branch**: `rollback/fix-dark-light-mode-ai-panel-persisten-2026-04-28-a0ed489`
+- **Commit**: `a0ed48942e631948ffc6f7926f7546109d1eb084`
+- **Subject**: fix: dark/light mode, AI panel persistence, page transitions, CSS syntax
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 

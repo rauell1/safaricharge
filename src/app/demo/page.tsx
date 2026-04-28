@@ -76,6 +76,7 @@ import FinancialDashboard from '@/components/dashboard/FinancialDashboard';
 import { buildFinancialSnapshot, type FinancialInputs } from '@/lib/financial-dashboard';
 import { computeProfessionalEngineeringKpis } from '@/lib/engineeringKpis';
 import { LoadConfigComponents } from '@/components/simulation/LoadConfigComponents';
+import { PVSizingSection } from '@/components/configuration/PVSizingSection';
 import { RecommendationComponents } from '@/components/energy/RecommendationComponents';
 import { SimulationNodes } from '@/components/simulation/SimulationNodes';
 import { ValidationPanel } from '@/components/simulation/ValidationPanel';
@@ -106,7 +107,7 @@ const SOLAR_MODEL_SUNRISE_HOUR = 6;
 const SOLAR_MODEL_DAYLIGHT_HOURS = 12;
 const SOLAR_MODEL_PERFORMANCE_RATIO = 0.82;
 
-// ─── Location picker data ────────────────────────────────────────────────────
+// ─── Location picker data ────────────────────────────────────────────────────────────────────────────
 interface LocationOption {
   name: string;
   displayName: string;
@@ -274,629 +275,378 @@ function DemoDashboardView({
   const saveScenario = useEnergySystemStore((s) => s.saveScenario);
   const resetSystem = useEnergySystemStore((s) => s.resetSystem);
   const systemConfig = useEnergySystemStore((s) => s.systemConfig);
-  const { toast } = useToast();
-
+  const updateConfig = useEnergySystemStore((s) => s.updateSystemConfig);
   const [isReportOpen, setIsReportOpen] = useState(false);
-  const [locationPickerOpen, setLocationPickerOpen] = useState(false);
-  const [activeLocation, setActiveLocation] = useState<LocationOption>(DEFAULT_LOCATION);
+  const [showSizingDialog, setShowSizingDialog] = useState(false);
+  const [pendingSizing, setPendingSizing] = useState<null | { pvKw: number; batteryKwh: number }>(null);
+  const { toast } = useToast();
+  const [selectedLocation, setSelectedLocation] = useState<LocationOption>(DEFAULT_LOCATION);
+  const [locationSearch, setLocationSearch] = useState('');
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
 
-  useEffect(() => {
-    const payload = parseSimulatorSizingPayload(localStorage.getItem(SIZING_SIMULATOR_STORAGE_KEY));
-    if (!payload) return;
-
-    localStorage.removeItem(SIZING_SIMULATOR_STORAGE_KEY);
-
-    const store = useEnergySystemStore.getState();
-    const nextBatteryCapacity = payload.systemType === 'off-grid'
-      ? (payload.batteryCapacityKwh ?? store.fullSystemConfig.battery.capacityKwh)
-      : store.fullSystemConfig.battery.capacityKwh;
-
-    const nextFullSystemConfig = {
-      ...store.fullSystemConfig,
-      solar: {
-        ...store.fullSystemConfig.solar,
-        panelCount: payload.panelCount,
-        panelWattage: payload.panelWattage,
-        totalCapacityKw: payload.requiredPvCapacityKw,
-      },
-      inverter: {
-        ...store.fullSystemConfig.inverter,
-        capacityKw: Math.max(1, Number((payload.requiredPvCapacityKw * 0.9).toFixed(2))),
-      },
-      battery: {
-        ...store.fullSystemConfig.battery,
-        capacityKwh: nextBatteryCapacity,
-      },
-    };
-
-    store.updateFullSystemConfig(nextFullSystemConfig);
-    store.updateSystemConfig({
-      solarCapacityKW: payload.requiredPvCapacityKw,
-      inverterKW: nextFullSystemConfig.inverter.capacityKw,
-      batteryCapacityKWh: nextBatteryCapacity,
-    });
-    store.updateNode('solar', { capacityKW: payload.requiredPvCapacityKw });
-    store.updateNode('battery', { capacityKWh: nextBatteryCapacity });
-    store.setSimulationState({ isAutoMode: true });
-
-    const matchedLocation = KENYA_LOCATIONS.find((loc) => loc.name === payload.county);
-    if (matchedLocation) setActiveLocation(matchedLocation);
-
-    toast({
-      title: 'Sizing loaded',
-      description: `${payload.county} sizing preset loaded and simulation started.`,
-    });
-  }, [toast]);
-
-  const handleReset = useCallback(() => {
-    const confirmed = window.confirm(
-      'Reset the simulation?\n\nThis will clear all accumulated energy data and restart the system from its initial state.'
+  const filteredLocations = useMemo(() => {
+    const q = locationSearch.toLowerCase().trim();
+    if (!q) return KENYA_LOCATIONS;
+    return KENYA_LOCATIONS.filter((loc) =>
+      loc.displayName.toLowerCase().includes(q) ||
+      loc.county.toLowerCase().includes(q)
     );
-    if (!confirmed) return;
-    resetSystem();
-    toast({
-      title: 'Simulation reset',
-      description: 'All energy data has been cleared. The simulation is restarting.',
-    });
-  }, [resetSystem, toast]);
+  }, [locationSearch]);
 
-  const handleSelectLocation = useCallback((loc: LocationOption) => {
-    setActiveLocation(loc);
-    setLocationPickerOpen(false);
-    toast({
-      title: 'Location updated',
-      description: `Solar data will now reflect conditions in ${loc.displayName} (avg ${loc.annualAvgSunHours} sun-hours/day).`,
-    });
-  }, [toast]);
+  // Listen for PV sizing proposals from the standalone /sizing page
+  useEffect(() => {
+    const handleSizingProposal = (e: StorageEvent) => {
+      if (e.key !== SIZING_SIMULATOR_STORAGE_KEY || !e.newValue) return;
+      const result = parseSimulatorSizingPayload(e.newValue);
+      if (!result) return;
+      setPendingSizing(result);
+      setShowSizingDialog(true);
+    };
+    window.addEventListener('storage', handleSizingProposal);
+    return () => window.removeEventListener('storage', handleSizingProposal);
+  }, []);
 
-  const handleSaveScenario = useCallback((name: string) => {
-    const snap = buildFinancialSnapshot({
+  const handleApplySizing = useCallback(() => {
+    if (!pendingSizing) return;
+    updateConfig({ pvCapacityKw: pendingSizing.pvKw, batteryCapacityKwh: pendingSizing.batteryKwh });
+    toast({ title: 'System updated', description: `PV: ${pendingSizing.pvKw} kW · Battery: ${pendingSizing.batteryKwh} kWh` });
+    setShowSizingDialog(false);
+    setPendingSizing(null);
+  }, [pendingSizing, updateConfig, toast]);
+
+  const handleDismissSizing = useCallback(() => {
+    setShowSizingDialog(false);
+    setPendingSizing(null);
+  }, []);
+
+  // Social impact metrics
+  const totalSolarKwh = useMemo(() => {
+    if (minuteData.length > 0) {
+      return minuteData.reduce((sum, r) => sum + (r.solarOutputW / 1000) * (1 / 60), 0);
+    }
+    return stats.totalGenerated;
+  }, [minuteData, stats.totalGenerated]);
+
+  const householdsEquivalent = useMemo(() =>
+    Math.round(totalSolarKwh / (KENYA_HOUSEHOLD_ANNUAL_KWH / 365)),
+    [totalSolarKwh]
+  );
+  const keroseneDisplaced = useMemo(() =>
+    +(totalSolarKwh * KEROSENE_DISPLACEMENT_L_PER_KWH).toFixed(1),
+    [totalSolarKwh]
+  );
+  const co2Avoided = useMemo(() =>
+    +(totalSolarKwh * KENYA_DIESEL_BACKUP_CO2_KG_PER_KWH).toFixed(1),
+    [totalSolarKwh]
+  );
+
+  // Monthly overview data
+  const monthlyGenerated = useMemo(() => {
+    if (minuteData.length === 0) return [...FALLBACK_GEN] as unknown as number[];
+    const byMonth: number[] = Array(12).fill(0);
+    minuteData.forEach((r) => {
+      const m = new Date(r.timestamp).getMonth();
+      byMonth[m] += r.solarOutputW / 1000 / 60;
+    });
+    return byMonth.map((v) => Math.round(v));
+  }, [minuteData]);
+
+  const monthlyConsumed = useMemo(() => {
+    if (minuteData.length === 0) return [...FALLBACK_CONS] as unknown as number[];
+    const byMonth: number[] = Array(12).fill(0);
+    minuteData.forEach((r) => {
+      const m = new Date(r.timestamp).getMonth();
+      byMonth[m] += (r.loadDemandW ?? 0) / 1000 / 60;
+    });
+    return byMonth.map((v) => Math.round(v));
+  }, [minuteData]);
+
+  const engineeringKpis = useMemo(() =>
+    computeProfessionalEngineeringKpis(minuteData as SimulationMinuteRecord[], systemConfig),
+    [minuteData, systemConfig]
+  );
+
+  const financialSnapshot = useMemo(() =>
+    buildFinancialSnapshot({
       minuteData: minuteData as Parameters<typeof buildFinancialSnapshot>[0]['minuteData'],
       solarData: NAIROBI_SOLAR_DATA,
       inputs: financialInputs,
       evCapacityKw: 22,
-    });
-    saveScenario(
-      name,
-      {
-        capexTotal: snap.capex.total,
-        npvKes: snap.npvKes,
-        irrPct: snap.irrPct,
-        lcoeKesPerKwh: snap.lcoeKesPerKwh,
-        paybackYears: snap.paybackYears,
-      },
-      { name: activeLocation.name, latitude: activeLocation.latitude, longitude: activeLocation.longitude }
-    );
-    toast({ title: 'Scenario saved', description: `"${name}" has been saved. View it on the Scenarios page.` });
-  }, [activeLocation.latitude, activeLocation.longitude, activeLocation.name, financialInputs, minuteData, saveScenario, toast]);
-
-  const latestPoint = minuteData[minuteData.length - 1];
-  const solarPower = latestPoint?.solarKW ?? solarNode.powerKW ?? 0;
-  const batteryPower = latestPoint?.batteryPowerKW ?? batteryNode.powerKW ?? 0;
-  const gridPower = latestPoint ? latestPoint.gridImportKW - latestPoint.gridExportKW : gridNode.powerKW ?? 0;
-  const homePower = latestPoint ? latestPoint.homeLoadKW + latestPoint.ev1LoadKW + latestPoint.ev2LoadKW : homeNode.powerKW ?? 0;
-  const batteryLevel = latestPoint?.batteryLevelPct ?? batteryNode.soc ?? 0;
-  const ambientTemp = Number((26 + Math.max(0, solarPower * 0.22)).toFixed(1));
-  const inverterTemp = Number((38 + Math.max(0, solarPower * 1.6)).toFixed(1));
-  const batteryTemp = Number((batteryNode.temperature ?? (29 + Math.max(0, Math.abs(batteryPower) * 0.9))).toFixed(1));
-  const deratingPct = Number(Math.max(0, (inverterTemp - 60) * 1.8).toFixed(1));
-
-  const financialSnapshot = useMemo(() => buildFinancialSnapshot({
-    minuteData: minuteData as Parameters<typeof buildFinancialSnapshot>[0]['minuteData'],
-    solarData: NAIROBI_SOLAR_DATA,
-    inputs: financialInputs,
-    evCapacityKw: 22,
-  }), [financialInputs, minuteData]);
-
-  const engineeringKpis = useMemo(() => computeProfessionalEngineeringKpis({
-    minuteData,
-    systemCapacityKwp: Math.max(systemConfig.solarCapacityKW, 0),
-    avgDailySunHours: activeLocation.annualAvgSunHours,
-  }), [activeLocation.annualAvgSunHours, minuteData, systemConfig.solarCapacityKW]);
-
-  const sidebarMetrics = useMemo(() => ([
-    { label: 'Solar Power', value: `${solarPower.toFixed(1)} kW`, tone: 'solar' as const },
-    { label: 'Battery', value: `${batteryLevel.toFixed(0)}%`, tone: 'battery' as const },
-    { label: 'Grid', value: gridPower > 0 ? `+${gridPower.toFixed(1)} kW` : `${gridPower.toFixed(1)} kW`, tone: 'grid' as const },
-    { label: 'Savings', value: `KES ${Math.round(stats.totalSavingsKES).toLocaleString()}`, tone: 'neutral' as const },
-  ]), [batteryLevel, gridPower, solarPower, stats.totalSavingsKES]);
-
-  const flowDirection = useMemo(() => ({
-    solarToHome: flows.some((f) => f.from === 'solar' && f.to === 'home' && f.active),
-    solarToBattery: flows.some((f) => f.from === 'solar' && f.to === 'battery' && f.active),
-    solarToGrid: flows.some((f) => f.from === 'solar' && f.to === 'grid' && f.active),
-    batteryToHome: flows.some((f) => f.from === 'battery' && f.to === 'home' && f.active),
-    gridToHome: flows.some((f) => f.from === 'grid' && f.to === 'home' && f.active),
-  }), [flows]);
-
-  const graphData = useMemo(
-    () => resampleTo5MinBucketsProgressive(minuteData),
-    [minuteData]
+    }),
+    [financialInputs, minuteData]
   );
 
-  const expectedOutputData = useMemo(() => graphData.map((point) => {
-    const sunAngle = Math.max(0, Math.sin(((point.timeOfDay - SOLAR_MODEL_SUNRISE_HOUR) / SOLAR_MODEL_DAYLIGHT_HOURS) * Math.PI));
-    const expected = (solarNode.capacityKW ?? 10) * SOLAR_MODEL_PERFORMANCE_RATIO * sunAngle;
-    return { timeOfDay: point.timeOfDay, output: Number(expected.toFixed(2)) };
-  }), [graphData, solarNode.capacityKW]);
+  // ─── SVG / JPG export helpers ───────────────────────────────────────────────────────────────────────────
+  const graphRef = useRef<HTMLDivElement>(null);
 
-  const energySplit = useMemo(() => {
-    const totalEnergy = stats.totalSolarKWh + stats.totalConsumptionKWh + stats.totalGridExportKWh;
-    if (!totalEnergy) return { solarPct: 0, consumptionPct: 0, exportPct: 0 };
-    return {
-      solarPct: stats.totalSolarKWh / totalEnergy,
-      consumptionPct: stats.totalConsumptionKWh / totalEnergy,
-      exportPct: stats.totalGridExportKWh / totalEnergy,
-    };
-  }, [stats]);
-
-  const ringSegments = useMemo(() => {
-    const circumference = 2 * Math.PI * 48;
-    const clamp = (value: number) => Math.max(0, Math.min(1, value));
-    return {
-      circumference,
-      solar: clamp(energySplit.solarPct) * circumference,
-      consumption: clamp(energySplit.consumptionPct) * circumference,
-      export: clamp(energySplit.exportPct) * circumference,
-    };
-  }, [energySplit]);
-
-  const sparklineData = useMemo(() => {
-    const last7Days = minuteData.slice(-7 * 420);
-    const dailyData: { gen: number[]; power: number[]; cons: number[]; savings: number[] } = {
-      gen: [],
-      power: [],
-      cons: [],
-      savings: [],
-    };
-
-    for (let i = 0; i < 7; i++) {
-      const dayData = last7Days.slice(i * 420, (i + 1) * 420);
-      if (dayData.length > 0) {
-        dailyData.gen.push(dayData.reduce((sum, d) => sum + d.solarEnergyKWh, 0));
-        dailyData.cons.push(dayData.reduce((sum, d) => sum + (d.homeLoadKWh ?? 0) + (d.ev1LoadKWh ?? 0) + (d.ev2LoadKWh ?? 0), 0));
-        dailyData.savings.push(dayData.reduce((sum, d) => sum + d.savingsKES, 0));
-        dailyData.power.push(dayData.reduce((sum, d) => sum + d.solarKW, 0) / dayData.length);
-      }
-    }
-
-    return dailyData;
-  }, [minuteData]);
-
-  const trendsData = useMemo(() => {
-    const weekData = minuteData.slice(-7 * 420);
-    const yesterdayData = minuteData.slice(-2 * 420, -420);
-    const weeklyAvgGen = weekData.length > 0 ? weekData.reduce((sum, d) => sum + d.solarEnergyKWh, 0) / 7 : 0;
-    const weeklyAvgCons = weekData.length > 0 ? weekData.reduce((sum, d) => sum + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh, 0) / 7 : 0;
-    const yesterdaySavings = yesterdayData.length > 0 ? yesterdayData.reduce((sum, d) => sum + d.savingsKES, 0) : 0;
-    const usefulEnergy = Math.min(homePower, solarPower) + (batteryPower > 0 ? Math.min(batteryPower, solarPower - homePower) : 0);
-    const systemEfficiency = solarPower > 0 ? (usefulEnergy / solarPower) * 100 : 0;
-    const savingsChange = yesterdaySavings > 0 ? ((stats.totalSavingsKES - yesterdaySavings) / yesterdaySavings) * 100 : 0;
-    const now = new Date();
-    const batteryOptimized = now.getHours() >= 18 && now.getHours() <= 22 ? batteryLevel > 70 : batteryLevel > 50;
-    return {
-      weeklyAvgGen,
-      weeklyAvgCons,
-      yesterdaySavings,
-      systemEfficiency,
-      savingsChange,
-      batteryOptimized,
-      forecastChange: 10,
-    };
-  }, [batteryLevel, batteryPower, homePower, minuteData, solarPower, stats.totalSavingsKES]);
-
-  const socialImpact = useMemo(() => {
-    const trackedDays = financialSnapshot.energy.trackedDays;
-    if (trackedDays <= 0) {
-      return {
-        annualSolarGeneratedKwh: 0,
-        householdsPowered: 0,
-        keroseneDisplacedLiters: 0,
-        co2AvoidedKg: 0,
-      };
-    }
-
-    const annualSolarGeneratedKwh = financialSnapshot.energy.avgDailySolarKWh * 365;
-    const totalGridExportKwh = minuteData.reduce((sum, d) => sum + (d.gridExportKWh ?? 0), 0);
-    const avgDailyGridExportKwh = totalGridExportKwh / trackedDays;
-    const gridImportDisplacedKwh = Math.max(0, annualSolarGeneratedKwh - (avgDailyGridExportKwh * 365));
-
-    return {
-      annualSolarGeneratedKwh,
-      householdsPowered: annualSolarGeneratedKwh / KENYA_HOUSEHOLD_ANNUAL_KWH,
-      keroseneDisplacedLiters: gridImportDisplacedKwh * KEROSENE_DISPLACEMENT_L_PER_KWH,
-      co2AvoidedKg: annualSolarGeneratedKwh * KENYA_DIESEL_BACKUP_CO2_KG_PER_KWH,
-    };
-  }, [financialSnapshot.energy.avgDailySolarKWh, financialSnapshot.energy.trackedDays, minuteData]);
-
-  const monthlyOverviewData = useMemo(() => {
-    if (minuteData.length === 0) {
-      return MONTH_LABELS.map((label, index) => ({ label, gen: FALLBACK_GEN[index], cons: FALLBACK_CONS[index], isFallback: true }));
-    }
-
-    const genByMonth = new Array(12).fill(0) as number[];
-    const consByMonth = new Array(12).fill(0) as number[];
-    for (const d of minuteData) {
-      const idx = (d.month - 1 + 12) % 12;
-      genByMonth[idx] += d.solarEnergyKWh ?? 0;
-      consByMonth[idx] +=
-        (d.homeLoadKWh ?? (d.homeLoadKW ?? 0) * (1 / 60)) +
-        (d.ev1LoadKWh ?? (d.ev1LoadKW ?? 0) * (1 / 60)) +
-        (d.ev2LoadKWh ?? (d.ev2LoadKW ?? 0) * (1 / 60));
-    }
-
-    const maxVal = Math.max(...genByMonth, ...consByMonth, 1);
-    return MONTH_LABELS.map((label, index) => ({
-      label,
-      gen: (genByMonth[index] / maxVal) * 100,
-      cons: (consByMonth[index] / maxVal) * 100,
-      genKWh: genByMonth[index],
-      consKWh: consByMonth[index],
-      isFallback: false,
-    }));
-  }, [minuteData]);
-
-  const handleExportCsv = useCallback(async () => {
-    if (!minuteData || minuteData.length === 0) {
-      alert('No data to export. Please wait for the simulation to generate data.');
-      return;
-    }
-
-    const rows: string[] = [];
-    rows.push('Section 1: System Configuration');
-    rows.push('Metric,Value,Unit');
-    rows.push(`Solar Capacity,${systemConfig.solarCapacityKW.toFixed(2)},kWp`);
-    rows.push(`Battery Capacity,${systemConfig.batteryCapacityKWh.toFixed(2)},kWh`);
-    rows.push(`Inverter Capacity,${systemConfig.inverterKW.toFixed(2)},kW`);
-    rows.push(`Location,${activeLocation.displayName},-`);
-    rows.push(`Mode,${isAutoMode ? 'Auto' : 'Manual'},-`);
-    rows.push('');
-    rows.push('Section 2: Engineering KPIs');
-    rows.push('KPI,Value,Unit');
-    rows.push(`Specific Yield,${engineeringKpis.specificYield.toFixed(2)},kWh/kWp/year`);
-    rows.push(`Performance Ratio,${engineeringKpis.performanceRatio.toFixed(4)},ratio`);
-    rows.push(`Capacity Factor,${engineeringKpis.capacityFactor.toFixed(4)},ratio`);
-    rows.push(`Self-consumption Rate,${engineeringKpis.selfConsumptionRate.toFixed(4)},ratio`);
-    rows.push(`Grid Independence,${engineeringKpis.gridIndependence.toFixed(4)},ratio`);
-    rows.push(`Battery cycles/year,${engineeringKpis.batteryCyclesPerYear.toFixed(2)},cycles/year`);
-    rows.push(`CO2 avoided,${engineeringKpis.co2AvoidedKgPerYear.toFixed(2)},kg/year`);
-    rows.push('');
-    rows.push('Section 3: Finance KPIs');
-    rows.push('KPI,Value,Unit');
-    rows.push(`LCOE,${financialSnapshot.lcoeKesPerKwh.toFixed(2)},KES/kWh`);
-    rows.push(`NPV,${financialSnapshot.npvKes.toFixed(2)},KES`);
-    rows.push(`IRR,${financialSnapshot.irrPct.toFixed(2)},%`);
-    rows.push(`Simple Payback,${financialSnapshot.paybackYears.toFixed(2)},years`);
-    rows.push('');
-    rows.push('Section 4: Raw Simulation Time Series');
-    rows.push('Timestamp,Date,Year,Month,Week,Day,Hour,Minute,Solar (kW),Home Load (kW),EV1 Load (kW),EV2 Load (kW),Battery Power (kW),Battery Level (%),Grid Import (kW),Grid Export (kW),EV1 SoC (%),EV2 SoC (%),Tariff Rate (KES/kWh),Peak Time,Savings (KES),Solar Energy (kWh),Grid Import (kWh),Grid Export (kWh)');
-    for (const d of minuteData) {
-      rows.push(`${d.timestamp},${d.date},${d.year},${d.month},${d.week},${d.day},${d.hour},${d.minute},${(d.solarKW || 0).toFixed(2)},${(d.homeLoadKW || 0).toFixed(2)},${(d.ev1LoadKW || 0).toFixed(2)},${(d.ev2LoadKW || 0).toFixed(2)},${(d.batteryPowerKW || 0).toFixed(2)},${(d.batteryLevelPct || 0).toFixed(1)},${(d.gridImportKW || 0).toFixed(2)},${(d.gridExportKW || 0).toFixed(2)},${(d.ev1SocPct || 0).toFixed(1)},${(d.ev2SocPct || 0).toFixed(1)},${(d.tariffRate || 0).toFixed(2)},${d.isPeakTime ? 'Yes' : 'No'},${(d.savingsKES || 0).toFixed(2)},${(d.solarEnergyKWh || 0).toFixed(4)},${(d.gridImportKWh || 0).toFixed(4)},${(d.gridExportKWh || 0).toFixed(4)}`);
-    }
-
-    const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const handleDownloadSVG = useCallback(async () => {
+    const samples = resampleTo5MinBuckets(minuteData as SimulationMinuteRecord[]);
+    const svgContent = buildGraphSVG(samples, { width: 900, height: 340, label: 'Daily Energy Flow' });
+    const blob = new Blob([svgContent], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `SafariCharge_Engineering_Report_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
+    a.download = 'safaricharge-daily-energy.svg';
     a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 300);
-  }, [activeLocation.displayName, engineeringKpis, financialSnapshot, isAutoMode, minuteData, systemConfig]);
-
-  const handleExportExcel = useCallback(async () => {
-    alert('Excel export is available from the report modal in the dashboard view.');
-  }, []);
-
-  const handleFormalReport = useCallback(async () => {
-    if (!minuteData || minuteData.length === 0) {
-      alert('No data available. Please wait for the simulation to generate data.');
-      return;
-    }
-    window.print();
+    URL.revokeObjectURL(url);
   }, [minuteData]);
 
-  const handleDownloadCharts = useCallback(async () => {
-    alert('Chart export is available from the report modal in the dashboard view.');
-  }, []);
-
-  const headerNotifications = useMemo(() => {
-    const items: Array<{
-      id: string;
-      title: string;
-      description: string;
-      actionLabel?: string;
-      onAction?: () => void;
-    }> = [];
-
-    if (!isAutoMode) {
-      items.push({
-        id: 'manual-mode',
-        title: 'Manual mode enabled',
-        description: 'Automation is paused. Some optimizations are not being applied.',
-        actionLabel: 'Open Simulation',
-        onAction: () => onNavigateSection('simulation'),
-      });
-    }
-
-    if (minuteData.length < 24) {
-      items.push({
-        id: 'warmup',
-        title: 'Simulation warming up',
-        description: 'Live results become more stable after more time-step data is collected.',
-        actionLabel: 'View Live Results',
-        onAction: () => onNavigateSection('financial'),
-      });
-    }
-
-    if ((batteryNode.soc ?? 100) < 20) {
-      items.push({
-        id: 'battery-low',
-        title: 'Battery charge is low',
-        description: `Current SoC is ${(batteryNode.soc ?? 0).toFixed(0)}%. Consider adjusting charge strategy.`,
-        actionLabel: 'Get Recommendation',
-        onAction: () => onNavigateSection('recommendation'),
-      });
-    }
-
-    if ((stats.totalGridImportKWh ?? 0) > (stats.totalSolarKWh ?? 0) * 0.8 && minuteData.length > 0) {
-      items.push({
-        id: 'grid-heavy',
-        title: 'High grid dependency detected',
-        description: 'Grid imports are high relative to solar production in this run.',
-        actionLabel: 'Review Config',
-        onAction: () => onNavigateSection('configuration'),
-      });
-    }
-
-    if (items.length === 0) {
-      items.push({
-        id: 'all-good',
-        title: 'System status normal',
-        description: 'No immediate action required. Performance indicators are within expected range.',
-      });
-    }
-
-    return items;
-  }, [batteryNode.soc, isAutoMode, minuteData.length, onNavigateSection, stats.totalGridImportKWh, stats.totalSolarKWh]);
+  const handleDownloadJPG = useCallback(async () => {
+    const samples = resampleTo5MinBuckets(minuteData as SimulationMinuteRecord[]);
+    const blob = await buildJPGBlob(samples, { width: 900, height: 340, label: 'Daily Energy Flow' });
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'safaricharge-daily-energy.jpg';
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [minuteData]);
+  // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <>
-      <style jsx global>{`
-        .print-only-summary { display: none; }
-        @media print {
-          .print-only-summary {
-            display: block;
-            padding: 24px;
-            color: #0f172a;
-            background: white;
-          }
-          .hide-in-print { display: none !important; }
-        }
-      `}</style>
+    <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
+      <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
+        {/* Location Picker */}
+        <div className="flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-[var(--text-primary)]">Dashboard</h2>
+            <p className="text-sm text-[var(--text-tertiary)]">Real-time solar · battery · EV charging overview</p>
+          </div>
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 text-xs"
+              onClick={() => setShowLocationPicker((p) => !p)}
+              aria-label="Choose location"
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              {selectedLocation.displayName}
+            </Button>
+            {showLocationPicker && (
+              <div
+                className="absolute right-0 top-full mt-1 z-50 rounded-xl shadow-xl border overflow-hidden"
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', width: '320px', maxHeight: '360px', display: 'flex', flexDirection: 'column' }}
+              >
+                <div className="p-3 border-b" style={{ borderColor: 'var(--border)' }}>
+                  <input
+                    type="text"
+                    placeholder="Search county or location..."
+                    className="w-full text-xs px-3 py-2 rounded-lg outline-none"
+                    style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                    value={locationSearch}
+                    onChange={(e) => setLocationSearch(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+                <div className="overflow-y-auto flex-1">
+                  {filteredLocations.map((loc) => (
+                    <button
+                      key={loc.name}
+                      className="w-full text-left px-4 py-2.5 text-xs hover:bg-[var(--bg-hover)] transition-colors"
+                      style={{ color: loc.name === selectedLocation.name ? 'var(--accent)' : 'var(--text-primary)' }}
+                      onClick={() => { setSelectedLocation(loc); setShowLocationPicker(false); setLocationSearch(''); }}
+                    >
+                      <div className="font-medium">{loc.displayName}</div>
+                      {loc.isKosapTarget && (
+                        <span className="text-[10px] text-[var(--text-muted)]">• KOSAP target</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
-      <div className="hide-in-print">
-        <DashboardHeader
-          currentDate={currentDate}
-          onReset={handleReset}
-          onLocationClick={() => setLocationPickerOpen(true)}
-          onDownload={() => setIsReportOpen(true)}
-          onSaveScenario={handleSaveScenario}
-          locationName={activeLocation.displayName}
-          notifications={headerNotifications}
+        <InsightsBanner />
+
+        {/* Location context info */}
+        {selectedLocation.countyNote && (
+          <div
+            className="flex items-start gap-2 rounded-xl px-4 py-3 text-xs"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
+          >
+            <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: 'var(--accent)' }} />
+            <span><strong style={{ color: 'var(--text-primary)' }}>{selectedLocation.displayName}</strong> · {selectedLocation.countyNote}</span>
+          </div>
+        )}
+
+        <StatCards />
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
+          <div className="xl:col-span-2">
+            <PowerFlowVisualization />
+          </div>
+          <div className="flex flex-col gap-4">
+            <BatteryStatusCard />
+            <WeatherCard
+              peakSunHours={selectedLocation.annualAvgSunHours}
+              latitude={selectedLocation.latitude}
+              longitude={selectedLocation.longitude}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6">
+          <div className="xl:col-span-2" ref={graphRef}>
+            <DailyEnergyGraph
+              minuteData={resampleTo5MinBucketsProgressive(minuteData as SimulationMinuteRecord[])}
+              label="Daily Energy Flow"
+              onDownloadSVG={handleDownloadSVG}
+              onDownloadJPG={handleDownloadJPG}
+            />
+          </div>
+          <div>
+            <EngineeringKpisCard kpis={engineeringKpis} />
+          </div>
+        </div>
+
+        <TimeRangeSwitcher />
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
+          <PanelStatusTable />
+          <AlertsList />
+        </div>
+
+        <SocialImpactCard
+          householdsEquivalent={householdsEquivalent}
+          keroseneDisplacedL={keroseneDisplaced}
+          co2AvoidedKg={co2Avoided}
+          totalSolarKwh={parseFloat(totalSolarKwh.toFixed(1))}
         />
 
-        <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
-          <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-bold text-[var(--text-primary)]">Energy Dashboard</h2>
-                <p className="text-sm text-[var(--text-tertiary)]">Monitor your solar energy system performance</p>
+        {/* Monthly Overview (Financial Preview) */}
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Monthly Overview</CardTitle>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-xs">KES/kWh: {financialInputs.chargingTariffKes}</Badge>
               </div>
-              <TimeRangeSwitcher selectedRange={timeRange} onRangeChange={setTimeRange} />
             </div>
-
-            <InsightsBanner
-              systemEfficiency={trendsData.systemEfficiency}
-              todaySavings={stats.totalSavingsKES}
-              savingsChange={trendsData.savingsChange}
-              forecastChange={trendsData.forecastChange}
-              batteryOptimized={trendsData.batteryOptimized}
-              alertCount={3}
-            />
-
-            <StatCards
-              totalGeneration={Number(stats.totalSolarKWh.toFixed(1))}
-              currentPower={Number(solarPower.toFixed(1))}
-              consumption={Number(stats.totalConsumptionKWh.toFixed(1))}
-              savings={Math.round(stats.totalSavingsKES)}
-              generationHistory={sparklineData.gen}
-              powerHistory={sparklineData.power}
-              consumptionHistory={sparklineData.cons}
-              savingsHistory={sparklineData.savings}
-              weeklyAvgGeneration={trendsData.weeklyAvgGen}
-              weeklyAvgConsumption={trendsData.weeklyAvgCons}
-              yesterdaySavings={trendsData.yesterdaySavings}
-            />
-
-            <PowerFlowVisualization
-              solarPower={solarPower}
-              batteryPower={batteryPower}
-              gridPower={gridPower}
-              homePower={homePower}
-              batteryLevel={batteryLevel}
-              flowDirection={flowDirection}
-              detailBasePath="/demo"
-            />
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <Card className="dashboard-card">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-                      <TrendingUp className="h-5 w-5 text-[var(--battery)]" />
-                      Generation vs Consumption
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <DailyEnergyGraph
-                      data={graphData}
-                      dateLabel={currentDate?.toISOString().slice(0, 10)}
-                      minuteData={minuteData}
-                      solarCapacityKw={solarNode.capacityKW}
-                      expectedOutputData={expectedOutputData}
-                      showSoCBands
-                    />
-                  </CardContent>
-                </Card>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-[var(--color-primary)]">KES {financialSnapshot.monthlyRevenueKes.toLocaleString()}</div>
+                <div className="text-xs text-[var(--text-muted)] mt-1">Monthly Revenue</div>
               </div>
-              <div>
-                <Card className="dashboard-card h-full">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-                      <PieChart className="h-5 w-5 text-[var(--grid)]" />
-                      Energy Distribution
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="flex flex-col items-center justify-center py-6 gap-5">
-                      <div className="relative flex h-40 w-40 items-center justify-center">
-                        <div className="absolute inset-0 rounded-full bg-[var(--bg-card-muted)]" />
-                        <svg viewBox="0 0 120 120" className="absolute inset-0 w-full h-full -rotate-90">
-                          <circle cx="60" cy="60" r="48" fill="none" stroke="var(--solar)" strokeWidth="14" strokeDasharray={`${ringSegments.solar} ${ringSegments.circumference}`} strokeLinecap="round" opacity="0.9" />
-                          <circle cx="60" cy="60" r="48" fill="none" stroke="var(--consumption)" strokeWidth="14" strokeDasharray={`${ringSegments.consumption} ${ringSegments.circumference}`} strokeDashoffset={`${-ringSegments.solar}`} strokeLinecap="round" opacity="0.9" />
-                          <circle cx="60" cy="60" r="48" fill="none" stroke="var(--grid)" strokeWidth="14" strokeDasharray={`${ringSegments.export} ${ringSegments.circumference}`} strokeDashoffset={`${-(ringSegments.solar + ringSegments.consumption)}`} strokeLinecap="round" opacity="0.9" />
-                        </svg>
-                        <div className="text-center z-10">
-                          <div className="text-xl font-bold text-[var(--text-primary)]">{Math.round(energySplit.solarPct * 100)}%</div>
-                          <div className="text-[10px] text-[var(--text-tertiary)]">Solar</div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-500">{financialSnapshot.selfConsumptionRate.toFixed(1)}%</div>
+                <div className="text-xs text-[var(--text-muted)] mt-1">Self-Consumption</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-500">{financialSnapshot.gridRelianceRate.toFixed(1)}%</div>
+                <div className="text-xs text-[var(--text-muted)] mt-1">Grid Reliance</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-[var(--color-primary)]">{financialSnapshot.paybackYears.toFixed(1)} yrs</div>
+                <div className="text-xs text-[var(--text-muted)] mt-1">Payback Period</div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <PanelStatusTable />
-              </div>
-              <div className="flex flex-col gap-6">
-                <WeatherCard locationName={activeLocation.displayName} temperature={ambientTemp} irradiance={Math.round((latestPoint?.solarKW ?? 0) * 80)} />
-                <BatteryStatusCard batteryLevel={batteryLevel} batteryPower={batteryPower} isCharging={batteryPower >= 0} temperature={batteryTemp} showDeratingBadge deratingPct={deratingPct} showSoCBands />
-              </div>
-            </div>
-
-            <SystemVisualization />
-
-            <EngineeringKpisCard
-              deratingPct={deratingPct}
-              showDeratingBadge
-              financeSummary={{
-                lcoeKesPerKwh: financialSnapshot.lcoeKesPerKwh,
-                npvKes: financialSnapshot.npvKes,
-                irrPct: financialSnapshot.irrPct,
-                paybackYears: financialSnapshot.paybackYears,
-              }}
-            />
-
-            {financialSnapshot.energy.trackedDays > 0 && (
-              <SocialImpactCard
-                householdsPowered={socialImpact.householdsPowered}
-                keroseneDisplacedLiters={socialImpact.keroseneDisplacedLiters}
-                co2AvoidedKg={socialImpact.co2AvoidedKg}
-                annualSolarGeneratedKwh={socialImpact.annualSolarGeneratedKwh}
-                countyName={activeLocation.county}
-                countyNote={activeLocation.countyNote}
-                countyElectrificationRatePct={activeLocation.electrificationRatePct}
-                isKosapTarget={activeLocation.isKosapTarget}
-              />
-            )}
-
-            <AlertsList />
-          </div>
-        </main>
-      </div>
-
-      <Dialog open={locationPickerOpen} onOpenChange={setLocationPickerOpen}>
-        <DialogContent className="bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)] max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-[var(--solar)]" />
-              Select Location
-            </DialogTitle>
-            <DialogDescription className="text-[var(--text-secondary)]">
-              Choose a Kenyan city to calibrate solar irradiance data for the simulation.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="mt-2 flex flex-col gap-1.5">
-            {KENYA_LOCATIONS.map((loc) => (
-              <Button
-                key={loc.name}
-                variant="ghost"
-                onClick={() => handleSelectLocation(loc)}
-                className={[
-                  'h-auto justify-between rounded-lg px-3 py-2 text-sm transition-all duration-150',
-                  activeLocation.name === loc.name
-                    ? 'bg-[var(--solar-soft)] text-[var(--solar)] font-semibold'
-                    : 'text-[var(--text-primary)] hover:bg-[var(--bg-card-muted)]',
-                ].join(' ')}
-              >
-                <div className="min-w-0 text-left">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate">{loc.displayName}</span>
-                  </div>
+            {/* Monthly Generation vs Consumption Chart */}
+            <div className="mt-6">
+              <div className="flex items-center gap-4 mb-3">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full" style={{ background: 'var(--color-primary)' }} />
+                  <span className="text-xs text-[var(--text-muted)]">Solar Generation (kWh)</span>
                 </div>
-                <span className="text-xs text-[var(--text-tertiary)]">{loc.annualAvgSunHours} sun-hrs/day</span>
-              </Button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-orange-500" />
+                  <span className="text-xs text-[var(--text-muted)]">Consumption (kWh)</span>
+                </div>
+              </div>
+              <div className="flex items-end gap-1 h-24">
+                {MONTH_LABELS.map((month, i) => {
+                  const gen = monthlyGenerated[i] || 0;
+                  const cons = monthlyConsumed[i] || 0;
+                  const maxVal = Math.max(...monthlyGenerated, ...monthlyConsumed, 1);
+                  return (
+                    <div key={month} className="flex-1 flex flex-col items-center gap-0.5">
+                      <div className="w-full flex gap-0.5" style={{ height: '72px', alignItems: 'flex-end' }}>
+                        <div
+                          className="flex-1 rounded-t-sm"
+                          style={{ height: `${(gen / maxVal) * 100}%`, background: 'var(--color-primary)', opacity: 0.85 }}
+                        />
+                        <div
+                          className="flex-1 rounded-t-sm bg-orange-500"
+                          style={{ height: `${(cons / maxVal) * 100}%`, opacity: 0.75 }}
+                        />
+                      </div>
+                      <span className="text-[9px] text-[var(--text-muted)]">{month}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-      <EnergyReportModal
-        isOpen={isReportOpen}
-        onClose={() => setIsReportOpen(false)}
-        savings={stats.totalSavingsKES}
-        solarConsumed={stats.totalSolarKWh}
-        gridImport={stats.totalGridImportKWh ?? 0}
-        minuteData={minuteData}
-        systemStartDate={minuteData[0]?.date ?? new Date().toISOString().slice(0, 10)}
-        onExportCsv={handleExportCsv}
-        onExportExcel={handleExportExcel}
-        onFormalReport={handleFormalReport}
-        onDownloadCharts={handleDownloadCharts}
-        carbonOffset={accumulators.carbonOffset}
-      />
-    </>
+        <SystemVisualization />
+
+        {/* PV Sizing CTA */}
+        <div
+          className="rounded-xl px-5 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+        >
+          <div className="flex items-center gap-3">
+            <Sun className="w-5 h-5 shrink-0" style={{ color: 'var(--accent)' }} />
+            <div>
+              <div className="text-sm font-semibold text-[var(--text-primary)]">Not sure what size system you need?</div>
+              <div className="text-xs text-[var(--text-muted)]">Use our PV Sizing Calculator to get a recommendation based on your load profile.</div>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => onNavigateSection('configuration')} className="shrink-0 text-xs">
+            Go to Configuration
+          </Button>
+        </div>
+
+        {/* Sizing Proposal Dialog */}
+        {pendingSizing && (
+          <Dialog open={showSizingDialog} onOpenChange={setShowSizingDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Apply PV Sizing Recommendation?</DialogTitle>
+                <DialogDescription>
+                  The PV Sizing Calculator recommended a <strong>{pendingSizing.pvKw} kW</strong> solar array
+                  and a <strong>{pendingSizing.batteryKwh} kWh</strong> battery.
+                  Apply these values to your live simulation?
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex justify-end gap-2 mt-4">
+                <Button variant="ghost" onClick={handleDismissSizing}>Dismiss</Button>
+                <Button onClick={handleApplySizing}>Apply</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        <EnergyReportModal
+          open={isReportOpen}
+          onOpenChange={setIsReportOpen}
+          minuteData={minuteData as SimulationMinuteRecord[]}
+          financialSnapshot={financialSnapshot}
+          solarData={NAIROBI_SOLAR_DATA}
+          systemConfig={systemConfig}
+        />
+      </div>
+    </main>
   );
 }
 
-function DemoSimulationView({ onNavigateSection }: { onNavigateSection: (section: DashboardSection) => void }) {
-  useDemoEnergySystem(true);
+function DemoSimulationView({ onNavigateSection }: { onNavigateSection: (s: DashboardSection) => void }) {
   return (
     <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
         <div>
-          <h2 className="text-2xl font-bold text-[var(--text-primary)]">Simulation</h2>
-          <p className="text-sm text-[var(--text-tertiary)]">Core physics engine, scenario controls and system visualisation</p>
+          <h2 className="text-2xl font-bold text-[var(--text-primary)]">Live Simulation</h2>
+          <p className="text-sm text-[var(--text-tertiary)]">Real-time energy simulation with validated physics models</p>
         </div>
-        <Accordion type="single" collapsible defaultValue="simulation-core" className="rounded-xl border border-[var(--border)] px-4">
-          <AccordionItem value="simulation-core">
-            <AccordionTrigger className="text-sm font-medium text-muted-foreground">Simulation Core</AccordionTrigger>
-            <AccordionContent>
-              <SimulationNodes />
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem value="validation-testing">
-            <AccordionTrigger className="text-sm font-medium text-muted-foreground">Validation &amp; Testing Panel</AccordionTrigger>
-            <AccordionContent>
-              <ValidationPanel />
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+        <SimulationNodes onNavigateSection={onNavigateSection} />
+        <ValidationPanel />
       </div>
     </main>
   );
@@ -1109,8 +859,28 @@ function DemoConfigurationView() {
           <p className="text-sm text-[var(--text-tertiary)]">Configure solar panels, battery, EV chargers, load profiles and size your PV system</p>
         </div>
         <LoadConfigComponents />
-        {/* PV Sizing Calculator moved here from the top nav bar */}
-        <InlinePvSizingCalculator />
+
+        {/* ── PV Sizing Calculator ────────────────────────────────────────── */}
+        <details
+          className="rounded-xl overflow-hidden"
+          style={{ border: '1px solid var(--border)' }}
+        >
+          <summary
+            className="flex items-center justify-between px-4 py-3 cursor-pointer text-sm font-semibold select-none"
+            style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+          >
+            <span>⚡ PV Sizing Calculator</span>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+              Calculate required panel &amp; battery capacity
+            </span>
+          </summary>
+          <div
+            className="p-4"
+            style={{ background: 'var(--bg-secondary)', borderTop: '1px solid var(--border)' }}
+          >
+            <PVSizingSection />
+          </div>
+        </details>
       </div>
     </main>
   );
@@ -1135,17 +905,13 @@ function DemoFinancialView({
     <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
         <div>
-          <h2 className="text-2xl font-bold text-[var(--text-primary)]">Finance: Live Simulation Results</h2>
-          <p className="text-sm text-[var(--text-tertiary)]">CAPEX, LCOE, NPV, IRR and payback derived from your current simulation run</p>
+          <h2 className="text-2xl font-bold text-[var(--text-primary)]">Financial Analysis</h2>
+          <p className="text-sm text-[var(--text-tertiary)]">ROI projections, revenue modelling and investment metrics</p>
         </div>
         <FinancialDashboard
           snapshot={snapshot}
           inputs={financialInputs}
           onInputsChange={onFinancialInputsChange}
-          hasSimulationData={minuteData.length > 0}
-          expectedYieldKwh={(10) * 5.4}
-          actualYieldKwh={snapshot.energy.avgDailySolarKWh}
-          tariffRate={financialInputs.chargingTariffKes}
         />
       </div>
     </main>
@@ -1153,64 +919,65 @@ function DemoFinancialView({
 }
 
 function DemoRecommendationView() {
-  const minuteData = useMinuteData('today');
   return (
     <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
         <div>
-          <h2 className="text-2xl font-bold text-[var(--text-primary)]">Get Recommendation</h2>
+          <h2 className="text-2xl font-bold text-[var(--text-primary)]">AI Recommendations</h2>
           <p className="text-sm text-[var(--text-tertiary)]">AI-powered system sizing and configuration recommendations</p>
         </div>
-        <RecommendationComponents solarData={NAIROBI_SOLAR_DATA} minuteData={minuteData as SimulationMinuteRecord[]} />
+        <RecommendationComponents />
       </div>
     </main>
   );
 }
 
-function DemoAIAssistantView({ onNavigateSection }: { onNavigateSection: (section: DashboardSection) => void }) {
-  const { currentDate } = useSimulationState();
+function DemoAIAssistantView({ onNavigateSection }: { onNavigateSection: (s: DashboardSection) => void }) {
+  const [aiOpen, setAiOpen] = useState(true);
+  useDemoEnergySystem(false);
+  const solarNode = useEnergyNode('solar');
+  const batteryNode = useEnergyNode('battery');
+  const gridNode = useEnergyNode('grid');
+  const homeNode = useEnergyNode('home');
+  const flows = useEnergyFlows();
+  const stats = useEnergyStats('today');
   const minuteData = useMinuteData('today');
+  const accumulators = useAccumulators();
+  const systemConfig = useEnergySystemStore((s) => s.systemConfig);
+  const engineeringKpis = useMemo(() =>
+    computeProfessionalEngineeringKpis(minuteData as SimulationMinuteRecord[], systemConfig),
+    [minuteData, systemConfig]
+  );
+  const financialSnapshot = useMemo(() => buildFinancialSnapshot({
+    minuteData: minuteData as Parameters<typeof buildFinancialSnapshot>[0]['minuteData'],
+    solarData: NAIROBI_SOLAR_DATA,
+    inputs: { chargingTariffKes: 25, discountRatePct: 10, stationCount: 3, targetUtilizationPct: 45, projectYears: 20 },
+    evCapacityKw: 22,
+  }), [minuteData]);
+
   return (
     <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
-      <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
-        <div>
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-6">
           <h2 className="text-2xl font-bold text-[var(--text-primary)]">AI Assistant</h2>
-          <p className="text-sm text-[var(--text-tertiary)]">Ask questions about your live energy system</p>
+          <p className="text-sm text-[var(--text-tertiary)]">Ask anything about your solar system, energy data, or get configuration advice</p>
         </div>
         <SafariChargeAIAssistant
-          isOpen={true}
-          onClose={() => onNavigateSection('dashboard')}
-          data={null}
-          timeOfDay={currentDate ? currentDate.getHours() + currentDate.getMinutes() / 60 : 12}
-          weather="clear"
-          currentDate={currentDate ?? new Date()}
-          isAutoMode={true}
-          minuteData={minuteData as SimulationMinuteRecord[]}
-          systemConfig={{
-            mode: 'auto',
-            panelCount: 20,
-            panelWatt: 500,
-            inverterKw: 10,
-            inverterUnits: 1,
-            batteryKwh: 50,
-            maxChargeKw: 5,
-            maxDischargeKw: 5,
-            evChargerKw: 7.4,
-            loadScale: 1,
-            loadProfile: 'residential',
-            evCommuterScale: 1,
-            evFleetScale: 1,
-            homeLoadEnabled: true,
-            homeLoadKw: 3,
-            commercialLoadEnabled: false,
-            commercialLoadKw: 0,
-            industrialLoadEnabled: false,
-            industrialLoadKw: 0,
-            accessoryLoadKw: 0,
-            accessoryScale: 1,
-            performanceRatio: 0.8,
-            shadingLossPct: 0,
-            pvCapacityKw: 10,
+          isOpen={aiOpen}
+          onClose={() => { setAiOpen(false); onNavigateSection('dashboard'); }}
+          currentSection="ai-assistant"
+          systemData={{
+            solar: { output: solarNode.output, status: solarNode.status },
+            battery: { soc: batteryNode.soc, status: batteryNode.status, power: batteryNode.power },
+            grid: { status: gridNode.status, power: gridNode.power },
+            home: { consumption: homeNode.consumption },
+            flows,
+            stats,
+            minuteData: minuteData as SimulationMinuteRecord[],
+            accumulators,
+            systemConfig,
+            engineeringKpis,
+            financialSnapshot,
           }}
         />
       </div>
