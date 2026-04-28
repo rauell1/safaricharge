@@ -13,9 +13,12 @@ import {
   ShieldCheck,
   Zap,
   TrendingUp,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import {
   Sidebar,
   SidebarContent,
@@ -56,26 +59,22 @@ interface DashboardSidebarProps {
 }
 
 const TONE: Record<SidebarContextMetric['tone'], { dot: string; bg: string; text: string }> = {
-  solar:   { dot: 'bg-[var(--solar)]',    bg: 'bg-[var(--solar-soft)]',       text: 'text-[var(--solar)]' },
-  battery: { dot: 'bg-[var(--battery)]',  bg: 'bg-[var(--battery-soft)]',     text: 'text-[var(--battery)]' },
-  grid:    { dot: 'bg-[var(--grid)]',     bg: 'bg-[var(--grid-soft)]',        text: 'text-[var(--grid)]' },
-  ev:      { dot: 'bg-[var(--ev)]',       bg: 'bg-[var(--ev-soft)]',          text: 'text-[var(--ev)]' },
+  solar:   { dot: 'bg-[var(--solar)]',      bg: 'bg-[var(--solar-soft)]',     text: 'text-[var(--solar)]' },
+  battery: { dot: 'bg-[var(--battery)]',    bg: 'bg-[var(--battery-soft)]',   text: 'text-[var(--battery)]' },
+  grid:    { dot: 'bg-[var(--grid)]',       bg: 'bg-[var(--grid-soft)]',      text: 'text-[var(--grid)]' },
+  ev:      { dot: 'bg-[var(--ev)]',         bg: 'bg-[var(--ev-soft)]',        text: 'text-[var(--ev)]' },
   neutral: { dot: 'bg-[var(--text-muted)]', bg: 'bg-[var(--bg-card-muted)]', text: 'text-[var(--text-secondary)]' },
 };
 
 // ── Governance section — lazy: hooks only mount when panel is open ─────────────
-// Keeps useEnergyNode / useMinuteData out of the top-level sidebar render
-// so they don't run (and trigger re-renders) on every non-dashboard route.
-
 function GovernanceSection() {
   const [open, setOpen] = useState(false);
-
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="flex w-full items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2 text-sm font-medium text-[var(--text-primary)]"
+        className="flex w-full items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-card)] transition-colors"
       >
         <ShieldCheck className="h-4 w-4 text-[var(--battery)]" />
         Governance
@@ -85,22 +84,16 @@ function GovernanceSection() {
   );
 }
 
-// Only mounts (and therefore only calls hooks) when the panel is open.
 function GovernancePanelContent() {
   const battery = useEnergyNode('battery');
   const solar = useEnergyNode('solar');
-
-  // Stable selector: only re-compute when the last minute-data point changes.
-  // Avoids iterating the full array on every simulation tick.
   const minuteData = useMinuteData('today');
   const latestPoint = useMemo(
     () => minuteData[minuteData.length - 1],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [minuteData.length],
   );
-
   const expectedOutputBaseline = (solar.capacityKW ?? 10) * 0.7;
-
   return (
     <div className="mt-2">
       <GovernanceWidget
@@ -114,8 +107,46 @@ function GovernancePanelContent() {
   );
 }
 
-// ── Main sidebar ──────────────────────────────────────────────────────────────
+// ── Theme toggle button ───────────────────────────────────────────────────────
+function ThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
 
+  return (
+    <button
+      type="button"
+      onClick={() => setTheme(isDark ? 'light' : 'dark')}
+      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      className="flex w-full items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-card)] hover:border-[var(--border-hover)] transition-all duration-150"
+    >
+      <span className="flex items-center gap-2.5">
+        {isDark ? (
+          <Sun className="h-4 w-4 text-[var(--solar)]" />
+        ) : (
+          <Moon className="h-4 w-4 text-[var(--battery)]" />
+        )}
+        <span className="text-[var(--text-secondary)]">
+          {isDark ? 'Light mode' : 'Dark mode'}
+        </span>
+      </span>
+      {/* Toggle pill */}
+      <span
+        className="relative inline-flex h-5 w-9 shrink-0 rounded-full border border-[var(--border-strong)] transition-colors duration-200"
+        style={{ background: isDark ? 'var(--battery-soft)' : 'var(--bg-card-muted)' }}
+      >
+        <span
+          className="absolute top-0.5 left-0.5 h-4 w-4 rounded-full shadow-sm transition-transform duration-200"
+          style={{
+            background: isDark ? 'var(--battery)' : 'var(--text-tertiary)',
+            transform: isDark ? 'translateX(16px)' : 'translateX(0)',
+          }}
+        />
+      </span>
+    </button>
+  );
+}
+
+// ── Main sidebar ──────────────────────────────────────────────────────────────
 export function DashboardSidebar({
   activeSection = 'dashboard',
   onSectionChange,
@@ -138,7 +169,6 @@ export function DashboardSidebar({
     return activeSection ?? 'dashboard';
   }, [activeSection, pathname]);
 
-  // ── Nav items ────────────────────────────────────────────────────────────
   const primaryNavItems: Array<{
     id: DashboardSection;
     label: string;
@@ -146,13 +176,13 @@ export function DashboardSidebar({
     href?: string;
     description?: string;
   }> = [
-    { id: 'dashboard',           label: 'Dashboard',              icon: LayoutDashboard,  href: '/dashboard', description: 'Live operations overview' },
-    { id: 'simulation',          label: 'Simulation',             icon: FlaskConical,     href: '/simulation', description: 'Run and inspect system behavior' },
-    { id: 'configuration',       label: 'System Config',          icon: SlidersHorizontal, href: '/configuration', description: 'Tune solar, battery and EV settings' },
-    { id: 'energy-intelligence', label: 'Energy Intelligence',    icon: Zap,              href: '/energy-intelligence', description: 'AI analysis of energy performance' },
-    { id: 'scenarios',           label: 'Scenarios',              icon: BookMarked,       href: '/scenarios', description: 'Saved cases and comparisons' },
-    { id: 'recommendation',      label: 'Recommendations',        icon: Lightbulb,        href: '/recommendation', description: 'Sizing and optimization guidance' },
-    { id: 'ai-assistant',        label: 'AI Assistant',           icon: Bot,              href: '/ai-assistant', description: 'Ask questions about system data' },
+    { id: 'dashboard',           label: 'Dashboard',           icon: LayoutDashboard,   href: '/dashboard',            description: 'Live operations overview' },
+    { id: 'simulation',          label: 'Simulation',          icon: FlaskConical,      href: '/simulation',           description: 'Run and inspect system behavior' },
+    { id: 'configuration',       label: 'System Config',       icon: SlidersHorizontal, href: '/configuration',        description: 'Tune solar, battery and EV settings' },
+    { id: 'energy-intelligence', label: 'Energy Intelligence', icon: Zap,               href: '/energy-intelligence',  description: 'AI analysis of energy performance' },
+    { id: 'scenarios',           label: 'Scenarios',           icon: BookMarked,        href: '/scenarios',            description: 'Saved cases and comparisons' },
+    { id: 'recommendation',      label: 'Recommendations',     icon: Lightbulb,         href: '/recommendation',       description: 'Sizing and optimization guidance' },
+    { id: 'ai-assistant',        label: 'AI Assistant',        icon: Bot,               href: '/ai-assistant',         description: 'Ask questions about system data' },
   ];
 
   const financeNavItems: Array<{
@@ -163,33 +193,22 @@ export function DashboardSidebar({
     description?: string;
   }> = [
     { id: 'financial',       label: 'Live Results', icon: DollarSign, href: '/live-results', description: 'Uses your running simulation data' },
-    { id: 'financial-model', label: 'Planner',      icon: TrendingUp, href: '/financial', description: 'Standalone what-if model' },
+    { id: 'financial-model', label: 'Planner',      icon: TrendingUp, href: '/financial',    description: 'Standalone what-if model' },
   ];
 
   return (
-    <Sidebar
-      className="border-r text-[var(--text-primary)]"
-      style={{}}
-    >
+    <Sidebar className="border-r border-[var(--border)] text-[var(--text-primary)]" style={{}}>
       {/* Logo */}
-      <SidebarHeader
-        className="px-4 py-5 border-b border-[var(--border)]"
-      >
+      <SidebarHeader className="px-4 py-5 border-b border-[var(--border)] bg-[var(--bg-card)]">
         <div className="flex items-center justify-center">
-          <img
-            src="/logo.png"
-            alt="SafariCharge"
-            className="h-20 w-auto object-contain"
-          />
+          <img src="/logo.png" alt="SafariCharge" className="h-20 w-auto object-contain" />
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 py-4">
-        {/* Nav */}
+      <SidebarContent className="px-2 py-4 bg-[var(--bg-secondary)]">
+        {/* Primary Nav */}
         <SidebarGroup>
-          <SidebarGroupLabel
-            className="mb-1.5 px-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]"
-          >
+          <SidebarGroupLabel className="mb-1.5 px-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
             Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -201,28 +220,18 @@ export function DashboardSidebar({
 
                 const inner = (
                   <span className="flex items-center gap-3 w-full">
-                    <item.icon
-                      className={cn('h-4 w-4 shrink-0', isActive ? 'text-[var(--battery)]' : 'text-[var(--text-tertiary)]')}
-                    />
+                    <item.icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-[var(--battery)]' : 'text-[var(--text-tertiary)]')} />
                     <span className="min-w-0 flex-1">
-                      <span
-                        className={cn('block text-sm truncate', isActive ? 'font-medium text-[var(--text-primary)]' : 'font-normal text-[var(--text-secondary)]')}
-                      >
+                      <span className={cn('block text-sm truncate', isActive ? 'font-medium text-[var(--text-primary)]' : 'font-normal text-[var(--text-secondary)]')}>
                         {item.label}
                       </span>
                       {item.description && (
-                        <span
-                          className="block truncate text-[11px] leading-tight text-[var(--text-tertiary)]"
-                        >
+                        <span className="block truncate text-[11px] leading-tight text-[var(--text-tertiary)]">
                           {item.description}
                         </span>
                       )}
                     </span>
-                    {isActive && (
-                      <span
-                        className="ml-auto w-1.5 h-1.5 rounded-full shrink-0 bg-[var(--battery)]"
-                      />
-                    )}
+                    {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full shrink-0 bg-[var(--battery)]" />}
                   </span>
                 );
 
@@ -234,23 +243,16 @@ export function DashboardSidebar({
                       onClick={() => !item.href && onSectionChange?.(item.id)}
                       className={cn(
                         'group relative rounded-lg px-3 py-2.5 transition-all duration-150',
-                        isActive
-                          ? 'bg-[var(--bg-card)] shadow-sm'
-                          : 'hover:bg-[var(--bg-card-muted)]'
+                        isActive ? 'bg-[var(--bg-card)] shadow-sm' : 'hover:bg-[var(--bg-card-muted)]'
                       )}
                     >
-                      {item.href ? (
-                        <Link href={item.href} className="w-full">
-                          {inner}
-                        </Link>
-                      ) : (
-                        inner
-                      )}
+                      {item.href ? <Link href={item.href} className="w-full">{inner}</Link> : inner}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
               })}
 
+              {/* Finance sub-label */}
               <SidebarMenuItem className="mt-2">
                 <div className="px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
                   Finance
@@ -264,30 +266,18 @@ export function DashboardSidebar({
 
                 const inner = (
                   <span className="flex items-center gap-3 w-full">
-                    <item.icon
-                      className="h-4 w-4 shrink-0"
-                      className={cn('h-4 w-4 shrink-0', isActive ? 'text-[var(--battery)]' : 'text-[var(--text-tertiary)]')}
-                    />
+                    <item.icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-[var(--battery)]' : 'text-[var(--text-tertiary)]')} />
                     <span className="min-w-0 flex-1">
-                      <span
-                        className={cn('block text-sm truncate', isActive ? 'font-medium' : 'font-normal')}
-                        className={cn('block text-sm truncate', isActive ? 'font-medium text-[var(--text-primary)]' : 'font-normal text-[var(--text-secondary)]')}
-                      >
+                      <span className={cn('block text-sm truncate', isActive ? 'font-medium text-[var(--text-primary)]' : 'font-normal text-[var(--text-secondary)]')}>
                         {item.label}
                       </span>
                       {item.description && (
-                        <span
-                          className="block truncate text-[11px] leading-tight text-[var(--text-tertiary)]"
-                        >
+                        <span className="block truncate text-[11px] leading-tight text-[var(--text-tertiary)]">
                           {item.description}
                         </span>
                       )}
                     </span>
-                    {isActive && (
-                      <span
-                        className="ml-auto w-1.5 h-1.5 rounded-full shrink-0 bg-[var(--battery)]"
-                      />
-                    )}
+                    {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full shrink-0 bg-[var(--battery)]" />}
                   </span>
                 );
 
@@ -299,18 +289,10 @@ export function DashboardSidebar({
                       onClick={() => !item.href && onSectionChange?.(item.id)}
                       className={cn(
                         'group relative rounded-lg px-3 py-2.5 pl-6 transition-all duration-150',
-                        isActive
-                          ? 'bg-[var(--bg-card)] shadow-sm'
-                          : 'hover:bg-[var(--bg-card-muted)]'
+                        isActive ? 'bg-[var(--bg-card)] shadow-sm' : 'hover:bg-[var(--bg-card-muted)]'
                       )}
                     >
-                      {item.href ? (
-                        <Link href={item.href} className="w-full">
-                          {inner}
-                        </Link>
-                      ) : (
-                        inner
-                      )}
+                      {item.href ? <Link href={item.href} className="w-full">{inner}</Link> : inner}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
@@ -322,9 +304,7 @@ export function DashboardSidebar({
         {/* Live context metrics */}
         {contextualMetrics.length > 0 && (
           <SidebarGroup className="mt-5">
-            <SidebarGroupLabel
-                className="mb-1.5 px-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]"
-            >
+            <SidebarGroupLabel className="mb-1.5 px-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
               Live Context
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -333,19 +313,14 @@ export function DashboardSidebar({
                   <div
                     key={m.label}
                     className={cn(
-                      'rounded-lg px-3 py-2.5 flex items-center justify-between',
+                      'rounded-lg px-3 py-2.5 flex items-center justify-between border border-[var(--border)]',
                       TONE[m.tone].bg,
-                      'border border-[rgba(255,255,255,0.06)]'
                     )}
                   >
-                    <span
-                      className="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]"
-                    >
+                    <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
                       {m.label}
                     </span>
-                    <span
-                      className={cn('text-sm font-bold tabular-nums', TONE[m.tone].text)}
-                    >
+                    <span className={cn('text-sm font-bold tabular-nums', TONE[m.tone].text)}>
                       {m.value}
                     </span>
                   </div>
@@ -355,11 +330,9 @@ export function DashboardSidebar({
           </SidebarGroup>
         )}
 
-        {/* Governance — lazy: hooks only mount when panel is open */}
+        {/* Governance */}
         <SidebarGroup className="mt-5">
-          <SidebarGroupLabel
-            className="mb-1.5 px-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]"
-          >
+          <SidebarGroupLabel className="mb-1.5 px-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
             Governance
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -368,22 +341,16 @@ export function DashboardSidebar({
         </SidebarGroup>
       </SidebarContent>
 
-      {/* Footer */}
-      <SidebarFooter
-        className="px-4 py-4 border-t border-[var(--border)]"
-      >
+      {/* Footer: theme toggle + system status */}
+      <SidebarFooter className="px-4 py-4 border-t border-[var(--border)] bg-[var(--bg-card)] space-y-3">
+        {/* ── Theme toggle — its own full-width row ── */}
+        <ThemeToggle />
+
+        {/* ── System status ── */}
         <div className="flex items-center gap-2.5">
-          <span
-            className="h-2 w-2 rounded-full shrink-0 status-online bg-[var(--battery)]"
-          />
-          <span className="text-xs text-[var(--text-tertiary)]">
-            System Online
-          </span>
-          <span
-            className="ml-auto text-xs text-[var(--text-tertiary)]"
-          >
-            &copy; 2026
-          </span>
+          <span className="h-2 w-2 rounded-full shrink-0 status-online bg-[var(--battery)]" />
+          <span className="text-xs text-[var(--text-tertiary)]">System Online</span>
+          <span className="ml-auto text-xs text-[var(--text-tertiary)]">&copy; 2026</span>
         </div>
       </SidebarFooter>
     </Sidebar>

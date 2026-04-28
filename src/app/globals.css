@@ -1,85 +1,99 @@
 @import "tailwindcss";
 @config "../../tailwind.config.ts";
 
-/* ─── Design tokens ─────────────────────────────────────────── */
-:root {
-  /* Shadcn menu + surface tokens */
-  --background: 222 32% 6%;
-  --foreground: 210 40% 96%;
-  --card: 222 28% 10%;
-  --card-foreground: 210 36% 92%;
-  --popover: 222 30% 12%;
-  --popover-foreground: 210 36% 92%;
-  --primary: 152 66% 42%;
-  --primary-foreground: 144 86% 96%;
-  --secondary: 220 20% 18%;
-  --secondary-foreground: 213 32% 88%;
-  --muted: 218 16% 22%;
-  --muted-foreground: 214 22% 72%;
-  --accent: 44 95% 52%;
-  --accent-foreground: 219 33% 10%;
-  --destructive: 0 72% 60%;
+/* ═══════════════════════════════════════════════════════════════
+   SAFARICHARGE DESIGN TOKENS
+   Strategy:
+   - :root  = LIGHT mode (default, first load, no flash)
+   - .dark  = dark mode overrides
+   - .light = explicit light override (same as :root, for next-themes)
+   Every colour token, surface, border and text level is declared in
+   both contexts so NO section of the UI can ever stay in the wrong
+   mode. Hardcoded hex/rgba values are banned outside these blocks.
+═══════════════════════════════════════════════════════════════ */
+
+/* ─── LIGHT MODE (default :root) ───────────────────────────── */
+:root,
+.light {
+  color-scheme: light;
+
+  /* Shadcn / Radix hsl tokens */
+  --background:             210 40% 98%;
+  --foreground:             222 47% 11%;
+  --card:                   0 0% 100%;
+  --card-foreground:        222 47% 11%;
+  --popover:                0 0% 100%;
+  --popover-foreground:     222 47% 11%;
+  --primary:                152 66% 34%;
+  --primary-foreground:     144 86% 96%;
+  --secondary:              210 40% 94%;
+  --secondary-foreground:   222 47% 11%;
+  --muted:                  210 40% 94%;
+  --muted-foreground:       215 16% 42%;
+  --accent:                 44 95% 48%;
+  --accent-foreground:      219 33% 10%;
+  --destructive:            0 72% 52%;
   --destructive-foreground: 0 0% 100%;
-  --border-color: 220 18% 26%;
-  --input: 220 18% 22%;
-  --ring: 152 66% 42%;
-  --radius: 0.875rem;
+  --border-color:           214 32% 86%;
+  --input:                  214 32% 90%;
+  --ring:                   152 66% 34%;
+  --radius:                 0.875rem;
 
   /* Surfaces */
-  --bg-primary:     #080d18;
-  --bg-secondary:   #0d1424;
-  --bg-card:        #101929;
-  --bg-card-hover:  #162035;
-  --bg-card-muted:  rgba(255,255,255,0.035);
+  --bg-primary:       #f5f7f4;
+  --bg-secondary:     #ffffff;
+  --bg-card:          #ffffff;
+  --bg-card-hover:    #f8faf8;
+  --bg-card-muted:    rgba(7,18,14,0.04);
 
   /* Borders */
-  --border:         rgba(255,255,255,0.08);
-  --border-strong:  rgba(168,210,255,0.18);
-  --border-hover:   rgba(168,210,255,0.26);
+  --border:           rgba(7,18,14,0.10);
+  --border-strong:    rgba(7,18,14,0.22);
+  --border-hover:     rgba(7,18,14,0.28);
 
-  /* Text — dark mode (high contrast) */
-  --text-primary:   #f1f5f9;
-  --text-secondary: #b0bec5;
-  --text-tertiary:  #78909c;
-  --text-muted:     #546e7a;
+  /* Text */
+  --text-primary:     #0d1f17;
+  --text-secondary:   #2e4a3c;
+  --text-tertiary:    #4a6658;
+  --text-muted:       #688070;
 
-  /* Brand accents */
-  --solar:          #f59e0b;
-  --solar-bright:   #fbbf24;
-  --solar-soft:     rgba(245,158,11,0.10);
+  /* Brand accents — dark enough for light backgrounds */
+  --solar:            #b45309;
+  --solar-bright:     #d97706;
+  --solar-soft:       rgba(180,83,9,0.10);
 
-  --battery:        #10b981;
-  --battery-bright: #34d399;
-  --battery-soft:   rgba(16,185,129,0.10);
+  --battery:          #047857;
+  --battery-bright:   #059669;
+  --battery-soft:     rgba(4,120,87,0.10);
 
-  --consumption:    #06b6d4;
-  --consumption-soft: rgba(6,182,212,0.10);
+  --consumption:      #0e7490;
+  --consumption-soft: rgba(14,116,144,0.10);
 
-  --grid:           #3b82f6;
-  --grid-bright:    #60a5fa;
-  --grid-soft:      rgba(59,130,246,0.10);
+  --grid:             #1d4ed8;
+  --grid-bright:      #2563eb;
+  --grid-soft:        rgba(29,78,216,0.10);
 
-  --ev:             #a855f7;
-  --ev-bright:      #c084fc;
-  --ev-soft:        rgba(168,85,247,0.10);
+  --ev:               #6d28d9;
+  --ev-bright:        #7c3aed;
+  --ev-soft:          rgba(109,40,217,0.10);
 
-  --alert:          #ef4444;
-  --alert-bright:   #f87171;
-  --alert-soft:     rgba(239,68,68,0.10);
+  --alert:            #b91c1c;
+  --alert-bright:     #dc2626;
+  --alert-soft:       rgba(185,28,28,0.10);
 
-  --success:        #22c55e;
-  --warning:        #f59e0b;
-  --warning-soft:   rgba(245,158,11,0.10);
+  --success:          #15803d;
+  --warning:          #b45309;
+  --warning-soft:     rgba(180,83,9,0.10);
 
-  /* Sidebar tokens */
-  --sidebar-background: 220 28% 10%;
-  --sidebar-foreground: 215 14% 65%;
-  --sidebar-primary:    215 14% 40%;
-  --sidebar-primary-foreground: 215 14% 85%;
-  --sidebar-accent:     220 18% 16%;
-  --sidebar-accent-foreground: 215 14% 85%;
-  --sidebar-border:     220 16% 14%;
-  --sidebar-ring:       217 33% 17%;
+  /* Sidebar tokens (hsl for shadcn Sidebar component) */
+  --sidebar-background:           210 40% 97%;
+  --sidebar-foreground:           215 16% 20%;
+  --sidebar-primary:              152 66% 28%;
+  --sidebar-primary-foreground:   144 86% 96%;
+  --sidebar-accent:               210 40% 93%;
+  --sidebar-accent-foreground:    215 16% 15%;
+  --sidebar-border:               214 32% 88%;
+  --sidebar-ring:                 152 66% 34%;
 
   /* Spacing */
   --space-xs:  0.25rem;
@@ -100,105 +114,109 @@
   --font-sans:    var(--font-inter), system-ui, -apple-system, sans-serif;
   --font-display: var(--font-inter), system-ui, sans-serif;
 
-  /* Responsive icon sizes — used by .icon-auto and .sidebar-icon */
-  --icon-xs: 0.875rem;  /* 14px */
-  --icon-sm: 1rem;      /* 16px */
-  --icon-md: 1.25rem;   /* 20px */
-  --icon-lg: 1.5rem;    /* 24px */
+  /* Responsive icon sizes */
+  --icon-xs: 0.875rem;
+  --icon-sm: 1rem;
+  --icon-md: 1.25rem;
+  --icon-lg: 1.5rem;
 
-  /* Shared website shell tokens */
-  --site-page-bg: #03070f;
-  --site-page-fg: #f8fafc;
-  --site-page-muted: rgba(255,255,255,0.42);
-  --site-page-soft: rgba(255,255,255,0.16);
-  --site-page-border: rgba(255,255,255,0.05);
-  --site-page-surface: rgba(255,255,255,0.025);
-}
-
-.light {
-  color-scheme: light;
-
-  --background: 210 40% 98%;
-  --foreground: 222 47% 11%;
-  --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-  --primary: 152 66% 34%;
-  --primary-foreground: 144 86% 96%;
-  --secondary: 210 40% 94%;
-  --secondary-foreground: 222 47% 11%;
-  --muted: 210 40% 94%;
-  --muted-foreground: 215 16% 42%;
-  --accent: 44 95% 48%;
-  --accent-foreground: 219 33% 10%;
-  --border-color: 214 32% 86%;
-  --input: 214 32% 90%;
-
-  --bg-primary: #f5f7f4;
-  --bg-secondary: #ffffff;
-  --bg-card: #ffffff;
-  --bg-card-hover: #f8faf8;
-  --bg-card-muted: rgba(7,18,14,0.04);
-
-  --border: rgba(7,18,14,0.10);
-  --border-strong: rgba(7,18,14,0.22);
-  --border-hover: rgba(7,18,14,0.28);
-
-  /* Light mode text — boosted for WCAG AA */
-  --text-primary:   #0d1f17;
-  --text-secondary: #2e4a3c;
-  --text-tertiary:  #4a6658;
-  --text-muted:     #688070;
-
-  /* Brand accents — adjusted for light backgrounds */
-  --solar:          #b45309;
-  --solar-bright:   #d97706;
-  --solar-soft:     rgba(180,83,9,0.10);
-
-  --battery:        #047857;
-  --battery-bright: #059669;
-  --battery-soft:   rgba(4,120,87,0.10);
-
-  --consumption:    #0e7490;
-  --consumption-soft: rgba(14,116,144,0.10);
-
-  --grid:           #1d4ed8;
-  --grid-bright:    #2563eb;
-  --grid-soft:      rgba(29,78,216,0.10);
-
-  --ev:             #6d28d9;
-  --ev-bright:      #7c3aed;
-  --ev-soft:        rgba(109,40,217,0.10);
-
-  --alert:          #b91c1c;
-  --alert-bright:   #dc2626;
-  --alert-soft:     rgba(185,28,28,0.10);
-
-  --success:        #15803d;
-  --warning:        #b45309;
-  --warning-soft:   rgba(180,83,9,0.10);
-
-  /* Sidebar light overrides */
-  --sidebar-background: 210 40% 96%;
-  --sidebar-foreground: 215 16% 25%;
-  --sidebar-primary:    215 16% 16%;
-  --sidebar-primary-foreground: 215 14% 8%;
-  --sidebar-accent:     210 40% 92%;
-  --sidebar-accent-foreground: 215 16% 15%;
-  --sidebar-border:     214 32% 88%;
-  --sidebar-ring:       152 66% 34%;
-
-  --site-page-bg: #f5f7f4;
-  --site-page-fg: #0d1f17;
-  --site-page-muted: rgba(13,31,23,0.68);
-  --site-page-soft: rgba(13,31,23,0.18);
-  --site-page-border: rgba(13,31,23,0.10);
+  /* Site shell tokens */
+  --site-page-bg:      #f5f7f4;
+  --site-page-fg:      #0d1f17;
+  --site-page-muted:   rgba(13,31,23,0.68);
+  --site-page-soft:    rgba(13,31,23,0.18);
+  --site-page-border:  rgba(13,31,23,0.10);
   --site-page-surface: rgba(255,255,255,0.86);
+
+  /* Card shadow — light */
+  --card-shadow:       0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
+  --card-shadow-hover: 0 4px 8px rgba(0,0,0,0.10), 0 12px 24px rgba(0,0,0,0.07);
 }
 
+/* ─── DARK MODE ─────────────────────────────────────────────── */
 .dark {
   color-scheme: dark;
+
+  --background:             222 32% 6%;
+  --foreground:             210 40% 96%;
+  --card:                   222 28% 10%;
+  --card-foreground:        210 36% 92%;
+  --popover:                222 30% 12%;
+  --popover-foreground:     210 36% 92%;
+  --primary:                152 66% 42%;
+  --primary-foreground:     144 86% 96%;
+  --secondary:              220 20% 18%;
+  --secondary-foreground:   213 32% 88%;
+  --muted:                  218 16% 22%;
+  --muted-foreground:       214 22% 72%;
+  --accent:                 44 95% 52%;
+  --accent-foreground:      219 33% 10%;
+  --destructive:            0 72% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border-color:           220 18% 26%;
+  --input:                  220 18% 22%;
+  --ring:                   152 66% 42%;
+
+  --bg-primary:       #080d18;
+  --bg-secondary:     #0d1424;
+  --bg-card:          #101929;
+  --bg-card-hover:    #162035;
+  --bg-card-muted:    rgba(255,255,255,0.035);
+
+  --border:           rgba(255,255,255,0.08);
+  --border-strong:    rgba(168,210,255,0.18);
+  --border-hover:     rgba(168,210,255,0.26);
+
+  --text-primary:     #f1f5f9;
+  --text-secondary:   #b0bec5;
+  --text-tertiary:    #78909c;
+  --text-muted:       #546e7a;
+
+  --solar:            #f59e0b;
+  --solar-bright:     #fbbf24;
+  --solar-soft:       rgba(245,158,11,0.10);
+
+  --battery:          #10b981;
+  --battery-bright:   #34d399;
+  --battery-soft:     rgba(16,185,129,0.10);
+
+  --consumption:      #06b6d4;
+  --consumption-soft: rgba(6,182,212,0.10);
+
+  --grid:             #3b82f6;
+  --grid-bright:      #60a5fa;
+  --grid-soft:        rgba(59,130,246,0.10);
+
+  --ev:               #a855f7;
+  --ev-bright:        #c084fc;
+  --ev-soft:          rgba(168,85,247,0.10);
+
+  --alert:            #ef4444;
+  --alert-bright:     #f87171;
+  --alert-soft:       rgba(239,68,68,0.10);
+
+  --success:          #22c55e;
+  --warning:          #f59e0b;
+  --warning-soft:     rgba(245,158,11,0.10);
+
+  --sidebar-background:           220 28% 10%;
+  --sidebar-foreground:           215 14% 65%;
+  --sidebar-primary:              215 14% 40%;
+  --sidebar-primary-foreground:   215 14% 85%;
+  --sidebar-accent:               220 18% 16%;
+  --sidebar-accent-foreground:    215 14% 85%;
+  --sidebar-border:               220 16% 14%;
+  --sidebar-ring:                 217 33% 17%;
+
+  --site-page-bg:      #03070f;
+  --site-page-fg:      #f8fafc;
+  --site-page-muted:   rgba(255,255,255,0.42);
+  --site-page-soft:    rgba(255,255,255,0.16);
+  --site-page-border:  rgba(255,255,255,0.05);
+  --site-page-surface: rgba(255,255,255,0.025);
+
+  --card-shadow:       0 1px 2px rgba(0,0,0,0.35), 0 4px 12px rgba(0,0,0,0.22);
+  --card-shadow-hover: 0 4px 6px rgba(0,0,0,0.45), 0 12px 24px rgba(0,0,0,0.30), 0 0 0 1px var(--border-strong);
 }
 
 /* ─── Base ───────────────────────────────────────────────────── */
@@ -215,7 +233,6 @@ html, body {
 
 body {
   background: var(--bg-primary);
-  /* Slightly larger base for readability on all devices */
   font-size: clamp(14px, 1vw + 12px, 16px);
   line-height: 1.6;
 }
@@ -224,7 +241,7 @@ main, section, article, header, footer {
   min-width: 0;
 }
 
-/* ─── Typography utilities ───────────────────────────────────── */
+/* ─── Typography ─────────────────────────────────────────────── */
 .tabular {
   font-variant-numeric: tabular-nums;
 }
@@ -242,7 +259,6 @@ p, li {
   line-height: 1.65;
 }
 
-/* Ensure labels + small text are always readable */
 label, caption, figcaption {
   color: var(--text-secondary);
   font-size: clamp(0.75rem, 0.7rem + 0.3vw, 0.875rem);
@@ -269,20 +285,13 @@ label, caption, figcaption {
 }
 
 @media (min-width: 640px) {
-  .page-shell {
-    width: min(1400px, 100% - 48px);
-    padding: 28px 20px 36px;
-  }
+  .page-shell { width: min(1400px, 100% - 48px); padding: 28px 20px 36px; }
 }
-
 @media (min-width: 1024px) {
-  .page-shell {
-    width: min(1400px, 100% - 80px);
-    padding: 32px 28px 44px;
-  }
+  .page-shell { width: min(1400px, 100% - 80px); padding: 32px 28px 44px; }
 }
 
-.page-shell :where(p, li) { overflow-wrap: normal; word-break: normal; }
+.page-shell :where(p, li)                   { overflow-wrap: normal; word-break: normal; }
 .page-shell :where(h1, h2, h3, h4, h5, h6) { overflow-wrap: normal; word-break: normal; }
 
 .sc-readable-copy {
@@ -308,7 +317,7 @@ label, caption, figcaption {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.35), 0 4px 12px rgba(0,0,0,0.22);
+  box-shadow: var(--card-shadow);
   transition:
     transform 200ms cubic-bezier(0.16,1,0.3,1),
     box-shadow 200ms cubic-bezier(0.16,1,0.3,1),
@@ -319,31 +328,19 @@ label, caption, figcaption {
   transform: translateY(-1px);
   background: var(--bg-card-hover);
   border-color: var(--border-hover);
-  box-shadow:
-    0 4px 6px rgba(0,0,0,0.45),
-    0 12px 24px rgba(0,0,0,0.3),
-    0 0 0 1px var(--border-strong);
+  box-shadow: var(--card-shadow-hover);
 }
 
-.light .dashboard-card {
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
-}
-
-.light .dashboard-card:hover {
-  box-shadow: 0 4px 8px rgba(0,0,0,0.10), 0 12px 24px rgba(0,0,0,0.07);
-}
-
-/* Card text — ensure readability in both modes */
+/* Card text */
 .dashboard-card h1,
 .dashboard-card h2,
 .dashboard-card h3,
 .dashboard-card h4 { color: var(--text-primary); }
 
 .dashboard-card p,
-.dashboard-card span:not([class*='text-[']),
 .dashboard-card li { color: var(--text-secondary); }
 
-/* ─── Overlay menus/dropdowns ─────────────────────────────────── */
+/* ─── Overlay menus / dropdowns ──────────────────────────────── */
 [data-slot='dropdown-menu-content'],
 [data-slot='dropdown-menu-sub-content'],
 [data-slot='context-menu-content'],
@@ -355,17 +352,17 @@ label, caption, figcaption {
 [data-slot='popover-content'] {
   background-color: hsl(var(--popover));
   color: hsl(var(--popover-foreground));
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 14px 48px rgba(0,0,0,0.32), 0 2px 12px rgba(0,0,0,0.2);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
   backdrop-filter: blur(14px) saturate(140%);
   z-index: 60;
 }
 
-.light [data-slot='dropdown-menu-content'],
-.light [data-slot='select-content'],
-.light [data-slot='popover-content'] {
-  border-color: rgba(0,0,0,0.08);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+.dark [data-slot='dropdown-menu-content'],
+.dark [data-slot='select-content'],
+.dark [data-slot='popover-content'] {
+  border-color: rgba(255,255,255,0.08);
+  box-shadow: 0 14px 48px rgba(0,0,0,0.32), 0 2px 12px rgba(0,0,0,0.2);
 }
 
 /* ─── Skeleton shimmer ───────────────────────────────────────── */
@@ -386,14 +383,7 @@ label, caption, figcaption {
   border-radius: var(--radius-sm);
 }
 
-/* ─── Mobile slider fixes ────────────────────────────────────── */
-/*
-  Touch-friendly range inputs:
-  - Minimum 44px touch target via transparent padding (does not affect visual height)
-  - Fluid thumb size via clamp() — scales with viewport
-  - Strong contrast track in both light and dark
-  - Filled-progress tint using --range-progress custom property (set via JS or default gradient)
-*/
+/* ─── Mobile slider ──────────────────────────────────────────── */
 input[type='range'] {
   -webkit-appearance: none;
   appearance: none;
@@ -403,18 +393,13 @@ input[type='range'] {
   background: var(--border-strong);
   outline: none;
   cursor: pointer;
-  /* 44px minimum touch target — transparent padding adds height without changing visuals */
   padding-block: 19px;
   margin-block: 0;
   box-sizing: content-box;
-  /* Clip the visible track to stay 6px even with padding */
   background-clip: content-box;
 }
 
-/* Webkit (Chrome, Safari, Edge, iOS) */
-input[type='range']::-webkit-slider-container {
-  height: 6px;
-}
+input[type='range']::-webkit-slider-container { height: 6px; }
 
 input[type='range']::-webkit-slider-runnable-track {
   height: 6px;
@@ -425,7 +410,6 @@ input[type='range']::-webkit-slider-runnable-track {
 input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  /* Fluid: 22px on small screens, scales with viewport, capped at 26px on large */
   width:  clamp(22px, 3.5vw + 14px, 26px);
   height: clamp(22px, 3.5vw + 14px, 26px);
   margin-top: calc((6px - clamp(22px, 3.5vw + 14px, 26px)) / 2);
@@ -448,7 +432,6 @@ input[type='range']:active::-webkit-slider-thumb {
   box-shadow: 0 0 0 7px var(--battery-soft), 0 2px 10px rgba(0,0,0,0.4);
 }
 
-/* Firefox */
 input[type='range']::-moz-range-track {
   height: 6px;
   border-radius: 9999px;
@@ -465,56 +448,32 @@ input[type='range']::-moz-range-thumb {
   cursor: pointer;
 }
 
-input[type='range']::-moz-range-thumb:hover {
-  transform: scale(1.15);
-}
+input[type='range']::-moz-range-thumb:hover { transform: scale(1.15); }
 
-/* Light mode — stronger track contrast */
-.light input[type='range']::-webkit-slider-runnable-track,
-.light input[type='range']::-moz-range-track {
-  background: rgba(13,31,23,0.20);
-}
-
-.light input[type='range'] {
-  background: rgba(13,31,23,0.20);
-}
-
-/* ─── Responsive icon auto-sizing ────────────────────────────── */
-/*
-  Apply .icon-auto to Lucide/SVG icons that should scale with viewport.
-  clamp(min, preferred, max): 16px on small mobile → scales up → 20px on desktop.
-*/
+/* ─── Responsive icons ───────────────────────────────────────── */
 .icon-auto {
   width:  clamp(16px, 1.2vw + 12px, 20px);
   height: clamp(16px, 1.2vw + 12px, 20px);
   flex-shrink: 0;
 }
 
-/* Sidebar nav icons — slightly larger for easier tap */
 .sidebar-icon {
   width:  clamp(17px, 1.3vw + 12px, 22px);
   height: clamp(17px, 1.3vw + 12px, 22px);
   flex-shrink: 0;
 }
 
-/* Mobile bottom nav icons — fixed at comfortable tap size */
 @media (max-width: 767px) {
-  .icon-auto   { width: 20px; height: 20px; }
+  .icon-auto    { width: 20px; height: 20px; }
   .sidebar-icon { width: 22px; height: 22px; }
-
-  /* Force all Lucide icons inside the mobile nav to 20px */
-  nav[aria-label='Mobile navigation'] svg {
-    width: 20px !important;
-    height: 20px !important;
-  }
+  nav[aria-label='Mobile navigation'] svg { width: 20px !important; height: 20px !important; }
 }
 
-/* Header / toolbar icons */
 @media (min-width: 768px) and (max-width: 1280px) {
   .icon-auto { width: 18px; height: 18px; }
 }
 
-/* ─── Simulation-reset toast notification ────────────────────── */
+/* ─── Simulation-reset toast ─────────────────────────────────── */
 @keyframes toast-in {
   from { opacity: 0; transform: translateX(-50%) translateY(16px) scale(0.96); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0)     scale(1); }
@@ -527,10 +486,8 @@ input[type='range']::-moz-range-thumb:hover {
 
 .sim-reset-toast {
   position: fixed;
-  /* On mobile: sit above the 56px bottom nav + safe area */
   bottom: calc(env(safe-area-inset-bottom, 0px) + 64px);
   left: 50%;
-  /* translateX is baked into keyframes so it stays centred during animation */
   transform: translateX(-50%);
   z-index: 9999;
   width: max-content;
@@ -544,11 +501,8 @@ input[type='range']::-moz-range-thumb:hover {
   pointer-events: none;
 }
 
-/* Desktop: lower to standard position — no mobile nav offset needed */
 @media (min-width: 768px) {
-  .sim-reset-toast {
-    bottom: 28px;
-  }
+  .sim-reset-toast { bottom: 28px; }
 }
 
 /* ─── Energy-flow animations ─────────────────────────────────── */
@@ -608,7 +562,7 @@ input[type='range']::-moz-range-thumb:hover {
 .status-online            { animation: pulse-status 2.4s ease-in-out infinite; }
 .animate-scale-in         { animation: scale-in 0.18s cubic-bezier(0.16,1,0.3,1); }
 
-/* ─── Global transition reset (opt-in) ──────────────────────── */
+/* ─── Global interactive transitions ────────────────────────── */
 a, button, input, select, textarea,
 [role="button"], [tabindex] {
   transition-property: color, background-color, border-color, box-shadow, opacity, transform;
@@ -655,12 +609,12 @@ a, button, input, select, textarea,
 .card-hover { transition: all 220ms cubic-bezier(0.16,1,0.3,1); }
 .card-hover:hover { transform: translateY(-1px); }
 
-/* ─── AI Assistant panel readability ─────────────────────────── */
-/* Ensure AI message text is readable in both modes */
+/* ─── AI panel ───────────────────────────────────────────────── */
 .ai-panel-message {
   font-size: clamp(0.8125rem, 0.75rem + 0.3vw, 0.9375rem);
   line-height: 1.7;
   letter-spacing: 0.01em;
+  color: var(--text-primary);
 }
 
 .ai-panel-chip {
@@ -668,12 +622,13 @@ a, button, input, select, textarea,
   line-height: 1.4;
 }
 
-/* Input placeholder contrast in light mode */
-.light input::placeholder { color: var(--text-tertiary); }
-.light textarea::placeholder { color: var(--text-tertiary); }
+/* Input placeholders */
+input::placeholder  { color: var(--text-tertiary); }
+textarea::placeholder { color: var(--text-tertiary); }
 
-/* ─── Ensure header has enough contrast in both modes ─────────── */
-.light header {
-  background: rgba(245,247,244,0.96) !important;
-  border-bottom-color: rgba(13,31,23,0.10) !important;
+/* ─── Header ─────────────────────────────────────────────────── */
+header {
+  background: color-mix(in srgb, var(--bg-primary) 96%, transparent);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
 }
