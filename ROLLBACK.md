@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 151 | `rollback/feat-light-dark-mode-persistent-ai-pan-2026-04-28-3b9ad56` | `3b9ad56` | feat: light/dark mode, persistent AI panel & faster page transitions | 2026-04-28 |
 | 150 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-28-78b6c80` | `78b6c80` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-04-28 |
 | 149 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-27-0d642fa` | `0d642fa` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-04-27 |
 | 148 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-26-ebc4abc` | `ebc4abc` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-04-26 |
@@ -1565,6 +1566,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-28-78b6c80`
 - **Commit**: `78b6c80804d484e7a2ecf6d2aac57eb6174430f2`
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #151 — `rollback/feat-light-dark-mode-persistent-ai-pan-2026-04-28-3b9ad56`
+
+- **Branch**: `rollback/feat-light-dark-mode-persistent-ai-pan-2026-04-28-3b9ad56`
+- **Commit**: `3b9ad5676c4f0968254e746959736efbc5f3f12b`
+- **Subject**: feat: light/dark mode, persistent AI panel & faster page transitions
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
