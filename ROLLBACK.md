@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 161 | `rollback/fix-horizontal-text-alignment-in-popup-2026-04-28-4e0a0bf` | `4e0a0bf` | fix: horizontal text alignment in popups/status bars + remove long hyphens throughout | 2026-04-28 |
 | 160 | `rollback/fix-export-horizontal-card-layout-remo-2026-04-28-a6928d1` | `a6928d1` | fix(export): horizontal card layout, remove all em dashes and long hyphens | 2026-04-28 |
 | 159 | `rollback/fix-export-remove-pdfmake-xlsx-deps-fi-2026-04-28-1ab8c7d` | `1ab8c7d` | fix(export): remove pdfmake/xlsx deps, fix useSimulationStore 404 — use zero-dep PDF builder + jszip CSV multi-sheet | 2026-04-28 |
 | 158 | `rollback/feat-export-page-clean-navbar-fix-popu-2026-04-28-c036e8c` | `c036e8c` | feat: export page, clean navbar, fix popups, graphs zip, multi-sheet CSV | 2026-04-28 |
@@ -1665,6 +1666,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-export-horizontal-card-layout-remo-2026-04-28-a6928d1`
 - **Commit**: `a6928d1249dd1faffed8cef0fe5b779a2d742e2a`
 - **Subject**: fix(export): horizontal card layout, remove all em dashes and long hyphens
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #161 — `rollback/fix-horizontal-text-alignment-in-popup-2026-04-28-4e0a0bf`
+
+- **Branch**: `rollback/fix-horizontal-text-alignment-in-popup-2026-04-28-4e0a0bf`
+- **Commit**: `4e0a0bf7888a02dd464b8501e04e78b877fe08f7`
+- **Subject**: fix: horizontal text alignment in popups/status bars + remove long hyphens throughout
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
