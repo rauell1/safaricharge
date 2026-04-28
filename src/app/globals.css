@@ -384,13 +384,6 @@ label, caption, figcaption {
 }
 
 /* ─── Dialog / AlertDialog / Sheet — global safety net ──────── */
-/*
- * Even though dialog.tsx, alert-dialog.tsx, and sheet.tsx now use
- * bg-[var(--bg-card)] directly, this CSS block acts as a catch-all:
- * any Radix overlay that somehow still carries the Tailwind
- * bg-background class (e.g. a future shadcn upgrade) will be
- * overridden here so the broken raw-HSL value can never leak through.
- */
 [data-slot='dialog-content'],
 [data-slot='alert-dialog-content'],
 [data-slot='sheet-content'] {
@@ -586,6 +579,20 @@ input[type='range']::-moz-range-thumb:hover { transform: scale(1.15); }
 @keyframes scale-in {
   from { opacity: 0; transform: scale(0.95); }
   to   { opacity: 1; transform: scale(1); }
+}
+
+/* ─── FAB (Floating AI Button) ───────────────────────────────── */
+@keyframes fab-pulse {
+  0%, 100% {
+    box-shadow:
+      0 4px 20px color-mix(in srgb, var(--battery) 45%, transparent),
+      0 2px 8px rgba(0,0,0,0.22);
+  }
+  50% {
+    box-shadow:
+      0 4px 28px color-mix(in srgb, var(--battery) 65%, transparent),
+      0 2px 12px rgba(0,0,0,0.28);
+  }
 }
 
 .animate-flow-down        { animation: flow-down 1s ease-in-out infinite; }

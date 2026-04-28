@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { DashboardSidebar, type DashboardSection, type SidebarContextMetric } from './DashboardSidebar';
 import { MobileBottomNav } from './MobileBottomNav';
+import { AIFab } from './AIFab';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
 import { clearExternalUploadActive, isExternalUploadActive } from '@/lib/external-upload-guard';
 import { SIZING_SIMULATOR_STORAGE_KEY } from '@/lib/pv-sizing';
 import { SafariChargeAIAssistant } from '@/components/ai/AIAssistant';
 import { AIAssistantProvider, useAIAssistant } from '@/contexts/AIAssistantContext';
-import { X, Info } from 'lucide-react';
 import {
   useEnergyNode,
   useMinuteData,
@@ -35,10 +35,6 @@ function DashboardLayoutInner({
   const router = useRouter();
   const { isOpen: aiOpen, closeAI } = useAIAssistant();
 
-  // Toast shown ONLY when the user is actually leaving the entire site.
-  // A ref tracks whether we have already shown it this session so it
-  // appears at most once, even if the user triggers beforeunload
-  // multiple times (e.g. refresh attempts).
   const toastShownRef = useRef(false);
 
   const { isAutoMode, currentDate } = useSimulationState();
@@ -72,11 +68,6 @@ function DashboardLayoutInner({
   }, [router]);
 
   // ── Site-leave guard ─────────────────────────────────────────────
-  // beforeunload fires ONLY when the browser is about to leave the
-  // current origin entirely (tab close, external link, browser back
-  // past the app origin). Internal Next.js client-side navigations
-  // do NOT trigger it, so this never fires when switching pages via
-  // the sidebar.
   useEffect(() => {
     const resetTransientState = () => {
       useEnergySystemStore.getState().resetSystem();
@@ -85,9 +76,6 @@ function DashboardLayoutInner({
 
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if (isExternalUploadActive()) return;
-      // Show the native browser dialog ("Leave site?") which contains
-      // the standard browser message. No custom toast needed here —
-      // the browser UI is the notification.
       event.preventDefault();
       event.returnValue = '';
     };
@@ -121,6 +109,14 @@ function DashboardLayoutInner({
         minuteData={minuteData}
         systemConfig={systemConfig}
       />
+
+      {/*
+        FAB — floating AI toggle button.
+        Desktop only (hidden on mobile via CSS).
+        Automatically hides when the AI panel is open (shows "Close AI" instead).
+        Persists across all page navigations.
+      */}
+      <AIFab />
 
       {/* Mobile bottom nav */}
       <MobileBottomNav

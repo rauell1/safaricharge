@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DashboardSection } from './DashboardSidebar';
+import { useAIAssistant } from '@/contexts/AIAssistantContext';
 
 type MobileNavItemId = DashboardSection | 'finance-parent';
 
@@ -23,6 +24,7 @@ const NAV_ITEMS: Array<{
   label: string;
   icon: React.ElementType;
   href?: string;
+  isAiToggle?: boolean;
 }> = [
   { id: 'dashboard',           label: 'Home',      icon: LayoutDashboard, href: '/dashboard' },
   { id: 'simulation',          label: 'Simulate',  icon: FlaskConical,    href: '/simulation' },
@@ -30,7 +32,8 @@ const NAV_ITEMS: Array<{
   { id: 'finance-parent',      label: 'Finance',   icon: TrendingUp },
   { id: 'scenarios',           label: 'Scenarios', icon: BookMarked,      href: '/scenarios' },
   { id: 'recommendation',      label: 'Recs',      icon: Lightbulb,       href: '/recommendation' },
-  { id: 'ai-assistant',        label: 'AI',        icon: Bot,             href: '/ai-assistant' },
+  // AI item: toggles the slide-out panel instead of navigating
+  { id: 'ai-assistant',        label: 'AI',        icon: Bot,             isAiToggle: true },
 ];
 
 const FINANCE_CHILD_ITEMS: Array<{
@@ -53,6 +56,7 @@ export function MobileBottomNav({
 }: MobileBottomNavProps) {
   const pathname = usePathname();
   const [isFinanceMenuOpen, setIsFinanceMenuOpen] = useState(false);
+  const { isOpen: aiPanelOpen, toggleAI } = useAIAssistant();
 
   useEffect(() => {
     setIsFinanceMenuOpen(false);
@@ -65,15 +69,20 @@ export function MobileBottomNav({
     >
       {NAV_ITEMS.map((item) => {
         const isFinanceParent = item.id === 'finance-parent';
+        const isAiToggle = item.isAiToggle === true;
+
         const isFinanceActive =
           activeSection === 'financial' ||
           activeSection === 'financial-model' ||
           !!pathname?.startsWith('/financial') ||
           !!pathname?.startsWith('/live-results');
-        const isActive = isFinanceParent
-          ? isFinanceActive || isFinanceMenuOpen
-          : activeSection === item.id ||
-            (item.href && item.href !== '/demo' && !!pathname?.startsWith(item.href));
+
+        const isActive = isAiToggle
+          ? aiPanelOpen
+          : isFinanceParent
+            ? isFinanceActive || isFinanceMenuOpen
+            : activeSection === item.id ||
+              (item.href && item.href !== '/demo' && !!pathname?.startsWith(item.href));
 
         const Icon = item.icon;
 
@@ -101,7 +110,18 @@ export function MobileBottomNav({
 
         return (
           <div key={item.id} className="relative flex-1 flex items-stretch">
-            {isFinanceParent ? (
+            {isAiToggle ? (
+              // AI button: toggles panel, no navigation
+              <button
+                type="button"
+                onClick={toggleAI}
+                className="flex-1 flex items-stretch focus:outline-none active:bg-[var(--bg-card-muted)]/40 transition-colors"
+                aria-label={aiPanelOpen ? 'Close AI Assistant' : 'Open AI Assistant'}
+                aria-pressed={aiPanelOpen}
+              >
+                {inner}
+              </button>
+            ) : isFinanceParent ? (
               <>
                 <button
                   type="button"
@@ -140,7 +160,7 @@ export function MobileBottomNav({
               </>
             ) : (
               <Link
-                href={item.href}
+                href={item.href!}
                 className="flex-1 flex items-stretch focus:outline-none active:bg-[var(--bg-card-muted)]/40 transition-colors"
                 aria-label={item.label}
                 aria-current={isActive ? 'page' : undefined}
