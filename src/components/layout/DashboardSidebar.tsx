@@ -66,7 +66,7 @@ const TONE: Record<SidebarContextMetric['tone'], { dot: string; bg: string; text
   neutral: { dot: 'bg-[var(--text-muted)]', bg: 'bg-[var(--bg-card-muted)]', text: 'text-[var(--text-secondary)]' },
 };
 
-// ── Governance section — lazy: hooks only mount when panel is open ─────────────
+// ── Governance section ──────────────────────────────────────────────────────
 function GovernanceSection() {
   const [open, setOpen] = useState(false);
   return (
@@ -90,7 +90,6 @@ function GovernancePanelContent() {
   const minuteData = useMinuteData('today');
   const latestPoint = useMemo(
     () => minuteData[minuteData.length - 1],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [minuteData.length],
   );
   const expectedOutputBaseline = (solar.capacityKW ?? 10) * 0.7;
@@ -107,11 +106,10 @@ function GovernancePanelContent() {
   );
 }
 
-// ── Theme toggle button ───────────────────────────────────────────────────────
+// ── Theme toggle ─────────────────────────────────────────────────────────
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
-
   return (
     <button
       type="button"
@@ -129,7 +127,6 @@ function ThemeToggle() {
           {isDark ? 'Light mode' : 'Dark mode'}
         </span>
       </span>
-      {/* Toggle pill */}
       <span
         className="relative inline-flex h-5 w-9 shrink-0 rounded-full border border-[var(--border-strong)] transition-colors duration-200"
         style={{ background: isDark ? 'var(--battery-soft)' : 'var(--bg-card-muted)' }}
@@ -157,32 +154,32 @@ export function DashboardSidebar({
   const resolvedActive: DashboardSection = useMemo(() => {
     if (activeSection && activeSection !== 'dashboard') return activeSection;
     if (!pathname) return 'dashboard';
-    if (pathname.startsWith('/energy-intelligence'))                               return 'energy-intelligence';
-    if (pathname.startsWith('/live-results'))                                      return 'financial';
-    if (pathname.startsWith('/financial'))                                         return 'financial-model';
-    if (pathname.startsWith('/scenarios'))                                         return 'scenarios';
+    if (pathname.startsWith('/energy-intelligence'))                                return 'energy-intelligence';
+    if (pathname.startsWith('/live-results'))                                       return 'financial';
+    if (pathname.startsWith('/financial'))                                          return 'financial-model';
+    if (pathname.startsWith('/scenarios'))                                          return 'scenarios';
     if (pathname.startsWith('/demo/simulation') || pathname.includes('simulation')) return 'simulation';
-    if (pathname.includes('configuration'))                                        return 'configuration';
-    if (pathname.includes('financial'))                                            return 'financial';
-    if (pathname.includes('recommendation'))                                       return 'recommendation';
-    if (pathname.includes('ai-assistant'))                                         return 'ai-assistant';
+    if (pathname.includes('configuration'))                                         return 'configuration';
+    if (pathname.includes('financial'))                                             return 'financial';
+    if (pathname.includes('recommendation'))                                        return 'recommendation';
+    if (pathname.includes('ai-assistant'))                                          return 'ai-assistant';
     return activeSection ?? 'dashboard';
   }, [activeSection, pathname]);
 
+  // Nav items — description field removed entirely
   const primaryNavItems: Array<{
     id: DashboardSection;
     label: string;
     icon: React.ElementType;
     href?: string;
-    description?: string;
   }> = [
-    { id: 'dashboard',           label: 'Dashboard',           icon: LayoutDashboard,   href: '/dashboard',            description: 'Live operations overview' },
-    { id: 'simulation',          label: 'Simulation',          icon: FlaskConical,      href: '/simulation',           description: 'Run and inspect system behavior' },
-    { id: 'configuration',       label: 'System Config',       icon: SlidersHorizontal, href: '/configuration',        description: 'Tune solar, battery and EV settings' },
-    { id: 'energy-intelligence', label: 'Energy Intelligence', icon: Zap,               href: '/energy-intelligence',  description: 'AI analysis of energy performance' },
-    { id: 'scenarios',           label: 'Scenarios',           icon: BookMarked,        href: '/scenarios',            description: 'Saved cases and comparisons' },
-    { id: 'recommendation',      label: 'Recommendations',     icon: Lightbulb,         href: '/recommendation',       description: 'Sizing and optimization guidance' },
-    { id: 'ai-assistant',        label: 'AI Assistant',        icon: Bot,               href: '/ai-assistant',         description: 'Ask questions about system data' },
+    { id: 'dashboard',           label: 'Dashboard',           icon: LayoutDashboard,   href: '/dashboard' },
+    { id: 'simulation',          label: 'Simulation',          icon: FlaskConical,      href: '/simulation' },
+    { id: 'configuration',       label: 'System Config',       icon: SlidersHorizontal, href: '/configuration' },
+    { id: 'energy-intelligence', label: 'Energy Intelligence', icon: Zap,               href: '/energy-intelligence' },
+    { id: 'scenarios',           label: 'Scenarios',           icon: BookMarked,        href: '/scenarios' },
+    { id: 'recommendation',      label: 'Recommendations',     icon: Lightbulb,         href: '/recommendation' },
+    { id: 'ai-assistant',        label: 'AI Assistant',        icon: Bot,               href: '/ai-assistant' },
   ];
 
   const financeNavItems: Array<{
@@ -190,14 +187,64 @@ export function DashboardSidebar({
     label: string;
     icon: React.ElementType;
     href?: string;
-    description?: string;
   }> = [
-    { id: 'financial',       label: 'Live Results', icon: DollarSign, href: '/live-results', description: 'Uses your running simulation data' },
-    { id: 'financial-model', label: 'Planner',      icon: TrendingUp, href: '/financial',    description: 'Standalone what-if model' },
+    { id: 'financial',       label: 'Live Results', icon: DollarSign, href: '/live-results' },
+    { id: 'financial-model', label: 'Planner',      icon: TrendingUp, href: '/financial' },
   ];
 
+  // Shared nav item renderer — label only, no description sub-text
+  const renderNavItem = (
+    item: { id: DashboardSection; label: string; icon: React.ElementType; href?: string },
+    extraClass = ''
+  ) => {
+    const isActive =
+      resolvedActive === item.id ||
+      (!!item.href && !!pathname?.startsWith(item.href));
+
+    const inner = (
+      <span className="flex items-center gap-3 w-full">
+        <item.icon
+          className={cn(
+            'h-4 w-4 shrink-0',
+            isActive ? 'text-[var(--battery)]' : 'text-[var(--text-tertiary)]'
+          )}
+        />
+        <span
+          className={cn(
+            'flex-1 text-sm truncate',
+            isActive
+              ? 'font-medium text-[var(--text-primary)]'
+              : 'font-normal text-[var(--text-secondary)]'
+          )}
+        >
+          {item.label}
+        </span>
+        {isActive && (
+          <span className="ml-auto w-1.5 h-1.5 rounded-full shrink-0 bg-[var(--battery)]" />
+        )}
+      </span>
+    );
+
+    return (
+      <SidebarMenuItem key={item.id}>
+        <SidebarMenuButton
+          asChild={!!item.href}
+          isActive={isActive}
+          onClick={() => !item.href && onSectionChange?.(item.id)}
+          className={cn(
+            'group relative rounded-lg px-3 py-2 transition-colors duration-100',
+            isActive ? 'bg-[var(--bg-card)] shadow-sm' : 'hover:bg-[var(--bg-card-muted)]',
+            extraClass
+          )}
+        >
+          {item.href ? <Link href={item.href} className="w-full">{inner}</Link> : inner}
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    );
+  };
+
   return (
-    <Sidebar className="border-r border-[var(--border)] text-[var(--text-primary)]" style={{}}>
+    <Sidebar className="border-r border-[var(--border)] text-[var(--text-primary)]">
       {/* Logo */}
       <SidebarHeader className="px-4 py-5 border-b border-[var(--border)] bg-[var(--bg-card)]">
         <div className="flex items-center justify-center">
@@ -205,106 +252,32 @@ export function DashboardSidebar({
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 py-4 bg-[var(--bg-secondary)]">
+      <SidebarContent className="px-2 py-3 bg-[var(--bg-secondary)]">
         {/* Primary Nav */}
         <SidebarGroup>
-          <SidebarGroupLabel className="mb-1.5 px-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+          <SidebarGroupLabel className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
             Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-0.5">
-              {primaryNavItems.map((item) => {
-                const isActive =
-                  resolvedActive === item.id ||
-                  (!!item.href && !!pathname?.startsWith(item.href));
-
-                const inner = (
-                  <span className="flex items-center gap-3 w-full">
-                    <item.icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-[var(--battery)]' : 'text-[var(--text-tertiary)]')} />
-                    <span className="min-w-0 flex-1">
-                      <span className={cn('block text-sm truncate', isActive ? 'font-medium text-[var(--text-primary)]' : 'font-normal text-[var(--text-secondary)]')}>
-                        {item.label}
-                      </span>
-                      {item.description && (
-                        <span className="block truncate text-[11px] leading-tight text-[var(--text-tertiary)]">
-                          {item.description}
-                        </span>
-                      )}
-                    </span>
-                    {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full shrink-0 bg-[var(--battery)]" />}
-                  </span>
-                );
-
-                return (
-                  <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton
-                      asChild={!!item.href}
-                      isActive={isActive}
-                      onClick={() => !item.href && onSectionChange?.(item.id)}
-                      className={cn(
-                        'group relative rounded-lg px-3 py-2.5 transition-all duration-150',
-                        isActive ? 'bg-[var(--bg-card)] shadow-sm' : 'hover:bg-[var(--bg-card-muted)]'
-                      )}
-                    >
-                      {item.href ? <Link href={item.href} className="w-full">{inner}</Link> : inner}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
+              {primaryNavItems.map((item) => renderNavItem(item))}
 
               {/* Finance sub-label */}
               <SidebarMenuItem className="mt-2">
-                <div className="px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+                <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
                   Finance
                 </div>
               </SidebarMenuItem>
 
-              {financeNavItems.map((item) => {
-                const isActive =
-                  resolvedActive === item.id ||
-                  (!!item.href && !!pathname?.startsWith(item.href));
-
-                const inner = (
-                  <span className="flex items-center gap-3 w-full">
-                    <item.icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-[var(--battery)]' : 'text-[var(--text-tertiary)]')} />
-                    <span className="min-w-0 flex-1">
-                      <span className={cn('block text-sm truncate', isActive ? 'font-medium text-[var(--text-primary)]' : 'font-normal text-[var(--text-secondary)]')}>
-                        {item.label}
-                      </span>
-                      {item.description && (
-                        <span className="block truncate text-[11px] leading-tight text-[var(--text-tertiary)]">
-                          {item.description}
-                        </span>
-                      )}
-                    </span>
-                    {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full shrink-0 bg-[var(--battery)]" />}
-                  </span>
-                );
-
-                return (
-                  <SidebarMenuItem key={item.id}>
-                    <SidebarMenuButton
-                      asChild={!!item.href}
-                      isActive={isActive}
-                      onClick={() => !item.href && onSectionChange?.(item.id)}
-                      className={cn(
-                        'group relative rounded-lg px-3 py-2.5 pl-6 transition-all duration-150',
-                        isActive ? 'bg-[var(--bg-card)] shadow-sm' : 'hover:bg-[var(--bg-card-muted)]'
-                      )}
-                    >
-                      {item.href ? <Link href={item.href} className="w-full">{inner}</Link> : inner}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
+              {financeNavItems.map((item) => renderNavItem(item, 'pl-6'))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         {/* Live context metrics */}
         {contextualMetrics.length > 0 && (
-          <SidebarGroup className="mt-5">
-            <SidebarGroupLabel className="mb-1.5 px-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+          <SidebarGroup className="mt-4">
+            <SidebarGroupLabel className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
               Live Context
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -313,8 +286,8 @@ export function DashboardSidebar({
                   <div
                     key={m.label}
                     className={cn(
-                      'rounded-lg px-3 py-2.5 flex items-center justify-between border border-[var(--border)]',
-                      TONE[m.tone].bg,
+                      'rounded-lg px-3 py-2 flex items-center justify-between border border-[var(--border)]',
+                      TONE[m.tone].bg
                     )}
                   >
                     <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
@@ -331,8 +304,8 @@ export function DashboardSidebar({
         )}
 
         {/* Governance */}
-        <SidebarGroup className="mt-5">
-          <SidebarGroupLabel className="mb-1.5 px-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <SidebarGroup className="mt-4">
+          <SidebarGroupLabel className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
             Governance
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -341,12 +314,9 @@ export function DashboardSidebar({
         </SidebarGroup>
       </SidebarContent>
 
-      {/* Footer: theme toggle + system status */}
+      {/* Footer: theme toggle + status */}
       <SidebarFooter className="px-4 py-4 border-t border-[var(--border)] bg-[var(--bg-card)] space-y-3">
-        {/* ── Theme toggle — its own full-width row ── */}
         <ThemeToggle />
-
-        {/* ── System status ── */}
         <div className="flex items-center gap-2.5">
           <span className="h-2 w-2 rounded-full shrink-0 status-online bg-[var(--battery)]" />
           <span className="text-xs text-[var(--text-tertiary)]">System Online</span>
