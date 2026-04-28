@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 160 | `rollback/fix-export-horizontal-card-layout-remo-2026-04-28-a6928d1` | `a6928d1` | fix(export): horizontal card layout, remove all em dashes and long hyphens | 2026-04-28 |
 | 159 | `rollback/fix-export-remove-pdfmake-xlsx-deps-fi-2026-04-28-1ab8c7d` | `1ab8c7d` | fix(export): remove pdfmake/xlsx deps, fix useSimulationStore 404 — use zero-dep PDF builder + jszip CSV multi-sheet | 2026-04-28 |
 | 158 | `rollback/feat-export-page-clean-navbar-fix-popu-2026-04-28-c036e8c` | `c036e8c` | feat: export page, clean navbar, fix popups, graphs zip, multi-sheet CSV | 2026-04-28 |
 | 157 | `rollback/feat-floating-ai-button-landing-light-2026-04-28-23140b0` | `23140b0` | feat: floating AI button, landing light mode, full color token compliance | 2026-04-28 |
@@ -1655,6 +1656,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-export-remove-pdfmake-xlsx-deps-fi-2026-04-28-1ab8c7d`
 - **Commit**: `1ab8c7deabe19556d1e6e64751cd39e144f30f9d`
 - **Subject**: fix(export): remove pdfmake/xlsx deps, fix useSimulationStore 404 — use zero-dep PDF builder + jszip CSV multi-sheet
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #160 — `rollback/fix-export-horizontal-card-layout-remo-2026-04-28-a6928d1`
+
+- **Branch**: `rollback/fix-export-horizontal-card-layout-remo-2026-04-28-a6928d1`
+- **Commit**: `a6928d1249dd1faffed8cef0fe5b779a2d742e2a`
+- **Subject**: fix(export): horizontal card layout, remove all em dashes and long hyphens
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
