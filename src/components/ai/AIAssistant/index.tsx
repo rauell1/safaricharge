@@ -12,9 +12,11 @@
  */
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Sparkles, X, Send, Loader2 } from 'lucide-react';
+import { Sparkles, X, Send } from 'lucide-react';
 import { buildAiSystemData, buildLearningContext } from './helpers';
 import type { AssistantProps } from '@/types/dashboard';
+
+type Message = { role: string; text: string };
 
 const SUGGESTION_CHIPS = [
   'How is my system performing right now?',
@@ -25,6 +27,13 @@ const SUGGESTION_CHIPS = [
   'When is the best time to charge?',
   'How much CO\u2082 have I saved?',
   'Tips for Nairobi rainy season?',
+];
+
+const INITIAL_MESSAGES: Message[] = [
+  {
+    role: 'assistant',
+    text: "Hello! I'm **SafariCharge AI**, your intelligent energy advisor.\n\nI can help with your live dashboard data *and* answer broader questions using verified research when needed (not just your current simulation). Ask me anything! \u2600\ufe0f\ud83d\udd0b\ud83d\udcda",
+  },
 ];
 
 export const AIMessageText = ({ text }: { text: string }) => {
@@ -61,12 +70,7 @@ export const SafariChargeAIAssistant = ({
   minuteData,
   systemConfig,
 }: AssistantProps) => {
-  const [messages, setMessages] = useState<Array<{ role: string; text: string }}>([
-    {
-      role: 'assistant',
-      text: "Hello! I'm **SafariCharge AI**, your intelligent energy advisor.\n\nI can help with your live dashboard data *and* answer broader questions using verified research when needed (not just your current simulation). Ask me anything! \u2600\ufe0f\ud83d\udd0b\ud83d\udcda",
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,10 +88,9 @@ export const SafariChargeAIAssistant = ({
     [data, minuteData, timeOfDay, currentDate, systemConfig]
   );
 
-  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), [
-    messages,
-    isTyping,
-  ]);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isTyping) return;
@@ -133,8 +136,9 @@ export const SafariChargeAIAssistant = ({
       }
 
       setMessages((prev) => [...prev, { role: 'assistant', text: payload!.response! }]);
-    } catch (err: any) {
-      setError(err.message || 'Failed to reach SafariCharge AI. Check your connection.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to reach SafariCharge AI. Check your connection.';
+      setError(message);
       setMessages((prev) => [
         ...prev,
         {
@@ -150,9 +154,6 @@ export const SafariChargeAIAssistant = ({
   const handleSend = () => sendMessage(inputText);
   const handleChip = (chip: string) => sendMessage(chip);
 
-  // Panel is rendered at the DashboardLayout level (always mounted).
-  // Use a CSS transform to slide it off-screen when closed instead of
-  // returning null — this keeps conversation state alive across navigation.
   const latest = minuteData?.[minuteData.length - 1];
   const liveSolar   = data?.solarR        ?? latest?.solarKW        ?? 0;
   const liveBattery = data?.batteryLevel  ?? latest?.batteryLevelPct ?? 0;
@@ -170,12 +171,11 @@ export const SafariChargeAIAssistant = ({
         borderColor: 'var(--border)',
         transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
         transition: 'transform 260ms cubic-bezier(0.16, 1, 0.3, 1)',
-        // Keep in DOM but off-screen when closed, so state is preserved
         pointerEvents: isOpen ? 'auto' : 'none',
       }}
       aria-hidden={!isOpen}
     >
-      {/* ── Header ── */}
+      {/* Header */}
       <div
         className="p-4 flex justify-between items-center shadow-md flex-shrink-0"
         style={{
@@ -209,7 +209,7 @@ export const SafariChargeAIAssistant = ({
         </div>
       </div>
 
-      {/* ── Live status bar ── */}
+      {/* Live status bar */}
       <div
         className="px-4 py-2 flex gap-4 text-[10px] font-mono flex-shrink-0"
         style={{
@@ -218,20 +218,20 @@ export const SafariChargeAIAssistant = ({
           color: 'var(--text-secondary)',
         }}
       >
-        <span style={{ color: 'var(--solar)' }}>☀️ {liveSolar.toFixed(1)}kW</span>
-        <span style={{ color: 'var(--ev)' }}>🔋 {liveBattery.toFixed(0)}%</span>
+        <span style={{ color: 'var(--solar)' }}>\u2600\ufe0f {liveSolar.toFixed(1)}kW</span>
+        <span style={{ color: 'var(--ev)' }}>\ud83d\udd0b {liveBattery.toFixed(0)}%</span>
         <span style={{ color: liveNetGrid > 0.1 ? 'var(--alert)' : 'var(--consumption)' }}>
-          ⚡{' '}
+          \u26a1{' '}
           {liveNetGrid > 0.1
             ? `Import ${liveNetGrid.toFixed(1)}kW`
             : liveNetGrid < -0.1
               ? `Export ${Math.abs(liveNetGrid).toFixed(1)}kW`
               : 'Grid balanced'}
         </span>
-        {(liveEv1V2g || liveEv2V2g) && <span style={{ color: 'var(--warning)' }}>V2G↑</span>}
+        {(liveEv1V2g || liveEv2V2g) && <span style={{ color: 'var(--warning)' }}>V2G\u2191</span>}
       </div>
 
-      {/* ── Messages ── */}
+      {/* Messages */}
       <div
         className="flex-1 overflow-y-auto p-4 space-y-3"
         style={{ background: 'var(--bg-primary)' }}
@@ -321,7 +321,7 @@ export const SafariChargeAIAssistant = ({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ── Input ── */}
+      {/* Input */}
       <div
         className="p-3 flex gap-2 flex-shrink-0"
         style={{
