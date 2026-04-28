@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 178 | `rollback/merge-pull-request-239-from-rauell1-co-2026-04-28-df9edbe` | `df9edbe` | Merge pull request #239 from rauell1/codex/add-smart-grid-integration-layer | 2026-04-28 |
 | 177 | `rollback/fix-dark-light-mode-ai-panel-persisten-2026-04-28-a0ed489` | `a0ed489` | fix: dark/light mode, AI panel persistence, page transitions, CSS syntax | 2026-04-28 |
 | 176 | `rollback/ci-retrigger-vercel-build-fix-bad-plac-2026-04-28-30f088f` | `30f088f` | ci: retrigger Vercel build — fix bad placeholder commit f1c8f57 | 2026-04-28 |
 | 175 | `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-04-28-f0a31bf` | `f0a31bf` | docs(auto): regenerate README.md [skip ci] | 2026-04-28 |
@@ -1835,6 +1836,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-dark-light-mode-ai-panel-persisten-2026-04-28-a0ed489`
 - **Commit**: `a0ed48942e631948ffc6f7926f7546109d1eb084`
 - **Subject**: fix: dark/light mode, AI panel persistence, page transitions, CSS syntax
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #178 — `rollback/merge-pull-request-239-from-rauell1-co-2026-04-28-df9edbe`
+
+- **Branch**: `rollback/merge-pull-request-239-from-rauell1-co-2026-04-28-df9edbe`
+- **Commit**: `df9edbea75c85dcdf5f2b76a6f0729cbc4551d23`
+- **Subject**: Merge pull request #239 from rauell1/codex/add-smart-grid-integration-layer
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
