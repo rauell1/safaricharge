@@ -5,6 +5,10 @@
  *
  * Usage:
  *   import { SafariChargeAIAssistant } from '@/components/ai/AIAssistant';
+ *
+ * Light/dark: all colours use CSS var tokens from globals.css — no hardcoded
+ * slate-900 / slate-800 / text-white. Works with both .light and .dark classes
+ * set by next-themes.
  */
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
@@ -57,7 +61,7 @@ export const SafariChargeAIAssistant = ({
   minuteData,
   systemConfig,
 }: AssistantProps) => {
-  const [messages, setMessages] = useState<Array<{ role: string; text: string }>>([
+  const [messages, setMessages] = useState<Array<{ role: string; text: string }}>([
     {
       role: 'assistant',
       text: "Hello! I'm **SafariCharge AI**, your intelligent energy advisor.\n\nI can help with your live dashboard data *and* answer broader questions using verified research when needed (not just your current simulation). Ask me anything! \u2600\ufe0f\ud83d\udd0b\ud83d\udcda",
@@ -146,9 +150,9 @@ export const SafariChargeAIAssistant = ({
   const handleSend = () => sendMessage(inputText);
   const handleChip = (chip: string) => sendMessage(chip);
 
-  if (!isOpen) return null;
-
-  const showChips = messages.length <= 2;
+  // Panel is rendered at the DashboardLayout level (always mounted).
+  // Use a CSS transform to slide it off-screen when closed instead of
+  // returning null — this keeps conversation state alive across navigation.
   const latest = minuteData?.[minuteData.length - 1];
   const liveSolar   = data?.solarR        ?? latest?.solarKW        ?? 0;
   const liveBattery = data?.batteryLevel  ?? latest?.batteryLevelPct ?? 0;
@@ -156,33 +160,67 @@ export const SafariChargeAIAssistant = ({
   const liveEv1V2g  = data?.ev1V2g       ?? false;
   const liveEv2V2g  = data?.ev2V2g       ?? false;
 
+  const showChips = messages.length <= 2;
+
   return (
-    <div className="fixed right-0 top-16 bottom-0 w-full md:w-96 bg-[var(--bg-secondary)] shadow-2xl border-l border-[var(--border)] z-[200] flex flex-col">
-      {/* Header */}
-      <div className="p-4 bg-slate-900 text-white flex justify-between items-center shadow-md flex-shrink-0">
+    <div
+      className="fixed right-0 top-16 bottom-0 w-full md:w-96 shadow-2xl border-l z-[200] flex flex-col"
+      style={{
+        background: 'var(--bg-secondary)',
+        borderColor: 'var(--border)',
+        transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+        transition: 'transform 260ms cubic-bezier(0.16, 1, 0.3, 1)',
+        // Keep in DOM but off-screen when closed, so state is preserved
+        pointerEvents: isOpen ? 'auto' : 'none',
+      }}
+      aria-hidden={!isOpen}
+    >
+      {/* ── Header ── */}
+      <div
+        className="p-4 flex justify-between items-center shadow-md flex-shrink-0"
+        style={{
+          background: 'var(--bg-card)',
+          borderBottom: '1px solid var(--border)',
+          color: 'var(--text-primary)',
+        }}
+      >
         <div className="flex items-center gap-2">
-          <Sparkles size={16} className="text-green-400" />
+          <Sparkles size={16} className="text-[var(--battery)]" />
           <div>
-            <h3 className="font-bold text-sm leading-none">SafariCharge AI</h3>
-            <p className="text-[10px] text-slate-400 mt-0.5">Powered by live simulation data</p>
+            <h3 className="font-bold text-sm leading-none" style={{ color: 'var(--text-primary)' }}>SafariCharge AI</h3>
+            <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>Powered by live simulation data</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 text-[10px] text-green-400">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+          <div className="flex items-center gap-1.5 text-[10px]" style={{ color: 'var(--battery)' }}>
+            <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--battery)' }} />
             {isAutoMode ? 'Live' : 'Paused'}
           </div>
-          <button onClick={onClose} className="text-white hover:text-slate-300">
+          <button
+            onClick={onClose}
+            aria-label="Close AI Assistant"
+            className="rounded-md p-1 transition-colors"
+            style={{ color: 'var(--text-secondary)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+          >
             <X size={20} />
           </button>
         </div>
       </div>
 
-      {/* Live status bar */}
-      <div className="bg-slate-800 px-4 py-2 flex gap-4 text-[10px] font-mono text-slate-400 flex-shrink-0">
-        <span className="text-green-400">☀️ {liveSolar.toFixed(1)}kW</span>
-        <span className="text-purple-400">🔋 {liveBattery.toFixed(0)}%</span>
-        <span className={liveNetGrid > 0.1 ? 'text-red-400' : 'text-sky-400'}>
+      {/* ── Live status bar ── */}
+      <div
+        className="px-4 py-2 flex gap-4 text-[10px] font-mono flex-shrink-0"
+        style={{
+          background: 'var(--bg-card-muted)',
+          borderBottom: '1px solid var(--border)',
+          color: 'var(--text-secondary)',
+        }}
+      >
+        <span style={{ color: 'var(--solar)' }}>☀️ {liveSolar.toFixed(1)}kW</span>
+        <span style={{ color: 'var(--ev)' }}>🔋 {liveBattery.toFixed(0)}%</span>
+        <span style={{ color: liveNetGrid > 0.1 ? 'var(--alert)' : 'var(--consumption)' }}>
           ⚡{' '}
           {liveNetGrid > 0.1
             ? `Import ${liveNetGrid.toFixed(1)}kW`
@@ -190,24 +228,37 @@ export const SafariChargeAIAssistant = ({
               ? `Export ${Math.abs(liveNetGrid).toFixed(1)}kW`
               : 'Grid balanced'}
         </span>
-        {(liveEv1V2g || liveEv2V2g) && <span className="text-orange-400">V2G↑</span>}
+        {(liveEv1V2g || liveEv2V2g) && <span style={{ color: 'var(--warning)' }}>V2G↑</span>}
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[var(--bg-primary)]">
+      {/* ── Messages ── */}
+      <div
+        className="flex-1 overflow-y-auto p-4 space-y-3"
+        style={{ background: 'var(--bg-primary)' }}
+      >
         {messages.map((msg, idx) => (
           <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             {msg.role === 'assistant' && (
-              <div className="w-6 h-6 rounded-full bg-slate-900 flex items-center justify-center mr-2 flex-shrink-0 mt-0.5">
-                <Sparkles size={12} className="text-green-400" />
+              <div
+                className="w-6 h-6 rounded-full flex items-center justify-center mr-2 flex-shrink-0 mt-0.5"
+                style={{ background: 'var(--bg-card)' }}
+              >
+                <Sparkles size={12} className="text-[var(--battery)]" />
               </div>
             )}
             <div
               className={`max-w-[85%] p-3 rounded-2xl text-sm shadow-sm ${
-                msg.role === 'user'
-                  ? 'bg-sky-500 text-white rounded-br-sm'
-                  : 'bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] rounded-bl-sm'
+                msg.role === 'user' ? 'rounded-br-sm' : 'rounded-bl-sm'
               }`}
+              style={
+                msg.role === 'user'
+                  ? { background: 'var(--consumption)', color: '#fff' }
+                  : {
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--text-primary)',
+                    }
+              }
             >
               {msg.role === 'assistant' ? <AIMessageText text={msg.text} /> : msg.text}
             </div>
@@ -216,26 +267,37 @@ export const SafariChargeAIAssistant = ({
 
         {isTyping && (
           <div className="flex justify-start items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-slate-900 flex items-center justify-center flex-shrink-0">
-              <Sparkles size={12} className="text-green-400" />
+            <div
+              className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ background: 'var(--bg-card)' }}
+            >
+              <Sparkles size={12} className="text-[var(--battery)]" />
             </div>
-            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1">
-              <span className="w-1.5 h-1.5 bg-[var(--text-tertiary)] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-1.5 h-1.5 bg-[var(--text-tertiary)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-1.5 h-1.5 bg-[var(--text-tertiary)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            <div
+              className="rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--text-tertiary)', animationDelay: '0ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--text-tertiary)', animationDelay: '150ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--text-tertiary)', animationDelay: '300ms' }} />
             </div>
           </div>
         )}
 
         {showChips && !isTyping && (
           <div className="pt-2">
-            <p className="text-[10px] text-[var(--text-tertiary)] font-mono mb-2 ml-8">Suggested questions:</p>
+            <p className="text-[10px] font-mono mb-2 ml-8" style={{ color: 'var(--text-tertiary)' }}>Suggested questions:</p>
             <div className="flex flex-wrap gap-2 ml-8">
               {SUGGESTION_CHIPS.map((chip) => (
                 <button
                   key={chip}
                   onClick={() => handleChip(chip)}
-                  className="text-[11px] bg-[var(--bg-card)] border border-[var(--consumption)] text-[var(--consumption)] px-3 py-1.5 rounded-full hover:opacity-80 transition-colors font-medium"
+                  className="text-[11px] px-3 py-1.5 rounded-full font-medium transition-opacity hover:opacity-80"
+                  style={{
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--consumption)',
+                    color: 'var(--consumption)',
+                  }}
                 >
                   {chip}
                 </button>
@@ -245,15 +307,28 @@ export const SafariChargeAIAssistant = ({
         )}
 
         {error && (
-          <div className="text-xs text-red-600 text-center bg-red-50 rounded-lg p-3 border border-red-200 break-words">
+          <div
+            className="text-xs text-center rounded-lg p-3 border break-words"
+            style={{
+              color: 'var(--alert)',
+              background: 'var(--alert-soft)',
+              borderColor: 'var(--alert)',
+            }}
+          >
             {error}
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <div className="p-3 bg-[var(--bg-secondary)] border-t border-[var(--border)] flex gap-2 flex-shrink-0">
+      {/* ── Input ── */}
+      <div
+        className="p-3 flex gap-2 flex-shrink-0"
+        style={{
+          background: 'var(--bg-secondary)',
+          borderTop: '1px solid var(--border)',
+        }}
+      >
         <input
           type="text"
           value={inputText}
@@ -261,12 +336,19 @@ export const SafariChargeAIAssistant = ({
           onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
           placeholder="Ask about your solar system..."
           disabled={isTyping}
-          className="flex-1 bg-[var(--bg-card-muted)] text-[var(--text-primary)] rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--battery)] disabled:opacity-60 placeholder:text-[var(--text-tertiary)]"
+          className="flex-1 rounded-full px-4 py-2 text-sm outline-none disabled:opacity-60"
+          style={{
+            background: 'var(--bg-card-muted)',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--border)',
+          }}
         />
         <button
           onClick={handleSend}
           disabled={!inputText.trim() || isTyping}
-          className="p-2.5 bg-[var(--battery)] text-white rounded-full disabled:opacity-50 hover:opacity-90 transition-colors"
+          className="p-2.5 rounded-full disabled:opacity-50 transition-opacity hover:opacity-90"
+          style={{ background: 'var(--battery)', color: '#fff' }}
+          aria-label="Send message"
         >
           <Send size={16} />
         </button>

@@ -9,6 +9,16 @@ import { MobileBottomNav } from './MobileBottomNav';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
 import { clearExternalUploadActive, isExternalUploadActive } from '@/lib/external-upload-guard';
 import { SIZING_SIMULATOR_STORAGE_KEY } from '@/lib/pv-sizing';
+import { SafariChargeAIAssistant } from '@/components/ai/AIAssistant';
+import { AIAssistantProvider, useAIAssistant } from '@/contexts/AIAssistantContext';
+import {
+  useEnergyFlows,
+  useEnergyNode,
+  useMinuteData,
+  useSimulationState,
+  useEnergyStats,
+} from '@/hooks/useEnergySystem';
+import { useEnergySystemStore as useStore } from '@/stores/energySystemStore';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -17,13 +27,35 @@ interface DashboardLayoutProps {
   contextualMetrics?: SidebarContextMetric[];
 }
 
-export function DashboardLayout({
+// Inner layout that consumes the AI context (must be inside AIAssistantProvider)
+function DashboardLayoutInner({
   children,
   activeSection = 'dashboard',
   onSectionChange,
   contextualMetrics = [],
 }: DashboardLayoutProps) {
   const router = useRouter();
+  const { isOpen: aiOpen, closeAI } = useAIAssistant();
+
+  // Live data for persistent AI panel
+  const { isAutoMode, currentDate } = useSimulationState();
+  const solarNode = useEnergyNode('solar');
+  const batteryNode = useEnergyNode('battery');
+  const gridNode = useEnergyNode('grid');
+  const homeNode = useEnergyNode('home');
+  const minuteData = useMinuteData('today');
+  const systemConfig = useStore((s) => s.systemConfig);
+
+  const latestPoint = minuteData[minuteData.length - 1];
+  const aiData = {
+    solarR:      latestPoint?.solarKW        ?? solarNode.powerKW   ?? 0,
+    batteryLevel: latestPoint?.batteryLevelPct ?? batteryNode.soc    ?? 0,
+    netGridPower: latestPoint
+      ? latestPoint.gridImportKW - latestPoint.gridExportKW
+      : gridNode.powerKW ?? 0,
+    ev1V2g: false,
+    ev2V2g: false,
+  };
 
   useEffect(() => {
     const routes = [
@@ -37,46 +69,27 @@ export function DashboardLayout({
       '/live-results',
       '/financial',
     ];
-
     routes.forEach((route) => {
-      try {
-        router.prefetch(route);
-      } catch {
-        // Ignore prefetch failures; navigation still works via normal routing.
-      }
+      try { router.prefetch(route); } catch { /* ignore */ }
     });
   }, [router]);
 
   useEffect(() => {
     const resetTransientState = () => {
       useEnergySystemStore.getState().resetSystem();
-
-      try {
-        localStorage.removeItem(SIZING_SIMULATOR_STORAGE_KEY);
-      } catch {
-        // Ignore storage failures during page teardown.
-      }
+      try { localStorage.removeItem(SIZING_SIMULATOR_STORAGE_KEY); } catch { /* ignore */ }
     };
-
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if (isExternalUploadActive()) return;
-
       event.preventDefault();
       event.returnValue = '';
     };
-
     const handlePageHide = () => {
-      if (isExternalUploadActive()) {
-        clearExternalUploadActive();
-        return;
-      }
-
+      if (isExternalUploadActive()) { clearExternalUploadActive(); return; }
       resetTransientState();
     };
-
     window.addEventListener('beforeunload', handleBeforeUnload);
     window.addEventListener('pagehide', handlePageHide);
-
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('pagehide', handlePageHide);
@@ -85,15 +98,28 @@ export function DashboardLayout({
 
   return (
     <SidebarProvider defaultOpen={true}>
-      {/* Bottom tab bar — mobile only, rendered outside the flex row so it
-          sits fixed at the bottom on top of all content */}
+      {/* Persistent AI panel — lives outside the page router so it never
+          unmounts when the user navigates between sections. Slide transition
+          controlled by isOpen state from AIAssistantContext. */}
+      <SafariChargeAIAssistant
+        isOpen={aiOpen}
+        onClose={closeAI}
+        data={aiData as any}
+        timeOfDay={latestPoint?.timeOfDay ?? new Date().getHours() + new Date().getMinutes() / 60}
+        currentDate={currentDate ?? undefined}
+        isAutoMode={isAutoMode}
+        minuteData={minuteData}
+        systemConfig={systemConfig}
+      />
+
+      {/* Bottom tab bar — mobile only */}
       <MobileBottomNav
         activeSection={activeSection}
         onSectionChange={onSectionChange}
       />
 
       <div className="flex min-h-screen w-full overflow-x-hidden bg-[var(--bg-primary)] text-[var(--text-primary)]">
-        {/* Sidebar — hidden on mobile, full sidebar on md+ */}
+        {/* Sidebar — hidden on mobile */}
         <div className="hidden md:flex">
           <DashboardSidebar
             activeSection={activeSection}
@@ -103,7 +129,6 @@ export function DashboardLayout({
         </div>
 
         <SidebarInset className="flex-1 min-w-0 overflow-x-hidden flex flex-col bg-[var(--bg-primary)]">
-          {/* pb-16 on mobile so content is never hidden behind the tab bar */}
           <div className="relative min-h-screen w-full min-w-0 overflow-x-hidden pb-16 md:pb-0 bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.08)_0,_transparent_32%),_radial-gradient(circle_at_80%_18%,_rgba(16,185,129,0.07)_0,_transparent_28%),_linear-gradient(to_bottom,_rgba(12,18,34,0.9),_var(--bg-primary))]">
             <div className="page-shell h-full">
               <div className="mx-auto mb-5 flex w-full max-w-6xl items-start gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-amber-100 shadow-[0_8px_24px_rgba(0,0,0,0.16)]">
@@ -120,5 +145,13 @@ export function DashboardLayout({
         </SidebarInset>
       </div>
     </SidebarProvider>
+  );
+}
+
+export function DashboardLayout(props: DashboardLayoutProps) {
+  return (
+    <AIAssistantProvider>
+      <DashboardLayoutInner {...props} />
+    </AIAssistantProvider>
   );
 }
