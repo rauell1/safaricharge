@@ -238,13 +238,26 @@
 }
 
 /* ─── Base ───────────────────────────────────────────────────── */
+/*
+  overflow-x: hidden is intentionally NOT set on html or body.
+
+  Radix UI / shadcn dialogs, sheets, and tooltips render into a fixed
+  portal that the browser measures against the viewport. Setting
+  overflow-x: hidden on <html> or <body> causes those elements to
+  become the containing block for fixed-position children, which:
+    1. Shifts fixed overlays off-centre (dialog appears at x ≠ 50vw)
+    2. Can clip drop-shadows and focus rings at the viewport edge
+    3. Prevents momentum scrolling on iOS inside modals
+
+  The overflow guard is on .page-shell instead, which protects the
+  content area from layout overflow without affecting any overlay.
+*/
 html, body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
   width: 100%;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
@@ -288,12 +301,18 @@ label, caption, figcaption {
 }
 
 /* ─── Page shell ─────────────────────────────────────────────── */
+/*
+  overflow-x: hidden lives here — on the content shell, not on html/body.
+  This prevents layout-level horizontal overflow (e.g. a wide chart or
+  table briefly expanding the page) without ever touching fixed overlays.
+*/
 .page-shell {
   display: block;
   width: min(1400px, 100% - 32px);
   margin: 0 auto;
   padding: 24px 16px 32px;
   min-width: 0;
+  overflow-x: hidden;
   animation: page-enter 120ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -601,7 +620,7 @@ input[type='range']::-moz-range-thumb:hover { transform: scale(1.15); }
 .animate-pulse-glow       { animation: pulse-glow 2.2s ease-in-out infinite; }
 .animate-flow-horizontal  { animation: flow-left-to-right 2s ease-in-out infinite; }
 .status-online            { animation: pulse-status 2.4s ease-in-out infinite; }
-.animate-scale-in         { animation: scale-in 0.18s cubic-bezier(0.16,1,0.3,1); }
+.animate-scale-in         { animation: scale-in 0.18s cubic-bezier(0.16,1,0.3,1)); }
 
 /* ─── Global interactive transitions ────────────────────────── */
 a, button, input, select, textarea,

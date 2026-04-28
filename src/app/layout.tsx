@@ -35,7 +35,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} overflow-x-hidden`} suppressHydrationWarning>
+    // overflow-x-hidden removed from <html> and <body>.
+    // Radix/shadcn dialogs use fixed portals measured against the viewport;
+    // overflow-x:hidden on <html>/<body> makes those elements the containing
+    // block for fixed children, which mis-centres dialogs and clips overlays.
+    // The overflow guard now lives on .page-shell in globals.css instead.
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
         {/* SVG favicon */}
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -43,7 +48,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#01696f" />
         <meta name="msapplication-TileColor" content="#01696f" />
       </head>
-      <body className={`${inter.className} overflow-x-hidden`}>
+      <body className={inter.className}>
         <ThemeProvider>
           {/*
             AIAssistantProvider wraps the ENTIRE app so the AI panel
