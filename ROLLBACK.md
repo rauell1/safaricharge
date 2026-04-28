@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 155 | `rollback/feat-default-light-mode-strict-theme-t-2026-04-28-a144876` | `a144876` | feat: default light mode, strict theme tokens, dark/light toggle in sidebar footer | 2026-04-28 |
 | 154 | `rollback/fix-mobile-sliders-icon-auto-sizing-re-2026-04-28-3f3f940` | `3f3f940` | fix: mobile sliders, icon auto-sizing, readability, persistent sim-reset toast | 2026-04-28 |
 | 153 | `rollback/fix-mobile-slider-icon-sizing-readabil-2026-04-28-3b264e6` | `3b264e6` | fix: mobile slider, icon sizing, readability, simulation-reset toast notification | 2026-04-28 |
 | 152 | `rollback/fix-resolve-turbopack-generic-syntax-e-2026-04-28-37dc261` | `37dc261` | fix: resolve Turbopack generic syntax error in AIAssistant useState | 2026-04-28 |
@@ -1605,6 +1606,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-mobile-sliders-icon-auto-sizing-re-2026-04-28-3f3f940`
 - **Commit**: `3f3f940c1b0240e81e753aea3db01c69aa6c9c58`
 - **Subject**: fix: mobile sliders, icon auto-sizing, readability, persistent sim-reset toast
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #155 — `rollback/feat-default-light-mode-strict-theme-t-2026-04-28-a144876`
+
+- **Branch**: `rollback/feat-default-light-mode-strict-theme-t-2026-04-28-a144876`
+- **Commit**: `a144876e3fe7225c6e6f05b5705b0b76e0b01de0`
+- **Subject**: feat: default light mode, strict theme tokens, dark/light toggle in sidebar footer
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
