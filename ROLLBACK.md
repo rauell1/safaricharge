@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 167 | `rollback/fix-resolve-dialog-modal-narrow-strip-2026-04-28-f343af3` | `f343af3` | fix: resolve dialog/modal narrow-strip rendering across all pages | 2026-04-28 |
 | 166 | `rollback/fix-sidebar-ai-assistant-item-toggles-2026-04-28-d3a5cef` | `d3a5cef` | fix: sidebar AI Assistant item toggles panel instead of navigating to /ai-assistant | 2026-04-28 |
 | 165 | `rollback/feat-add-persistent-floating-ai-button-2026-04-28-83a8f1e` | `83a8f1e` | feat: add persistent floating AI button (FAB) + wire mobile nav AI toggle | 2026-04-28 |
 | 164 | `rollback/fix-dialog-z-index-centering-scroll-an-2026-04-28-3758ecf` | `3758ecf` | fix: dialog z-index, centering, scroll, and overflow across all pages | 2026-04-28 |
@@ -1725,6 +1726,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-sidebar-ai-assistant-item-toggles-2026-04-28-d3a5cef`
 - **Commit**: `d3a5cef9b107db36285303654f4c1c40ffca0333`
 - **Subject**: fix: sidebar AI Assistant item toggles panel instead of navigating to /ai-assistant
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #167 — `rollback/fix-resolve-dialog-modal-narrow-strip-2026-04-28-f343af3`
+
+- **Branch**: `rollback/fix-resolve-dialog-modal-narrow-strip-2026-04-28-f343af3`
+- **Commit**: `f343af3686433eb60b7787409949986824e395cc`
+- **Subject**: fix: resolve dialog/modal narrow-strip rendering across all pages
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
