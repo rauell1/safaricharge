@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 176 | `rollback/ci-retrigger-vercel-build-fix-bad-plac-2026-04-28-30f088f` | `30f088f` | ci: retrigger Vercel build — fix bad placeholder commit f1c8f57 | 2026-04-28 |
 | 175 | `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-04-28-f0a31bf` | `f0a31bf` | docs(auto): regenerate README.md [skip ci] | 2026-04-28 |
 | 174 | `rollback/chore-placeholder-will-use-full-file-p-2026-04-28-f1c8f57` | `f1c8f57` | chore: placeholder — will use full file push | 2026-04-28 |
 | 173 | `rollback/chore-record-branch-cleanup-for-rollba-2026-04-28-bd57230` | `bd57230` | chore: record branch cleanup for rollback reference (2026-04-28) | 2026-04-28 |
@@ -1815,6 +1816,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-04-28-f0a31bf`
 - **Commit**: `f0a31bf0adb5cd6910b380c18f2c37fea8ff0b15`
 - **Subject**: docs(auto): regenerate README.md [skip ci]
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #176 — `rollback/ci-retrigger-vercel-build-fix-bad-plac-2026-04-28-30f088f`
+
+- **Branch**: `rollback/ci-retrigger-vercel-build-fix-bad-plac-2026-04-28-30f088f`
+- **Commit**: `30f088fbc4c3730906466d2306b78cab48aee29e`
+- **Subject**: ci: retrigger Vercel build — fix bad placeholder commit f1c8f57
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
