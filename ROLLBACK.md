@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 168 | `rollback/fix-move-overflow-x-guard-off-html-bod-2026-04-28-fd45e75` | `fd45e75` | fix: move overflow-x guard off html/body to fix dialog centering | 2026-04-28 |
 | 167 | `rollback/fix-resolve-dialog-modal-narrow-strip-2026-04-28-f343af3` | `f343af3` | fix: resolve dialog/modal narrow-strip rendering across all pages | 2026-04-28 |
 | 166 | `rollback/fix-sidebar-ai-assistant-item-toggles-2026-04-28-d3a5cef` | `d3a5cef` | fix: sidebar AI Assistant item toggles panel instead of navigating to /ai-assistant | 2026-04-28 |
 | 165 | `rollback/feat-add-persistent-floating-ai-button-2026-04-28-83a8f1e` | `83a8f1e` | feat: add persistent floating AI button (FAB) + wire mobile nav AI toggle | 2026-04-28 |
@@ -1735,6 +1736,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-resolve-dialog-modal-narrow-strip-2026-04-28-f343af3`
 - **Commit**: `f343af3686433eb60b7787409949986824e395cc`
 - **Subject**: fix: resolve dialog/modal narrow-strip rendering across all pages
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #168 — `rollback/fix-move-overflow-x-guard-off-html-bod-2026-04-28-fd45e75`
+
+- **Branch**: `rollback/fix-move-overflow-x-guard-off-html-bod-2026-04-28-fd45e75`
+- **Commit**: `fd45e75e049535273721a11f467898770ffd7e47`
+- **Subject**: fix: move overflow-x guard off html/body to fix dialog centering
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
