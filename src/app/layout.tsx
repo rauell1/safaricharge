@@ -3,6 +3,8 @@ import { Analytics } from "@vercel/analytics/react";
 import { Inter } from "next/font/google";
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AIAssistantProvider } from "@/contexts/AIAssistantContext";
+import { AIFloatingButton } from "@/components/ai/AIFloatingButton";
 import "./globals.css";
 
 const inter = Inter({
@@ -35,7 +37,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} overflow-x-hidden`} suppressHydrationWarning>
       <head>
-        {/* SVG favicon — scales perfectly from 16px to 256px */}
+        {/* SVG favicon */}
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         {/* Theme colour matches SafariCharge teal */}
         <meta name="theme-color" content="#01696f" />
@@ -43,7 +45,18 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} overflow-x-hidden`}>
         <ThemeProvider>
-          {children}
+          {/*
+            AIAssistantProvider wraps the ENTIRE app so the AI panel
+            state is never reset on page navigation.
+            AIFloatingButton is rendered here — outside the page router —
+            so it persists on every page including landing, auth, demo, etc.
+            DashboardLayout renders the actual SafariChargeAIAssistant panel;
+            the FAB here just controls the isOpen flag via context.
+          */}
+          <AIAssistantProvider>
+            {children}
+            <AIFloatingButton />
+          </AIAssistantProvider>
           <Analytics />
           <SpeedInsights />
         </ThemeProvider>

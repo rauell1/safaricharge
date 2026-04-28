@@ -109,6 +109,7 @@
   --radius-lg:  0.75rem;
   --radius-xl:  1rem;
   --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
 
   /* Type */
   --font-sans:    var(--font-inter), system-ui, -apple-system, sans-serif;
@@ -120,13 +121,23 @@
   --icon-md: 1.25rem;
   --icon-lg: 1.5rem;
 
-  /* Site shell tokens */
+  /* ── Site-shell tokens (used by landing, auth, marketing pages) ── */
+  /* These are the ONLY tokens the landing page uses — all expressed
+     in terms of the core palette above. No hardcoded hex on any page. */
   --site-page-bg:      #f5f7f4;
   --site-page-fg:      #0d1f17;
-  --site-page-muted:   rgba(13,31,23,0.68);
-  --site-page-soft:    rgba(13,31,23,0.18);
+  --site-page-muted:   rgba(13,31,23,0.62);
+  --site-page-soft:    rgba(13,31,23,0.36);
   --site-page-border:  rgba(13,31,23,0.10);
-  --site-page-surface: rgba(255,255,255,0.86);
+  --site-page-surface: rgba(255,255,255,0.80);
+
+  /* Landing decorative tokens */
+  --site-grid-line:    rgba(4,120,87,0.05);
+  --site-top-glow:     rgba(4,120,87,0.10);
+  --site-nav-bg:       rgba(245,247,244,0.88);
+  --site-nav-link:     rgba(13,31,23,0.52);
+  --site-nav-link-hover: rgba(13,31,23,0.90);
+  --site-nav-link-bg-hover: rgba(13,31,23,0.05);
 
   /* Card shadow — light */
   --card-shadow:       0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
@@ -208,12 +219,21 @@
   --sidebar-border:               220 16% 14%;
   --sidebar-ring:                 217 33% 17%;
 
+  /* ── Site-shell tokens — dark overrides ── */
   --site-page-bg:      #03070f;
   --site-page-fg:      #f8fafc;
   --site-page-muted:   rgba(255,255,255,0.42);
-  --site-page-soft:    rgba(255,255,255,0.16);
+  --site-page-soft:    rgba(255,255,255,0.20);
   --site-page-border:  rgba(255,255,255,0.05);
   --site-page-surface: rgba(255,255,255,0.025);
+
+  /* Landing decorative tokens — dark */
+  --site-grid-line:    rgba(16,185,129,0.03);
+  --site-top-glow:     rgba(16,185,129,0.18);
+  --site-nav-bg:       rgba(3,7,15,0.85);
+  --site-nav-link:     rgba(255,255,255,0.42);
+  --site-nav-link-hover: rgba(255,255,255,0.90);
+  --site-nav-link-bg-hover: rgba(255,255,255,0.05);
 
   --card-shadow:       0 1px 2px rgba(0,0,0,0.35), 0 4px 12px rgba(0,0,0,0.22);
   --card-shadow-hover: 0 4px 6px rgba(0,0,0,0.45), 0 12px 24px rgba(0,0,0,0.30), 0 0 0 1px var(--border-strong);

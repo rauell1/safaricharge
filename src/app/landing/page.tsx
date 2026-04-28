@@ -1,6 +1,5 @@
 'use client';
 
-import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import {
   Sun, Zap, BarChart3, Battery, ArrowRight, Shield,
@@ -15,42 +14,42 @@ const features = [
     title: 'Pyomo MILP Optimizer',
     description:
       'Goes beyond rule-based dispatch. Our MILP engine finds the globally optimal BESS charge/discharge schedule against KPLC peak and off-peak windows.',
-    accent: '#10b981',
+    accent: 'var(--battery)',
   },
   {
     icon: BarChart3,
     title: 'Real-Time Solar Analytics',
     description:
       'Live AC output, irradiance correlation, inverter limit tracking, and curtailment detection — all in a single dashboard.',
-    accent: '#f59e0b',
+    accent: 'var(--solar)',
   },
   {
     icon: Battery,
     title: 'BESS SoC Intelligence',
     description:
       'SoC bounds enforcement, binary charge/discharge mutex, and battery health KPIs surfaced without a proprietary BMS integration.',
-    accent: '#3b82f6',
+    accent: 'var(--grid)',
   },
   {
     icon: Globe,
     title: 'KPLC Tariff Engine',
     description:
       'Full all-in pricing — base rate, fuel surcharge, FERFA, INFA, ERC, WRA, and VAT — for EV, domestic, and small-commercial profiles.',
-    accent: '#a855f7',
+    accent: 'var(--ev)',
   },
   {
     icon: TrendingDown,
     title: 'Cost & Carbon KPIs',
     description:
       'Per-cycle cost savings, grid displacement percentage, CO₂ avoided, and peak demand shaving — exportable to CSV or PDF.',
-    accent: '#06b6d4',
+    accent: 'var(--consumption)',
   },
   {
     icon: Shield,
     title: 'Block-Structured Extensibility',
     description:
       'Add gensets, EV smart charging, or thermal loads as new optimiser blocks without modifying existing simulation logic.',
-    accent: '#10b981',
+    accent: 'var(--battery)',
   },
 ];
 
@@ -140,28 +139,20 @@ const testimonials = [
     by: 'Energy Manager, Nairobi Industrial Park',
   },
   {
-    quote: 'Finally a tool built for Kenya\'s grid reality.',
+    quote: "Finally a tool built for Kenya's grid reality.",
     by: 'Solar Engineer, Mombasa SEZ',
   },
 ];
 
 export default function LandingPage() {
-  const { resolvedTheme } = useTheme();
-  const isLight = resolvedTheme === 'light';
-
-  const shell = {
-    pageBg: isLight ? 'var(--site-page-bg)' : '#03070f',
-    pageFg: isLight ? 'var(--site-page-fg)' : '#f8fafc',
-    muted: isLight ? 'var(--site-page-muted)' : 'rgba(255,255,255,0.45)',
-    soft: isLight ? 'var(--site-page-soft)' : 'rgba(255,255,255,0.2)',
-    border: isLight ? 'var(--site-page-border)' : 'rgba(255,255,255,0.05)',
-    surface: isLight ? 'var(--site-page-surface)' : 'rgba(255,255,255,0.02)',
-  };
-
   return (
     <div
-      className="min-h-screen text-white antialiased"
-      style={{ background: shell.pageBg, color: shell.pageFg, fontFamily: "'Inter', system-ui, sans-serif" }}
+      className="min-h-screen antialiased"
+      style={{
+        background: 'var(--site-page-bg)',
+        color: 'var(--site-page-fg)',
+        fontFamily: "'Inter', system-ui, sans-serif",
+      }}
     >
       <style jsx>{`
         @keyframes proPulse {
@@ -169,7 +160,6 @@ export default function LandingPage() {
           50% { opacity: 0.78; transform: scale(1.01); }
           100% { opacity: 0.42; transform: scale(1); }
         }
-
         .pro-glow::before {
           content: '';
           position: absolute;
@@ -187,9 +177,7 @@ export default function LandingPage() {
         aria-hidden
         className="pointer-events-none fixed inset-0 z-0"
         style={{
-          backgroundImage: isLight
-            ? 'linear-gradient(rgba(16,185,129,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.05) 1px, transparent 1px)'
-            : 'linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px)',
+          backgroundImage: 'linear-gradient(var(--site-grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--site-grid-line) 1px, transparent 1px)',
           backgroundSize: '80px 80px',
         }}
       />
@@ -199,9 +187,7 @@ export default function LandingPage() {
         className="pointer-events-none fixed inset-x-0 top-0 z-0"
         style={{
           height: '50vh',
-          background: isLight
-            ? 'radial-gradient(ellipse 60% 40% at 50% -5%, rgba(16,185,129,0.12) 0%, transparent 70%)'
-            : 'radial-gradient(ellipse 60% 40% at 50% -5%, rgba(16,185,129,0.18) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse 60% 40% at 50% -5%, var(--site-top-glow) 0%, transparent 70%)',
         }}
       />
 
@@ -209,10 +195,10 @@ export default function LandingPage() {
       <header
         className="fixed top-0 inset-x-0 z-50"
         style={{
-          background: isLight ? 'rgba(255,255,255,0.82)' : 'rgba(3,7,15,0.8)',
+          background: 'var(--site-nav-bg)',
           backdropFilter: 'blur(24px) saturate(180%)',
           WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-          borderBottom: `1px solid ${shell.border}`,
+          borderBottom: '1px solid var(--site-page-border)',
         }}
       >
         <div className="mx-auto max-w-7xl px-6 sm:px-10 h-16 flex items-center justify-between">
@@ -230,7 +216,16 @@ export default function LandingPage() {
                 href={item.href}
                 target={item.external ? '_blank' : undefined}
                 rel={item.external ? 'noopener noreferrer' : undefined}
-                className="text-sm px-3.5 py-2 rounded-lg text-white/45 hover:text-white/85 hover:bg-white/5 transition-colors"
+                className="text-sm px-3.5 py-2 rounded-lg transition-colors"
+                style={{ color: 'var(--site-nav-link)', background: 'transparent' }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-nav-link-hover)';
+                  (e.currentTarget as HTMLAnchorElement).style.background = 'var(--site-nav-link-bg-hover)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-nav-link)';
+                  (e.currentTarget as HTMLAnchorElement).style.background = 'transparent';
+                }}
               >
                 {item.label}
               </a>
@@ -241,14 +236,21 @@ export default function LandingPage() {
             <ThemeToggle />
             <Link
               href="/demo"
-              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-lg text-white/55 border border-white/10 hover:text-white/90 hover:border-white/20 transition-colors"
+              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors"
+              style={{
+                color: 'var(--site-nav-link)',
+                border: '1px solid var(--site-page-border)',
+              }}
             >
               <Activity className="w-3.5 h-3.5" />
               Dashboard
             </Link>
             <Link
               href="/demo"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-1.5 rounded-lg bg-[#10b981] text-white hover:bg-[#059669] transition-colors"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-1.5 rounded-lg transition-colors"
+              style={{ background: 'var(--battery)', color: '#fff' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--battery-bright)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--battery)'; }}
             >
               Open app <ArrowRight className="w-3.5 h-3.5" />
             </Link>
@@ -264,14 +266,14 @@ export default function LandingPage() {
             <span
               className="inline-flex items-center gap-2 text-xs font-semibold px-3.5 py-1.5 rounded-full"
               style={{
-                background: isLight ? 'rgba(16,185,129,0.10)' : 'rgba(16,185,129,0.08)',
+                background: 'var(--battery-soft)',
                 border: '1px solid rgba(16,185,129,0.22)',
-                color: '#34d399',
+                color: 'var(--battery)',
               }}
             >
               <span
                 className="w-1.5 h-1.5 rounded-full animate-pulse"
-                style={{ background: '#10b981', boxShadow: '0 0 8px #10b981' }}
+                style={{ background: 'var(--battery)', boxShadow: '0 0 8px var(--battery)' }}
               />
               Pyomo MILP optimizer · Live
             </span>
@@ -283,14 +285,14 @@ export default function LandingPage() {
             style={{
               fontSize: 'clamp(2.8rem, 7vw, 5.5rem)',
               letterSpacing: '-0.04em',
-              color: isLight ? '#102418' : '#f0fdf8',
+              color: 'var(--site-page-fg)',
             }}
           >
             Solar intelligence
             <br />
             <span
               style={{
-                background: 'linear-gradient(90deg, #10b981 10%, #6ee7b7 55%, #a7f3d0 100%)',
+                background: 'linear-gradient(90deg, var(--battery) 10%, var(--battery-bright) 55%, var(--battery-soft) 100%)',
                 WebkitBackgroundClip: 'text',
                 backgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
@@ -304,7 +306,7 @@ export default function LandingPage() {
             className="text-center lg:text-left mx-auto lg:mx-0 mb-10"
             style={{
               fontSize: 'clamp(1rem, 2vw, 1.15rem)',
-              color: shell.muted,
+              color: 'var(--site-page-muted)',
               maxWidth: '52ch',
               lineHeight: 1.75,
             }}
@@ -322,16 +324,21 @@ export default function LandingPage() {
                   key={kpi.label}
                   className="rounded-2xl p-4"
                   style={{
-                    background: shell.surface,
+                    background: 'var(--site-page-surface)',
                     border: '1px solid rgba(16,185,129,0.15)',
                     boxShadow: '0 0 24px rgba(16,185,129,0.08)',
                   }}
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs" style={{ color: shell.muted }}>{kpi.label}</span>
-                    <Icon className="w-4 h-4" style={{ color: '#10b981' }} />
+                    <span className="text-xs" style={{ color: 'var(--site-page-muted)' }}>{kpi.label}</span>
+                    <Icon className="w-4 h-4" style={{ color: 'var(--battery)' }} />
                   </div>
-                  <div className="text-lg font-semibold" style={{ color: shell.pageFg, letterSpacing: '-0.02em' }}>{kpi.value}</div>
+                  <div
+                    className="text-lg font-semibold"
+                    style={{ color: 'var(--site-page-fg)', letterSpacing: '-0.02em' }}
+                  >
+                    {kpi.value}
+                  </div>
                 </div>
               );
             })}
@@ -341,20 +348,49 @@ export default function LandingPage() {
             <Link
               href="/demo"
               aria-label="Open demo dashboard"
-              className="group inline-flex items-center gap-2 font-semibold text-sm px-7 py-3.5 rounded-xl bg-[#10b981] text-white shadow-[0_0_40px_rgba(16,185,129,0.3)] hover:bg-[#059669] hover:shadow-[0_0_56px_rgba(16,185,129,0.45)] transition-all"
+              className="group inline-flex items-center gap-2 font-semibold text-sm px-7 py-3.5 rounded-xl text-white transition-all"
+              style={{
+                background: 'var(--battery)',
+                boxShadow: '0 0 40px rgba(16,185,129,0.3)',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.background = 'var(--battery-bright)';
+                (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 0 56px rgba(16,185,129,0.45)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.background = 'var(--battery)';
+                (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 0 40px rgba(16,185,129,0.3)';
+              }}
             >
               Open dashboard <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <a
               href="#features"
-              className="group inline-flex items-center gap-2 text-sm px-6 py-3.5 rounded-xl text-white/55 border border-white/10 hover:text-white/90 hover:border-white/20 hover:bg-white/5 transition-colors"
+              className="group inline-flex items-center gap-2 text-sm px-6 py-3.5 rounded-xl transition-colors"
+              style={{
+                color: 'var(--site-page-muted)',
+                border: '1px solid var(--site-page-border)',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-page-fg)';
+                (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--site-page-soft)';
+                (e.currentTarget as HTMLAnchorElement).style.background = 'var(--site-page-surface)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-page-muted)';
+                (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--site-page-border)';
+                (e.currentTarget as HTMLAnchorElement).style.background = 'transparent';
+              }}
             >
               See features <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
             </a>
           </div>
 
           {/* Trust line */}
-          <p className="text-center lg:text-left text-xs" style={{ color: shell.soft }}>
+          <p
+            className="text-center lg:text-left text-xs"
+            style={{ color: 'var(--site-page-soft)' }}
+          >
             Built for Nairobi&rsquo;s C&amp;I solar sites · KPLC TOU-aware · Open source
           </p>
         </div>
@@ -363,33 +399,48 @@ export default function LandingPage() {
       {/* ── Stats ── */}
       <section
         id="stats"
-        style={{ borderTop: `1px solid ${shell.border}`, borderBottom: `1px solid ${shell.border}` }}
+        style={{
+          borderTop: '1px solid var(--site-page-border)',
+          borderBottom: '1px solid var(--site-page-border)',
+        }}
       >
         <div className="mx-auto max-w-7xl">
           <div
             className="grid grid-cols-2 md:grid-cols-4"
-            style={{ borderLeft: `1px solid ${shell.border}` }}
+            style={{ borderLeft: '1px solid var(--site-page-border)' }}
           >
             {stats.map((s) => (
               <div
                 key={s.label}
                 className="py-12 px-8 text-center"
-                style={{ borderRight: `1px solid ${shell.border}` }}
+                style={{ borderRight: '1px solid var(--site-page-border)' }}
               >
                 <div
                   className="font-black tabular-nums mb-1"
                   style={{
                     fontSize: 'clamp(2rem, 4vw, 2.8rem)',
-                    color: '#10b981',
+                    color: 'var(--battery)',
                     letterSpacing: '-0.04em',
                   }}
                 >
                   {s.value}
                 </div>
-                <div className="text-sm font-medium mb-1" style={{ color: isLight ? '#274233' : 'rgba(255,255,255,0.65)' }}>{s.label}</div>
-                <div className="text-xs mb-3" style={{ color: shell.soft }}>{s.sub}</div>
+                <div
+                  className="text-sm font-medium mb-1"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  {s.label}
+                </div>
+                <div className="text-xs mb-3" style={{ color: 'var(--site-page-soft)' }}>{s.sub}</div>
                 <svg className="mx-auto" width="64" height="20" viewBox="0 0 60 20" fill="none" aria-hidden>
-                  <polyline points={s.sparkline} fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <polyline
+                    points={s.sparkline}
+                    fill="none"
+                    stroke="var(--battery)"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               </div>
             ))}
@@ -398,40 +449,68 @@ export default function LandingPage() {
       </section>
 
       {/* ── How it works ── */}
-      <section className="py-28 px-6 sm:px-10" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <section
+        className="py-28 px-6 sm:px-10"
+        style={{ borderBottom: '1px solid var(--site-page-border)' }}
+      >
         <div className="mx-auto max-w-7xl">
           <div className="mb-14">
             <div
               className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full mb-5"
-              style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.18)', color: '#34d399' }}
+              style={{
+                background: 'var(--battery-soft)',
+                border: '1px solid rgba(16,185,129,0.18)',
+                color: 'var(--battery)',
+              }}
             >
               How it works
             </div>
             <h2
               className="font-bold tracking-tight mb-4"
-              style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', color: '#f0fdf8', letterSpacing: '-0.04em' }}
+              style={{
+                fontSize: 'clamp(1.8rem, 4vw, 2.8rem)',
+                color: 'var(--site-page-fg)',
+                letterSpacing: '-0.04em',
+              }}
             >
               From telemetry to dispatch in minutes
             </h2>
           </div>
 
           <div className="relative">
-            <div aria-hidden className="absolute left-8 top-2 bottom-2 hidden sm:block" style={{ width: '1px', background: 'rgba(16,185,129,0.3)' }} />
+            <div
+              aria-hidden
+              className="absolute left-8 top-2 bottom-2 hidden sm:block"
+              style={{ width: '1px', background: 'var(--battery-soft)' }}
+            />
             <div className="space-y-10">
               {steps.map((step, index) => (
                 <div key={step.title} className="grid sm:grid-cols-[90px_1fr] gap-5 sm:gap-8 items-start">
-                  <div className="text-4xl sm:text-5xl font-black leading-none" style={{ color: 'rgba(16,185,129,0.7)', letterSpacing: '-0.04em' }}>
+                  <div
+                    className="text-4xl sm:text-5xl font-black leading-none"
+                    style={{ color: 'var(--battery)', letterSpacing: '-0.04em', opacity: 0.7 }}
+                  >
                     {index + 1}
                   </div>
                   <div
                     className="rounded-2xl p-6"
                     style={{
-                      background: 'rgba(255,255,255,0.02)',
-                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'var(--site-page-surface)',
+                      border: '1px solid var(--site-page-border)',
                     }}
                   >
-                    <h3 className="text-lg font-semibold mb-2" style={{ color: '#e2e8f0' }}>{step.title}</h3>
-                    <p className="text-sm" style={{ color: 'rgba(255,255,255,0.42)', lineHeight: 1.7 }}>{step.description}</p>
+                    <h3
+                      className="text-lg font-semibold mb-2"
+                      style={{ color: 'var(--text-primary)' }}
+                    >
+                      {step.title}
+                    </h3>
+                    <p
+                      className="text-sm"
+                      style={{ color: 'var(--site-page-muted)', lineHeight: 1.7 }}
+                    >
+                      {step.description}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -446,17 +525,25 @@ export default function LandingPage() {
           <div className="mb-20">
             <div
               className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full mb-5"
-              style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.18)', color: '#34d399' }}
+              style={{
+                background: 'var(--battery-soft)',
+                border: '1px solid rgba(16,185,129,0.18)',
+                color: 'var(--battery)',
+              }}
             >
               <Cpu className="w-3 h-3" /> Platform capabilities
             </div>
             <h2
               className="font-bold tracking-tight mb-4"
-              style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', color: '#f0fdf8', letterSpacing: '-0.04em' }}
+              style={{
+                fontSize: 'clamp(1.8rem, 4vw, 2.8rem)',
+                color: 'var(--site-page-fg)',
+                letterSpacing: '-0.04em',
+              }}
             >
               Everything your site needs
             </h2>
-            <p style={{ color: 'rgba(255,255,255,0.4)', lineHeight: 1.75, maxWidth: '44ch' }}>
+            <p style={{ color: 'var(--site-page-muted)', lineHeight: 1.75, maxWidth: '44ch' }}>
               From raw inverter telemetry to globally-optimal dispatch schedules — all in one platform.
             </p>
           </div>
@@ -468,16 +555,37 @@ export default function LandingPage() {
               return (
                 <div
                   key={f.title}
-                  className={`group rounded-2xl border border-white/10 p-8 bg-[#03070f] hover:bg-[#06100a] transition-colors ${isPrimary ? 'sm:col-span-2 lg:col-span-2 lg:p-10' : ''}`}
+                  className={`group rounded-2xl p-8 transition-colors ${isPrimary ? 'sm:col-span-2 lg:col-span-2 lg:p-10' : ''}`}
+                  style={{
+                    background: 'var(--site-page-surface)',
+                    border: '1px solid var(--site-page-border)',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.background = 'var(--bg-card-hover)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.background = 'var(--site-page-surface)';
+                  }}
                 >
                   <div
                     className="w-10 h-10 rounded-xl grid place-items-center mb-5"
-                    style={{ background: `${f.accent}12`, border: `1px solid ${f.accent}20` }}
+                    style={{
+                      background: 'var(--battery-soft)',
+                      border: '1px solid var(--battery-soft)',
+                    }}
                   >
                     <Icon className="w-5 h-5" style={{ color: f.accent }} strokeWidth={1.8} />
                   </div>
-                  <h3 className={`font-semibold mb-3 ${isPrimary ? 'text-xl' : 'text-[0.95rem]'}`} style={{ color: '#e2e8f0' }}>{f.title}</h3>
-                  <p className={`leading-relaxed text-white/40 group-hover:text-white/55 transition-colors ${isPrimary ? 'text-base max-w-3xl' : 'text-sm'}`}>
+                  <h3
+                    className={`font-semibold mb-3 ${isPrimary ? 'text-xl' : 'text-[0.95rem]'}`}
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {f.title}
+                  </h3>
+                  <p
+                    className={`leading-relaxed transition-colors ${isPrimary ? 'text-base max-w-3xl' : 'text-sm'}`}
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
                     {f.description}
                   </p>
                 </div>
@@ -490,32 +598,54 @@ export default function LandingPage() {
       {/* ── CTA band ── */}
       <section
         className="py-24 px-6 sm:px-10 relative overflow-hidden"
-        style={{ borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(16,185,129,0.025)' }}
+        style={{
+          borderTop: '1px solid var(--site-page-border)',
+          background: 'var(--battery-soft)',
+        }}
       >
         <div
           aria-hidden
           className="absolute inset-x-0 top-0 pointer-events-none"
           style={{
             height: '100%',
-            background: 'radial-gradient(ellipse 50% 70% at 50% 50%, rgba(16,185,129,0.07) 0%, transparent 70%)',
+            background: 'radial-gradient(ellipse 50% 70% at 50% 50%, var(--battery-soft) 0%, transparent 70%)',
           }}
         />
         <div className="relative mx-auto max-w-3xl text-center">
-          <Leaf className="w-10 h-10 mx-auto mb-6" style={{ color: '#10b981', opacity: 0.6 }} />
+          <Leaf className="w-10 h-10 mx-auto mb-6" style={{ color: 'var(--battery)', opacity: 0.6 }} />
           <h2
             className="font-bold tracking-tight mb-5"
-            style={{ fontSize: 'clamp(1.7rem, 3.5vw, 2.5rem)', color: '#f0fdf8', letterSpacing: '-0.04em' }}
+            style={{
+              fontSize: 'clamp(1.7rem, 3.5vw, 2.5rem)',
+              color: 'var(--site-page-fg)',
+              letterSpacing: '-0.04em',
+            }}
           >
             Your dashboard is ready
           </h2>
-          <p className="mb-10 mx-auto" style={{ color: 'rgba(255,255,255,0.42)', maxWidth: '46ch', lineHeight: 1.75 }}>
+          <p
+            className="mb-10 mx-auto"
+            style={{ color: 'var(--site-page-muted)', maxWidth: '46ch', lineHeight: 1.75 }}
+          >
             No sign-in required. Explore real-time solar analytics, BESS dispatch, and
             KPLC cost modelling right now.
           </p>
           <Link
             href="/demo"
-            className="group inline-flex items-center gap-2 font-semibold text-sm px-8 py-4 rounded-xl bg-[#10b981] text-white shadow-[0_0_40px_rgba(16,185,129,0.28)] hover:bg-[#059669] hover:shadow-[0_0_56px_rgba(16,185,129,0.42)] transition-all"
-            style={{ fontSize: '0.95rem' }}
+            className="group inline-flex items-center gap-2 font-semibold text-sm px-8 py-4 rounded-xl text-white transition-all"
+            style={{
+              background: 'var(--battery)',
+              fontSize: '0.95rem',
+              boxShadow: '0 0 40px rgba(16,185,129,0.28)',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLAnchorElement).style.background = 'var(--battery-bright)';
+              (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 0 56px rgba(16,185,129,0.42)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLAnchorElement).style.background = 'var(--battery)';
+              (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 0 40px rgba(16,185,129,0.28)';
+            }}
           >
             Open dashboard <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
@@ -523,22 +653,34 @@ export default function LandingPage() {
       </section>
 
       {/* ── Pricing ── */}
-      <section id="pricing" className="py-32 px-6 sm:px-10" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <section
+        id="pricing"
+        className="py-32 px-6 sm:px-10"
+        style={{ borderTop: '1px solid var(--site-page-border)' }}
+      >
         <div className="mx-auto max-w-7xl">
           <div className="mb-20">
             <div
               className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full mb-5"
-              style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.18)', color: '#34d399' }}
+              style={{
+                background: 'var(--battery-soft)',
+                border: '1px solid rgba(16,185,129,0.18)',
+                color: 'var(--battery)',
+              }}
             >
               Pricing
             </div>
             <h2
               className="font-bold tracking-tight mb-4"
-              style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', color: '#f0fdf8', letterSpacing: '-0.04em' }}
+              style={{
+                fontSize: 'clamp(1.8rem, 4vw, 2.8rem)',
+                color: 'var(--site-page-fg)',
+                letterSpacing: '-0.04em',
+              }}
             >
               Simple, transparent pricing
             </h2>
-            <p style={{ color: 'rgba(255,255,255,0.4)' }}>Open-core. Start free, scale when ready.</p>
+            <p style={{ color: 'var(--site-page-muted)' }}>Open-core. Start free, scale when ready.</p>
           </div>
 
           <div className="grid sm:grid-cols-3 gap-4 items-start">
@@ -547,91 +689,155 @@ export default function LandingPage() {
                 key={plan.name}
                 className={`group rounded-2xl p-7 relative ${plan.highlight ? 'pro-glow' : ''}`}
                 style={{
-                  background: plan.highlight ? 'rgba(16,185,129,0.06)' : 'rgba(255,255,255,0.02)',
-                  border: plan.highlight ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.06)',
+                  background: plan.highlight ? 'var(--battery-soft)' : 'var(--site-page-surface)',
+                  border: plan.highlight
+                    ? '1px solid rgba(16,185,129,0.3)'
+                    : '1px solid var(--site-page-border)',
                   boxShadow: plan.highlight ? '0 0 60px rgba(16,185,129,0.1)' : 'none',
                 }}
               >
                 {plan.highlight && (
                   <span
                     className="inline-flex text-xs font-semibold px-2.5 py-0.5 rounded-full mb-4"
-                    style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}
+                    style={{
+                      background: 'var(--battery-soft)',
+                      color: 'var(--battery)',
+                      border: '1px solid rgba(16,185,129,0.2)',
+                    }}
                   >
                     Most popular
                   </span>
                 )}
-                <h3 className="font-semibold text-lg mb-1" style={{ color: '#e2e8f0' }}>{plan.name}</h3>
+                <h3 className="font-semibold text-lg mb-1" style={{ color: 'var(--text-primary)' }}>{plan.name}</h3>
                 <div className="flex items-baseline gap-1 mb-2">
-                  <span className="text-3xl font-bold" style={{ color: '#f0fdf8', letterSpacing: '-0.04em' }}>{plan.price}</span>
-                  {plan.period && <span className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>{plan.period}</span>}
+                  <span
+                    className="text-3xl font-bold"
+                    style={{ color: 'var(--site-page-fg)', letterSpacing: '-0.04em' }}
+                  >
+                    {plan.price}
+                  </span>
+                  {plan.period && (
+                    <span className="text-sm" style={{ color: 'var(--site-page-muted)' }}>{plan.period}</span>
+                  )}
                 </div>
-                <p className="text-sm mb-7" style={{ color: 'rgba(255,255,255,0.4)' }}>{plan.description}</p>
+                <p className="text-sm mb-7" style={{ color: 'var(--site-page-muted)' }}>{plan.description}</p>
                 <ul className="space-y-2.5 mb-9">
                   {plan.features.map((feat) => (
-                    <li key={feat} className="flex items-start gap-2.5 text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                      <Check className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#10b981' }} />
+                    <li
+                      key={feat}
+                      className="flex items-start gap-2.5 text-sm"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
+                      <Check className="w-4 h-4 shrink-0 mt-0.5" style={{ color: 'var(--battery)' }} />
                       {feat}
                     </li>
                   ))}
                 </ul>
                 <Link
                   href={plan.href}
-                  className={`block w-full text-center text-sm font-semibold py-2.5 rounded-xl transition-colors ${
-                    plan.highlight
-                      ? 'bg-[#10b981] text-white hover:bg-[#059669]'
-                      : 'text-white/60 border border-white/10 hover:border-white/25 hover:text-white'
-                  }`}
+                  className={`block w-full text-center text-sm font-semibold py-2.5 rounded-xl transition-colors`}
+                  style={{
+                    background: plan.highlight ? 'var(--battery)' : 'transparent',
+                    color: plan.highlight ? '#fff' : 'var(--site-page-muted)',
+                    border: plan.highlight ? 'none' : '1px solid var(--site-page-border)',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (plan.highlight) {
+                      (e.currentTarget as HTMLAnchorElement).style.background = 'var(--battery-bright)';
+                    } else {
+                      (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-page-fg)';
+                      (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--site-page-soft)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (plan.highlight) {
+                      (e.currentTarget as HTMLAnchorElement).style.background = 'var(--battery)';
+                    } else {
+                      (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-page-muted)';
+                      (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--site-page-border)';
+                    }
+                  }}
                 >
                   {plan.cta}
                 </Link>
               </div>
             ))}
           </div>
-          <p className="mt-6 text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
+          <p className="mt-6 text-sm" style={{ color: 'var(--site-page-muted)' }}>
             All plans include the Pyomo MILP engine and KPLC tariff calculator
           </p>
         </div>
       </section>
 
       {/* ── Social proof ── */}
-      <section className="px-6 sm:px-10 pb-24" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <section
+        className="px-6 sm:px-10 pb-24"
+        style={{ borderTop: '1px solid var(--site-page-border)' }}
+      >
         <div className="mx-auto max-w-7xl grid md:grid-cols-2 gap-4 pt-16">
           {testimonials.map((item) => (
             <div
               key={item.quote}
               className="rounded-2xl p-6"
-              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}
+              style={{
+                background: 'var(--site-page-surface)',
+                border: '1px solid var(--site-page-border)',
+              }}
             >
-              <Quote className="w-5 h-5 mb-4" style={{ color: '#10b981' }} />
-              <p className="text-base mb-3" style={{ color: '#e2e8f0' }}>
+              <Quote className="w-5 h-5 mb-4" style={{ color: 'var(--battery)' }} />
+              <p className="text-base mb-3" style={{ color: 'var(--text-primary)' }}>
                 <em>&ldquo;{item.quote}&rdquo;</em>
               </p>
-              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>— {item.by}</p>
+              <p className="text-sm" style={{ color: 'var(--site-page-muted)' }}>— {item.by}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* ── Final CTA ── */}
-      <section className="py-32 px-6 sm:px-10" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <section
+        className="py-32 px-6 sm:px-10"
+        style={{ borderTop: '1px solid var(--site-page-border)' }}
+      >
         <div className="mx-auto max-w-3xl text-center">
           <h2
             className="font-bold tracking-tight mb-5"
-            style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', color: '#f0fdf8', letterSpacing: '-0.04em' }}
+            style={{
+              fontSize: 'clamp(1.8rem, 4vw, 2.8rem)',
+              color: 'var(--site-page-fg)',
+              letterSpacing: '-0.04em',
+            }}
           >
             Ready to optimise your site?
           </h2>
           <p
             className="mb-10 mx-auto"
-            style={{ color: 'rgba(255,255,255,0.42)', maxWidth: '46ch', lineHeight: 1.75, fontSize: '1.05rem' }}
+            style={{
+              color: 'var(--site-page-muted)',
+              maxWidth: '46ch',
+              lineHeight: 1.75,
+              fontSize: '1.05rem',
+            }}
           >
             Join energy managers across Kenya already using SafariCharge to cut KPLC bills and
             maximise solar yield.
           </p>
           <Link
             href="/demo"
-            className="group inline-flex items-center gap-2 font-semibold px-9 py-4 rounded-xl bg-[#10b981] text-white shadow-[0_0_48px_rgba(16,185,129,0.3)] hover:bg-[#059669] hover:shadow-[0_0_64px_rgba(16,185,129,0.44)] transition-all"
-            style={{ fontSize: '0.95rem' }}
+            className="group inline-flex items-center gap-2 font-semibold px-9 py-4 rounded-xl text-white transition-all"
+            style={{
+              background: 'var(--battery)',
+              fontSize: '0.95rem',
+              boxShadow: '0 0 48px rgba(16,185,129,0.3)',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLAnchorElement).style.background = 'var(--battery-bright)';
+              (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 0 64px rgba(16,185,129,0.44)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLAnchorElement).style.background = 'var(--battery)';
+              (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 0 48px rgba(16,185,129,0.3)';
+            }}
           >
             Open dashboard <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
@@ -639,30 +845,48 @@ export default function LandingPage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }} className="py-12 px-6 sm:px-10">
-        <div className="mx-auto max-w-7xl grid gap-10 md:grid-cols-3 text-sm" style={{ color: 'rgba(255,255,255,0.22)' }}>
+      <footer
+        style={{ borderTop: '1px solid var(--site-page-border)' }}
+        className="py-12 px-6 sm:px-10"
+      >
+        <div
+          className="mx-auto max-w-7xl grid gap-10 md:grid-cols-3 text-sm"
+          style={{ color: 'var(--site-page-muted)' }}
+        >
           <div>
             <div className="flex items-center gap-2.5 mb-3">
               <svg width="18" height="18" viewBox="0 0 28 28" fill="none">
-                <path d="M14 7 L17.5 13 L21 13 L14 21 L16 15 L12 15 Z" fill="rgba(16,185,129,0.75)" />
+                <path d="M14 7 L17.5 13 L21 13 L14 21 L16 15 L12 15 Z" fill="var(--battery)" />
               </svg>
-              <span className="font-semibold" style={{ color: '#e2e8f0' }}>SafariCharge</span>
+              <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>SafariCharge</span>
             </div>
             <p className="mb-2">Solar intelligence built for Kenya</p>
             <p>© {new Date().getFullYear()} SafariCharge</p>
           </div>
 
           <div>
-            <p className="font-semibold mb-3" style={{ color: '#e2e8f0' }}>Links</p>
+            <p className="font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Links</p>
             <div className="space-y-2">
-              <Link href="/demo" className="block hover:text-white/65 transition-colors">Dashboard</Link>
-              <a href="#features" className="block hover:text-white/65 transition-colors">Features</a>
-              <a href="#pricing" className="block hover:text-white/65 transition-colors">Pricing</a>
+              <Link href="/demo" className="block transition-colors" style={{ color: 'var(--site-page-muted)' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-page-muted)'; }}
+              >Dashboard</Link>
+              <a href="#features" className="block transition-colors" style={{ color: 'var(--site-page-muted)' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-page-muted)'; }}
+              >Features</a>
+              <a href="#pricing" className="block transition-colors" style={{ color: 'var(--site-page-muted)' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-page-muted)'; }}
+              >Pricing</a>
               <a
                 href="https://github.com/rauell1/safaricharge"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 hover:text-white/65 transition-colors"
+                className="inline-flex items-center gap-1.5 transition-colors"
+                style={{ color: 'var(--site-page-muted)' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-page-muted)'; }}
               >
                 GitHub <ArrowUpRight className="w-3.5 h-3.5" />
               </a>
@@ -670,8 +894,14 @@ export default function LandingPage() {
           </div>
 
           <div>
-            <p className="font-semibold mb-3" style={{ color: '#e2e8f0' }}>Contact</p>
-            <a href="mailto:hello@safaricharge.ke" className="inline-flex hover:text-white/65 transition-colors mb-2">
+            <p className="font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Contact</p>
+            <a
+              href="mailto:hello@safaricharge.ke"
+              className="inline-flex mb-2 transition-colors"
+              style={{ color: 'var(--site-page-muted)' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-page-muted)'; }}
+            >
               hello@safaricharge.ke
             </a>
             <p>Built in Nairobi 🇰🇪</p>
