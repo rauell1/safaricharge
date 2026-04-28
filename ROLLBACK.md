@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 171 | `rollback/feat-move-save-scenario-from-navbar-mo-2026-04-28-cdef08f` | `cdef08f` | feat: move Save Scenario from navbar modal into Scenarios page inline section | 2026-04-28 |
 | 170 | `rollback/fix-pin-all-radix-portals-to-modal-roo-2026-04-28-43cc568` | `43cc568` | fix: pin all Radix portals to #modal-root at <body> level | 2026-04-28 |
 | 169 | `rollback/fix-remove-overflow-x-hidden-and-trans-2026-04-28-52c9631` | `52c9631` | fix: remove overflow-x-hidden and transform-creating wrappers from DashboardLayout | 2026-04-28 |
 | 168 | `rollback/fix-move-overflow-x-guard-off-html-bod-2026-04-28-fd45e75` | `fd45e75` | fix: move overflow-x guard off html/body to fix dialog centering | 2026-04-28 |
@@ -1765,6 +1766,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-pin-all-radix-portals-to-modal-roo-2026-04-28-43cc568`
 - **Commit**: `43cc568c837f63825f2ad8b54b382609e7f98f28`
 - **Subject**: fix: pin all Radix portals to #modal-root at <body> level
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #171 — `rollback/feat-move-save-scenario-from-navbar-mo-2026-04-28-cdef08f`
+
+- **Branch**: `rollback/feat-move-save-scenario-from-navbar-mo-2026-04-28-cdef08f`
+- **Commit**: `cdef08f6eee0bfe72ed19087cdfe71392dd49cf5`
+- **Subject**: feat: move Save Scenario from navbar modal into Scenarios page inline section
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
