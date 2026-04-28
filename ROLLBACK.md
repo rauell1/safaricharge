@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 166 | `rollback/fix-sidebar-ai-assistant-item-toggles-2026-04-28-d3a5cef` | `d3a5cef` | fix: sidebar AI Assistant item toggles panel instead of navigating to /ai-assistant | 2026-04-28 |
 | 165 | `rollback/feat-add-persistent-floating-ai-button-2026-04-28-83a8f1e` | `83a8f1e` | feat: add persistent floating AI button (FAB) + wire mobile nav AI toggle | 2026-04-28 |
 | 164 | `rollback/fix-dialog-z-index-centering-scroll-an-2026-04-28-3758ecf` | `3758ecf` | fix: dialog z-index, centering, scroll, and overflow across all pages | 2026-04-28 |
 | 163 | `rollback/fix-patch-alert-dialog-sheet-globals-c-2026-04-28-8b62765` | `8b62765` | fix: patch alert-dialog + sheet + globals.css so ALL shadcn overlay components use project design tokens | 2026-04-28 |
@@ -1715,6 +1716,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/feat-add-persistent-floating-ai-button-2026-04-28-83a8f1e`
 - **Commit**: `83a8f1e430a33bc399761f453f4d015c2398c9d8`
 - **Subject**: feat: add persistent floating AI button (FAB) + wire mobile nav AI toggle
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #166 — `rollback/fix-sidebar-ai-assistant-item-toggles-2026-04-28-d3a5cef`
+
+- **Branch**: `rollback/fix-sidebar-ai-assistant-item-toggles-2026-04-28-d3a5cef`
+- **Commit**: `d3a5cef9b107db36285303654f4c1c40ffca0333`
+- **Subject**: fix: sidebar AI Assistant item toggles panel instead of navigating to /ai-assistant
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
