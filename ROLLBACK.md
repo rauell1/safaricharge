@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 156 | `rollback/fix-toast-only-on-site-leave-seamless-2026-04-28-65961c2` | `65961c2` | fix: toast only on site-leave, seamless nav, strip sidebar descriptions | 2026-04-28 |
 | 155 | `rollback/feat-default-light-mode-strict-theme-t-2026-04-28-a144876` | `a144876` | feat: default light mode, strict theme tokens, dark/light toggle in sidebar footer | 2026-04-28 |
 | 154 | `rollback/fix-mobile-sliders-icon-auto-sizing-re-2026-04-28-3f3f940` | `3f3f940` | fix: mobile sliders, icon auto-sizing, readability, persistent sim-reset toast | 2026-04-28 |
 | 153 | `rollback/fix-mobile-slider-icon-sizing-readabil-2026-04-28-3b264e6` | `3b264e6` | fix: mobile slider, icon sizing, readability, simulation-reset toast notification | 2026-04-28 |
@@ -1615,6 +1616,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/feat-default-light-mode-strict-theme-t-2026-04-28-a144876`
 - **Commit**: `a144876e3fe7225c6e6f05b5705b0b76e0b01de0`
 - **Subject**: feat: default light mode, strict theme tokens, dark/light toggle in sidebar footer
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #156 — `rollback/fix-toast-only-on-site-leave-seamless-2026-04-28-65961c2`
+
+- **Branch**: `rollback/fix-toast-only-on-site-leave-seamless-2026-04-28-65961c2`
+- **Commit**: `65961c222f4a8db6f9eeacc5a4ee8080380b5d9b`
+- **Subject**: fix: toast only on site-leave, seamless nav, strip sidebar descriptions
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
