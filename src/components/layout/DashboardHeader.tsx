@@ -5,8 +5,6 @@ import Link from 'next/link';
 import {
   Calendar,
   Bell,
-  Filter,
-  Download,
   RotateCcw,
   MapPin,
   Target,
@@ -27,7 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { SubscriptionBadge } from '@/components/SubscriptionBadge';
-import { ThemeToggle } from '@/components/theme-toggle';
+// ThemeToggle removed from header — lives in sidebar footer only
 
 interface DashboardHeaderProps {
   currentDate: Date;
@@ -55,7 +53,6 @@ export function DashboardHeader({
   onReset,
   onLocationClick,
   onRecommendationClick,
-  onDownload,
   onSaveScenario,
   locationName = 'Nairobi',
   notificationCount = 0,
@@ -101,7 +98,6 @@ export function DashboardHeader({
     });
   };
 
-  // Responsive icon button — size adapts via CSS clamp tokens
   const iconBtn =
     'relative rounded-xl transition-all duration-150 flex items-center justify-center'
     + ' h-9 w-9 sm:h-10 sm:w-10';
@@ -110,7 +106,6 @@ export function DashboardHeader({
     border: '1px solid var(--border)',
     color: 'var(--text-secondary)',
   };
-  // Icon size follows CSS var so it adapts across breakpoints
   const iconSize = { width: 'var(--icon-sm)', height: 'var(--icon-sm)', flexShrink: 0 };
 
   return (
@@ -122,19 +117,19 @@ export function DashboardHeader({
             background: 'var(--bg-card)',
             border: '1px solid var(--border)',
             color: 'var(--text-primary)',
+            padding: '24px',
           }}
         >
-          <DialogHeader>
-            <DialogTitle style={{ color: 'var(--text-primary)' }}>Save Scenario</DialogTitle>
-            <DialogDescription style={{ color: 'var(--text-secondary)' }}>
+          <DialogHeader style={{ marginBottom: '12px' }}>
+            <DialogTitle style={{ color: 'var(--text-primary)', fontSize: '1rem', fontWeight: 600 }}>Save Scenario</DialogTitle>
+            <DialogDescription style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem', marginTop: '4px' }}>
               Save the current configuration and KPI snapshot for later comparison.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-2">
+          <div style={{ paddingBlock: '8px' }}>
             <Label
               htmlFor="scenario-name"
-              className="block text-sm mb-1.5"
-              style={{ color: 'var(--text-secondary)' }}
+              style={{ display: 'block', fontSize: '0.8125rem', marginBottom: '6px', color: 'var(--text-secondary)' }}
             >
               Scenario name
             </Label>
@@ -151,7 +146,7 @@ export function DashboardHeader({
               }}
             />
           </div>
-          <DialogFooter>
+          <DialogFooter style={{ marginTop: '16px', gap: '8px' }}>
             <Button variant="ghost" onClick={() => setSaveOpen(false)}>
               Cancel
             </Button>
@@ -205,10 +200,9 @@ export function DashboardHeader({
           </div>
         </div>
 
-        {/* Right: actions */}
+        {/* Right: actions — Export removed, ThemeToggle removed */}
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
           <SubscriptionBadge />
-          <ThemeToggle />
 
           {/* Get Recommendation */}
           {onRecommendationClick && (
@@ -234,32 +228,6 @@ export function DashboardHeader({
             </Button>
           </Link>
 
-          {/* Filters — desktop only */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                className={cn(iconBtn, 'hidden sm:flex')}
-                style={iconBtnStyle}
-                aria-label="Filters"
-              >
-                <Filter style={iconSize} />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent
-              className="w-64 rounded-xl"
-              style={{
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                color: 'var(--text-primary)',
-              }}
-            >
-              <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Filters</p>
-              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                Filter options coming soon.
-              </p>
-            </PopoverContent>
-          </Popover>
-
           {/* Notifications */}
           <Popover>
             <PopoverTrigger asChild>
@@ -284,21 +252,25 @@ export function DashboardHeader({
               </button>
             </PopoverTrigger>
             <PopoverContent
-              className="w-72 sm:w-80 rounded-xl"
+              align="end"
+              sideOffset={8}
+              className="w-80 rounded-xl"
               style={{
                 background: 'var(--bg-card)',
                 border: '1px solid var(--border)',
                 color: 'var(--text-primary)',
+                padding: '16px',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
               }}
             >
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Notifications</p>
+              <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
+                <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>Notifications</p>
                 {unreadNotifications.length > 0 && (
                   <button
                     type="button"
                     onClick={markAllAsRead}
-                    className="text-[11px] font-medium hover:opacity-80"
-                    style={{ color: 'var(--battery)' }}
+                    style={{ fontSize: '0.6875rem', fontWeight: 500, color: 'var(--battery)' }}
+                    className="hover:opacity-80"
                   >
                     Mark all read
                   </button>
@@ -306,33 +278,34 @@ export function DashboardHeader({
               </div>
 
               {notifications.length === 0 ? (
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>No notifications yet.</p>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>No notifications yet.</p>
               ) : unreadNotifications.length === 0 ? (
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>You are all caught up.</p>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>You are all caught up.</p>
               ) : (
-                <div className="space-y-2">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {unreadNotifications.slice(0, 6).map((item) => (
                     <div
                       key={item.id}
-                      className="rounded-lg px-3 py-2"
                       style={{
                         background: 'var(--bg-card-muted)',
                         border: '1px solid var(--border)',
+                        borderRadius: '8px',
+                        padding: '10px 12px',
                       }}
                     >
-                      <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+                      <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                         {item.title}
                       </p>
-                      <p className="mt-0.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                      <p style={{ marginTop: '3px', fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                         {item.description}
                       </p>
-                      <div className="mt-2 flex items-center gap-2">
+                      <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                         {item.actionLabel && item.onAction && (
                           <button
                             type="button"
                             onClick={() => { item.onAction?.(); markAsRead(item.id); }}
-                            className="text-[11px] font-medium hover:opacity-80"
-                            style={{ color: 'var(--battery)' }}
+                            style={{ fontSize: '0.6875rem', fontWeight: 500, color: 'var(--battery)' }}
+                            className="hover:opacity-80"
                           >
                             {item.actionLabel}
                           </button>
@@ -340,8 +313,8 @@ export function DashboardHeader({
                         <button
                           type="button"
                           onClick={() => markAsRead(item.id)}
-                          className="text-[11px] font-medium hover:opacity-80"
-                          style={{ color: 'var(--text-tertiary)' }}
+                          style={{ fontSize: '0.6875rem', fontWeight: 500, color: 'var(--text-tertiary)' }}
+                          className="hover:opacity-80"
                         >
                           Dismiss
                         </button>
@@ -352,29 +325,6 @@ export function DashboardHeader({
               )}
             </PopoverContent>
           </Popover>
-
-          {/* Export */}
-          <button
-            onClick={onDownload}
-            className="h-9 sm:h-10 px-2.5 sm:px-4 rounded-xl flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold transition-all"
-            style={{
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border)',
-              color: 'var(--text-secondary)',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = 'var(--bg-card-hover)';
-              (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background = 'var(--bg-card)';
-              (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)';
-            }}
-            aria-label="Export data"
-          >
-            <Download style={iconSize} />
-            <span className="hidden md:inline">Export</span>
-          </button>
 
           {/* Save Scenario */}
           {onSaveScenario && (

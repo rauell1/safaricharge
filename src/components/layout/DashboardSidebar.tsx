@@ -15,6 +15,7 @@ import {
   TrendingUp,
   Sun,
   Moon,
+  Download,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -44,7 +45,8 @@ export type DashboardSection =
   | 'recommendation'
   | 'ai-assistant'
   | 'energy-intelligence'
-  | 'financial-model';
+  | 'financial-model'
+  | 'export';
 
 export interface SidebarContextMetric {
   label: string;
@@ -154,6 +156,7 @@ export function DashboardSidebar({
   const resolvedActive: DashboardSection = useMemo(() => {
     if (activeSection && activeSection !== 'dashboard') return activeSection;
     if (!pathname) return 'dashboard';
+    if (pathname.startsWith('/export'))                                             return 'export';
     if (pathname.startsWith('/energy-intelligence'))                                return 'energy-intelligence';
     if (pathname.startsWith('/live-results'))                                       return 'financial';
     if (pathname.startsWith('/financial'))                                          return 'financial-model';
@@ -166,7 +169,6 @@ export function DashboardSidebar({
     return activeSection ?? 'dashboard';
   }, [activeSection, pathname]);
 
-  // Nav items — description field removed entirely
   const primaryNavItems: Array<{
     id: DashboardSection;
     label: string;
@@ -192,7 +194,15 @@ export function DashboardSidebar({
     { id: 'financial-model', label: 'Planner',      icon: TrendingUp, href: '/financial' },
   ];
 
-  // Shared nav item renderer — label only, no description sub-text
+  const toolsNavItems: Array<{
+    id: DashboardSection;
+    label: string;
+    icon: React.ElementType;
+    href?: string;
+  }> = [
+    { id: 'export', label: 'Export', icon: Download, href: '/export' },
+  ];
+
   const renderNavItem = (
     item: { id: DashboardSection; label: string; icon: React.ElementType; href?: string },
     extraClass = ''
@@ -270,6 +280,18 @@ export function DashboardSidebar({
               </SidebarMenuItem>
 
               {financeNavItems.map((item) => renderNavItem(item, 'pl-6'))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Tools group — Export lives here */}
+        <SidebarGroup className="mt-4">
+          <SidebarGroupLabel className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+            Tools
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="space-y-0.5">
+              {toolsNavItems.map((item) => renderNavItem(item))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
