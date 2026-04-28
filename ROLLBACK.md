@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 170 | `rollback/fix-pin-all-radix-portals-to-modal-roo-2026-04-28-43cc568` | `43cc568` | fix: pin all Radix portals to #modal-root at <body> level | 2026-04-28 |
 | 169 | `rollback/fix-remove-overflow-x-hidden-and-trans-2026-04-28-52c9631` | `52c9631` | fix: remove overflow-x-hidden and transform-creating wrappers from DashboardLayout | 2026-04-28 |
 | 168 | `rollback/fix-move-overflow-x-guard-off-html-bod-2026-04-28-fd45e75` | `fd45e75` | fix: move overflow-x guard off html/body to fix dialog centering | 2026-04-28 |
 | 167 | `rollback/fix-resolve-dialog-modal-narrow-strip-2026-04-28-f343af3` | `f343af3` | fix: resolve dialog/modal narrow-strip rendering across all pages | 2026-04-28 |
@@ -1755,6 +1756,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-remove-overflow-x-hidden-and-trans-2026-04-28-52c9631`
 - **Commit**: `52c9631e4ed9383cf5014a327a2d20bb84204984`
 - **Subject**: fix: remove overflow-x-hidden and transform-creating wrappers from DashboardLayout
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #170 — `rollback/fix-pin-all-radix-portals-to-modal-roo-2026-04-28-43cc568`
+
+- **Branch**: `rollback/fix-pin-all-radix-portals-to-modal-roo-2026-04-28-43cc568`
+- **Commit**: `43cc568c837f63825f2ad8b54b382609e7f98f28`
+- **Subject**: fix: pin all Radix portals to #modal-root at <body> level
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
