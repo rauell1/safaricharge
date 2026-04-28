@@ -35,6 +35,7 @@ import {
 import { cn } from '@/lib/utils';
 import { GovernanceWidget } from '@/components/widgets/GovernanceWidget';
 import { useEnergyNode, useMinuteData } from '@/hooks/useEnergySystem';
+import { useAIAssistant } from '@/contexts/AIAssistantContext';
 
 export type DashboardSection =
   | 'dashboard'
@@ -152,6 +153,7 @@ export function DashboardSidebar({
   contextualMetrics = [],
 }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const { isOpen: aiPanelOpen, toggleAI } = useAIAssistant();
 
   const resolvedActive: DashboardSection = useMemo(() => {
     if (activeSection && activeSection !== 'dashboard') return activeSection;
@@ -174,6 +176,7 @@ export function DashboardSidebar({
     label: string;
     icon: React.ElementType;
     href?: string;
+    isAiToggle?: boolean;
   }> = [
     { id: 'dashboard',           label: 'Dashboard',           icon: LayoutDashboard,   href: '/dashboard' },
     { id: 'simulation',          label: 'Simulation',          icon: FlaskConical,      href: '/simulation' },
@@ -181,7 +184,8 @@ export function DashboardSidebar({
     { id: 'energy-intelligence', label: 'Energy Intelligence', icon: Zap,               href: '/energy-intelligence' },
     { id: 'scenarios',           label: 'Scenarios',           icon: BookMarked,        href: '/scenarios' },
     { id: 'recommendation',      label: 'Recommendations',     icon: Lightbulb,         href: '/recommendation' },
-    { id: 'ai-assistant',        label: 'AI Assistant',        icon: Bot,               href: '/ai-assistant' },
+    // AI Assistant: toggles the slide-out panel — no page navigation
+    { id: 'ai-assistant',        label: 'AI Assistant',        icon: Bot,               isAiToggle: true },
   ];
 
   const financeNavItems: Array<{
@@ -204,12 +208,16 @@ export function DashboardSidebar({
   ];
 
   const renderNavItem = (
-    item: { id: DashboardSection; label: string; icon: React.ElementType; href?: string },
+    item: { id: DashboardSection; label: string; icon: React.ElementType; href?: string; isAiToggle?: boolean },
     extraClass = ''
   ) => {
-    const isActive =
-      resolvedActive === item.id ||
-      (!!item.href && !!pathname?.startsWith(item.href));
+    const isAiToggleItem = item.isAiToggle === true;
+
+    // AI item is "active" when the panel is open; all others use path matching
+    const isActive = isAiToggleItem
+      ? aiPanelOpen
+      : resolvedActive === item.id ||
+        (!!item.href && !!pathname?.startsWith(item.href));
 
     const inner = (
       <span className="flex items-center gap-3 w-full">
@@ -237,18 +245,35 @@ export function DashboardSidebar({
 
     return (
       <SidebarMenuItem key={item.id}>
-        <SidebarMenuButton
-          asChild={!!item.href}
-          isActive={isActive}
-          onClick={() => !item.href && onSectionChange?.(item.id)}
-          className={cn(
-            'group relative rounded-lg px-3 py-2 transition-colors duration-100',
-            isActive ? 'bg-[var(--bg-card)] shadow-sm' : 'hover:bg-[var(--bg-card-muted)]',
-            extraClass
-          )}
-        >
-          {item.href ? <Link href={item.href} className="w-full">{inner}</Link> : inner}
-        </SidebarMenuButton>
+        {isAiToggleItem ? (
+          // Render as a button that toggles the AI panel
+          <SidebarMenuButton
+            isActive={isActive}
+            onClick={toggleAI}
+            aria-label={aiPanelOpen ? 'Close AI Assistant panel' : 'Open AI Assistant panel'}
+            aria-pressed={aiPanelOpen}
+            className={cn(
+              'group relative rounded-lg px-3 py-2 transition-colors duration-100 w-full',
+              isActive ? 'bg-[var(--bg-card)] shadow-sm' : 'hover:bg-[var(--bg-card-muted)]',
+              extraClass
+            )}
+          >
+            {inner}
+          </SidebarMenuButton>
+        ) : (
+          <SidebarMenuButton
+            asChild={!!item.href}
+            isActive={isActive}
+            onClick={() => !item.href && onSectionChange?.(item.id)}
+            className={cn(
+              'group relative rounded-lg px-3 py-2 transition-colors duration-100',
+              isActive ? 'bg-[var(--bg-card)] shadow-sm' : 'hover:bg-[var(--bg-card-muted)]',
+              extraClass
+            )}
+          >
+            {item.href ? <Link href={item.href} className="w-full">{inner}</Link> : inner}
+          </SidebarMenuButton>
+        )}
       </SidebarMenuItem>
     );
   };
