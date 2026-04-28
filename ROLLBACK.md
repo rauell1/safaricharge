@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 164 | `rollback/fix-dialog-z-index-centering-scroll-an-2026-04-28-3758ecf` | `3758ecf` | fix: dialog z-index, centering, scroll, and overflow across all pages | 2026-04-28 |
 | 163 | `rollback/fix-patch-alert-dialog-sheet-globals-c-2026-04-28-8b62765` | `8b62765` | fix: patch alert-dialog + sheet + globals.css so ALL shadcn overlay components use project design tokens | 2026-04-28 |
 | 162 | `rollback/fix-dialog-background-border-text-toke-2026-04-28-436c0bc` | `436c0bc` | fix: dialog background/border/text tokens — use project CSS vars not shadcn bg-background | 2026-04-28 |
 | 161 | `rollback/fix-horizontal-text-alignment-in-popup-2026-04-28-4e0a0bf` | `4e0a0bf` | fix: horizontal text alignment in popups/status bars + remove long hyphens throughout | 2026-04-28 |
@@ -1695,6 +1696,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-patch-alert-dialog-sheet-globals-c-2026-04-28-8b62765`
 - **Commit**: `8b62765a0f19274a7bc0898d30c86742f3a5da1d`
 - **Subject**: fix: patch alert-dialog + sheet + globals.css so ALL shadcn overlay components use project design tokens
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #164 — `rollback/fix-dialog-z-index-centering-scroll-an-2026-04-28-3758ecf`
+
+- **Branch**: `rollback/fix-dialog-z-index-centering-scroll-an-2026-04-28-3758ecf`
+- **Commit**: `3758ecf1d400c7001471f563234bc12b03c1d644`
+- **Subject**: fix: dialog z-index, centering, scroll, and overflow across all pages
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
