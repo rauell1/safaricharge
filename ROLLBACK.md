@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 158 | `rollback/feat-export-page-clean-navbar-fix-popu-2026-04-28-c036e8c` | `c036e8c` | feat: export page, clean navbar, fix popups, graphs zip, multi-sheet CSV | 2026-04-28 |
 | 157 | `rollback/feat-floating-ai-button-landing-light-2026-04-28-23140b0` | `23140b0` | feat: floating AI button, landing light mode, full color token compliance | 2026-04-28 |
 | 156 | `rollback/fix-toast-only-on-site-leave-seamless-2026-04-28-65961c2` | `65961c2` | fix: toast only on site-leave, seamless nav, strip sidebar descriptions | 2026-04-28 |
 | 155 | `rollback/feat-default-light-mode-strict-theme-t-2026-04-28-a144876` | `a144876` | feat: default light mode, strict theme tokens, dark/light toggle in sidebar footer | 2026-04-28 |
@@ -1635,6 +1636,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/feat-floating-ai-button-landing-light-2026-04-28-23140b0`
 - **Commit**: `23140b05fb1f6c8d505784b266da8189bff70b20`
 - **Subject**: feat: floating AI button, landing light mode, full color token compliance
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #158 — `rollback/feat-export-page-clean-navbar-fix-popu-2026-04-28-c036e8c`
+
+- **Branch**: `rollback/feat-export-page-clean-navbar-fix-popu-2026-04-28-c036e8c`
+- **Commit**: `c036e8c0255dc7400690ba4e439f6f2c3bd95fa1`
+- **Subject**: feat: export page, clean navbar, fix popups, graphs zip, multi-sheet CSV
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
