@@ -5,6 +5,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { useModalRoot } from "@/hooks/useModalRoot"
 
 function Dialog({
   ...props
@@ -19,9 +20,20 @@ function DialogTrigger({
 }
 
 function DialogPortal({
+  container: containerProp,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Portal>) {
-  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
+  // Resolve #modal-root after hydration so SSR never tries to access
+  // document. Falls back to whatever the caller passes, then document.body.
+  const modalRoot = useModalRoot()
+  const container = containerProp ?? modalRoot ?? undefined
+  return (
+    <DialogPrimitive.Portal
+      data-slot="dialog-portal"
+      container={container}
+      {...props}
+    />
+  )
 }
 
 function DialogClose({
@@ -38,8 +50,6 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        // z-[199]: sits above sidebar (z-40) and header (z-40) but just
-        // below DialogContent (z-[200]) so the backdrop renders correctly.
         "data-[state=open]:animate-in data-[state=closed]:animate-out",
         "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         "fixed inset-0 z-[199] bg-black/60 backdrop-blur-sm",
@@ -59,34 +69,20 @@ function DialogContent({
   showCloseButton?: boolean
 }) {
   return (
-    <DialogPortal data-slot="dialog-portal">
+    <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          // ── Core layout & animation ──────────────────────────────────────
           "data-[state=open]:animate-in data-[state=closed]:animate-out",
           "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
           "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-          // ── Positioning: always perfectly centred in viewport ────────────
-          // z-[200]: above sidebar (z-40), header (z-40), overlay (z-[199]).
-          // Without this the dialog can render behind the sidebar or header,
-          // causing the white-background-only-on-one-side issue.
+          // Always centred in the true viewport — not any layout subtree
           "fixed top-[50%] left-[50%] z-[200]",
           "w-full max-w-[calc(100%-2rem)] sm:max-w-lg",
           "translate-x-[-50%] translate-y-[-50%]",
           "grid gap-4 p-6 duration-200",
-          // ── Scroll safety: tall dialogs must not overflow the viewport ───
-          // max-h-[90vh] + overflow-y-auto ensures the Save Scenario dialog,
-          // Import JSON dialog, and any future tall dialogs scroll internally
-          // instead of overflowing outside the card background, which caused
-          // text to bleed over the dashboard behind the dialog.
           "max-h-[90vh] sm:max-h-[85vh] overflow-y-auto",
-          // ── Theme-aware colours — use project design tokens ──────────────
-          // bg-[var(--bg-card)] replaces bg-background so the dialog
-          // correctly follows the active light / dark theme token instead
-          // of the raw hsl(var(--background)) Tailwind utility which has
-          // no wrapper and renders an incomplete value in this codebase.
           "bg-[var(--bg-card)] text-[var(--text-primary)]",
           "border border-[var(--border)]",
           "rounded-xl shadow-2xl",

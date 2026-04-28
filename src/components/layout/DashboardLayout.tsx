@@ -25,7 +25,7 @@ interface DashboardLayoutProps {
   contextualMetrics?: SidebarContextMetric[];
 }
 
-// ── Inner layout (consumes AI context) ───────────────────────────────
+// ── Inner layout (consumes AI context) ──────────────────────────────────────
 function DashboardLayoutInner({
   children,
   activeSection = 'dashboard',
@@ -34,8 +34,6 @@ function DashboardLayoutInner({
 }: DashboardLayoutProps) {
   const router = useRouter();
   const { isOpen: aiOpen, closeAI } = useAIAssistant();
-
-  const toastShownRef = useRef(false);
 
   const { isAutoMode, currentDate } = useSimulationState();
   const solarNode    = useEnergyNode('solar');
@@ -67,7 +65,7 @@ function DashboardLayoutInner({
     });
   }, [router]);
 
-  // ── Site-leave guard ─────────────────────────────────────────────
+  // ── Site-leave guard ──────────────────────────────────────────────────────
   useEffect(() => {
     const resetTransientState = () => {
       useEnergySystemStore.getState().resetSystem();
@@ -96,18 +94,13 @@ function DashboardLayoutInner({
   return (
     <SidebarProvider defaultOpen={true}>
       {/*
-        AI panel + FAB live OUTSIDE the page router subtree so they persist
-        across all page navigations without remounting.
+        AI panel + FAB live OUTSIDE the page router subtree so they
+        persist across all page navigations without remounting.
 
-        IMPORTANT: Do NOT wrap these in any element that has:
-          - transform / translate / rotate / scale
-          - overflow: hidden  (makes element a containing block for fixed children)
-          - will-change: transform
-          - filter
-          - perspective
-        Any of those properties would cause Radix fixed portals (Dialog,
-        Sheet, Tooltip, etc.) to measure their position against that element
-        instead of the true viewport, collapsing them to a thin strip.
+        NOTE: Do NOT wrap in any element with transform / overflow:hidden /
+        will-change / filter — those create a CSS containing block and
+        break fixed-position portals. The AI panel itself renders into
+        #modal-root via its own DialogPortal so it is already safe.
       */}
       <SafariChargeAIAssistant
         isOpen={aiOpen}
@@ -130,12 +123,13 @@ function DashboardLayoutInner({
       {/*
         Layout shell — flex row, full viewport.
 
-        RULES for this element and all its children:
-        ✅  Use `min-width: 0` to prevent flex children from overflowing
-        ✅  Use `.page-shell` (globals.css) for the overflow-x guard on content
-        ❌  NO overflow-x: hidden here — would create a containing block for
-            fixed portals (Dialog etc.) and clip them to this box's width
-        ❌  NO transform-based animations on this element or SidebarInset
+        RULES:
+        ✅  min-w-0 to prevent flex children from overflowing
+        ✅  .page-shell (globals.css) is the only overflow-x guard, applied
+            to the content area — NOT to layout wrappers
+        ❌  NO overflow-x:hidden here
+        ❌  NO transform-based animations on SidebarInset
+        ❌  NO isolation:isolate (removed — unnecessary stacking context)
       */}
       <div className="flex min-h-screen w-full bg-[var(--bg-primary)] text-[var(--text-primary)]">
         {/* Sidebar — desktop only */}
@@ -147,16 +141,8 @@ function DashboardLayoutInner({
           />
         </div>
 
-        {/*
-          SidebarInset — the main content column.
-
-          isolation-isolate creates a proper CSS stacking context so
-          z-index layers inside (cards, sticky headers, etc.) work
-          correctly, WITHOUT using transform or overflow:hidden which
-          would break fixed-position portals.
-        */}
-        <SidebarInset className="flex-1 min-w-0 flex flex-col isolate">
-          {/* Single content wrapper — no overflow:hidden, no transform */}
+        {/* Main content column */}
+        <SidebarInset className="flex-1 min-w-0 flex flex-col">
           <div className="relative min-h-screen w-full min-w-0 pb-16 md:pb-0">
             <div className="page-shell h-full">
               <div className="flex flex-col h-full">

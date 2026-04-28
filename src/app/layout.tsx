@@ -42,22 +42,12 @@ export default function RootLayout({
     // The overflow guard now lives on .page-shell in globals.css instead.
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
-        {/* SVG favicon */}
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        {/* Theme colour matches SafariCharge teal */}
         <meta name="theme-color" content="#01696f" />
         <meta name="msapplication-TileColor" content="#01696f" />
       </head>
       <body className={inter.className}>
         <ThemeProvider>
-          {/*
-            AIAssistantProvider wraps the ENTIRE app so the AI panel
-            state is never reset on page navigation.
-            AIFloatingButton is rendered here — outside the page router —
-            so it persists on every page including landing, auth, demo, etc.
-            DashboardLayout renders the actual SafariChargeAIAssistant panel;
-            the FAB here just controls the isOpen flag via context.
-          */}
           <AIAssistantProvider>
             {children}
             <AIFloatingButton />
@@ -65,6 +55,32 @@ export default function RootLayout({
           <Analytics />
           <SpeedInsights />
         </ThemeProvider>
+
+        {/*
+          #modal-root — the single mount point for ALL Radix portals.
+
+          WHY this exists:
+            Radix Dialog/Sheet/Tooltip portals default to document.body,
+            but under Next.js App Router SSR hydration the portal can
+            attach to the nearest hydrated root instead of true <body>.
+            That lands the portal inside the SidebarProvider/SidebarInset
+            layout tree, which has overflow/transition properties that
+            create a CSS containing block — causing `position:fixed`
+            dialogs to measure 50vw against the sidebar box instead of
+            the viewport, collapsing them to a vertical strip.
+
+          WHY it's OUTSIDE ThemeProvider/AIAssistantProvider:
+            Being a direct child of <body> and the LAST sibling means:
+            1. Its containing block is always the true viewport.
+            2. It paints on top of every layout layer naturally.
+            3. No transform / overflow / will-change ancestor can
+               interfere with its fixed-position children.
+
+          The `useModalRoot` hook (src/hooks/useModalRoot.ts) resolves
+          this element after hydration and passes it as `container` to
+          every DialogPortal / SheetPortal in the app.
+        */}
+        <div id="modal-root" />
       </body>
     </html>
   );
