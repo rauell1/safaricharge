@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 163 | `rollback/fix-patch-alert-dialog-sheet-globals-c-2026-04-28-8b62765` | `8b62765` | fix: patch alert-dialog + sheet + globals.css so ALL shadcn overlay components use project design tokens | 2026-04-28 |
 | 162 | `rollback/fix-dialog-background-border-text-toke-2026-04-28-436c0bc` | `436c0bc` | fix: dialog background/border/text tokens — use project CSS vars not shadcn bg-background | 2026-04-28 |
 | 161 | `rollback/fix-horizontal-text-alignment-in-popup-2026-04-28-4e0a0bf` | `4e0a0bf` | fix: horizontal text alignment in popups/status bars + remove long hyphens throughout | 2026-04-28 |
 | 160 | `rollback/fix-export-horizontal-card-layout-remo-2026-04-28-a6928d1` | `a6928d1` | fix(export): horizontal card layout, remove all em dashes and long hyphens | 2026-04-28 |
@@ -1685,6 +1686,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-dialog-background-border-text-toke-2026-04-28-436c0bc`
 - **Commit**: `436c0bcb58aed3775779a2c6716659170317b470`
 - **Subject**: fix: dialog background/border/text tokens — use project CSS vars not shadcn bg-background
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #163 — `rollback/fix-patch-alert-dialog-sheet-globals-c-2026-04-28-8b62765`
+
+- **Branch**: `rollback/fix-patch-alert-dialog-sheet-globals-c-2026-04-28-8b62765`
+- **Commit**: `8b62765a0f19274a7bc0898d30c86742f3a5da1d`
+- **Subject**: fix: patch alert-dialog + sheet + globals.css so ALL shadcn overlay components use project design tokens
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
