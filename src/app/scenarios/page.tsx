@@ -3,8 +3,9 @@
 import React, { useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import {
-  Trash2, Upload, ArrowLeft, BookMarked, TrendingUp, TrendingDown, Minus,
-  FileDown, Copy, BarChart2, FileUp, Copy as CopyIcon, X, Radar, Info,
+  Trash2, Upload, ArrowLeft, BookMarked, TrendingUp, TrendingDown,
+  FileDown, Copy, BarChart2, FileUp, Copy as CopyIcon, X, Info,
+  BookmarkPlus, Check,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid,
@@ -15,6 +16,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Table,
   TableBody,
@@ -35,6 +38,8 @@ import { useEnergySystemStore, type SavedScenario, type FinancialSnapshot, type 
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { clearExternalUploadActive, markExternalUploadActive } from '@/lib/external-upload-guard';
+import { buildFinancialSnapshot } from '@/lib/financial-dashboard';
+import { useMinuteData } from '@/hooks/useEnergySystem';
 
 export const dynamic = 'force-dynamic';
 
@@ -234,14 +239,6 @@ function DetailDrawer({ scenario, baseline, onClose, onLoad, onDuplicate, onDele
   ];
 
   return (
-    /*
-     * Backdrop: covers only the content area (right of the sidebar).
-     * The sidebar is at z-40 in DashboardLayout; this overlay is z-50 but
-     * scoped so it never sits on top of the nav — sidebar links stay clickable.
-     *
-     * On mobile the sidebar is off-canvas (width 0), so `left-0` kicks in
-     * via the CSS variable fallback and the full screen is covered as expected.
-     */
     <div
       className="fixed inset-y-0 right-0 left-0 md:left-[var(--sidebar-width)] z-50 flex items-end md:items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={onClose}
@@ -438,6 +435,113 @@ function ImportDialog({ open, onOpenChange, onImport }: ImportDialogProps) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ── Save Scenario inline card ────────────────────────────────────────────────
+
+const NAIROBI_SOLAR_DATA = {
+  latitude: -1.2921,
+  longitude: 36.8219,
+  location: 'Nairobi',
+  monthlyAverage: [5.5, 5.8, 5.6, 5.4, 5.2, 5.1, 5.0, 5.3, 5.7, 5.8, 5.4, 5.3],
+  annualAverage: 5.4,
+  monthlyTemperature: [22, 23, 24, 23, 22, 21, 20, 21, 22, 23, 22, 22],
+  peakSunHours: [5.5, 5.8, 5.6, 5.4, 5.2, 5.1, 5.0, 5.3, 5.7, 5.8, 5.4, 5.3],
+};
+
+function SaveScenarioCard() {
+  const [name, setName] = useState('');
+  const [saved, setSaved] = useState(false);
+  const saveScenario = useEnergySystemStore((s) => s.saveScenario);
+  const systemConfig = useEnergySystemStore((s) => s.systemConfig);
+  const minuteData = useMinuteData('today');
+  const { toast } = useToast();
+
+  const handleSave = () => {
+    const finalName = name.trim() || `Scenario ${new Date().toLocaleString()}`;
+
+    let financeSnap: FinancialSnapshot;
+    try {
+      const snap = buildFinancialSnapshot({
+        minuteData: minuteData as Parameters<typeof buildFinancialSnapshot>[0]['minuteData'],
+        solarData: NAIROBI_SOLAR_DATA,
+        inputs: { chargingTariffKes: 25, discountRatePct: 10, stationCount: 3, targetUtilizationPct: 45, projectYears: 20 },
+        evCapacityKw: 22,
+      });
+      financeSnap = {
+        capexTotal: snap.capex.total,
+        npvKes: snap.npvKes,
+        irrPct: snap.irrPct,
+        lcoeKesPerKwh: snap.lcoeKesPerKwh,
+        paybackYears: snap.paybackYears,
+      };
+    } catch {
+      financeSnap = { capexTotal: 0, npvKes: 0, irrPct: 0, lcoeKesPerKwh: 0, paybackYears: 0 };
+    }
+
+    saveScenario(finalName, financeSnap, { name: 'Nairobi', latitude: -1.2921, longitude: 36.8219 });
+    setName('');
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2200);
+    toast({ title: 'Scenario saved', description: `"${finalName}" has been added below.` });
+  };
+
+  const hasData = minuteData.length > 0;
+
+  return (
+    <Card className="bg-[var(--bg-card)] border-[var(--border)] shadow-card">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide flex items-center gap-2">
+          <BookmarkPlus className="h-4 w-4 text-[var(--solar)]" />
+          Save Current Scenario
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+          <div className="flex-1 space-y-1.5 min-w-0">
+            <Label
+              htmlFor="inline-scenario-name"
+              className="text-xs text-[var(--text-secondary)]"
+            >
+              Scenario name
+              {!hasData && (
+                <span className="ml-2 text-[var(--text-tertiary)] font-normal">
+                  (run the dashboard first to capture live data)
+                </span>
+              )}
+            </Label>
+            <Input
+              id="inline-scenario-name"
+              placeholder={`e.g. ${systemConfig.solarCapacityKW.toFixed(0)} kW PV · ${systemConfig.batteryCapacityKWh.toFixed(0)} kWh Battery`}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+              className="bg-[var(--bg-card-muted)] border-[var(--border)] text-[var(--text-primary)] focus-visible:ring-[var(--solar)] h-9"
+            />
+          </div>
+          <Button
+            onClick={handleSave}
+            disabled={saved}
+            className="h-9 shrink-0 transition-all duration-200"
+            style={{
+              background: saved ? 'var(--battery)' : 'var(--solar)',
+              color: '#fff',
+              opacity: saved ? 0.85 : 1,
+            }}
+          >
+            {saved ? (
+              <><Check className="h-3.5 w-3.5 mr-1.5" />Saved!</>
+            ) : (
+              <><BookmarkPlus className="h-3.5 w-3.5 mr-1.5" />Save Scenario</>
+            )}
+          </Button>
+        </div>
+        <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">
+          Captures the current system configuration (PV {systemConfig.solarCapacityKW.toFixed(1)} kW · Battery {systemConfig.batteryCapacityKWh.toFixed(1)} kWh · Inverter {systemConfig.inverterKW.toFixed(1)} kW) and KPI snapshot for comparison.
+        </p>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -690,7 +794,7 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
       {/* Import dialog */}
       <ImportDialog open={importOpen} onOpenChange={setImportOpen} onImport={handleImport} />
 
-      {/* Detail drawer — scoped to content area, sidebar stays interactive */}
+      {/* Detail drawer */}
       {detailId && (
         <DetailDrawer
           scenario={detailScenario}
@@ -780,6 +884,9 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
             </div>
           </div>
 
+          {/* ── Save Current Scenario ── */}
+          <SaveScenarioCard />
+
           {/* Empty state */}
           {scenarios.length === 0 && (
             <Card className="bg-[var(--bg-card)] border-[var(--border)] shadow-card">
@@ -788,11 +895,7 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
                 <div>
                   <p className="text-[var(--text-primary)] font-semibold text-lg">No scenarios saved yet</p>
                   <p className="text-[var(--text-secondary)] text-sm mt-1">
-                    Use the{' '}
-                    <span className="inline-flex items-center gap-1 font-medium text-[var(--solar)]">
-                      <BookMarked className="h-3.5 w-3.5" /> Save scenario
-                    </span>{' '}
-                    button in the dashboard header, or{' '}
+                    Use the <span className="font-medium text-[var(--solar)]">Save Current Scenario</span> card above, or{' '}
                     <button
                       onClick={() => setImportOpen(true)}
                       className="font-medium text-[var(--battery)] underline underline-offset-2 hover:opacity-80 transition-opacity"
@@ -940,64 +1043,40 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
                               {b ? <DeltaCell value={fmtKES(s.finance.npvKes)} current={s.finance.npvKes} baseline={b.finance.npvKes} /> : <span className="text-[var(--text-primary)]">{fmtKES(s.finance.npvKes)}</span>}
                             </TableCell>
                             <TableCell>
-                              {b ? <DeltaCell value={s.finance.irrPct ? `${fmt(s.finance.irrPct)}%` : '—'} current={s.finance.irrPct} baseline={b.finance.irrPct} /> : <span className="text-[var(--text-primary)]">{s.finance.irrPct ? `${fmt(s.finance.irrPct)}%` : '—'}</span>}
+                              {b ? <DeltaCell value={`${fmt(s.finance.irrPct)}%`} current={s.finance.irrPct} baseline={b.finance.irrPct} /> : <span className="text-[var(--text-primary)]">{fmt(s.finance.irrPct)}%</span>}
                             </TableCell>
                             <TableCell>
-                              {b ? <DeltaCell value={s.finance.paybackYears ? `${fmt(s.finance.paybackYears)} yr` : '—'} current={s.finance.paybackYears} baseline={b.finance.paybackYears} higherIsBetter={false} /> : <span className="text-[var(--text-primary)]">{s.finance.paybackYears ? `${fmt(s.finance.paybackYears)} yr` : '—'}</span>}
+                              {b ? <DeltaCell value={`${fmt(s.finance.paybackYears)} yr`} current={s.finance.paybackYears} baseline={b.finance.paybackYears} higherIsBetter={false} /> : <span className="text-[var(--text-primary)]">{fmt(s.finance.paybackYears)} yr</span>}
                             </TableCell>
-                            <TableCell>
-                              {b ? <DeltaCell value={s.engineering ? `${fmt(s.engineering.specificYieldKWhPerKWp)} kWh/kWp` : '—'} current={s.engineering?.specificYieldKWhPerKWp ?? 0} baseline={b.engineering?.specificYieldKWhPerKWp ?? 0} /> : <span className="text-[var(--text-primary)]">{s.engineering ? `${fmt(s.engineering.specificYieldKWhPerKWp)} kWh/kWp` : '—'}</span>}
-                            </TableCell>
-                            <TableCell>
-                              {b ? <DeltaCell value={s.engineering ? `${fmt(s.engineering.performanceRatioPct)}%` : '—'} current={s.engineering?.performanceRatioPct ?? 0} baseline={b.engineering?.performanceRatioPct ?? 0} /> : <span className="text-[var(--text-primary)]">{s.engineering ? `${fmt(s.engineering.performanceRatioPct)}%` : '—'}</span>}
-                            </TableCell>
-                            <TableCell>
-                              {b ? <DeltaCell value={s.engineering ? `${fmt(s.engineering.capacityFactorPct)}%` : '—'} current={s.engineering?.capacityFactorPct ?? 0} baseline={b.engineering?.capacityFactorPct ?? 0} /> : <span className="text-[var(--text-primary)]">{s.engineering ? `${fmt(s.engineering.capacityFactorPct)}%` : '—'}</span>}
-                            </TableCell>
-                            <TableCell>
-                              {b ? <DeltaCell value={s.engineering ? fmt(s.engineering.batteryCycles, 2) : '—'} current={s.engineering?.batteryCycles ?? 0} baseline={b.engineering?.batteryCycles ?? 0} /> : <span className="text-[var(--text-primary)]">{s.engineering ? fmt(s.engineering.batteryCycles, 2) : '—'}</span>}
-                            </TableCell>
+                            <TableCell className="text-[var(--text-primary)]">{s.engineering ? fmt(s.engineering.specificYieldKWhPerKWp) : '—'}</TableCell>
+                            <TableCell className="text-[var(--text-primary)]">{s.engineering ? `${fmt(s.engineering.performanceRatioPct)}%` : '—'}</TableCell>
+                            <TableCell className="text-[var(--text-primary)]">{s.engineering ? `${fmt(s.engineering.capacityFactorPct)}%` : '—'}</TableCell>
+                            <TableCell className="text-[var(--text-primary)]">{s.engineering ? fmt(s.engineering.batteryCycles, 2) : '—'}</TableCell>
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-1">
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => setDetailId(s.id)}
-                                  className="h-8 px-2 text-[var(--text-secondary)] hover:text-[var(--solar)] hover:bg-[var(--solar-soft)]"
-                                  title="View details"
+                                  onClick={() => handleLoad(s.id, s.name)}
+                                  className="h-7 px-2 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                                 >
-                                  <Info className="h-3.5 w-3.5" />
-                                  <span className="sr-only">Details</span>
+                                  <Upload className="h-3 w-3 mr-1" />Load
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => handleDuplicate(s.id)}
-                                  className="h-8 px-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-muted)]"
-                                  title="Duplicate scenario"
+                                  className="h-7 px-2 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                                 >
-                                  <CopyIcon className="h-3.5 w-3.5" />
-                                  <span className="sr-only">Duplicate</span>
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleLoad(s.id, s.name)}
-                                  className="h-8 px-2 text-[var(--text-secondary)] hover:text-[var(--battery)] hover:bg-[var(--battery-soft)]"
-                                  title="Load scenario config to dashboard"
-                                >
-                                  <Upload className="h-3.5 w-3.5" />
-                                  <span className="sr-only">Load</span>
+                                  <CopyIcon className="h-3 w-3" />
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => handleDelete(s.id, s.name)}
-                                  className="h-8 px-2 text-[var(--text-secondary)] hover:text-red-400 hover:bg-red-400/10"
-                                  title="Delete scenario"
+                                  className="h-7 px-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-400/10"
                                 >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                  <span className="sr-only">Delete</span>
+                                  <Trash2 className="h-3 w-3" />
                                 </Button>
                               </div>
                             </TableCell>
@@ -1011,132 +1090,79 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
             </Card>
           )}
 
-          {/* Legend */}
-          {baseline && (
-            <div className="flex flex-wrap items-center gap-4 text-xs text-[var(--text-tertiary)]">
-              <span className="flex items-center gap-1">
-                <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
-                Better than baseline
-              </span>
-              <span className="flex items-center gap-1">
-                <TrendingDown className="h-3.5 w-3.5 text-red-400" />
-                Worse than baseline
-              </span>
-              <span className="flex items-center gap-1">
-                <Minus className="h-3.5 w-3.5" />
-                Within ±0.5% of baseline
-              </span>
-            </div>
-          )}
-
-          {/* Chart comparison — bar + radar tabs */}
+          {/* Chart comparison */}
           {selectedScenarios.length >= 2 && (
             <Card className="bg-[var(--bg-card)] border-[var(--border)] shadow-card">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardHeader>
+                <div className="flex items-center justify-between gap-4">
                   <CardTitle className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide flex items-center gap-2">
-                    <BarChart2 className="h-4 w-4 text-[var(--solar)]" />
-                    Compare Charts ({selectedScenarios.length} selected)
+                    <BarChart2 className="h-4 w-4" />
+                    Comparison Chart
+                    <Badge className="bg-[var(--solar-soft)] text-[var(--solar)] border-[var(--solar)]/20 text-[10px] px-1.5 py-0">
+                      {selectedScenarios.length} selected
+                    </Badge>
                   </CardTitle>
-                  <div className="flex items-center gap-1 bg-[var(--bg-card-muted)] rounded-lg p-1 border border-[var(--border)]">
-                    <button
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant={chartTab === 'bar' ? 'default' : 'outline'}
                       onClick={() => setChartTab('bar')}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                        chartTab === 'bar'
-                          ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm'
-                          : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
-                      }`}
+                      className={chartTab === 'bar' ? 'bg-[var(--solar)] text-[var(--bg-primary)] h-7 px-3 text-xs' : 'border-[var(--border)] h-7 px-3 text-xs text-[var(--text-secondary)]'}
                     >
-                      <BarChart2 className="h-3 w-3" />
                       Bar
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={chartTab === 'radar' ? 'default' : 'outline'}
                       onClick={() => setChartTab('radar')}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                        chartTab === 'radar'
-                          ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm'
-                          : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
-                      }`}
+                      className={chartTab === 'radar' ? 'bg-[var(--solar)] text-[var(--bg-primary)] h-7 px-3 text-xs' : 'border-[var(--border)] h-7 px-3 text-xs text-[var(--text-secondary)]'}
                     >
-                      <Radar className="h-3 w-3" />
                       Radar
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 {chartTab === 'bar' ? (
-                  <>
-                    <p className="text-xs text-[var(--text-tertiary)] mb-4">
-                      Tip: click a scenario name in the table to view full details.
-                    </p>
-                    <ResponsiveContainer width="100%" height={340}>
-                      <BarChart data={barChartData} margin={{ top: 8, right: 16, left: 16, bottom: 8 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                        <XAxis dataKey="kpi" tick={{ fill: 'var(--text-secondary)', fontSize: 11 }} tickLine={false} />
-                        <YAxis
-                          tick={{ fill: 'var(--text-secondary)', fontSize: 11 }}
-                          tickLine={false}
-                          axisLine={false}
-                          tickFormatter={(v: number) => Math.abs(v) >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
-                        />
-                        <Tooltip
-                          contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 12 }}
-                          formatter={(value: number, name: string) => {
-                            const formatted = typeof value === 'number' && Math.abs(value) >= 100
-                              ? `KES ${value.toLocaleString('en-KE', { maximumFractionDigits: 0 })}`
-                              : String(value);
-                            return [formatted, name];
-                          }}
-                        />
-                        <Legend wrapperStyle={{ fontSize: 12, color: 'var(--text-secondary)' }} />
-                        {selectedScenarios.map((s, i) => (
-                          <Bar key={s.id} dataKey={labelMap.get(s.id)!} fill={SCENARIO_COLOURS[i % SCENARIO_COLOURS.length]} radius={[3, 3, 0, 0]} />
-                        ))}
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </>
+                  <ResponsiveContainer width="100%" height={320}>
+                    <BarChart data={barChartData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                      <XAxis dataKey="kpi" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <Tooltip
+                        contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 12 }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 11, color: 'var(--text-secondary)' }} />
+                      {selectedScenarios.map((s, i) => (
+                        <Bar key={s.id} dataKey={labelMap.get(s.id)!} fill={SCENARIO_COLOURS[i % SCENARIO_COLOURS.length]} radius={[4, 4, 0, 0]} />
+                      ))}
+                    </BarChart>
+                  </ResponsiveContainer>
                 ) : (
-                  <>
-                    <p className="text-xs text-[var(--text-tertiary)] mb-4">
-                      All axes are normalised (10–90) so different units can be shown together. Higher = better on every axis (Payback is inverted).
-                    </p>
-                    <ResponsiveContainer width="100%" height={360}>
-                      <RadarChart data={radarData} margin={{ top: 16, right: 32, left: 32, bottom: 16 }}>
-                        <PolarGrid stroke="var(--border)" />
-                        <PolarAngleAxis dataKey="label" tick={{ fill: 'var(--text-secondary)', fontSize: 11 }} />
-                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: 'var(--text-tertiary)', fontSize: 9 }} />
-                        {selectedScenarios.map((s, i) => {
-                          const colour = SCENARIO_COLOURS[i % SCENARIO_COLOURS.length];
-                          const label = labelMap.get(s.id)!;
-                          return (
-                            <RechartsRadar
-                              key={s.id}
-                              name={label}
-                              dataKey={label}
-                              stroke={colour}
-                              fill={colour}
-                              fillOpacity={0.12}
-                              dot={{ r: 3, fill: colour }}
-                            />
-                          );
-                        })}
-                        <Legend wrapperStyle={{ fontSize: 12, color: 'var(--text-secondary)' }} />
-                        <Tooltip
-                          contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 12 }}
+                  <ResponsiveContainer width="100%" height={320}>
+                    <RadarChart data={radarData}>
+                      <PolarGrid stroke="var(--border)" />
+                      <PolarAngleAxis dataKey="label" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} />
+                      <PolarRadiusAxis tick={{ fill: 'var(--text-faint)', fontSize: 9 }} />
+                      {selectedScenarios.map((s, i) => (
+                        <RechartsRadar
+                          key={s.id}
+                          name={labelMap.get(s.id)!}
+                          dataKey={labelMap.get(s.id)!}
+                          stroke={SCENARIO_COLOURS[i % SCENARIO_COLOURS.length]}
+                          fill={SCENARIO_COLOURS[i % SCENARIO_COLOURS.length]}
+                          fillOpacity={0.18}
                         />
-                      </RadarChart>
-                    </ResponsiveContainer>
-                  </>
+                      ))}
+                      <Legend wrapperStyle={{ fontSize: 11, color: 'var(--text-secondary)' }} />
+                      <Tooltip
+                        contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 12 }}
+                      />
+                    </RadarChart>
+                  </ResponsiveContainer>
                 )}
               </CardContent>
             </Card>
-          )}
-
-          {scenarios.length >= 2 && selectedScenarios.length < 2 && (
-            <p className="text-xs text-[var(--text-tertiary)] text-center py-2">
-              Select 2–4 scenarios using the checkboxes to compare them in a chart.
-            </p>
           )}
 
         </div>
