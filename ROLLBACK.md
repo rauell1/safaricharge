@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 173 | `rollback/chore-record-branch-cleanup-for-rollba-2026-04-28-bd57230` | `bd57230` | chore: record branch cleanup for rollback reference (2026-04-28) | 2026-04-28 |
 | 172 | `rollback/feat-move-pv-sizing-from-navbar-into-s-2026-04-28-0c7a21c` | `0c7a21c` | feat: move PV Sizing from navbar into System Configuration page | 2026-04-28 |
 | 171 | `rollback/feat-move-save-scenario-from-navbar-mo-2026-04-28-cdef08f` | `cdef08f` | feat: move Save Scenario from navbar modal into Scenarios page inline section | 2026-04-28 |
 | 170 | `rollback/fix-pin-all-radix-portals-to-modal-roo-2026-04-28-43cc568` | `43cc568` | fix: pin all Radix portals to #modal-root at <body> level | 2026-04-28 |
@@ -1785,6 +1786,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/feat-move-pv-sizing-from-navbar-into-s-2026-04-28-0c7a21c`
 - **Commit**: `0c7a21c536f459cef61a50321444f9808396f359`
 - **Subject**: feat: move PV Sizing from navbar into System Configuration page
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #173 — `rollback/chore-record-branch-cleanup-for-rollba-2026-04-28-bd57230`
+
+- **Branch**: `rollback/chore-record-branch-cleanup-for-rollba-2026-04-28-bd57230`
+- **Commit**: `bd57230f9f8750f86436a84511e194745bcdde87`
+- **Subject**: chore: record branch cleanup for rollback reference (2026-04-28)
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
