@@ -3,12 +3,8 @@
  * AIAssistant/index.tsx
  * SafariChargeAIAssistant component + AIMessageText renderer.
  *
- * Usage:
- *   import { SafariChargeAIAssistant } from '@/components/ai/AIAssistant';
- *
- * Light/dark: all colours use CSS var tokens from globals.css — no hardcoded
- * slate-900 / slate-800 / text-white. Works with both .light and .dark classes
- * set by next-themes.
+ * All colours use CSS var tokens — no hardcoded palette.
+ * Works with both .light and .dark classes from next-themes.
  */
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
@@ -39,15 +35,17 @@ const INITIAL_MESSAGES: Message[] = [
 export const AIMessageText = ({ text }: { text: string }) => {
   const lines = text.split('\n');
   return (
-    <div className="space-y-1">
+    <div className="space-y-1 ai-panel-message">
       {lines.map((line, i) => {
         if (!line.trim()) return <div key={i} className="h-1" />;
         const parts = line.split(/(\*\*[^*]+\*\*)/g);
         return (
-          <p key={i} className="leading-relaxed">
+          <p key={i} className="leading-relaxed" style={{ color: 'inherit' }}>
             {parts.map((part, j) =>
               part.startsWith('**') && part.endsWith('**') ? (
-                <strong key={j}>{part.slice(2, -2)}</strong>
+                <strong key={j} style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+                  {part.slice(2, -2)}
+                </strong>
               ) : (
                 part
               )
@@ -137,7 +135,10 @@ export const SafariChargeAIAssistant = ({
 
       setMessages((prev) => [...prev, { role: 'assistant', text: payload!.response! }]);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to reach SafariCharge AI. Check your connection.';
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Failed to reach SafariCharge AI. Check your connection.';
       setError(message);
       setMessages((prev) => [
         ...prev,
@@ -172,12 +173,15 @@ export const SafariChargeAIAssistant = ({
         transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
         transition: 'transform 260ms cubic-bezier(0.16, 1, 0.3, 1)',
         pointerEvents: isOpen ? 'auto' : 'none',
+        /* Ensure it stacks cleanly in both light and dark */
+        boxShadow: '-8px 0 32px rgba(0,0,0,0.18)',
       }}
       aria-hidden={!isOpen}
+      aria-label="AI Assistant Panel"
     >
-      {/* Header */}
+      {/* ── Header ── */}
       <div
-        className="p-4 flex justify-between items-center shadow-md flex-shrink-0"
+        className="p-4 flex justify-between items-center shadow-sm flex-shrink-0"
         style={{
           background: 'var(--bg-card)',
           borderBottom: '1px solid var(--border)',
@@ -185,74 +189,132 @@ export const SafariChargeAIAssistant = ({
         }}
       >
         <div className="flex items-center gap-2">
-          <Sparkles size={16} className="text-[var(--battery)]" />
+          <Sparkles
+            aria-hidden="true"
+            style={{ width: 'var(--icon-sm)', height: 'var(--icon-sm)', color: 'var(--battery)' }}
+          />
           <div>
-            <h3 className="font-bold text-sm leading-none" style={{ color: 'var(--text-primary)' }}>SafariCharge AI</h3>
-            <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>Powered by live simulation data</p>
+            <h3
+              className="font-bold text-sm leading-none"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              SafariCharge AI
+            </h3>
+            <p
+              className="text-[10px] mt-0.5"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              Powered by live simulation data
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 text-[10px]" style={{ color: 'var(--battery)' }}>
-            <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--battery)' }} />
+          <div
+            className="flex items-center gap-1.5 text-[10px] font-medium"
+            style={{ color: 'var(--battery)' }}
+          >
+            <div
+              className="w-1.5 h-1.5 rounded-full animate-pulse"
+              style={{ background: 'var(--battery)' }}
+              aria-hidden="true"
+            />
             {isAutoMode ? 'Live' : 'Paused'}
           </div>
+          {/* X close button — always visible */}
           <button
             onClick={onClose}
             aria-label="Close AI Assistant"
-            className="rounded-md p-1 transition-colors"
-            style={{ color: 'var(--text-secondary)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+            className="rounded-md p-1.5 transition-colors"
+            style={{
+              color: 'var(--text-secondary)',
+              background: 'transparent',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+              e.currentTarget.style.background = 'var(--bg-card-muted)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-secondary)';
+              e.currentTarget.style.background = 'transparent';
+            }}
           >
-            <X size={20} />
+            <X
+              aria-hidden="true"
+              style={{ width: 'var(--icon-md)', height: 'var(--icon-md)' }}
+            />
           </button>
         </div>
       </div>
 
-      {/* Live status bar */}
+      {/* ── Live status bar ── */}
       <div
-        className="px-4 py-2 flex gap-4 text-[10px] font-mono flex-shrink-0"
+        className="px-4 py-2 flex gap-4 text-[10px] font-mono flex-shrink-0 flex-wrap"
         style={{
           background: 'var(--bg-card-muted)',
           borderBottom: '1px solid var(--border)',
           color: 'var(--text-secondary)',
         }}
       >
-        <span style={{ color: 'var(--solar)' }}>\u2600\ufe0f {liveSolar.toFixed(1)}kW</span>
+        <span style={{ color: 'var(--solar)' }}>\u2600\ufe0f {liveSolar.toFixed(1)} kW</span>
         <span style={{ color: 'var(--ev)' }}>\ud83d\udd0b {liveBattery.toFixed(0)}%</span>
-        <span style={{ color: liveNetGrid > 0.1 ? 'var(--alert)' : 'var(--consumption)' }}>
+        <span
+          style={{
+            color:
+              liveNetGrid > 0.1
+                ? 'var(--alert)'
+                : 'var(--consumption)',
+          }}
+        >
           \u26a1{' '}
           {liveNetGrid > 0.1
-            ? `Import ${liveNetGrid.toFixed(1)}kW`
+            ? `Import ${liveNetGrid.toFixed(1)} kW`
             : liveNetGrid < -0.1
-              ? `Export ${Math.abs(liveNetGrid).toFixed(1)}kW`
+              ? `Export ${Math.abs(liveNetGrid).toFixed(1)} kW`
               : 'Grid balanced'}
         </span>
-        {(liveEv1V2g || liveEv2V2g) && <span style={{ color: 'var(--warning)' }}>V2G\u2191</span>}
+        {(liveEv1V2g || liveEv2V2g) && (
+          <span style={{ color: 'var(--warning)' }}>V2G\u2191</span>
+        )}
       </div>
 
-      {/* Messages */}
+      {/* ── Messages ── */}
       <div
         className="flex-1 overflow-y-auto p-4 space-y-3"
         style={{ background: 'var(--bg-primary)' }}
       >
         {messages.map((msg, idx) => (
-          <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+          <div
+            key={idx}
+            className={`flex ${
+              msg.role === 'user' ? 'justify-end' : 'justify-start'
+            }`}
+          >
             {msg.role === 'assistant' && (
               <div
                 className="w-6 h-6 rounded-full flex items-center justify-center mr-2 flex-shrink-0 mt-0.5"
-                style={{ background: 'var(--bg-card)' }}
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
               >
-                <Sparkles size={12} className="text-[var(--battery)]" />
+                <Sparkles
+                  aria-hidden="true"
+                  style={{
+                    width: '12px',
+                    height: '12px',
+                    color: 'var(--battery)',
+                  }}
+                />
               </div>
             )}
             <div
-              className={`max-w-[85%] p-3 rounded-2xl text-sm shadow-sm ${
+              className={`max-w-[85%] p-3 rounded-2xl shadow-sm ${
                 msg.role === 'user' ? 'rounded-br-sm' : 'rounded-bl-sm'
               }`}
               style={
                 msg.role === 'user'
-                  ? { background: 'var(--consumption)', color: '#fff' }
+                  ? {
+                      background: 'var(--consumption)',
+                      color: '#fff',
+                      /* Slightly darker user bubble in light mode for contrast */
+                    }
                   : {
                       background: 'var(--bg-card)',
                       border: '1px solid var(--border)',
@@ -260,7 +322,11 @@ export const SafariChargeAIAssistant = ({
                     }
               }
             >
-              {msg.role === 'assistant' ? <AIMessageText text={msg.text} /> : msg.text}
+              {msg.role === 'assistant' ? (
+                <AIMessageText text={msg.text} />
+              ) : (
+                <span className="text-sm leading-relaxed">{msg.text}</span>
+              )}
             </div>
           </div>
         ))}
@@ -269,30 +335,50 @@ export const SafariChargeAIAssistant = ({
           <div className="flex justify-start items-center gap-2">
             <div
               className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: 'var(--bg-card)' }}
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
             >
-              <Sparkles size={12} className="text-[var(--battery)]" />
+              <Sparkles
+                aria-hidden="true"
+                style={{ width: '12px', height: '12px', color: 'var(--battery)' }}
+              />
             </div>
             <div
               className="rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1"
-              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+              style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border)',
+              }}
             >
-              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--text-tertiary)', animationDelay: '0ms' }} />
-              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--text-tertiary)', animationDelay: '150ms' }} />
-              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--text-tertiary)', animationDelay: '300ms' }} />
+              <span
+                className="w-1.5 h-1.5 rounded-full animate-bounce"
+                style={{ background: 'var(--text-tertiary)', animationDelay: '0ms' }}
+              />
+              <span
+                className="w-1.5 h-1.5 rounded-full animate-bounce"
+                style={{ background: 'var(--text-tertiary)', animationDelay: '150ms' }}
+              />
+              <span
+                className="w-1.5 h-1.5 rounded-full animate-bounce"
+                style={{ background: 'var(--text-tertiary)', animationDelay: '300ms' }}
+              />
             </div>
           </div>
         )}
 
         {showChips && !isTyping && (
           <div className="pt-2">
-            <p className="text-[10px] font-mono mb-2 ml-8" style={{ color: 'var(--text-tertiary)' }}>Suggested questions:</p>
+            <p
+              className="text-[10px] font-mono mb-2 ml-8"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              Suggested questions:
+            </p>
             <div className="flex flex-wrap gap-2 ml-8">
               {SUGGESTION_CHIPS.map((chip) => (
                 <button
                   key={chip}
                   onClick={() => handleChip(chip)}
-                  className="text-[11px] px-3 py-1.5 rounded-full font-medium transition-opacity hover:opacity-80"
+                  className="ai-panel-chip px-3 py-1.5 rounded-full font-medium transition-opacity hover:opacity-80 active:scale-95"
                   style={{
                     background: 'var(--bg-card)',
                     border: '1px solid var(--consumption)',
@@ -321,7 +407,7 @@ export const SafariChargeAIAssistant = ({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
+      {/* ── Input ── */}
       <div
         className="p-3 flex gap-2 flex-shrink-0"
         style={{
@@ -336,21 +422,31 @@ export const SafariChargeAIAssistant = ({
           onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
           placeholder="Ask about your solar system..."
           disabled={isTyping}
-          className="flex-1 rounded-full px-4 py-2 text-sm outline-none disabled:opacity-60"
+          className="flex-1 rounded-full px-4 py-2.5 text-sm outline-none disabled:opacity-60"
           style={{
-            background: 'var(--bg-card-muted)',
+            background: 'var(--bg-card)',
             color: 'var(--text-primary)',
             border: '1px solid var(--border)',
+            /* Slightly taller for easier mobile tapping */
+            minHeight: '40px',
           }}
         />
         <button
           onClick={handleSend}
           disabled={!inputText.trim() || isTyping}
-          className="p-2.5 rounded-full disabled:opacity-50 transition-opacity hover:opacity-90"
-          style={{ background: 'var(--battery)', color: '#fff' }}
+          className="p-2.5 rounded-full disabled:opacity-50 transition-opacity hover:opacity-90 active:scale-95"
+          style={{
+            background: 'var(--battery)',
+            color: '#fff',
+            minWidth: '40px',
+            minHeight: '40px',
+          }}
           aria-label="Send message"
         >
-          <Send size={16} />
+          <Send
+            aria-hidden="true"
+            style={{ width: 'var(--icon-sm)', height: 'var(--icon-sm)' }}
+          />
         </button>
       </div>
     </div>
