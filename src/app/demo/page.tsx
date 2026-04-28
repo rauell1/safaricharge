@@ -28,12 +28,21 @@ import {
   useTimeRange,
 } from '@/hooks/useEnergySystem';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart3, PieChart, TrendingUp, Leaf, Car, Trees } from 'lucide-react';
+import { BarChart3, PieChart, TrendingUp, Leaf, Car, Trees, Calculator } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { EnergyReportModal } from '@/components/energy/EnergyReportModal';
 import type { SolarIrradianceData } from '@/lib/nasa-power-api';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
-import { SIZING_SIMULATOR_STORAGE_KEY, parseSimulatorSizingPayload } from '@/lib/pv-sizing';
+import {
+  BATTERY_DOD,
+  SIZING_SIMULATOR_STORAGE_KEY,
+  computeSizingResult,
+  parseSimulatorSizingPayload,
+  type BatteryChemistry,
+  type KenyaIrradiancePreset,
+  type SimulatorSizingPayload,
+  type SystemType,
+} from '@/lib/pv-sizing';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import {
@@ -44,6 +53,15 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { MapPin, Sun, Info } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -51,6 +69,7 @@ import { resampleTo5MinBucketsProgressive, resampleTo5MinBuckets } from '@/lib/g
 import type { SimulationMinuteRecord } from '@/types/simulation-core';
 import { SocialImpactCard } from '@/components/widgets/SocialImpactCard';
 import kenyaIrradiancePresets from '../../../forecasting/kenya-irradiance-presets.json';
+import presetsData from '../../../forecasting/kenya-irradiance-presets.json';
 
 // ── Restored page components ──────────────────────────────────────────────────
 import FinancialDashboard from '@/components/dashboard/FinancialDashboard';
@@ -144,6 +163,13 @@ const DEFAULT_LOCATION: LocationOption = KENYA_LOCATIONS[0] ?? {
 const KENYA_HOUSEHOLD_ANNUAL_KWH = 1200;
 const KEROSENE_DISPLACEMENT_L_PER_KWH = 0.8;
 const KENYA_DIESEL_BACKUP_CO2_KG_PER_KWH = 0.4;
+
+// ─── Irradiance presets for PV sizing (same JSON, typed for sizing) ──────────
+type KenyaIrradiancePresetsFile = {
+  source: { name: string; url: string; accessed: string; notes: string };
+  presets: KenyaIrradiancePreset[];
+};
+const typedPresetsForSizing = presetsData as KenyaIrradiancePresetsFile;
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function ModularDashboardDemo({
@@ -626,13 +652,211 @@ function DemoSimulationView({ onNavigateSection }: { onNavigateSection: (s: Dash
   );
 }
 
+// ── Inline PV Sizing Calculator (embedded in System Configuration) ────────────
+function InlinePvSizingCalculator() {
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const [dailyLoadKwh, setDailyLoadKwh] = useState(10);
+  const [county, setCounty] = useState(typedPresetsForSizing.presets[0]?.county ?? 'Nairobi');
+  const [systemType, setSystemType] = useState<SystemType>('on-grid');
+  const [performanceRatio, setPerformanceRatio] = useState(0.8);
+  const [batteryChemistry, setBatteryChemistry] = useState<BatteryChemistry>('lifepo4');
+  const [autonomyDays, setAutonomyDays] = useState(2);
+  const [panelWattage, setPanelWattage] = useState(400);
+
+  const selectedPreset = useMemo(
+    () => typedPresetsForSizing.presets.find((p) => p.county === county) ?? typedPresetsForSizing.presets[0],
+    [county]
+  );
+
+  const result = useMemo(
+    () =>
+      computeSizingResult({
+        dailyLoadKwh,
+        avgDailySunHours: selectedPreset.avgDailySunHours,
+        performanceRatio,
+        systemType,
+        batteryChemistry,
+        autonomyDays,
+        panelWattage,
+      }),
+    [dailyLoadKwh, selectedPreset.avgDailySunHours, performanceRatio, systemType, batteryChemistry, autonomyDays, panelWattage]
+  );
+
+  const handleLoadIntoSimulator = () => {
+    const payload: SimulatorSizingPayload = {
+      county: selectedPreset.county,
+      systemType,
+      panelWattage,
+      requiredPvCapacityKw: result.requiredPvCapacityKw,
+      panelCount: result.suggestedPanelCount,
+      batteryCapacityKwh: result.requiredBatteryCapacityKwh,
+      performanceRatio,
+      dailyLoadKwh,
+    };
+    localStorage.setItem(SIZING_SIMULATOR_STORAGE_KEY, JSON.stringify(payload));
+    toast({
+      title: 'Sizing applied',
+      description: `Redirecting to Simulation with ${selectedPreset.county} preset (${result.requiredPvCapacityKw.toFixed(2)} kW PV).`,
+    });
+    router.push('/simulation');
+  };
+
+  return (
+    <Card className="dashboard-card">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+          <Calculator className="h-5 w-5 text-[var(--solar)]" />
+          PV Sizing Calculator
+        </CardTitle>
+        <p className="text-sm text-[var(--text-tertiary)] mt-1">
+          Kenya county irradiance presets — estimate system capacity and load a scenario directly into the simulator.
+        </p>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {/* Daily load */}
+          <div className="space-y-2">
+            <Label>Daily Energy Consumption (kWh/day)</Label>
+            <Input
+              type="number" min={0} step={0.1} value={dailyLoadKwh}
+              onChange={(e) => setDailyLoadKwh(Number(e.target.value || 0))}
+            />
+          </div>
+
+          {/* County */}
+          <div className="space-y-2">
+            <Label>County / Location</Label>
+            <Select value={county} onValueChange={setCounty}>
+              <SelectTrigger><SelectValue placeholder="Select county" /></SelectTrigger>
+              <SelectContent>
+                {typedPresetsForSizing.presets.map((preset) => (
+                  <SelectItem key={preset.county} value={preset.county}>
+                    {preset.county} ({preset.avgDailySunHours.toFixed(1)} sun-hrs/day)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* System type */}
+          <div className="space-y-2">
+            <Label>System Type</Label>
+            <Select value={systemType} onValueChange={(v) => setSystemType(v as SystemType)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="on-grid">On-Grid</SelectItem>
+                <SelectItem value="off-grid">Off-Grid</SelectItem>
+                <SelectItem value="hybrid">Hybrid</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Performance ratio */}
+          <div className="space-y-2">
+            <Label>Performance Ratio</Label>
+            <Input
+              type="number" min={0.1} max={1} step={0.01} value={performanceRatio}
+              onChange={(e) => setPerformanceRatio(Number(e.target.value || 0.8))}
+            />
+          </div>
+
+          {/* Panel wattage */}
+          <div className="space-y-2">
+            <Label>Panel Wattage</Label>
+            <Select value={String(panelWattage)} onValueChange={(v) => setPanelWattage(Number(v))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="300">300W</SelectItem>
+                <SelectItem value="400">400W</SelectItem>
+                <SelectItem value="500">500W</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Battery chemistry */}
+          <div className="space-y-2">
+            <Label>Battery Chemistry</Label>
+            <Select
+              value={batteryChemistry}
+              onValueChange={(v) => setBatteryChemistry(v as BatteryChemistry)}
+              disabled={systemType !== 'off-grid'}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="lead-acid">Lead-Acid (50% DoD)</SelectItem>
+                <SelectItem value="lifepo4">LiFePO₂ (80% DoD)</SelectItem>
+                <SelectItem value="agm">AGM (60% DoD)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Autonomy days */}
+          <div className="space-y-2 md:col-span-2 lg:col-span-3">
+            <Label>Days of Autonomy</Label>
+            <Input
+              type="number" min={1} max={5} step={1} value={autonomyDays}
+              onChange={(e) => setAutonomyDays(Math.min(5, Math.max(1, Number(e.target.value || 1))))}
+              disabled={systemType !== 'off-grid'}
+            />
+          </div>
+        </div>
+
+        {/* Results summary */}
+        <div
+          className="mt-6 rounded-xl p-4 space-y-2 text-sm"
+          style={{ background: 'var(--bg-card-muted)', border: '1px solid var(--border)' }}
+        >
+          <p className="font-semibold text-[var(--text-primary)] mb-3">Sizing Summary</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1.5 text-[var(--text-secondary)]">
+            <p><span className="font-medium text-[var(--text-primary)]">Required PV capacity:</span> {result.requiredPvCapacityKw.toFixed(2)} kW</p>
+            <p><span className="font-medium text-[var(--text-primary)]">Suggested panels:</span> {result.suggestedPanelCount} × {panelWattage}W</p>
+            <p>
+              <span className="font-medium text-[var(--text-primary)]">Required battery:</span>{' '}
+              {result.requiredBatteryCapacityKwh === null
+                ? 'N/A (on-grid / hybrid)'
+                : `${result.requiredBatteryCapacityKwh.toFixed(2)} kWh`}
+            </p>
+            <p><span className="font-medium text-[var(--text-primary)]">Est. monthly generation:</span> {result.estimatedMonthlyGenerationKwh.toFixed(1)} kWh</p>
+            <p>
+              <span className="font-medium text-[var(--text-primary)]">Simple payback:</span>{' '}
+              {Number.isFinite(result.simplePaybackYears)
+                ? `${result.simplePaybackYears.toFixed(1)} years`
+                : 'Not applicable'}
+            </p>
+            <p className="text-xs text-[var(--text-tertiary)]">
+              {selectedPreset.county} • {selectedPreset.annualYieldKwhPerKwp} kWh/kWp/yr
+              • Peak: {selectedPreset.peakMonth} • Low: {selectedPreset.lowMonth}
+            </p>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Button onClick={handleLoadIntoSimulator} style={{ background: 'var(--solar)', color: '#fff' }}>
+            Load into Simulator
+          </Button>
+          <Button variant="outline" onClick={() => window.print()}>Print / Save as PDF</Button>
+        </div>
+
+        <p className="mt-3 text-xs text-[var(--text-tertiary)]">
+          Source: {typedPresetsForSizing.source.name} ({typedPresetsForSizing.source.url}),
+          accessed {typedPresetsForSizing.source.accessed}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function DemoConfigurationView() {
   return (
     <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
         <div>
           <h2 className="text-2xl font-bold text-[var(--text-primary)]">System Configuration</h2>
-          <p className="text-sm text-[var(--text-tertiary)]">Configure solar panels, battery, EV chargers and load profiles</p>
+          <p className="text-sm text-[var(--text-tertiary)]">Configure solar panels, battery, EV chargers, load profiles and size your PV system</p>
         </div>
         <LoadConfigComponents />
 
