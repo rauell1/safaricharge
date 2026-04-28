@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import Link from 'next/link';
 import {
   Calendar,
   Bell,
@@ -9,7 +8,6 @@ import {
   MapPin,
   Target,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
@@ -148,12 +146,6 @@ export function DashboardHeader({
             <span className="hidden md:inline">Recommend</span>
           </button>
         )}
-
-        <Link href="/sizing">
-          <Button variant="outline" className="h-9 sm:h-10 text-xs sm:text-sm px-2.5 sm:px-4 whitespace-nowrap">
-            PV Sizing
-          </Button>
-        </Link>
 
         {/* Notifications */}
         <Popover>
