@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 169 | `rollback/fix-remove-overflow-x-hidden-and-trans-2026-04-28-52c9631` | `52c9631` | fix: remove overflow-x-hidden and transform-creating wrappers from DashboardLayout | 2026-04-28 |
 | 168 | `rollback/fix-move-overflow-x-guard-off-html-bod-2026-04-28-fd45e75` | `fd45e75` | fix: move overflow-x guard off html/body to fix dialog centering | 2026-04-28 |
 | 167 | `rollback/fix-resolve-dialog-modal-narrow-strip-2026-04-28-f343af3` | `f343af3` | fix: resolve dialog/modal narrow-strip rendering across all pages | 2026-04-28 |
 | 166 | `rollback/fix-sidebar-ai-assistant-item-toggles-2026-04-28-d3a5cef` | `d3a5cef` | fix: sidebar AI Assistant item toggles panel instead of navigating to /ai-assistant | 2026-04-28 |
@@ -1745,6 +1746,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-move-overflow-x-guard-off-html-bod-2026-04-28-fd45e75`
 - **Commit**: `fd45e75e049535273721a11f467898770ffd7e47`
 - **Subject**: fix: move overflow-x guard off html/body to fix dialog centering
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #169 — `rollback/fix-remove-overflow-x-hidden-and-trans-2026-04-28-52c9631`
+
+- **Branch**: `rollback/fix-remove-overflow-x-hidden-and-trans-2026-04-28-52c9631`
+- **Commit**: `52c9631e4ed9383cf5014a327a2d20bb84204984`
+- **Subject**: fix: remove overflow-x-hidden and transform-creating wrappers from DashboardLayout
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
