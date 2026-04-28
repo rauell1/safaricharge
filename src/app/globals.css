@@ -97,9 +97,14 @@
   --radius-2xl: 1.5rem;
 
   /* Type */
-  /* --font-inter is injected by src/app/layout.tsx via next/font */
   --font-sans:    var(--font-inter), system-ui, -apple-system, sans-serif;
   --font-display: var(--font-inter), system-ui, sans-serif;
+
+  /* Responsive icon sizes */
+  --icon-xs: 0.875rem;  /* 14px */
+  --icon-sm: 1rem;      /* 16px */
+  --icon-md: 1.25rem;   /* 20px */
+  --icon-lg: 1.5rem;    /* 24px */
 
   /* Shared website shell tokens */
   --site-page-bg: #03070f;
@@ -236,28 +241,18 @@ p, li {
 }
 
 /* ─── Page shell ─────────────────────────────────────────────── */
-/* Block layout — children use their own spacing utilities (space-y-*, gap-*).
-   flex-direction:column was removed because it caused inline/span children
-   to stack vertically instead of flowing horizontally. */
 .page-shell {
   display: block;
   width: min(1400px, 100% - 32px);
   margin: 0 auto;
   padding: 24px 16px 32px;
   min-width: 0;
-  /* Page entry animation — makes section switches feel instant */
   animation: page-enter 120ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes page-enter {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @media (min-width: 640px) {
@@ -274,17 +269,9 @@ p, li {
   }
 }
 
-.page-shell :where(p, li) {
-  overflow-wrap: normal;
-  word-break: normal;
-}
+.page-shell :where(p, li) { overflow-wrap: normal; word-break: normal; }
+.page-shell :where(h1, h2, h3, h4, h5, h6) { overflow-wrap: normal; word-break: normal; }
 
-.page-shell :where(h1, h2, h3, h4, h5, h6) {
-  overflow-wrap: normal;
-  word-break: normal;
-}
-
-/* Hard safety rails for stubborn narrow-column text collapse */
 .sc-readable-copy {
   display: block !important;
   width: min(100%, 40rem) !important;
@@ -308,9 +295,7 @@ p, li {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  box-shadow:
-    0 1px 2px rgba(0,0,0,0.35),
-    0 4px 12px rgba(0,0,0,0.22);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.35), 0 4px 12px rgba(0,0,0,0.22);
   transition:
     transform 200ms cubic-bezier(0.16,1,0.3,1),
     box-shadow 200ms cubic-bezier(0.16,1,0.3,1),
@@ -325,6 +310,15 @@ p, li {
     0 4px 6px rgba(0,0,0,0.45),
     0 12px 24px rgba(0,0,0,0.3),
     0 0 0 1px var(--border-strong);
+}
+
+/* ─── Light mode card shadow fix ───────────────────────────── */
+.light .dashboard-card {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.light .dashboard-card:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.10), 0 12px 24px rgba(0,0,0,0.07);
 }
 
 /* ─── Overlay menus/dropdowns ─────────────────────────────────── */
@@ -345,10 +339,11 @@ p, li {
   z-index: 60;
 }
 
-[data-slot='dropdown-menu-content']::backdrop,
-[data-slot='select-content']::backdrop,
-[data-slot='popover-content']::backdrop {
-  background: transparent;
+.light [data-slot='dropdown-menu-content'],
+.light [data-slot='select-content'],
+.light [data-slot='popover-content'] {
+  border-color: rgba(0,0,0,0.08);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
 }
 
 /* ─── Skeleton shimmer ───────────────────────────────────────── */
@@ -367,6 +362,125 @@ p, li {
   background-size: 200% 100%;
   animation: shimmer 1.6s ease-in-out infinite;
   border-radius: var(--radius-sm);
+}
+
+/* ─── Mobile slider fixes ────────────────────────────────────── */
+/* Ensure range inputs are touch-friendly and theme-aware on all devices */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--border-strong);
+  outline: none;
+  cursor: pointer;
+  /* Larger touch target without changing visual height */
+  padding: 10px 0;
+  margin: 4px 0;
+  box-sizing: content-box;
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: clamp(20px, 5vw, 24px);
+  height: clamp(20px, 5vw, 24px);
+  border-radius: 50%;
+  background: var(--battery);
+  border: 2px solid var(--bg-card);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.28);
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+input[type='range']::-moz-range-thumb {
+  width: clamp(20px, 5vw, 24px);
+  height: clamp(20px, 5vw, 24px);
+  border-radius: 50%;
+  background: var(--battery);
+  border: 2px solid var(--bg-card);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.28);
+  cursor: pointer;
+}
+
+input[type='range']::-webkit-slider-thumb:hover,
+input[type='range']::-webkit-slider-thumb:active {
+  transform: scale(1.18);
+  box-shadow: 0 0 0 4px var(--battery-soft), 0 2px 8px rgba(0,0,0,0.36);
+}
+
+input[type='range']::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--border-strong);
+}
+
+input[type='range']::-moz-range-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--border-strong);
+}
+
+/* Light mode slider track */
+.light input[type='range']::-webkit-slider-runnable-track,
+.light input[type='range']::-moz-range-track {
+  background: rgba(7,18,14,0.15);
+}
+
+/* ─── Responsive icon sizing ─────────────────────────────────── */
+/* Icons inside buttons/nav auto-scale with viewport */
+.icon-auto {
+  width: clamp(14px, 1.1vw + 10px, 20px);
+  height: clamp(14px, 1.1vw + 10px, 20px);
+  flex-shrink: 0;
+}
+
+/* Sidebar nav icons */
+.sidebar-icon {
+  width: clamp(16px, 1.2vw + 11px, 20px);
+  height: clamp(16px, 1.2vw + 11px, 20px);
+  flex-shrink: 0;
+}
+
+/* Mobile bottom nav icons — larger touch targets */
+@media (max-width: 767px) {
+  .icon-auto  { width: 20px; height: 20px; }
+  .sidebar-icon { width: 22px; height: 22px; }
+}
+
+/* ─── Simulation-reset toast notification ────────────────────── */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; transform: translateY(0)   scale(1); }
+  to   { opacity: 0; transform: translateY(-8px) scale(0.97); }
+}
+
+.sim-reset-toast {
+  position: fixed;
+  /* Sits just above mobile bottom nav on phones, normal position on desktop */
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 72px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  max-width: min(480px, calc(100vw - 32px));
+  width: max-content;
+  animation: toast-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  pointer-events: auto;
+}
+
+.sim-reset-toast.dismissing {
+  animation: toast-out 220ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+@media (min-width: 768px) {
+  .sim-reset-toast {
+    bottom: 28px;
+  }
 }
 
 /* ─── Energy-flow animations ─────────────────────────────────── */
@@ -426,7 +540,7 @@ p, li {
 .status-online            { animation: pulse-status 2.4s ease-in-out infinite; }
 .animate-scale-in         { animation: scale-in 0.18s cubic-bezier(0.16,1,0.3,1); }
 
-/* ─── Global transition reset (opt-in, not blanket) ─────────── */
+/* ─── Global transition reset (opt-in) ──────────────────────── */
 a, button, input, select, textarea,
 [role="button"], [tabindex] {
   transition-property: color, background-color, border-color, box-shadow, opacity, transform;
@@ -472,3 +586,32 @@ a, button, input, select, textarea,
 
 .card-hover { transition: all 220ms cubic-bezier(0.16,1,0.3,1); }
 .card-hover:hover { transform: translateY(-1px); }
+
+/* ─── Readability improvements (light + dark) ─────────────────── */
+/* Increase base body font-size contrast on smaller screens */
+@media (max-width: 640px) {
+  body { font-size: 15px; }
+  .text-xs { font-size: 0.75rem; line-height: 1.4; }
+  .text-sm { font-size: 0.8125rem; }
+}
+
+/* Light mode text contrast boost */
+.light {
+  --text-primary:   #0d1f17;
+  --text-secondary: #3a5246;
+  --text-tertiary:  #5a7268;
+  --text-muted:     #7a9080;
+}
+
+/* Ensure light-mode header has enough contrast */
+.light header {
+  background: rgba(245,247,244,0.95) !important;
+  border-bottom-color: rgba(7,18,14,0.10) !important;
+}
+
+/* Card text readability on light */
+.light .dashboard-card p,
+.light .dashboard-card span,
+.light .dashboard-card div {
+  /* Inherits --text-primary which is now darker in light mode */
+}

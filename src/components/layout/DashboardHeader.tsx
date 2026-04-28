@@ -66,15 +66,10 @@ export function DashboardHeader({
   const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(new Set());
 
   const dateLabel = currentDate.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   });
   const dateLabelShort = currentDate.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
+    month: 'short', day: 'numeric', year: 'numeric',
   });
 
   const handleSave = () => {
@@ -106,18 +101,21 @@ export function DashboardHeader({
     });
   };
 
-  /* ── shared icon-button class ── */
+  // Responsive icon button — size adapts via CSS clamp tokens
   const iconBtn =
-    'relative h-9 w-9 md:h-10 md:w-10 rounded-xl transition-all duration-150 flex items-center justify-center';
+    'relative rounded-xl transition-all duration-150 flex items-center justify-center'
+    + ' h-9 w-9 sm:h-10 sm:w-10';
   const iconBtnStyle = {
     background: 'var(--bg-card-muted)',
     border: '1px solid var(--border)',
     color: 'var(--text-secondary)',
   };
+  // Icon size follows CSS var so it adapts across breakpoints
+  const iconSize = { width: 'var(--icon-sm)', height: 'var(--icon-sm)', flexShrink: 0 };
 
   return (
     <>
-      {/* Save dialog */}
+      {/* Save scenario dialog */}
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
         <DialogContent
           style={{
@@ -127,7 +125,7 @@ export function DashboardHeader({
           }}
         >
           <DialogHeader>
-            <DialogTitle>Save Scenario</DialogTitle>
+            <DialogTitle style={{ color: 'var(--text-primary)' }}>Save Scenario</DialogTitle>
             <DialogDescription style={{ color: 'var(--text-secondary)' }}>
               Save the current configuration and KPI snapshot for later comparison.
             </DialogDescription>
@@ -169,34 +167,29 @@ export function DashboardHeader({
 
       {/* ── Header bar ── */}
       <header
-        className="sticky top-0 z-40 w-full flex items-center justify-between gap-4 px-4 py-3 md:px-6 md:h-[72px] flex-wrap md:flex-nowrap backdrop-blur-md"
+        className="sticky top-0 z-40 w-full flex items-center justify-between gap-2 sm:gap-4 px-3 sm:px-4 py-2.5 sm:py-3 md:px-6 md:h-[68px] flex-wrap md:flex-nowrap backdrop-blur-md"
         style={{
-          background: 'rgba(8,13,24,0.92)',
+          background: 'var(--bg-secondary)',
           borderBottom: '1px solid var(--border)',
           boxShadow: '0 1px 0 var(--border)',
         }}
       >
         {/* Left: trigger + date + location */}
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <SidebarTrigger
-            className={iconBtn}
-            style={iconBtnStyle}
-          />
-          <div className="space-y-1 min-w-0 flex-1">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <SidebarTrigger className={iconBtn} style={iconBtnStyle} />
+
+          <div className="space-y-0.5 min-w-0 flex-1">
             <div
-              className="flex items-center gap-2 text-sm font-semibold truncate"
+              className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold truncate"
               style={{ color: 'var(--text-primary)' }}
             >
-              <Calendar
-                className="h-4 w-4 shrink-0"
-                style={{ color: 'var(--text-muted)' }}
-              />
+              <Calendar style={{ ...iconSize, color: 'var(--text-muted)' }} />
               <span className="hidden sm:inline">{dateLabel}</span>
               <span className="sm:hidden">{dateLabelShort}</span>
             </div>
 
             <span
-              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer transition-all hover:opacity-80"
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold cursor-pointer transition-all hover:opacity-80"
               style={{
                 background: 'var(--solar-soft)',
                 border: '1px solid rgba(245,158,11,0.20)',
@@ -206,14 +199,14 @@ export function DashboardHeader({
               role="button"
               aria-label={`Change location: ${locationName}`}
             >
-              <MapPin className="h-3 w-3" />
-              <span className="truncate">{locationName}</span>
+              <MapPin style={{ width: 12, height: 12, flexShrink: 0 }} />
+              <span className="truncate max-w-[100px] sm:max-w-none">{locationName}</span>
             </span>
           </div>
         </div>
 
         {/* Right: actions */}
-        <div className="flex items-center gap-2 md:gap-1 flex-wrap justify-end md:justify-start">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
           <SubscriptionBadge />
           <ThemeToggle />
 
@@ -221,31 +214,27 @@ export function DashboardHeader({
           {onRecommendationClick && (
             <button
               onClick={onRecommendationClick}
-              className="h-9 md:h-10 px-3 md:px-4 rounded-xl flex items-center gap-2 text-sm font-semibold transition-all"
+              className="h-9 sm:h-10 px-2.5 sm:px-4 rounded-xl flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold transition-all"
               style={{
                 background: 'var(--battery)',
                 color: '#fff',
                 boxShadow: '0 2px 8px rgba(16,185,129,0.25)',
               }}
-              onMouseEnter={(e) =>
-                ((e.currentTarget as HTMLElement).style.background = 'var(--battery-bright)')
-              }
-              onMouseLeave={(e) =>
-                ((e.currentTarget as HTMLElement).style.background = 'var(--battery)')
-              }
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'var(--battery-bright)')}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = 'var(--battery)')}
             >
-              <Target className="h-4 w-4" />
+              <Target style={iconSize} />
               <span className="hidden md:inline">Recommend</span>
             </button>
           )}
 
           <Link href="/sizing">
-            <Button variant="outline" className="h-9 md:h-10">
+            <Button variant="outline" className="h-9 sm:h-10 text-xs sm:text-sm px-2.5 sm:px-4">
               PV Sizing
             </Button>
           </Link>
 
-          {/* Filters */}
+          {/* Filters — desktop only */}
           <Popover>
             <PopoverTrigger asChild>
               <button
@@ -253,7 +242,7 @@ export function DashboardHeader({
                 style={iconBtnStyle}
                 aria-label="Filters"
               >
-                <Filter className="h-4 w-4" />
+                <Filter style={iconSize} />
               </button>
             </PopoverTrigger>
             <PopoverContent
@@ -264,7 +253,7 @@ export function DashboardHeader({
                 color: 'var(--text-primary)',
               }}
             >
-              <p className="text-sm font-semibold mb-1">Filters</p>
+              <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Filters</p>
               <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                 Filter options coming soon.
               </p>
@@ -279,10 +268,10 @@ export function DashboardHeader({
                 style={iconBtnStyle}
                 aria-label={`Notifications (${effectiveNotificationCount})`}
               >
-                <Bell className="h-4 w-4" />
+                <Bell style={iconSize} />
                 {effectiveNotificationCount > 0 && (
                   <Badge
-                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-[10px] font-bold rounded-full border-2"
+                    className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center p-0 text-[9px] sm:text-[10px] font-bold rounded-full border-2"
                     style={{
                       background: 'var(--alert)',
                       color: '#fff',
@@ -295,7 +284,7 @@ export function DashboardHeader({
               </button>
             </PopoverTrigger>
             <PopoverContent
-              className="w-80 rounded-xl"
+              className="w-72 sm:w-80 rounded-xl"
               style={{
                 background: 'var(--bg-card)',
                 border: '1px solid var(--border)',
@@ -303,12 +292,13 @@ export function DashboardHeader({
               }}
             >
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-semibold">Notifications</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Notifications</p>
                 {unreadNotifications.length > 0 && (
                   <button
                     type="button"
                     onClick={markAllAsRead}
-                    className="text-[11px] font-medium text-[var(--battery)] hover:opacity-80"
+                    className="text-[11px] font-medium hover:opacity-80"
+                    style={{ color: 'var(--battery)' }}
                   >
                     Mark all read
                   </button>
@@ -316,49 +306,46 @@ export function DashboardHeader({
               </div>
 
               {notifications.length === 0 ? (
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  No notifications yet.
-                </p>
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>No notifications yet.</p>
               ) : unreadNotifications.length === 0 ? (
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  You are all caught up.
-                </p>
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>You are all caught up.</p>
               ) : (
                 <div className="space-y-2">
                   {unreadNotifications.slice(0, 6).map((item) => (
                     <div
                       key={item.id}
-                      className="rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2"
+                      className="rounded-lg px-3 py-2"
+                      style={{
+                        background: 'var(--bg-card-muted)',
+                        border: '1px solid var(--border)',
+                      }}
                     >
-                      <p className="text-xs font-semibold text-[var(--text-primary)]">
+                      <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
                         {item.title}
                       </p>
-                      <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+                      <p className="mt-0.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
                         {item.description}
                       </p>
-                      {(item.actionLabel || true) && (
-                        <div className="mt-2 flex items-center gap-2">
-                          {item.actionLabel && item.onAction && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                item.onAction?.();
-                                markAsRead(item.id);
-                              }}
-                              className="text-[11px] font-medium text-[var(--battery)] hover:opacity-80"
-                            >
-                              {item.actionLabel}
-                            </button>
-                          )}
+                      <div className="mt-2 flex items-center gap-2">
+                        {item.actionLabel && item.onAction && (
                           <button
                             type="button"
-                            onClick={() => markAsRead(item.id)}
-                            className="text-[11px] font-medium text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
+                            onClick={() => { item.onAction?.(); markAsRead(item.id); }}
+                            className="text-[11px] font-medium hover:opacity-80"
+                            style={{ color: 'var(--battery)' }}
                           >
-                            Dismiss
+                            {item.actionLabel}
                           </button>
-                        </div>
-                      )}
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => markAsRead(item.id)}
+                          className="text-[11px] font-medium hover:opacity-80"
+                          style={{ color: 'var(--text-tertiary)' }}
+                        >
+                          Dismiss
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -369,7 +356,7 @@ export function DashboardHeader({
           {/* Export */}
           <button
             onClick={onDownload}
-            className="h-9 md:h-10 px-3 md:px-4 rounded-xl flex items-center gap-2 text-sm font-semibold transition-all"
+            className="h-9 sm:h-10 px-2.5 sm:px-4 rounded-xl flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold transition-all"
             style={{
               background: 'var(--bg-card)',
               border: '1px solid var(--border)',
@@ -385,7 +372,7 @@ export function DashboardHeader({
             }}
             aria-label="Export data"
           >
-            <Download className="h-4 w-4" />
+            <Download style={iconSize} />
             <span className="hidden md:inline">Export</span>
           </button>
 
@@ -397,7 +384,7 @@ export function DashboardHeader({
               onClick={() => setSaveOpen(true)}
               aria-label="Save scenario"
             >
-              <BookmarkPlus className="h-4 w-4" />
+              <BookmarkPlus style={iconSize} />
             </button>
           )}
 
@@ -408,7 +395,7 @@ export function DashboardHeader({
             onClick={onReset}
             aria-label="Reset dashboard"
           >
-            <RotateCcw className="h-4 w-4" />
+            <RotateCcw style={iconSize} />
           </button>
         </div>
       </header>
