@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 177 | `rollback/fix-dark-light-mode-ai-panel-persisten-2026-04-28-a0ed489` | `a0ed489` | fix: dark/light mode, AI panel persistence, page transitions, CSS syntax | 2026-04-28 |
 | 176 | `rollback/ci-retrigger-vercel-build-fix-bad-plac-2026-04-28-30f088f` | `30f088f` | ci: retrigger Vercel build — fix bad placeholder commit f1c8f57 | 2026-04-28 |
 | 175 | `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-04-28-f0a31bf` | `f0a31bf` | docs(auto): regenerate README.md [skip ci] | 2026-04-28 |
 | 174 | `rollback/chore-placeholder-will-use-full-file-p-2026-04-28-f1c8f57` | `f1c8f57` | chore: placeholder — will use full file push | 2026-04-28 |
@@ -1825,6 +1826,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/ci-retrigger-vercel-build-fix-bad-plac-2026-04-28-30f088f`
 - **Commit**: `30f088fbc4c3730906466d2306b78cab48aee29e`
 - **Subject**: ci: retrigger Vercel build — fix bad placeholder commit f1c8f57
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #177 — `rollback/fix-dark-light-mode-ai-panel-persisten-2026-04-28-a0ed489`
+
+- **Branch**: `rollback/fix-dark-light-mode-ai-panel-persisten-2026-04-28-a0ed489`
+- **Commit**: `a0ed48942e631948ffc6f7926f7546109d1eb084`
+- **Subject**: fix: dark/light mode, AI panel persistence, page transitions, CSS syntax
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
