@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 175 | `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-04-28-f0a31bf` | `f0a31bf` | docs(auto): regenerate README.md [skip ci] | 2026-04-28 |
 | 174 | `rollback/chore-placeholder-will-use-full-file-p-2026-04-28-f1c8f57` | `f1c8f57` | chore: placeholder — will use full file push | 2026-04-28 |
 | 173 | `rollback/chore-record-branch-cleanup-for-rollba-2026-04-28-bd57230` | `bd57230` | chore: record branch cleanup for rollback reference (2026-04-28) | 2026-04-28 |
 | 172 | `rollback/feat-move-pv-sizing-from-navbar-into-s-2026-04-28-0c7a21c` | `0c7a21c` | feat: move PV Sizing from navbar into System Configuration page | 2026-04-28 |
@@ -1805,6 +1806,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/chore-placeholder-will-use-full-file-p-2026-04-28-f1c8f57`
 - **Commit**: `f1c8f57ffb989fb88fc987c2db506b9e6003c40d`
 - **Subject**: chore: placeholder — will use full file push
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #175 — `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-04-28-f0a31bf`
+
+- **Branch**: `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-04-28-f0a31bf`
+- **Commit**: `f0a31bf0adb5cd6910b380c18f2c37fea8ff0b15`
+- **Subject**: docs(auto): regenerate README.md [skip ci]
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
