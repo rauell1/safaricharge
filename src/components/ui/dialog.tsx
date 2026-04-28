@@ -38,7 +38,11 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/60 backdrop-blur-sm",
+        // z-[199]: sits above sidebar (z-40) and header (z-40) but just
+        // below DialogContent (z-[200]) so the backdrop renders correctly.
+        "data-[state=open]:animate-in data-[state=closed]:animate-out",
+        "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+        "fixed inset-0 z-[199] bg-black/60 backdrop-blur-sm",
         className
       )}
       {...props}
@@ -64,10 +68,20 @@ function DialogContent({
           "data-[state=open]:animate-in data-[state=closed]:animate-out",
           "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
           "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-          "fixed top-[50%] left-[50%] z-50",
+          // ── Positioning: always perfectly centred in viewport ────────────
+          // z-[200]: above sidebar (z-40), header (z-40), overlay (z-[199]).
+          // Without this the dialog can render behind the sidebar or header,
+          // causing the white-background-only-on-one-side issue.
+          "fixed top-[50%] left-[50%] z-[200]",
           "w-full max-w-[calc(100%-2rem)] sm:max-w-lg",
           "translate-x-[-50%] translate-y-[-50%]",
           "grid gap-4 p-6 duration-200",
+          // ── Scroll safety: tall dialogs must not overflow the viewport ───
+          // max-h-[90vh] + overflow-y-auto ensures the Save Scenario dialog,
+          // Import JSON dialog, and any future tall dialogs scroll internally
+          // instead of overflowing outside the card background, which caused
+          // text to bleed over the dashboard behind the dialog.
+          "max-h-[90vh] sm:max-h-[85vh] overflow-y-auto",
           // ── Theme-aware colours — use project design tokens ──────────────
           // bg-[var(--bg-card)] replaces bg-background so the dialog
           // correctly follows the active light / dark theme token instead
