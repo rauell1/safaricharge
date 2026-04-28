@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 172 | `rollback/feat-move-pv-sizing-from-navbar-into-s-2026-04-28-0c7a21c` | `0c7a21c` | feat: move PV Sizing from navbar into System Configuration page | 2026-04-28 |
 | 171 | `rollback/feat-move-save-scenario-from-navbar-mo-2026-04-28-cdef08f` | `cdef08f` | feat: move Save Scenario from navbar modal into Scenarios page inline section | 2026-04-28 |
 | 170 | `rollback/fix-pin-all-radix-portals-to-modal-roo-2026-04-28-43cc568` | `43cc568` | fix: pin all Radix portals to #modal-root at <body> level | 2026-04-28 |
 | 169 | `rollback/fix-remove-overflow-x-hidden-and-trans-2026-04-28-52c9631` | `52c9631` | fix: remove overflow-x-hidden and transform-creating wrappers from DashboardLayout | 2026-04-28 |
@@ -1775,6 +1776,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/feat-move-save-scenario-from-navbar-mo-2026-04-28-cdef08f`
 - **Commit**: `cdef08f6eee0bfe72ed19087cdfe71392dd49cf5`
 - **Subject**: feat: move Save Scenario from navbar modal into Scenarios page inline section
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #172 — `rollback/feat-move-pv-sizing-from-navbar-into-s-2026-04-28-0c7a21c`
+
+- **Branch**: `rollback/feat-move-pv-sizing-from-navbar-into-s-2026-04-28-0c7a21c`
+- **Commit**: `0c7a21c536f459cef61a50321444f9808396f359`
+- **Subject**: feat: move PV Sizing from navbar into System Configuration page
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
 
