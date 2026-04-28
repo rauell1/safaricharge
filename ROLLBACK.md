@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 181 | `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-04-28-7234908` | `7234908` | docs(auto): regenerate README.md [skip ci] | 2026-04-28 |
 | 180 | `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-04-28-0611f93` | `0611f93` | docs(auto): regenerate README.md [skip ci] | 2026-04-28 |
 | 179 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-28-e0ba091` | `e0ba091` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-04-28 |
 | 178 | `rollback/merge-pull-request-239-from-rauell1-co-2026-04-28-df9edbe` | `df9edbe` | Merge pull request #239 from rauell1/codex/add-smart-grid-integration-layer | 2026-04-28 |
@@ -1864,6 +1865,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 - **Branch**: `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-04-28-0611f93`
 - **Commit**: `0611f9356dbe87125a4adfd9c42ac0efa031de66`
+- **Subject**: docs(auto): regenerate README.md [skip ci]
+- **Date**: 2026-04-28
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #181 — `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-04-28-7234908`
+
+- **Branch**: `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-04-28-7234908`
+- **Commit**: `72349088bd29cb37396484ece85bf7f196054479`
 - **Subject**: docs(auto): regenerate README.md [skip ci]
 - **Date**: 2026-04-28
 - **Auto-generated**: yes (by update-rollback.yml)
