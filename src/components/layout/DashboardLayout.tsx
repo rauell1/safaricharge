@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { DashboardSidebar, type DashboardSection, type SidebarContextMetric } from './DashboardSidebar';
@@ -96,8 +96,18 @@ function DashboardLayoutInner({
   return (
     <SidebarProvider defaultOpen={true}>
       {/*
-        AI panel lives OUTSIDE the page router subtree so it persists
+        AI panel + FAB live OUTSIDE the page router subtree so they persist
         across all page navigations without remounting.
+
+        IMPORTANT: Do NOT wrap these in any element that has:
+          - transform / translate / rotate / scale
+          - overflow: hidden  (makes element a containing block for fixed children)
+          - will-change: transform
+          - filter
+          - perspective
+        Any of those properties would cause Radix fixed portals (Dialog,
+        Sheet, Tooltip, etc.) to measure their position against that element
+        instead of the true viewport, collapsing them to a thin strip.
       */}
       <SafariChargeAIAssistant
         isOpen={aiOpen}
@@ -110,21 +120,24 @@ function DashboardLayoutInner({
         systemConfig={systemConfig}
       />
 
-      {/*
-        FAB — floating AI toggle button.
-        Desktop only (hidden on mobile via CSS).
-        Automatically hides when the AI panel is open (shows "Close AI" instead).
-        Persists across all page navigations.
-      */}
       <AIFab />
 
-      {/* Mobile bottom nav */}
       <MobileBottomNav
         activeSection={activeSection}
         onSectionChange={onSectionChange}
       />
 
-      <div className="flex min-h-screen w-full overflow-x-hidden bg-[var(--bg-primary)] text-[var(--text-primary)]">
+      {/*
+        Layout shell — flex row, full viewport.
+
+        RULES for this element and all its children:
+        ✅  Use `min-width: 0` to prevent flex children from overflowing
+        ✅  Use `.page-shell` (globals.css) for the overflow-x guard on content
+        ❌  NO overflow-x: hidden here — would create a containing block for
+            fixed portals (Dialog etc.) and clip them to this box's width
+        ❌  NO transform-based animations on this element or SidebarInset
+      */}
+      <div className="flex min-h-screen w-full bg-[var(--bg-primary)] text-[var(--text-primary)]">
         {/* Sidebar — desktop only */}
         <div className="hidden md:flex">
           <DashboardSidebar
@@ -134,8 +147,17 @@ function DashboardLayoutInner({
           />
         </div>
 
-        <SidebarInset className="flex-1 min-w-0 overflow-x-hidden flex flex-col">
-          <div className="relative min-h-screen w-full min-w-0 overflow-x-hidden pb-16 md:pb-0">
+        {/*
+          SidebarInset — the main content column.
+
+          isolation-isolate creates a proper CSS stacking context so
+          z-index layers inside (cards, sticky headers, etc.) work
+          correctly, WITHOUT using transform or overflow:hidden which
+          would break fixed-position portals.
+        */}
+        <SidebarInset className="flex-1 min-w-0 flex flex-col isolate">
+          {/* Single content wrapper — no overflow:hidden, no transform */}
+          <div className="relative min-h-screen w-full min-w-0 pb-16 md:pb-0">
             <div className="page-shell h-full">
               <div className="flex flex-col h-full">
                 {children}
