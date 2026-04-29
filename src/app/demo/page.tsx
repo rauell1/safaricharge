@@ -83,8 +83,9 @@ import { ValidationPanel } from '@/components/simulation/ValidationPanel';
 import { SafariChargeAIAssistant } from '@/components/ai/AIAssistant';
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Force dynamic rendering - no static generation
-export const dynamic = 'force-dynamic';
+// NOTE: 'export const dynamic' is intentionally omitted here.
+// This is a 'use client' component — dynamic rendering directives must live
+// in a server wrapper (e.g. src/app/demo/layout.tsx or a server page.tsx).
 
 // Default Nairobi solar data for report generation
 const NAIROBI_SOLAR_DATA: SolarIrradianceData = {
