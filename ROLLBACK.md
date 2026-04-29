@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 186 | `rollback/chore-add-forecasting-tsconfig-path-al-2026-04-29-a532ded` | `a532ded` | chore: add @/forecasting tsconfig path alias + fix tailwind module type warning | 2026-04-29 |
 | 185 | `rollback/fix-correct-relative-import-path-for-k-2026-04-29-afccb66` | `afccb66` | fix: correct relative import path for kenya-irradiance-presets.json in PVSizingSection | 2026-04-29 |
 | 184 | `rollback/fix-resolve-turbopack-barrel-re-export-2026-04-29-efe1aa1` | `efe1aa1` | fix: resolve Turbopack barrel re-export errors for demo/page default export | 2026-04-29 |
 | 183 | `rollback/fix-remove-export-const-dynamic-from-u-2026-04-29-aa65532` | `aa65532` | fix: remove export const dynamic from use client file (Turbopack build error) | 2026-04-29 |
@@ -1915,6 +1916,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-correct-relative-import-path-for-k-2026-04-29-afccb66`
 - **Commit**: `afccb660db3a82bf327c8270606ee422fcc7525f`
 - **Subject**: fix: correct relative import path for kenya-irradiance-presets.json in PVSizingSection
+- **Date**: 2026-04-29
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #186 — `rollback/chore-add-forecasting-tsconfig-path-al-2026-04-29-a532ded`
+
+- **Branch**: `rollback/chore-add-forecasting-tsconfig-path-al-2026-04-29-a532ded`
+- **Commit**: `a532ded0902ae93dc4891e0faa5101d3284abb82`
+- **Subject**: chore: add @/forecasting tsconfig path alias + fix tailwind module type warning
 - **Date**: 2026-04-29
 - **Auto-generated**: yes (by update-rollback.yml)
 
