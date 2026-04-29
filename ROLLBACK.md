@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 184 | `rollback/fix-resolve-turbopack-barrel-re-export-2026-04-29-efe1aa1` | `efe1aa1` | fix: resolve Turbopack barrel re-export errors for demo/page default export | 2026-04-29 |
 | 183 | `rollback/fix-remove-export-const-dynamic-from-u-2026-04-29-aa65532` | `aa65532` | fix: remove export const dynamic from use client file (Turbopack build error) | 2026-04-29 |
 | 182 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-04-29-f919627` | `f919627` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-04-29 |
 | 181 | `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-04-28-7234908` | `7234908` | docs(auto): regenerate README.md [skip ci] | 2026-04-28 |
@@ -1895,6 +1896,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-remove-export-const-dynamic-from-u-2026-04-29-aa65532`
 - **Commit**: `aa65532e4fc649c4bd80252c3e8cc4bf294b6ab2`
 - **Subject**: fix: remove export const dynamic from use client file (Turbopack build error)
+- **Date**: 2026-04-29
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #184 — `rollback/fix-resolve-turbopack-barrel-re-export-2026-04-29-efe1aa1`
+
+- **Branch**: `rollback/fix-resolve-turbopack-barrel-re-export-2026-04-29-efe1aa1`
+- **Commit**: `efe1aa19261946de6ebfbacab47d5c6fb551b58c`
+- **Subject**: fix: resolve Turbopack barrel re-export errors for demo/page default export
 - **Date**: 2026-04-29
 - **Auto-generated**: yes (by update-rollback.yml)
 
