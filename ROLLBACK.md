@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 188 | `rollback/fix-proper-server-component-wrappers-w-2026-04-29-dd4f2f8` | `dd4f2f8` | fix: proper server-component wrappers with force-dynamic + ssr:false for all dashboard pages | 2026-04-29 |
 | 187 | `rollback/fix-force-dynamic-on-all-dashboard-pag-2026-04-29-e583713` | `e583713` | fix: force-dynamic on all dashboard pages + guard demo/page .counties access | 2026-04-29 |
 | 186 | `rollback/chore-add-forecasting-tsconfig-path-al-2026-04-29-a532ded` | `a532ded` | chore: add @/forecasting tsconfig path alias + fix tailwind module type warning | 2026-04-29 |
 | 185 | `rollback/fix-correct-relative-import-path-for-k-2026-04-29-afccb66` | `afccb66` | fix: correct relative import path for kenya-irradiance-presets.json in PVSizingSection | 2026-04-29 |
@@ -1935,6 +1936,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-force-dynamic-on-all-dashboard-pag-2026-04-29-e583713`
 - **Commit**: `e58371357232c0d17ff18092cf779e43d1adabd2`
 - **Subject**: fix: force-dynamic on all dashboard pages + guard demo/page .counties access
+- **Date**: 2026-04-29
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #188 — `rollback/fix-proper-server-component-wrappers-w-2026-04-29-dd4f2f8`
+
+- **Branch**: `rollback/fix-proper-server-component-wrappers-w-2026-04-29-dd4f2f8`
+- **Commit**: `dd4f2f804757671bbef679b8456f6c9c2c54856f`
+- **Subject**: fix: proper server-component wrappers with force-dynamic + ssr:false for all dashboard pages
 - **Date**: 2026-04-29
 - **Auto-generated**: yes (by update-rollback.yml)
 
