@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { DashboardSidebar, type DashboardSection, type SidebarContextMetric } from './DashboardSidebar';
 import { MobileBottomNav } from './MobileBottomNav';
-import { AIFab } from './AIFab';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
 import { clearExternalUploadActive, isExternalUploadActive } from '@/lib/external-upload-guard';
 import { SIZING_SIMULATOR_STORAGE_KEY } from '@/lib/pv-sizing';
@@ -94,7 +93,7 @@ function DashboardLayoutInner({
   return (
     <SidebarProvider defaultOpen={true}>
       {/*
-        AI panel + FAB live OUTSIDE the page router subtree so they
+        AI panel lives OUTSIDE the page router subtree so it
         persist across all page navigations without remounting.
 
         NOTE: Do NOT wrap in any element with transform / overflow:hidden /
@@ -112,9 +111,6 @@ function DashboardLayoutInner({
         minuteData={minuteData}
         systemConfig={systemConfig}
       />
-
-      <AIFab />
-
       <MobileBottomNav
         activeSection={activeSection}
         onSectionChange={onSectionChange}

@@ -377,30 +377,31 @@ function PowerFlowGraph({
   ];
 
   return (
-    <svg viewBox="0 0 320 120" className="w-full" role="img" aria-label="Power flow diagram">
+    <svg viewBox="0 0 360 140" className="w-full overflow-visible" role="img" aria-label="Power flow diagram" preserveAspectRatio="xMidYMid meet">
       {/* Lines */}
-      <line x1="90" y1="60" x2="160" y2="60" stroke="var(--border)" strokeWidth="2" />
-      <line x1="230" y1="60" x2="300" y2="60" stroke="var(--border)" strokeWidth="2" />
+      <line x1="96" y1="70" x2="148" y2="70" stroke="var(--border)" strokeWidth="2" />
+      <line x1="212" y1="70" x2="264" y2="70" stroke="var(--border)" strokeWidth="2" />
       {/* Line loss labels */}
-      <text x="125" y="50" fontSize="9" fill="var(--text-tertiary)" textAnchor="middle">
+      <text x="122" y="58" fontSize="10" fill="var(--text-secondary)" textAnchor="middle">
         {lineLoss1.toFixed(2)} kW
       </text>
-      <text x="265" y="50" fontSize="9" fill="var(--text-tertiary)" textAnchor="middle">
+      <text x="238" y="58" fontSize="10" fill="var(--text-secondary)" textAnchor="middle">
         {lineLoss2.toFixed(2)} kW
       </text>
       {/* Nodes */}
       {buses.map((b, i) => {
-        const cx = i === 0 ? 60 : i === 1 ? 185 : 310;
+        const cx = i === 0 ? 64 : i === 1 ? 180 : 296;
+        const cy = 70;
         const loadRatio = (b.gen + b.load) > 0 ? b.load / (b.gen + b.load + 0.001) : 0.5;
-        const r = 18 + loadRatio * 12;
+        const r = 30;
         const color = nodeColor(b.gen, b.load);
         return (
           <g key={b.id}>
-            <circle cx={cx} cy={60} r={r} fill={color} fillOpacity={0.2} stroke={color} strokeWidth="1.5" />
-            <text x={cx} y={56} fontSize="9" fill="var(--text-primary)" textAnchor="middle" fontWeight="600">
+            <circle cx={cx} cy={cy} r={r} fill={color} fillOpacity={0.16} stroke={color} strokeWidth="1.8" />
+            <text x={cx} y={cy - 4} fontSize="10" fill="var(--text-primary)" textAnchor="middle" fontWeight="700">
               {b.id}
             </text>
-            <text x={cx} y={68} fontSize="8" fill="var(--text-tertiary)" textAnchor="middle">
+            <text x={cx} y={cy + 11} fontSize="9" fill="var(--text-secondary)" textAnchor="middle">
               {(b.gen - b.load).toFixed(1)} kW
             </text>
           </g>
@@ -592,27 +593,27 @@ export default function EnergyIntelligencePage() {
     <DashboardLayout activeSection="energy-intelligence">
       {/* ─── Hero ────────────────────────────────────────────────────── */}
       <div className="px-4 sm:px-6 pt-6">
-        <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-gradient-to-br from-[#0f172a] via-[#0c1324] to-[#0a0f1d] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+        <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] shadow-card">
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 opacity-70"
+            className="pointer-events-none absolute inset-0 opacity-100"
             style={{
               background:
-                'radial-gradient(circle at 18% 22%, rgba(16,185,129,0.25), transparent 45%), radial-gradient(circle at 82% 18%, rgba(59,130,246,0.18), transparent 40%), radial-gradient(circle at 40% 88%, rgba(245,158,11,0.16), transparent 35%)',
+                'linear-gradient(135deg, var(--battery-soft), transparent 46%), linear-gradient(225deg, var(--grid-soft), transparent 48%), linear-gradient(0deg, var(--warning-soft), transparent 70%)',
             }}
           />
           <div className="relative px-5 sm:px-8 py-7 sm:py-8">
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(32rem,1fr)_minmax(22rem,26rem)] lg:items-center">
               <div className="w-full min-w-0 max-w-none space-y-4 lg:min-w-[32rem] lg:max-w-2xl">
                 <div className="flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
-                  <span className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-white/5 px-3 py-1 text-[var(--text-primary)]/90">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-1 text-[var(--text-primary)]">
                     <Zap className="h-3.5 w-3.5 text-[var(--solar)]" />
                     Energy storage
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-white/5 px-3 py-1">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-1">
                     Battery &amp; grid stability
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-white/5 px-3 py-1">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-1">
                     EV fleet charging
                   </span>
                 </div>
@@ -629,7 +630,7 @@ export default function EnergyIntelligencePage() {
                   {['Live telemetry', '15-min resolution', 'Kenya grid + EV ready'].map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-white/5 px-3 py-1"
+                    className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-1"
                     >
                       <span className="h-1.5 w-1.5 rounded-full bg-[var(--battery)] animate-pulse-glow" />
                       {tag}
@@ -645,7 +646,7 @@ export default function EnergyIntelligencePage() {
                     variant="outline"
                     size="sm"
                     onClick={reset}
-                    className="gap-1.5 border-[var(--border)] bg-white/5 hover:bg-[var(--bg-card-hover)]"
+                    className="gap-1.5 border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)]"
                   >
                     <RefreshCw className="h-3.5 w-3.5" />
                     Reset scenario
@@ -657,7 +658,7 @@ export default function EnergyIntelligencePage() {
                 {heroCards.map((card) => (
                   <div
                     key={card.title}
-                    className="min-w-0 rounded-xl border border-[var(--border)] bg-white/5 backdrop-blur-sm p-4 shadow-sm"
+                    className="min-w-0 rounded-xl border border-[var(--border)] bg-[var(--bg-card-muted)] backdrop-blur-sm p-4 shadow-sm"
                   >
                     <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] break-normal whitespace-normal">
                       {card.title}

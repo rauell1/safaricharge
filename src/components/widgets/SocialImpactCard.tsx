@@ -32,10 +32,10 @@ export function SocialImpactCard({
 }: SocialImpactCardProps) {
   return (
     <TooltipProvider delayDuration={180}>
-      <Card className="border-amber-200/70 bg-gradient-to-br from-amber-50 via-orange-50 to-emerald-50 shadow-card dark:border-amber-900/40 dark:from-amber-950/40 dark:via-orange-950/25 dark:to-emerald-950/30">
+      <Card className="border-[var(--border)] bg-[var(--bg-card)] shadow-card">
         <CardHeader className="pb-3">
           <CardTitle className="flex flex-wrap items-center gap-2 text-[var(--text-primary)]">
-            <Sun className="h-5 w-5 text-amber-500" />
+            <Sun className="h-5 w-5 text-[var(--solar)]" />
             Kenya Social Impact
             <Tooltip>
               <TooltipTrigger asChild>
@@ -48,7 +48,7 @@ export function SocialImpactCard({
                 <a className="ml-1 underline" href="https://globalsolaratlas.info/" target="_blank" rel="noreferrer">Global Solar Atlas</a>
               </TooltipContent>
             </Tooltip>
-            <Badge className="ml-auto bg-amber-100 text-amber-800 hover:bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200">
+            <Badge className="ml-auto border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-muted)]">
               Indicative impact estimates
             </Badge>
           </CardTitle>
@@ -56,7 +56,7 @@ export function SocialImpactCard({
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
             <MetricTile
-              icon={<Home className="h-4 w-4 text-amber-700" />}
+              icon={<Home className="h-4 w-4 text-[var(--solar)]" />}
               label="Equivalent households powered"
               value={formatValue(householdsPowered, 1)}
               unit="households/year"
@@ -64,7 +64,7 @@ export function SocialImpactCard({
               sourceHref="https://www.worldbank.org/en/country/kenya/overview"
             />
             <MetricTile
-              icon={<Zap className="h-4 w-4 text-orange-700" />}
+              icon={<Zap className="h-4 w-4 text-[var(--warning)]" />}
               label="Kerosene displaced"
               value={formatValue(keroseneDisplacedLiters)}
               unit="L/year avoided"
@@ -72,7 +72,7 @@ export function SocialImpactCard({
               sourceHref="https://www.m-kopa.com/impact"
             />
             <MetricTile
-              icon={<Leaf className="h-4 w-4 text-emerald-700" />}
+              icon={<Leaf className="h-4 w-4 text-[var(--battery)]" />}
               label="CO₂ avoided"
               value={formatValue(co2AvoidedKg)}
               unit="kg/year"
@@ -80,7 +80,7 @@ export function SocialImpactCard({
               sourceHref="https://www.epra.go.ke/"
             />
             <MetricTile
-              icon={<TrendingUp className="h-4 w-4 text-lime-700" />}
+              icon={<TrendingUp className="h-4 w-4 text-[var(--success)]" />}
               label="Estimated income uplift reference"
               value="77%"
               unit="reported uplift"
@@ -89,12 +89,12 @@ export function SocialImpactCard({
             />
           </div>
 
-          <div className="rounded-xl border border-amber-200/80 bg-white/80 p-3 text-sm dark:border-amber-900/60 dark:bg-slate-900/60">
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card-muted)] p-3 text-sm">
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-semibold text-[var(--text-primary)]">{countyName} context:</span>
               <span className="text-[var(--text-secondary)]">{countyNote}</span>
               {isKosapTarget && (
-                <Badge variant="secondary" className="border border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-700 dark:bg-amber-900/40 dark:text-amber-100">
+                <Badge variant="secondary" className="border border-[var(--border)] bg-[var(--warning-soft)] text-[var(--text-primary)]">
                   KOSAP target county
                 </Badge>
               )}
@@ -106,9 +106,9 @@ export function SocialImpactCard({
             </div>
           </div>
 
-          <div className="rounded-xl border border-orange-200/70 bg-orange-50/90 p-3 text-xs text-[var(--text-secondary)] dark:border-orange-900/60 dark:bg-orange-950/30">
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card-muted)] p-3 text-xs text-[var(--text-secondary)]">
             <div className="flex items-start gap-2">
-              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-orange-600" />
+              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--warning)]" />
               <div className="space-y-1">
                 <p>
                   Kenya&apos;s electrification rate reached 79% by 2023, up from ~25% a decade ago
@@ -121,7 +121,7 @@ export function SocialImpactCard({
                   <a className="underline" href="https://www.epra.go.ke/" target="_blank" rel="noreferrer">EPRA, 2025</a>
                   ) while off-grid programs like KOSAP continue extending access.
                 </p>
-                <p className="font-medium text-orange-800 dark:text-orange-300">
+                <p className="font-medium text-[var(--text-primary)]">
                   Annual solar generation used in this estimate: {formatValue(annualSolarGeneratedKwh)} kWh/year.
                 </p>
               </div>
@@ -149,7 +149,7 @@ function MetricTile({
   sourceHref?: string;
 }) {
   return (
-    <div className="rounded-xl border border-amber-200/80 bg-white/80 p-3 dark:border-amber-900/60 dark:bg-slate-900/60">
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3">
       <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-[var(--text-secondary)]">
         {icon}
         <span>{label}</span>

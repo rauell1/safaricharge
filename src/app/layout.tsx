@@ -4,7 +4,6 @@ import { Inter } from "next/font/google";
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AIAssistantProvider } from "@/contexts/AIAssistantContext";
-import { AIFloatingButton } from "@/components/ai/AIFloatingButton";
 import "./globals.css";
 
 const inter = Inter({
@@ -50,7 +49,6 @@ export default function RootLayout({
         <ThemeProvider>
           <AIAssistantProvider>
             {children}
-            <AIFloatingButton />
           </AIAssistantProvider>
           <Analytics />
           <SpeedInsights />

@@ -7,33 +7,30 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   FlaskConical,
+  SlidersHorizontal,
   BookMarked,
   Lightbulb,
-  Bot,
   Zap,
   TrendingUp,
+  MoreHorizontal,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DashboardSection } from './DashboardSidebar';
-import { useAIAssistant } from '@/contexts/AIAssistantContext';
 
-type MobileNavItemId = DashboardSection | 'finance-parent';
+type MobileNavItemId = DashboardSection | 'finance-parent' | 'more-parent';
 
 const NAV_ITEMS: Array<{
   id: MobileNavItemId;
   label: string;
   icon: React.ElementType;
   href?: string;
-  isAiToggle?: boolean;
 }> = [
   { id: 'dashboard',           label: 'Home',      icon: LayoutDashboard, href: '/dashboard' },
   { id: 'simulation',          label: 'Simulate',  icon: FlaskConical,    href: '/simulation' },
+  { id: 'configuration',       label: 'Config',    icon: SlidersHorizontal, href: '/configuration' },
   { id: 'energy-intelligence', label: 'Energy',    icon: Zap,             href: '/energy-intelligence' },
   { id: 'finance-parent',      label: 'Finance',   icon: TrendingUp },
-  { id: 'scenarios',           label: 'Scenarios', icon: BookMarked,      href: '/scenarios' },
-  { id: 'recommendation',      label: 'Recs',      icon: Lightbulb,       href: '/recommendation' },
-  // AI item: toggles the slide-out panel instead of navigating
-  { id: 'ai-assistant',        label: 'AI',        icon: Bot,             isAiToggle: true },
+  { id: 'more-parent',         label: 'More',      icon: MoreHorizontal },
 ];
 
 const FINANCE_CHILD_ITEMS: Array<{
@@ -43,6 +40,16 @@ const FINANCE_CHILD_ITEMS: Array<{
 }> = [
   { id: 'financial', label: 'Live Results', href: '/live-results' },
   { id: 'financial-model', label: 'Planner', href: '/financial' },
+];
+
+const MORE_CHILD_ITEMS: Array<{
+  id: DashboardSection;
+  label: string;
+  href: string;
+  icon: React.ElementType;
+}> = [
+  { id: 'scenarios', label: 'Scenarios', href: '/scenarios', icon: BookMarked },
+  { id: 'recommendation', label: 'Recommendations', href: '/recommendation', icon: Lightbulb },
 ];
 
 interface MobileBottomNavProps {
@@ -56,10 +63,11 @@ export function MobileBottomNav({
 }: MobileBottomNavProps) {
   const pathname = usePathname();
   const [isFinanceMenuOpen, setIsFinanceMenuOpen] = useState(false);
-  const { isOpen: aiPanelOpen, toggleAI } = useAIAssistant();
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
   useEffect(() => {
     setIsFinanceMenuOpen(false);
+    setIsMoreMenuOpen(false);
   }, [pathname, activeSection]);
 
   return (
@@ -69,7 +77,7 @@ export function MobileBottomNav({
     >
       {NAV_ITEMS.map((item) => {
         const isFinanceParent = item.id === 'finance-parent';
-        const isAiToggle = item.isAiToggle === true;
+        const isMoreParent = item.id === 'more-parent';
 
         const isFinanceActive =
           activeSection === 'financial' ||
@@ -77,10 +85,16 @@ export function MobileBottomNav({
           !!pathname?.startsWith('/financial') ||
           !!pathname?.startsWith('/live-results');
 
-        const isActive = isAiToggle
-          ? aiPanelOpen
-          : isFinanceParent
+        const isMoreActive =
+          activeSection === 'scenarios' ||
+          activeSection === 'recommendation' ||
+          !!pathname?.startsWith('/scenarios') ||
+          !!pathname?.startsWith('/recommendation');
+
+        const isActive = isFinanceParent
             ? isFinanceActive || isFinanceMenuOpen
+            : isMoreParent
+              ? isMoreActive || isMoreMenuOpen
             : activeSection === item.id ||
               (item.href && item.href !== '/demo' && !!pathname?.startsWith(item.href));
 
@@ -110,18 +124,7 @@ export function MobileBottomNav({
 
         return (
           <div key={item.id} className="relative flex-1 flex items-stretch">
-            {isAiToggle ? (
-              // AI button: toggles panel, no navigation
-              <button
-                type="button"
-                onClick={toggleAI}
-                className="flex-1 flex items-stretch focus:outline-none active:bg-[var(--bg-card-muted)]/40 transition-colors"
-                aria-label={aiPanelOpen ? 'Close AI Assistant' : 'Open AI Assistant'}
-                aria-pressed={aiPanelOpen}
-              >
-                {inner}
-              </button>
-            ) : isFinanceParent ? (
+            {isFinanceParent ? (
               <>
                 <button
                   type="button"
@@ -151,6 +154,45 @@ export function MobileBottomNav({
                               : 'text-[var(--text-secondary)] hover:bg-[var(--bg-card-muted)]'
                           )}
                         >
+                          {child.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            ) : isMoreParent ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsMoreMenuOpen((prev) => !prev)}
+                  className="flex-1 flex items-stretch focus:outline-none active:bg-[var(--bg-card-muted)]/40 transition-colors"
+                  aria-label="More"
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  {inner}
+                </button>
+
+                {isMoreMenuOpen && (
+                  <div className="absolute bottom-full right-1 mb-2 w-52 rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] p-1 shadow-xl">
+                    {MORE_CHILD_ITEMS.map((child) => {
+                      const isChildActive =
+                        activeSection === child.id ||
+                        (!!child.href && !!pathname?.startsWith(child.href));
+                      const ChildIcon = child.icon;
+
+                      return (
+                        <Link
+                          key={child.id}
+                          href={child.href}
+                          className={cn(
+                            'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs transition-colors',
+                            isChildActive
+                              ? 'bg-[var(--bg-card)] text-[var(--battery)]'
+                              : 'text-[var(--text-secondary)] hover:bg-[var(--bg-card-muted)]'
+                          )}
+                        >
+                          <ChildIcon className="h-3.5 w-3.5" />
                           {child.label}
                         </Link>
                       );
