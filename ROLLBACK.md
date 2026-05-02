@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 178 | `rollback/fix-clean-dashboard-mobile-navigation-2026-05-02-d70f295` | `d70f295` | fix: clean dashboard mobile navigation and themed panels | 2026-05-02 |
 | 177 | `rollback/fix-complete-pv-sizing-configuration-m-2026-05-02-58f4b1a` | `58f4b1a` | fix: complete pv sizing configuration move | 2026-05-02 |
 | 176 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-02-03d0656` | `03d0656` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-02 |
 | 175 | `rollback/fix-normalize-lockfile-for-vercel-inst-2026-05-02-5724279` | `5724279` | fix: normalize lockfile for vercel install | 2026-05-02 |
@@ -1835,6 +1836,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-complete-pv-sizing-configuration-m-2026-05-02-58f4b1a`
 - **Commit**: `58f4b1a561f4d7561dea4823bff9701d9d852169`
 - **Subject**: fix: complete pv sizing configuration move
+- **Date**: 2026-05-02
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #178 — `rollback/fix-clean-dashboard-mobile-navigation-2026-05-02-d70f295`
+
+- **Branch**: `rollback/fix-clean-dashboard-mobile-navigation-2026-05-02-d70f295`
+- **Commit**: `d70f2956d82aacd61debb7cdbe0020dd6d00a420`
+- **Subject**: fix: clean dashboard mobile navigation and themed panels
 - **Date**: 2026-05-02
 - **Auto-generated**: yes (by update-rollback.yml)
 
