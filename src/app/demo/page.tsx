@@ -57,6 +57,7 @@ import FinancialDashboard from '@/components/dashboard/FinancialDashboard';
 import { buildFinancialSnapshot, type FinancialInputs } from '@/lib/financial-dashboard';
 import { computeProfessionalEngineeringKpis } from '@/lib/engineeringKpis';
 import { LoadConfigComponents } from '@/components/simulation/LoadConfigComponents';
+import { PVSizingSection } from '@/components/configuration/PVSizingSection';
 import { RecommendationComponents } from '@/components/energy/RecommendationComponents';
 import { SimulationNodes } from '@/components/simulation/SimulationNodes';
 import { ValidationPanel } from '@/components/simulation/ValidationPanel';
@@ -157,6 +158,7 @@ type DemoIntegratedShellProps = {
 
 function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [activeSection, setActiveSection] = useState<DashboardSection>(initialSection);
   const [financialInputs, setFinancialInputs] = useState<FinancialInputs>({
     chargingTariffKes: 25,
@@ -171,6 +173,51 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
       router.push('/scenarios');
     }
   }, [activeSection, router]);
+
+  useEffect(() => {
+    const payload = parseSimulatorSizingPayload(localStorage.getItem(SIZING_SIMULATOR_STORAGE_KEY));
+    if (!payload) return;
+
+    localStorage.removeItem(SIZING_SIMULATOR_STORAGE_KEY);
+
+    const store = useEnergySystemStore.getState();
+    const nextBatteryCapacity = payload.systemType === 'off-grid'
+      ? (payload.batteryCapacityKwh ?? store.fullSystemConfig.battery.capacityKwh)
+      : store.fullSystemConfig.battery.capacityKwh;
+
+    const nextFullSystemConfig = {
+      ...store.fullSystemConfig,
+      solar: {
+        ...store.fullSystemConfig.solar,
+        panelCount: payload.panelCount,
+        panelWattage: payload.panelWattage,
+        totalCapacityKw: payload.requiredPvCapacityKw,
+      },
+      inverter: {
+        ...store.fullSystemConfig.inverter,
+        capacityKw: Math.max(1, Number((payload.requiredPvCapacityKw * 0.9).toFixed(2))),
+      },
+      battery: {
+        ...store.fullSystemConfig.battery,
+        capacityKwh: nextBatteryCapacity,
+      },
+    };
+
+    store.updateFullSystemConfig(nextFullSystemConfig);
+    store.updateSystemConfig({
+      solarCapacityKW: payload.requiredPvCapacityKw,
+      inverterKW: nextFullSystemConfig.inverter.capacityKw,
+      batteryCapacityKWh: nextBatteryCapacity,
+    });
+    store.updateNode('solar', { capacityKW: payload.requiredPvCapacityKw });
+    store.updateNode('battery', { capacityKWh: nextBatteryCapacity });
+    store.setSimulationState({ isAutoMode: true });
+
+    toast({
+      title: 'Sizing loaded',
+      description: `${payload.county} sizing preset loaded and simulation started.`,
+    });
+  }, [toast]);
 
   return (
     <DashboardLayout activeSection={activeSection} onSectionChange={setActiveSection} contextualMetrics={[]}>
@@ -253,54 +300,6 @@ function DemoDashboardView({
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [activeLocation, setActiveLocation] = useState<LocationOption>(DEFAULT_LOCATION);
-
-  useEffect(() => {
-    const payload = parseSimulatorSizingPayload(localStorage.getItem(SIZING_SIMULATOR_STORAGE_KEY));
-    if (!payload) return;
-
-    localStorage.removeItem(SIZING_SIMULATOR_STORAGE_KEY);
-
-    const store = useEnergySystemStore.getState();
-    const nextBatteryCapacity = payload.systemType === 'off-grid'
-      ? (payload.batteryCapacityKwh ?? store.fullSystemConfig.battery.capacityKwh)
-      : store.fullSystemConfig.battery.capacityKwh;
-
-    const nextFullSystemConfig = {
-      ...store.fullSystemConfig,
-      solar: {
-        ...store.fullSystemConfig.solar,
-        panelCount: payload.panelCount,
-        panelWattage: payload.panelWattage,
-        totalCapacityKw: payload.requiredPvCapacityKw,
-      },
-      inverter: {
-        ...store.fullSystemConfig.inverter,
-        capacityKw: Math.max(1, Number((payload.requiredPvCapacityKw * 0.9).toFixed(2))),
-      },
-      battery: {
-        ...store.fullSystemConfig.battery,
-        capacityKwh: nextBatteryCapacity,
-      },
-    };
-
-    store.updateFullSystemConfig(nextFullSystemConfig);
-    store.updateSystemConfig({
-      solarCapacityKW: payload.requiredPvCapacityKw,
-      inverterKW: nextFullSystemConfig.inverter.capacityKw,
-      batteryCapacityKWh: nextBatteryCapacity,
-    });
-    store.updateNode('solar', { capacityKW: payload.requiredPvCapacityKw });
-    store.updateNode('battery', { capacityKWh: nextBatteryCapacity });
-    store.setSimulationState({ isAutoMode: true });
-
-    const matchedLocation = KENYA_LOCATIONS.find((loc) => loc.name === payload.county);
-    if (matchedLocation) setActiveLocation(matchedLocation);
-
-    toast({
-      title: 'Sizing loaded',
-      description: `${payload.county} sizing preset loaded and simulation started.`,
-    });
-  }, [toast]);
 
   const handleReset = useCallback(() => {
     const confirmed = window.confirm(
@@ -884,6 +883,7 @@ function DemoConfigurationView() {
           <h2 className="text-2xl font-bold text-[var(--text-primary)]">System Configuration</h2>
           <p className="text-sm text-[var(--text-tertiary)]">Configure solar panels, battery, EV chargers and load profiles</p>
         </div>
+        <PVSizingSection />
         <LoadConfigComponents />
       </div>
     </main>
