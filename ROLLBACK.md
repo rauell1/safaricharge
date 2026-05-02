@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 176 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-02-03d0656` | `03d0656` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-02 |
 | 175 | `rollback/fix-normalize-lockfile-for-vercel-inst-2026-05-02-5724279` | `5724279` | fix: normalize lockfile for vercel install | 2026-05-02 |
 | 174 | `rollback/fix-resolve-dependency-vulnerabilities-2026-05-02-b6dc6e0` | `b6dc6e0` | fix: resolve dependency vulnerabilities | 2026-05-02 |
 | 173 | `rollback/chore-record-branch-cleanup-for-rollba-2026-04-28-bd57230` | `bd57230` | chore: record branch cleanup for rollback reference (2026-04-28) | 2026-04-28 |
@@ -1815,6 +1816,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-normalize-lockfile-for-vercel-inst-2026-05-02-5724279`
 - **Commit**: `5724279d493acdafd2c0316034f38469865b8927`
 - **Subject**: fix: normalize lockfile for vercel install
+- **Date**: 2026-05-02
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #176 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-02-03d0656`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-02-03d0656`
+- **Commit**: `03d06568172f56e7035b4507e45c5abeadb21bf0`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-05-02
 - **Auto-generated**: yes (by update-rollback.yml)
 
