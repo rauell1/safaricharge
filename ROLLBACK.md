@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 175 | `rollback/fix-normalize-lockfile-for-vercel-inst-2026-05-02-5724279` | `5724279` | fix: normalize lockfile for vercel install | 2026-05-02 |
 | 174 | `rollback/fix-resolve-dependency-vulnerabilities-2026-05-02-b6dc6e0` | `b6dc6e0` | fix: resolve dependency vulnerabilities | 2026-05-02 |
 | 173 | `rollback/chore-record-branch-cleanup-for-rollba-2026-04-28-bd57230` | `bd57230` | chore: record branch cleanup for rollback reference (2026-04-28) | 2026-04-28 |
 | 172 | `rollback/feat-move-pv-sizing-from-navbar-into-s-2026-04-28-0c7a21c` | `0c7a21c` | feat: move PV Sizing from navbar into System Configuration page | 2026-04-28 |
@@ -1805,6 +1806,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/fix-resolve-dependency-vulnerabilities-2026-05-02-b6dc6e0`
 - **Commit**: `b6dc6e0a8e41f6c1aa3ba9e3b85034bfbdba5429`
 - **Subject**: fix: resolve dependency vulnerabilities
+- **Date**: 2026-05-02
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #175 — `rollback/fix-normalize-lockfile-for-vercel-inst-2026-05-02-5724279`
+
+- **Branch**: `rollback/fix-normalize-lockfile-for-vercel-inst-2026-05-02-5724279`
+- **Commit**: `5724279d493acdafd2c0316034f38469865b8927`
+- **Subject**: fix: normalize lockfile for vercel install
 - **Date**: 2026-05-02
 - **Auto-generated**: yes (by update-rollback.yml)
 
