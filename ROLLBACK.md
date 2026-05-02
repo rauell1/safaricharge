@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 177 | `rollback/fix-complete-pv-sizing-configuration-m-2026-05-02-58f4b1a` | `58f4b1a` | fix: complete pv sizing configuration move | 2026-05-02 |
 | 176 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-02-03d0656` | `03d0656` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-02 |
 | 175 | `rollback/fix-normalize-lockfile-for-vercel-inst-2026-05-02-5724279` | `5724279` | fix: normalize lockfile for vercel install | 2026-05-02 |
 | 174 | `rollback/fix-resolve-dependency-vulnerabilities-2026-05-02-b6dc6e0` | `b6dc6e0` | fix: resolve dependency vulnerabilities | 2026-05-02 |
@@ -1825,6 +1826,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-02-03d0656`
 - **Commit**: `03d06568172f56e7035b4507e45c5abeadb21bf0`
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-05-02
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #177 — `rollback/fix-complete-pv-sizing-configuration-m-2026-05-02-58f4b1a`
+
+- **Branch**: `rollback/fix-complete-pv-sizing-configuration-m-2026-05-02-58f4b1a`
+- **Commit**: `58f4b1a561f4d7561dea4823bff9701d9d852169`
+- **Subject**: fix: complete pv sizing configuration move
 - **Date**: 2026-05-02
 - **Auto-generated**: yes (by update-rollback.yml)
 
