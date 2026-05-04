@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 180 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-04-d36adcb` | `d36adcb` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-04 |
 | 179 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-03-2e3d934` | `2e3d934` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-03 |
 | 178 | `rollback/fix-clean-dashboard-mobile-navigation-2026-05-02-d70f295` | `d70f295` | fix: clean dashboard mobile navigation and themed panels | 2026-05-02 |
 | 177 | `rollback/fix-complete-pv-sizing-configuration-m-2026-05-02-58f4b1a` | `58f4b1a` | fix: complete pv sizing configuration move | 2026-05-02 |
@@ -1856,6 +1857,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Commit**: `2e3d934d18dc09b89af8f5a247418711c20e9e70`
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-05-03
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #180 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-04-d36adcb`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-04-d36adcb`
+- **Commit**: `d36adcb2315920138f67bf03e24966ab26a905f0`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-05-04
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
