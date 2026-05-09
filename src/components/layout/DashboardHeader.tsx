@@ -5,7 +5,6 @@ import {
   Calendar,
   Bell,
   RotateCcw,
-  MapPin,
   Target,
 } from 'lucide-react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -108,19 +107,9 @@ export function DashboardHeader({
             <span className="sm:hidden">{dateLabelShort}</span>
           </div>
 
-          <span
-            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold cursor-pointer transition-all hover:opacity-80"
-            style={{
-              background: 'var(--solar-soft)',
-              border: '1px solid rgba(245,158,11,0.20)',
-              color: 'var(--solar)',
-            }}
-            onClick={onLocationClick}
-            role="button"
-            aria-label={`Change location: ${locationName}`}
-          >
-            <MapPin style={{ width: 12, height: 12, flexShrink: 0 }} />
-            <span className="truncate max-w-[100px] sm:max-w-none">{locationName}</span>
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--battery)' }}>
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--battery)] animate-pulse shrink-0" />
+            Live simulation active
           </span>
         </div>
       </div>

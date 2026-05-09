@@ -29,7 +29,7 @@ import {
   useTimeRange,
 } from '@/hooks/useEnergySystem';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart3, PieChart, TrendingUp, Leaf, Car, Trees } from 'lucide-react';
+import { BarChart3, PieChart, TrendingUp, Leaf, Car, Trees, LayoutDashboard, FlaskConical, SlidersHorizontal, DollarSign, Lightbulb, Bot } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { EnergyReportModal } from '@/components/energy/EnergyReportModal';
 import type { SolarIrradianceData } from '@/lib/nasa-power-api';
@@ -759,19 +759,22 @@ function DemoDashboardView({
         <DashboardHeader
           currentDate={currentDate}
           onReset={handleReset}
-          onLocationClick={onLocationPickerOpen}
           onDownload={() => setIsReportOpen(true)}
           onSaveScenario={handleSaveScenario}
-          locationName={activeLocation.displayName}
           notifications={headerNotifications}
         />
 
         <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
           <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-bold text-[var(--text-primary)]">Energy Dashboard</h2>
-                <p className="text-sm text-[var(--text-tertiary)]">Monitor your solar energy system performance</p>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-[var(--battery-soft)] border border-[var(--battery)]/20 flex items-center justify-center shrink-0">
+                  <LayoutDashboard size={20} className="text-[var(--battery)]" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-[var(--text-primary)]">Energy Dashboard</h2>
+                  <p className="text-sm text-[var(--text-tertiary)]">Monitor your solar energy system in real time</p>
+                </div>
               </div>
               <TimeRangeSwitcher selectedRange={timeRange} onRangeChange={setTimeRange} />
             </div>
@@ -922,9 +925,14 @@ function DemoSimulationView({ onNavigateSection }: { onNavigateSection: (section
   return (
     <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
-        <div>
-          <h2 className="text-2xl font-bold text-[var(--text-primary)]">Simulation</h2>
-          <p className="text-sm text-[var(--text-tertiary)]">Core physics engine, scenario controls and system visualisation</p>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-[var(--grid-soft)] border border-[var(--grid)]/20 flex items-center justify-center shrink-0">
+            <FlaskConical size={20} className="text-[var(--grid)]" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-[var(--text-primary)]">Simulation</h2>
+            <p className="text-sm text-[var(--text-tertiary)]">Physics engine, scenario controls and system visualisation</p>
+          </div>
         </div>
         <Accordion type="single" collapsible defaultValue="simulation-core" className="rounded-xl border border-[var(--border)] px-4">
           <AccordionItem value="simulation-core">
@@ -949,10 +957,15 @@ function DemoConfigurationView({ activeLocation, onLocationPickerOpen }: { activ
   return (
     <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h2 className="text-2xl font-bold text-[var(--text-primary)]">System Configuration</h2>
-            <p className="text-sm text-[var(--text-tertiary)]">Configure solar panels, battery, EV chargers and load profiles</p>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-[var(--solar-soft)] border border-[var(--solar)]/20 flex items-center justify-center shrink-0">
+              <SlidersHorizontal size={20} className="text-[var(--solar)]" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-[var(--text-primary)]">System Configuration</h2>
+              <p className="text-sm text-[var(--text-tertiary)]">Configure solar panels, battery, EV chargers and load profiles</p>
+            </div>
           </div>
           <button
             type="button"
@@ -989,9 +1002,14 @@ function DemoFinancialView({
   return (
     <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
-        <div>
-          <h2 className="text-2xl font-bold text-[var(--text-primary)]">Finance: Live Simulation Results</h2>
-          <p className="text-sm text-[var(--text-tertiary)]">CAPEX, LCOE, NPV, IRR and payback derived from your current simulation run</p>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-[var(--battery-soft)] border border-[var(--battery)]/20 flex items-center justify-center shrink-0">
+            <DollarSign size={20} className="text-[var(--battery)]" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-[var(--text-primary)]">Finance: Live Results</h2>
+            <p className="text-sm text-[var(--text-tertiary)]">CAPEX, LCOE, NPV, IRR and payback from your current simulation</p>
+          </div>
         </div>
         <FinancialDashboard
           snapshot={snapshot}
@@ -1012,9 +1030,14 @@ function DemoRecommendationView() {
   return (
     <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
-        <div>
-          <h2 className="text-2xl font-bold text-[var(--text-primary)]">Get Recommendation</h2>
-          <p className="text-sm text-[var(--text-tertiary)]">AI-powered system sizing and configuration recommendations</p>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-[var(--ev-soft)] border border-[var(--ev)]/20 flex items-center justify-center shrink-0">
+            <Lightbulb size={20} className="text-[var(--ev)]" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-[var(--text-primary)]">Recommendations</h2>
+            <p className="text-sm text-[var(--text-tertiary)]">AI-powered sizing and configuration recommendations</p>
+          </div>
         </div>
         <RecommendationComponents solarData={NAIROBI_SOLAR_DATA} minuteData={minuteData as SimulationMinuteRecord[]} />
       </div>
@@ -1028,9 +1051,14 @@ function DemoAIAssistantView({ onNavigateSection }: { onNavigateSection: (sectio
   return (
     <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
-        <div>
-          <h2 className="text-2xl font-bold text-[var(--text-primary)]">AI Assistant</h2>
-          <p className="text-sm text-[var(--text-tertiary)]">Ask questions about your live energy system</p>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-[var(--ev-soft)] border border-[var(--ev)]/20 flex items-center justify-center shrink-0">
+            <Bot size={20} className="text-[var(--ev)]" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-[var(--text-primary)]">AI Assistant</h2>
+            <p className="text-sm text-[var(--text-tertiary)]">Ask questions about your live energy system</p>
+          </div>
         </div>
         <SafariChargeAIAssistant
           isOpen={true}
