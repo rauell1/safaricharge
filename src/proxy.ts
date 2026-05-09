@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 // Exact public paths or path prefixes that do NOT require authentication.
-const PUBLIC_EXACT: Set<string> = new Set(['/', '/login'])
+const PUBLIC_EXACT: Set<string> = new Set(['/', '/login', '/landing'])
 const PUBLIC_PREFIXES: string[] = ['/auth/', '/api/', '/forgot-password', '/signup']
 
 const SESSION_TTL_MS = 60 * 60 * 1000

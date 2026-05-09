@@ -77,13 +77,7 @@ function LoginForm() {
     return ''
   }, [searchParams])
 
-  // Default to 'register' so new visitors see account creation first.
-  // If they're returning after a session expiry, show sign-in directly.
-  const initialMode = useMemo<Mode>(() => {
-    const reason = searchParams.get('reason')
-    return reason === 'session_expired' ? 'signin' : 'register'
-  }, [searchParams])
-  const [mode, setMode] = useState<Mode>(initialMode)
+  const [mode, setMode] = useState<Mode>('signin')
   const [error, setError] = useState(initialError)
   const [success, setSuccess] = useState('')
   const [oauthLoading, setOauthLoading] = useState<OAuthProvider | null>(null)

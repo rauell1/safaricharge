@@ -12,6 +12,6 @@ export default async function RootPage() {
     redirect('/dashboard')
   }
 
-  // Everyone else sees the login page
-  redirect('/login')
+  // Everyone else sees the landing page
+  redirect('/landing')
 }
