@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 188 | `rollback/merge-pull-request-244-from-rauell1-cl-2026-05-09-f4b8ba5` | `f4b8ba5` | Merge pull request #244 from rauell1/claude/fix-bugs-improve-ui-G0zsr | 2026-05-09 |
 | 187 | `rollback/merge-fix-bugs-improve-ui-add-logout-e-2026-05-09-aa37128` | `aa37128` | Merge: fix bugs, improve UI, add logout, enforce mandatory signup | 2026-05-09 |
 | 186 | `rollback/merge-pull-request-242-from-rauell1-cl-2026-05-09-83682b1` | `83682b1` | Merge pull request #242 from rauell1/claude/fix-bugs-improve-ui-G0zsr | 2026-05-09 |
 | 185 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-09-f14e5dd` | `f14e5dd` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-09 |
@@ -1935,6 +1936,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/merge-fix-bugs-improve-ui-add-logout-e-2026-05-09-aa37128`
 - **Commit**: `aa3712880e16f3c166d8a14a9a8b2e1f55f83dc6`
 - **Subject**: Merge: fix bugs, improve UI, add logout, enforce mandatory signup
+- **Date**: 2026-05-09
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #188 — `rollback/merge-pull-request-244-from-rauell1-cl-2026-05-09-f4b8ba5`
+
+- **Branch**: `rollback/merge-pull-request-244-from-rauell1-cl-2026-05-09-f4b8ba5`
+- **Commit**: `f4b8ba5b62d0dcce7a49f9130dd71bfd5fe122aa`
+- **Subject**: Merge pull request #244 from rauell1/claude/fix-bugs-improve-ui-G0zsr
 - **Date**: 2026-05-09
 - **Auto-generated**: yes (by update-rollback.yml)
 
