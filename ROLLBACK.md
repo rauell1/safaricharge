@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 191 | `rollback/fix-bugs-improve-ui-location-sync-live-2026-05-10-2be6dcc` | `2be6dcc` | Fix bugs & improve UI: location sync, live nodes, dark mode (#247) | 2026-05-10 |
 | 190 | `rollback/merge-pull-request-246-from-rauell1-cl-2026-05-10-889a0db` | `889a0db` | Merge pull request #246 from rauell1/claude/fix-bugs-improve-ui-G0zsr | 2026-05-10 |
 | 189 | `rollback/merge-pull-request-245-from-rauell1-cl-2026-05-10-7e34dc3` | `7e34dc3` | Merge pull request #245 from rauell1/claude/fix-bugs-improve-ui-G0zsr | 2026-05-10 |
 | 188 | `rollback/merge-pull-request-244-from-rauell1-cl-2026-05-09-f4b8ba5` | `f4b8ba5` | Merge pull request #244 from rauell1/claude/fix-bugs-improve-ui-G0zsr | 2026-05-09 |
@@ -1965,6 +1966,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/merge-pull-request-246-from-rauell1-cl-2026-05-10-889a0db`
 - **Commit**: `889a0db976b302ad24343e020dbb878e316a280b`
 - **Subject**: Merge pull request #246 from rauell1/claude/fix-bugs-improve-ui-G0zsr
+- **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #191 — `rollback/fix-bugs-improve-ui-location-sync-live-2026-05-10-2be6dcc`
+
+- **Branch**: `rollback/fix-bugs-improve-ui-location-sync-live-2026-05-10-2be6dcc`
+- **Commit**: `2be6dccdb95159eac01a2b036b4aee1c4903ba05`
+- **Subject**: Fix bugs & improve UI: location sync, live nodes, dark mode (#247)
 - **Date**: 2026-05-10
 - **Auto-generated**: yes (by update-rollback.yml)
 
