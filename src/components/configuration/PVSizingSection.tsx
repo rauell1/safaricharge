@@ -47,6 +47,9 @@ const typedPresets = presetsData as KenyaIrradiancePresetsFile;
 interface LocationOverride {
   name: string;
   displayName: string;
+  county: string;
+  latitude: number;
+  longitude: number;
   annualAvgSunHours: number;
 }
 
@@ -129,11 +132,16 @@ export function PVSizingSection({ locationOverride }: { locationOverride?: Locat
         </div>
 
         <div className={field}>
-          <Label className={labelCls}>County / Location</Label>
+          <Label className={labelCls}>Location</Label>
           {locationOverride ? (
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 6, padding: '8px 12px', color: 'var(--text-primary)', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span>{locationOverride.displayName}</span>
-              <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{locationOverride.annualAvgSunHours} PSH/day</span>
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 6, padding: '8px 12px', color: 'var(--text-primary)', fontSize: 13 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontWeight: 600 }}>{locationOverride.displayName}</span>
+                <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{locationOverride.annualAvgSunHours} PSH/day</span>
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                {locationOverride.county} · {locationOverride.latitude.toFixed(4)}°, {locationOverride.longitude.toFixed(4)}°
+              </div>
             </div>
           ) : (
             <Select value={county} onValueChange={setCounty}>
@@ -305,10 +313,16 @@ export function PVSizingSection({ locationOverride }: { locationOverride?: Locat
           </Button>
         </div>
 
-        <p className="text-xs" style={{ color: 'var(--text-tertiary)', paddingTop: '4px' }}>
-          Source: {typedPresets.source.name} ({typedPresets.source.url}), accessed{' '}
-          {typedPresets.source.accessed}
-        </p>
+        {locationOverride ? (
+          <p className="text-xs" style={{ color: 'var(--text-tertiary)', paddingTop: '4px' }}>
+            Solar data: Africa Cities database · {locationOverride.county} · {locationOverride.annualAvgSunHours} peak sun-hours/day
+          </p>
+        ) : (
+          <p className="text-xs" style={{ color: 'var(--text-tertiary)', paddingTop: '4px' }}>
+            Source: {typedPresets.source.name} ({typedPresets.source.url}), accessed{' '}
+            {typedPresets.source.accessed}
+          </p>
+        )}
       </div>
     </div>
   );

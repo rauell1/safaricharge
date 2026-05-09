@@ -362,7 +362,7 @@ function DemoSectionRenderer({
     case 'simulation':
       return <DemoSimulationView onNavigateSection={onNavigateSection} />;
     case 'configuration':
-      return <DemoConfigurationView activeLocation={activeLocation} />;
+      return <DemoConfigurationView activeLocation={activeLocation} onLocationPickerOpen={onLocationPickerOpen} />;
     case 'financial':
       return <DemoFinancialView financialInputs={financialInputs} onFinancialInputsChange={onFinancialInputsChange} />;
     case 'recommendation':
@@ -945,13 +945,24 @@ function DemoSimulationView({ onNavigateSection }: { onNavigateSection: (section
   );
 }
 
-function DemoConfigurationView({ activeLocation }: { activeLocation: LocationOption }) {
+function DemoConfigurationView({ activeLocation, onLocationPickerOpen }: { activeLocation: LocationOption; onLocationPickerOpen: () => void }) {
   return (
     <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
-        <div>
-          <h2 className="text-2xl font-bold text-[var(--text-primary)]">System Configuration</h2>
-          <p className="text-sm text-[var(--text-tertiary)]">Configure solar panels, battery, EV chargers and load profiles</p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h2 className="text-2xl font-bold text-[var(--text-primary)]">System Configuration</h2>
+            <p className="text-sm text-[var(--text-tertiary)]">Configure solar panels, battery, EV chargers and load profiles</p>
+          </div>
+          <button
+            type="button"
+            onClick={onLocationPickerOpen}
+            className="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--bg-card-hover)] px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:border-[var(--battery)] hover:text-[var(--battery)] transition-colors"
+          >
+            <MapPin size={14} className="shrink-0" />
+            <span className="max-w-[200px] truncate">{activeLocation.displayName}</span>
+            <span className="text-[10px] text-[var(--text-tertiary)]">{activeLocation.county}</span>
+          </button>
         </div>
         <PVSizingSection locationOverride={activeLocation} />
         <LoadConfigComponents />
