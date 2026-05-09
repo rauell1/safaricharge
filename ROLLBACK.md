@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 190 | `rollback/merge-pull-request-246-from-rauell1-cl-2026-05-10-889a0db` | `889a0db` | Merge pull request #246 from rauell1/claude/fix-bugs-improve-ui-G0zsr | 2026-05-10 |
 | 189 | `rollback/merge-pull-request-245-from-rauell1-cl-2026-05-10-7e34dc3` | `7e34dc3` | Merge pull request #245 from rauell1/claude/fix-bugs-improve-ui-G0zsr | 2026-05-10 |
 | 188 | `rollback/merge-pull-request-244-from-rauell1-cl-2026-05-09-f4b8ba5` | `f4b8ba5` | Merge pull request #244 from rauell1/claude/fix-bugs-improve-ui-G0zsr | 2026-05-09 |
 | 187 | `rollback/merge-fix-bugs-improve-ui-add-logout-e-2026-05-09-aa37128` | `aa37128` | Merge: fix bugs, improve UI, add logout, enforce mandatory signup | 2026-05-09 |
@@ -1955,6 +1956,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/merge-pull-request-245-from-rauell1-cl-2026-05-10-7e34dc3`
 - **Commit**: `7e34dc336f0e3f66b2d93c0509b5ad268a62eee2`
 - **Subject**: Merge pull request #245 from rauell1/claude/fix-bugs-improve-ui-G0zsr
+- **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #190 — `rollback/merge-pull-request-246-from-rauell1-cl-2026-05-10-889a0db`
+
+- **Branch**: `rollback/merge-pull-request-246-from-rauell1-cl-2026-05-10-889a0db`
+- **Commit**: `889a0db976b302ad24343e020dbb878e316a280b`
+- **Subject**: Merge pull request #246 from rauell1/claude/fix-bugs-improve-ui-G0zsr
 - **Date**: 2026-05-10
 - **Auto-generated**: yes (by update-rollback.yml)
 
