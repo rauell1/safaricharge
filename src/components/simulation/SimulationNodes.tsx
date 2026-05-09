@@ -41,6 +41,15 @@ import {
 import { useEnergySystemStore } from '@/stores/energySystemStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -404,6 +413,31 @@ export const GridProduct = React.memo(
 GridProduct.displayName = 'GridProduct';
 
 // ---------------------------------------------------------------------------
+// EV Charger & Inverter configuration presets
+// ---------------------------------------------------------------------------
+const EV_CHARGER_PRESETS = [
+  { id: 'ac7',   label: '7.4 kW AC — Level 2 Home',       maxKw: 7.4,  connectionType: 'AC' as const },
+  { id: 'ac22',  label: '22 kW AC — Three-Phase Type 2',   maxKw: 22,   connectionType: 'AC' as const },
+  { id: 'dc50',  label: '50 kW DC — Fast Charge CCS2',     maxKw: 50,   connectionType: 'DC' as const },
+  { id: 'dc120', label: '120 kW DC — Ultra-Fast CCS2',     maxKw: 120,  connectionType: 'DC' as const },
+  { id: 'dc150', label: '150 kW DC — HPC (High Power)',    maxKw: 150,  connectionType: 'DC' as const },
+  { id: 'dc350', label: '350 kW DC — Hypercharger',        maxKw: 350,  connectionType: 'DC' as const },
+];
+
+const INVERTER_PRESETS = [
+  { id: 'victron-8',   label: 'Victron Quattro 8kVA',       kw: 8   },
+  { id: 'victron-15',  label: 'Victron Quattro 15kVA',      kw: 15  },
+  { id: 'victron-30',  label: 'Victron Quattro 30kVA',      kw: 30  },
+  { id: 'growatt-10',  label: 'Growatt SPF-10K',            kw: 10  },
+  { id: 'growatt-20',  label: 'Growatt SPF-20K',            kw: 20  },
+  { id: 'deye-12',     label: 'Deye SUN-12K-SG04LP3',       kw: 12  },
+  { id: 'sma-15',      label: 'SMA Sunny Island 15kW',      kw: 15  },
+  { id: 'luxpower-12', label: 'LuxPower LXP 12kW',          kw: 12  },
+  { id: 'phocos-15',   label: 'Phocos Any-Grid 15kW',       kw: 15  },
+  { id: 'custom',      label: 'Custom / Other',             kw: 10  },
+];
+
+// ---------------------------------------------------------------------------
 // HomeProduct
 // ---------------------------------------------------------------------------
 export const HomeProduct = React.memo(
@@ -607,9 +641,18 @@ export function SimulationNodes() {
   const ev2Status    = ev2Power > 0.1 ? 'Charging' : (ev2Node.status === 'offline' ? 'Away' : 'Idle');
 
   const inverterPower = homeLoadKw + ev1Power + ev2Power;
-  const inverterCapKw = systemConfig.inverterKW ?? 10;
 
   const weather = isNight ? 'Night' : solarPower > (systemConfig.solarCapacityKW ?? 10) * 0.7 ? 'Sunny' : 'Cloudy';
+
+  // Local config state — EV chargers
+  const [evPresetId, setEvPresetId] = React.useState('ac22');
+  const [evChargerCount, setEvChargerCount] = React.useState(2);
+  const selectedEvPreset = EV_CHARGER_PRESETS.find(p => p.id === evPresetId) ?? EV_CHARGER_PRESETS[1];
+
+  // Local config state — Inverter bank
+  const [invPresetId, setInvPresetId] = React.useState('growatt-10');
+  const [invKwPerUnit, setInvKwPerUnit] = React.useState(10);
+  const [invUnits, setInvUnits] = React.useState(Math.min(5, Math.max(1, Math.round((systemConfig.inverterKW ?? 10) / 10))));
 
   // Session totals
   const totalSolarKWh   = minuteData.reduce((s, d) => s + d.solarEnergyKWh, 0);
@@ -626,7 +669,6 @@ export function SimulationNodes() {
 
   // Cable capacity references
   const dcCap = systemConfig.solarCapacityKW ?? 10;
-  const acCap = inverterCapKw;
 
   // ── Dynamic loads from fullSystemConfig ────────────────────────────────────
   const evLoads    = (fullSystemConfig?.loads ?? []).filter((l: any) => l.enabled && l.type === 'ev');
@@ -662,10 +704,12 @@ export function SimulationNodes() {
     return Home;
   };
 
-  // Inverter bank: derive unit count from total capacity ÷ 10 kW/unit
-  const inverterCount       = Math.min(5, Math.max(1, Math.round(inverterCapKw / 10)));
-  const perInverterCapKw    = inverterCapKw / inverterCount;
-  const perInverterPowerKw  = inverterPower / inverterCount;
+  // Inverter bank: derive unit count and capacity from local config state
+  const inverterCount      = Math.min(5, Math.max(1, invUnits));
+  const perInverterCapKw   = invKwPerUnit;
+  const perInverterPowerKw = inverterPower / Math.max(1, inverterCount);
+  const inverterCapKw      = invKwPerUnit * invUnits;
+  const acCap              = inverterCapKw;
 
   return (
     <div className="space-y-4">
@@ -846,11 +890,11 @@ export function SimulationNodes() {
             ))}
           </div>
 
-          {/* ── AC Bus bar label ── */}
-          <div className="relative flex items-center justify-center mb-1">
+          {/* ── AC Bus bar ── */}
+          <div className="relative w-full mt-1 mb-2">
             <HorizontalCable
-              width="80%"
-              height={4}
+              width="100%"
+              height={5}
               active={inverterPower > 0.1 || isImporting}
               color="bg-orange-400"
               glowColor="#f97316"
@@ -858,11 +902,10 @@ export function SimulationNodes() {
               capacityKw={acCap}
               flowDirection="right"
               speed={simSpeed}
-              showLabel
             />
-            <div className="absolute left-1/2 -translate-x-1/2 bg-[var(--bg-card)] border border-[var(--border)] px-2 py-0.5 rounded text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-wide -top-3 shadow-sm">
+            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-0.5 rounded-full bg-orange-500 text-white text-[10px] font-black uppercase tracking-widest shadow-md whitespace-nowrap z-10 pointer-events-none">
               AC Bus
-            </div>
+            </span>
           </div>
 
           {/* ── Row 4: AC loads — dynamic from fullSystemConfig.loads ── */}
@@ -919,8 +962,8 @@ export function SimulationNodes() {
               );
             })}
 
-            {/* EV loads — dynamic from fullSystemConfig.loads */}
-            {evLoads.length === 0 ? null : evLoads.map((load: any, idx: number) => {
+            {/* EV chargers — from local config */}
+            {Array.from({ length: evChargerCount }, (_, idx) => {
               const evPow  = getEvPower(idx);
               const evSocV = getEvSoc(idx);
               const evStat = evPow > 0.1 ? 'Charging' : 'Idle';
@@ -933,14 +976,14 @@ export function SimulationNodes() {
               ];
               const col = evPalette[idx % evPalette.length];
               return (
-                <div key={load.id ?? idx} className="flex flex-col items-center gap-0 flex-shrink-0">
+                <div key={idx} className="flex flex-col items-center gap-0 flex-shrink-0">
                   <RigidCable
                     height={36}
                     active={evPow > 0.1}
                     color={col.cable}
                     glowColor={col.glow}
                     powerKw={evPow}
-                    capacityKw={acCap}
+                    capacityKw={selectedEvPreset.maxKw}
                     flowDirection="down"
                     speed={simSpeed}
                     showLabel
@@ -950,11 +993,11 @@ export function SimulationNodes() {
                     status={evStat}
                     power={evPow}
                     soc={evSocV}
-                    carName={load.name}
-                    capacity={load.batteryKwh ?? 80}
-                    maxRate={load.onboardChargerKw ?? 22}
+                    carName={`EV ${idx + 1}`}
+                    capacity={80}
+                    maxRate={selectedEvPreset.maxKw}
                     onToggle={() => {}}
-                    v2g={load.supportsV2G ?? false}
+                    v2g={false}
                   />
                 </div>
               );
@@ -963,6 +1006,144 @@ export function SimulationNodes() {
           </div>
           </div>{/* min-w wrapper */}
           </div>{/* overflow-x-auto wrapper */}
+        </CardContent>
+      </Card>
+
+      {/* ══════════════════════════════════════════
+           INVERTER CONFIGURATION
+         ══════════════════════════════════════════ */}
+      <Card className="dashboard-card">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2 text-[var(--text-primary)]">
+            <Settings2 className="h-4 w-4 text-[var(--solar)]" />
+            Inverter Configuration
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-[var(--text-secondary)]">Make / Model</Label>
+              <Select
+                value={invPresetId}
+                onValueChange={(v) => {
+                  setInvPresetId(v);
+                  const p = INVERTER_PRESETS.find((x) => x.id === v);
+                  if (p && v !== 'custom') setInvKwPerUnit(p.kw);
+                }}
+              >
+                <SelectTrigger style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {INVERTER_PRESETS.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-[var(--text-secondary)]">Rated kW per unit</Label>
+              <Input
+                type="number"
+                min={1}
+                max={200}
+                step={0.5}
+                value={invKwPerUnit}
+                onChange={(e) => { setInvKwPerUnit(Number(e.target.value || 1)); setInvPresetId('custom'); }}
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-[var(--text-secondary)]">Units in parallel</Label>
+              <div className="flex items-center gap-2">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setInvUnits(n)}
+                    className={[
+                      'h-9 flex-1 rounded-lg text-sm font-bold border transition-all',
+                      invUnits === n
+                        ? 'bg-[var(--solar)] border-[var(--solar)] text-white shadow-sm'
+                        : 'bg-[var(--bg-card-muted)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--solar)] hover:text-[var(--solar)]',
+                    ].join(' ')}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-[var(--text-secondary)]">
+            <span className="flex items-center gap-1">
+              <Zap className="h-3 w-3 text-[var(--solar)]" />
+              Total capacity:
+              <strong className="text-[var(--text-primary)] ml-1">{(invKwPerUnit * invUnits).toFixed(1)} kW</strong>
+            </span>
+            {invUnits > 1 && (
+              <span className="text-[var(--text-tertiary)]">{invUnits} × {invKwPerUnit} kW in parallel</span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ══════════════════════════════════════════
+           EV CHARGER CONFIGURATION
+         ══════════════════════════════════════════ */}
+      <Card className="dashboard-card">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2 text-[var(--text-primary)]">
+            <Car className="h-4 w-4 text-sky-400" />
+            EV Charger Configuration
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-[var(--text-secondary)]">Charger Type</Label>
+              <Select value={evPresetId} onValueChange={setEvPresetId}>
+                <SelectTrigger style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {EV_CHARGER_PRESETS.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-[var(--text-secondary)]">Number of chargers</Label>
+              <div className="flex items-center gap-2">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setEvChargerCount(n)}
+                    className={[
+                      'h-9 flex-1 rounded-lg text-sm font-bold border transition-all',
+                      evChargerCount === n
+                        ? 'bg-sky-500 border-sky-500 text-white shadow-sm'
+                        : 'bg-[var(--bg-card-muted)] border-[var(--border)] text-[var(--text-secondary)] hover:border-sky-400 hover:text-sky-400',
+                    ].join(' ')}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+            <div className="rounded border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2 text-[var(--text-secondary)]">
+              Connection: <strong className="text-[var(--text-primary)]">{selectedEvPreset.connectionType}</strong>
+            </div>
+            <div className="rounded border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2 text-[var(--text-secondary)]">
+              Per charger: <strong className="text-[var(--text-primary)]">{selectedEvPreset.maxKw} kW max</strong>
+            </div>
+            <div className="rounded border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2 text-[var(--text-secondary)]">
+              Total capacity: <strong className="text-[var(--text-primary)]">{selectedEvPreset.maxKw * evChargerCount} kW</strong>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
