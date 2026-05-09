@@ -31,11 +31,16 @@ export function AnimatedLoadingState({
     */
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-6"
-      style={{ background: 'var(--bg-primary)' }}
+      style={{ background: 'var(--bg-primary, #f5f7f4)' }}
     >
       <div
-        className="w-full rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-8 text-center shadow-[0_10px_30px_rgba(0,0,0,0.18)]"
-        style={{ maxWidth: '420px' }}
+        className="w-full rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-8 text-center"
+        style={{
+          maxWidth: '420px',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
+          background: 'var(--bg-card, #ffffff)',
+          borderColor: 'var(--border, rgba(7,18,14,0.10))',
+        }}
       >
         {/* Animated icon */}
         <div className="relative mx-auto mb-6 flex h-20 w-20 items-center justify-center">

@@ -16,6 +16,7 @@ import {
   Moon,
   Download,
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
@@ -282,7 +283,7 @@ export function DashboardSidebar({
       {/* Logo */}
       <SidebarHeader className="px-4 py-5 border-b border-[var(--border)] bg-[var(--bg-card)]">
         <div className="flex items-center justify-center">
-          <img src="/logo.png" alt="SafariCharge" className="h-20 w-auto object-contain" />
+          <Image src="/logo.svg" alt="SafariCharge" width={140} height={80} className="object-contain" />
         </div>
       </SidebarHeader>
 

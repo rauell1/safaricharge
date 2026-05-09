@@ -51,7 +51,7 @@ export async function GET(request: Request) {
         console.error('[auth/callback] Missing Supabase env vars — skipping profile upsert')
         const response = NextResponse.redirect(`${origin}${safeNext}`)
         response.cookies.set('sc_last_seen', String(Date.now()), {
-          httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: 15 * 60,
+          httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: 60 * 60,
         })
         response.cookies.set(AUTH_VALIDATED_AT_COOKIE, String(Date.now()), {
           httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: Math.max(30, Math.floor(AUTH_VALIDATION_WINDOW_MS / 1000)),
@@ -122,7 +122,7 @@ export async function GET(request: Request) {
         if (needsOnboarding) {
           const response = NextResponse.redirect(`${origin}/onboarding?next=${encodeURIComponent(safeNext)}`)
           response.cookies.set('sc_last_seen', String(Date.now()), {
-            httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: 15 * 60,
+            httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: 60 * 60,
           })
           response.cookies.set(AUTH_VALIDATED_AT_COOKIE, String(Date.now()), {
             httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: Math.max(30, Math.floor(AUTH_VALIDATION_WINDOW_MS / 1000)),
@@ -150,7 +150,7 @@ export async function GET(request: Request) {
 
         const response = NextResponse.redirect(`${origin}${safeNext}`)
         response.cookies.set('sc_last_seen', String(Date.now()), {
-          httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: 15 * 60,
+          httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: 60 * 60,
         })
         response.cookies.set(AUTH_VALIDATED_AT_COOKIE, String(Date.now()), {
           httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: Math.max(30, Math.floor(AUTH_VALIDATION_WINDOW_MS / 1000)),
@@ -165,7 +165,7 @@ export async function GET(request: Request) {
 
       const response = NextResponse.redirect(`${origin}${safeNext}`)
       response.cookies.set('sc_last_seen', String(Date.now()), {
-        httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: 15 * 60,
+        httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: 60 * 60,
       })
       response.cookies.set(AUTH_VALIDATED_AT_COOKIE, String(Date.now()), {
         httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: Math.max(30, Math.floor(AUTH_VALIDATION_WINDOW_MS / 1000)),

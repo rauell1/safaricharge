@@ -72,7 +72,7 @@ function LoginForm() {
   const initialError = useMemo(() => {
     const reason = searchParams.get('reason')
     const err = searchParams.get('error')
-    if (reason === 'session_expired') return 'Your session expired after 15 minutes of inactivity. Please sign in again.'
+    if (reason === 'session_expired') return 'Your session expired after 1 hour of inactivity. Please sign in again.'
     if (err === 'auth_failed') return 'We could not verify your sign-in request. Please try again.'
     return ''
   }, [searchParams])
@@ -171,7 +171,7 @@ function LoginForm() {
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.55 }}>
           {mode === 'signin'
-            ? 'Sessions expire after 15 minutes of inactivity for security.'
+            ? 'Sessions expire after 1 hour of inactivity for security.'
             : 'Clean energy professionals workspace. Your details personalise your experience.'}
         </p>
       </div>
