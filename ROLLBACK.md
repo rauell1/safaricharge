@@ -55,6 +55,12 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 191 | `rollback/fix-bugs-improve-ui-location-sync-live-2026-05-10-2be6dcc` | `2be6dcc` | Fix bugs & improve UI: location sync, live nodes, dark mode (#247) | 2026-05-10 |
+| 190 | `rollback/merge-pull-request-246-from-rauell1-cl-2026-05-10-889a0db` | `889a0db` | Merge pull request #246 from rauell1/claude/fix-bugs-improve-ui-G0zsr | 2026-05-10 |
+| 189 | `rollback/merge-pull-request-245-from-rauell1-cl-2026-05-10-7e34dc3` | `7e34dc3` | Merge pull request #245 from rauell1/claude/fix-bugs-improve-ui-G0zsr | 2026-05-10 |
+| 188 | `rollback/merge-pull-request-244-from-rauell1-cl-2026-05-09-f4b8ba5` | `f4b8ba5` | Merge pull request #244 from rauell1/claude/fix-bugs-improve-ui-G0zsr | 2026-05-09 |
+| 187 | `rollback/merge-fix-bugs-improve-ui-add-logout-e-2026-05-09-aa37128` | `aa37128` | Merge: fix bugs, improve UI, add logout, enforce mandatory signup | 2026-05-09 |
+| 186 | `rollback/merge-pull-request-242-from-rauell1-cl-2026-05-09-83682b1` | `83682b1` | Merge pull request #242 from rauell1/claude/fix-bugs-improve-ui-G0zsr | 2026-05-09 |
 | 185 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-09-f14e5dd` | `f14e5dd` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-09 |
 | 184 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-08-190553a` | `190553a` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-08 |
 | 183 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-07-76d01a0` | `76d01a0` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-07 |
@@ -1916,6 +1922,60 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Commit**: `f14e5dd749923cf3884cc5a23705d18dc85a2c4f`
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-05-09
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #186 — `rollback/merge-pull-request-242-from-rauell1-cl-2026-05-09-83682b1`
+
+- **Branch**: `rollback/merge-pull-request-242-from-rauell1-cl-2026-05-09-83682b1`
+- **Commit**: `83682b1645d63b1296174c06044265e8cb1c931b`
+- **Subject**: Merge pull request #242 from rauell1/claude/fix-bugs-improve-ui-G0zsr
+- **Date**: 2026-05-09
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #187 — `rollback/merge-fix-bugs-improve-ui-add-logout-e-2026-05-09-aa37128`
+
+- **Branch**: `rollback/merge-fix-bugs-improve-ui-add-logout-e-2026-05-09-aa37128`
+- **Commit**: `aa3712880e16f3c166d8a14a9a8b2e1f55f83dc6`
+- **Subject**: Merge: fix bugs, improve UI, add logout, enforce mandatory signup
+- **Date**: 2026-05-09
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #188 — `rollback/merge-pull-request-244-from-rauell1-cl-2026-05-09-f4b8ba5`
+
+- **Branch**: `rollback/merge-pull-request-244-from-rauell1-cl-2026-05-09-f4b8ba5`
+- **Commit**: `f4b8ba5b62d0dcce7a49f9130dd71bfd5fe122aa`
+- **Subject**: Merge pull request #244 from rauell1/claude/fix-bugs-improve-ui-G0zsr
+- **Date**: 2026-05-09
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #189 — `rollback/merge-pull-request-245-from-rauell1-cl-2026-05-10-7e34dc3`
+
+- **Branch**: `rollback/merge-pull-request-245-from-rauell1-cl-2026-05-10-7e34dc3`
+- **Commit**: `7e34dc336f0e3f66b2d93c0509b5ad268a62eee2`
+- **Subject**: Merge pull request #245 from rauell1/claude/fix-bugs-improve-ui-G0zsr
+- **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #190 — `rollback/merge-pull-request-246-from-rauell1-cl-2026-05-10-889a0db`
+
+- **Branch**: `rollback/merge-pull-request-246-from-rauell1-cl-2026-05-10-889a0db`
+- **Commit**: `889a0db976b302ad24343e020dbb878e316a280b`
+- **Subject**: Merge pull request #246 from rauell1/claude/fix-bugs-improve-ui-G0zsr
+- **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #191 — `rollback/fix-bugs-improve-ui-location-sync-live-2026-05-10-2be6dcc`
+
+- **Branch**: `rollback/fix-bugs-improve-ui-location-sync-live-2026-05-10-2be6dcc`
+- **Commit**: `2be6dccdb95159eac01a2b036b4aee1c4903ba05`
+- **Subject**: Fix bugs & improve UI: location sync, live nodes, dark mode (#247)
+- **Date**: 2026-05-10
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
