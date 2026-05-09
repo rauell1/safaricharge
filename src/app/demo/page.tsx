@@ -138,6 +138,20 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
     projectYears: 20,
   });
 
+  const [activeLocation, setActiveLocation] = useState<LocationOption>(DEFAULT_LOCATION);
+  const [locationPickerOpen, setLocationPickerOpen] = useState(false);
+  const [locationSearch, setLocationSearch] = useState('');
+
+  const handleSelectLocation = useCallback((loc: LocationOption) => {
+    setActiveLocation(loc);
+    setLocationPickerOpen(false);
+    setLocationSearch('');
+    toast({
+      title: 'Location updated',
+      description: `Solar data will now reflect conditions in ${loc.displayName} (avg ${loc.annualAvgSunHours} sun-hours/day).`,
+    });
+  }, [toast]);
+
   useEffect(() => {
     if (activeSection === 'scenarios') {
       router.push('/scenarios');
@@ -190,15 +204,140 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
   }, [toast]);
 
   return (
-    <DashboardLayout activeSection={activeSection} onSectionChange={setActiveSection} contextualMetrics={[]}>
-      <Toaster />
-      <DemoSectionRenderer
-        activeSection={activeSection}
-        financialInputs={financialInputs}
-        onFinancialInputsChange={setFinancialInputs}
-        onNavigateSection={setActiveSection}
-      />
-    </DashboardLayout>
+    <>
+      <DashboardLayout activeSection={activeSection} onSectionChange={setActiveSection} contextualMetrics={[]}>
+        <Toaster />
+        <DemoSectionRenderer
+          activeSection={activeSection}
+          financialInputs={financialInputs}
+          onFinancialInputsChange={setFinancialInputs}
+          onNavigateSection={setActiveSection}
+          activeLocation={activeLocation}
+          onLocationPickerOpen={() => setLocationPickerOpen(true)}
+        />
+      </DashboardLayout>
+      {locationPickerOpen && typeof document !== 'undefined' && createPortal(
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, boxSizing: 'border-box' }}
+        >
+          <div
+            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)' }}
+            onClick={() => { setLocationPickerOpen(false); setLocationSearch(''); }}
+          />
+          <div
+            style={{
+              position: 'relative', zIndex: 1,
+              width: '100%', maxWidth: 480,
+              background: 'var(--bg-card, #fff)',
+              border: '1px solid var(--border, rgba(0,0,0,0.1))',
+              borderRadius: 14,
+              overflow: 'hidden',
+              boxShadow: '0 24px 80px rgba(0,0,0,0.22)',
+              display: 'flex', flexDirection: 'column',
+              maxHeight: 'calc(100vh - 80px)',
+            }}
+          >
+            <div style={{ padding: '16px 16px 0', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <MapPin style={{ width: 16, height: 16, color: 'var(--solar, #f59e0b)', flexShrink: 0 }} />
+                  <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary, #111)', letterSpacing: '-0.02em' }}>
+                    Select Location
+                  </span>
+                </div>
+                <button
+                  onClick={() => { setLocationPickerOpen(false); setLocationSearch(''); }}
+                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', padding: 4, color: 'var(--text-tertiary, #999)', lineHeight: 1 }}
+                  aria-label="Close"
+                >
+                  <X style={{ width: 16, height: 16 }} />
+                </button>
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary, #666)', marginBottom: 10, marginTop: 2 }}>
+                212 cities across Africa — Meteonorm irradiance data
+              </p>
+              <div style={{ position: 'relative', marginBottom: 10 }}>
+                <Search style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, color: 'var(--text-tertiary, #999)', pointerEvents: 'none' }} />
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Search city or country…"
+                  value={locationSearch}
+                  onChange={e => setLocationSearch(e.target.value)}
+                  style={{
+                    width: '100%', boxSizing: 'border-box',
+                    paddingLeft: 32, paddingRight: 12, paddingTop: 8, paddingBottom: 8,
+                    fontSize: 13, borderRadius: 8,
+                    border: '1px solid var(--border, rgba(0,0,0,0.12))',
+                    background: 'var(--bg-card-muted, #f8f8f8)',
+                    color: 'var(--text-primary, #111)',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {(() => {
+                const q = locationSearch.trim().toLowerCase();
+                const filtered = q
+                  ? AFRICA_LOCATIONS.filter(l => l.name.toLowerCase().includes(q) || l.county.toLowerCase().includes(q))
+                  : AFRICA_LOCATIONS;
+                const byCountry: Record<string, LocationOption[]> = {};
+                for (const loc of filtered) {
+                  if (!byCountry[loc.county]) byCountry[loc.county] = [];
+                  byCountry[loc.county].push(loc);
+                }
+                const countries = Object.keys(byCountry).sort();
+                if (countries.length === 0) {
+                  return <p style={{ padding: 20, textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary, #999)' }}>No cities found for "{locationSearch}"</p>;
+                }
+                return countries.map(country => (
+                  <div key={country}>
+                    <div style={{
+                      position: 'sticky', top: 0,
+                      padding: '4px 16px',
+                      fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+                      color: 'var(--text-tertiary, #999)',
+                      background: 'var(--bg-secondary, #f5f5f5)',
+                      borderBottom: '1px solid var(--border, rgba(0,0,0,0.06))',
+                    }}>
+                      {country}
+                    </div>
+                    {byCountry[country].map(loc => {
+                      const isActive = activeLocation.name === loc.name && activeLocation.county === loc.county;
+                      return (
+                        <button
+                          key={loc.displayName}
+                          onClick={() => { handleSelectLocation(loc); setLocationSearch(''); }}
+                          style={{
+                            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '8px 16px', border: 'none', cursor: 'pointer', textAlign: 'left',
+                            background: isActive ? 'var(--solar-soft, rgba(245,158,11,0.1))' : 'transparent',
+                            color: isActive ? 'var(--solar, #f59e0b)' : 'var(--text-primary, #111)',
+                            fontSize: 13, transition: 'background 0.1s',
+                          }}
+                          onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card-muted, #f0f0f0)'; }}
+                          onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+                        >
+                          <span style={{ fontWeight: isActive ? 600 : 400 }}>{loc.name}</span>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                            <span style={{ fontSize: 11, color: isActive ? 'var(--solar, #f59e0b)' : 'var(--text-tertiary, #999)' }}>
+                              {loc.annualAvgSunHours} PSH/day
+                            </span>
+                            {isActive && <CheckCircle2 style={{ width: 13, height: 13 }} />}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ));
+              })()}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
   );
 }
 
@@ -207,6 +346,8 @@ type DemoSectionRendererProps = {
   financialInputs: FinancialInputs;
   onFinancialInputsChange: React.Dispatch<React.SetStateAction<FinancialInputs>>;
   onNavigateSection: (section: DashboardSection) => void;
+  activeLocation: LocationOption;
+  onLocationPickerOpen: () => void;
 };
 
 function DemoSectionRenderer({
@@ -214,12 +355,14 @@ function DemoSectionRenderer({
   financialInputs,
   onFinancialInputsChange,
   onNavigateSection,
+  activeLocation,
+  onLocationPickerOpen,
 }: DemoSectionRendererProps) {
   switch (activeSection) {
     case 'simulation':
       return <DemoSimulationView onNavigateSection={onNavigateSection} />;
     case 'configuration':
-      return <DemoConfigurationView />;
+      return <DemoConfigurationView activeLocation={activeLocation} />;
     case 'financial':
       return <DemoFinancialView financialInputs={financialInputs} onFinancialInputsChange={onFinancialInputsChange} />;
     case 'recommendation':
@@ -236,7 +379,7 @@ function DemoSectionRenderer({
       );
     case 'dashboard':
     default:
-      return <DemoDashboardView financialInputs={financialInputs} onFinancialInputsChange={onFinancialInputsChange} onNavigateSection={onNavigateSection} />;
+      return <DemoDashboardView financialInputs={financialInputs} onFinancialInputsChange={onFinancialInputsChange} onNavigateSection={onNavigateSection} activeLocation={activeLocation} onLocationPickerOpen={onLocationPickerOpen} />;
   }
 }
 
@@ -244,12 +387,16 @@ type DemoDashboardViewProps = {
   financialInputs: FinancialInputs;
   onFinancialInputsChange: React.Dispatch<React.SetStateAction<FinancialInputs>>;
   onNavigateSection: (section: DashboardSection) => void;
+  activeLocation: LocationOption;
+  onLocationPickerOpen: () => void;
 };
 
 function DemoDashboardView({
   financialInputs,
   onFinancialInputsChange,
   onNavigateSection,
+  activeLocation,
+  onLocationPickerOpen,
 }: DemoDashboardViewProps) {
   useDemoEnergySystem(true);
   const { timeRange, setTimeRange } = useTimeRange();
@@ -268,9 +415,6 @@ function DemoDashboardView({
   const { toast } = useToast();
 
   const [isReportOpen, setIsReportOpen] = useState(false);
-  const [locationPickerOpen, setLocationPickerOpen] = useState(false);
-  const [locationSearch, setLocationSearch] = useState('');
-  const [activeLocation, setActiveLocation] = useState<LocationOption>(DEFAULT_LOCATION);
 
   const handleReset = useCallback(() => {
     const confirmed = window.confirm(
@@ -283,15 +427,6 @@ function DemoDashboardView({
       description: 'All energy data has been cleared. The simulation is restarting.',
     });
   }, [resetSystem, toast]);
-
-  const handleSelectLocation = useCallback((loc: LocationOption) => {
-    setActiveLocation(loc);
-    setLocationPickerOpen(false);
-    toast({
-      title: 'Location updated',
-      description: `Solar data will now reflect conditions in ${loc.displayName} (avg ${loc.annualAvgSunHours} sun-hours/day).`,
-    });
-  }, [toast]);
 
   const handleSaveScenario = useCallback((name: string) => {
     const snap = buildFinancialSnapshot({
@@ -624,7 +759,7 @@ function DemoDashboardView({
         <DashboardHeader
           currentDate={currentDate}
           onReset={handleReset}
-          onLocationClick={() => setLocationPickerOpen(true)}
+          onLocationClick={onLocationPickerOpen}
           onDownload={() => setIsReportOpen(true)}
           onSaveScenario={handleSaveScenario}
           locationName={activeLocation.displayName}
@@ -764,134 +899,6 @@ function DemoDashboardView({
         </main>
       </div>
 
-      {locationPickerOpen && typeof document !== 'undefined' && createPortal(
-        <div
-          style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, boxSizing: 'border-box' }}
-        >
-          {/* backdrop */}
-          <div
-            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)' }}
-            onClick={() => { setLocationPickerOpen(false); setLocationSearch(''); }}
-          />
-          {/* panel */}
-          <div
-            style={{
-              position: 'relative', zIndex: 1,
-              width: '100%', maxWidth: 480,
-              background: 'var(--bg-card, #fff)',
-              border: '1px solid var(--border, rgba(0,0,0,0.1))',
-              borderRadius: 14,
-              overflow: 'hidden',
-              boxShadow: '0 24px 80px rgba(0,0,0,0.22)',
-              display: 'flex', flexDirection: 'column',
-              maxHeight: 'calc(100vh - 80px)',
-            }}
-          >
-            {/* header */}
-            <div style={{ padding: '16px 16px 0', flexShrink: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <MapPin style={{ width: 16, height: 16, color: 'var(--solar, #f59e0b)', flexShrink: 0 }} />
-                  <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary, #111)', letterSpacing: '-0.02em' }}>
-                    Select Location
-                  </span>
-                </div>
-                <button
-                  onClick={() => { setLocationPickerOpen(false); setLocationSearch(''); }}
-                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', padding: 4, color: 'var(--text-tertiary, #999)', lineHeight: 1 }}
-                  aria-label="Close"
-                >
-                  <X style={{ width: 16, height: 16 }} />
-                </button>
-              </div>
-              <p style={{ fontSize: 12, color: 'var(--text-secondary, #666)', marginBottom: 10, marginTop: 2 }}>
-                212 cities across Africa — Meteonorm irradiance data
-              </p>
-              {/* search */}
-              <div style={{ position: 'relative', marginBottom: 10 }}>
-                <Search style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, color: 'var(--text-tertiary, #999)', pointerEvents: 'none' }} />
-                <input
-                  autoFocus
-                  type="text"
-                  placeholder="Search city or country…"
-                  value={locationSearch}
-                  onChange={e => setLocationSearch(e.target.value)}
-                  style={{
-                    width: '100%', boxSizing: 'border-box',
-                    paddingLeft: 32, paddingRight: 12, paddingTop: 8, paddingBottom: 8,
-                    fontSize: 13, borderRadius: 8,
-                    border: '1px solid var(--border, rgba(0,0,0,0.12))',
-                    background: 'var(--bg-card-muted, #f8f8f8)',
-                    color: 'var(--text-primary, #111)',
-                    outline: 'none',
-                  }}
-                />
-              </div>
-            </div>
-            {/* city list grouped by country */}
-            <div style={{ overflowY: 'auto', flex: 1 }}>
-              {(() => {
-                const q = locationSearch.trim().toLowerCase();
-                const filtered = q
-                  ? AFRICA_LOCATIONS.filter(l => l.name.toLowerCase().includes(q) || l.county.toLowerCase().includes(q))
-                  : AFRICA_LOCATIONS;
-                // group by country
-                const byCountry: Record<string, LocationOption[]> = {};
-                for (const loc of filtered) {
-                  if (!byCountry[loc.county]) byCountry[loc.county] = [];
-                  byCountry[loc.county].push(loc);
-                }
-                const countries = Object.keys(byCountry).sort();
-                if (countries.length === 0) {
-                  return <p style={{ padding: 20, textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary, #999)' }}>No cities found for "{locationSearch}"</p>;
-                }
-                return countries.map(country => (
-                  <div key={country}>
-                    <div style={{
-                      position: 'sticky', top: 0,
-                      padding: '4px 16px',
-                      fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
-                      color: 'var(--text-tertiary, #999)',
-                      background: 'var(--bg-secondary, #f5f5f5)',
-                      borderBottom: '1px solid var(--border, rgba(0,0,0,0.06))',
-                    }}>
-                      {country}
-                    </div>
-                    {byCountry[country].map(loc => {
-                      const isActive = activeLocation.name === loc.name && activeLocation.county === loc.county;
-                      return (
-                        <button
-                          key={loc.displayName}
-                          onClick={() => { handleSelectLocation(loc); setLocationSearch(''); }}
-                          style={{
-                            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            padding: '8px 16px', border: 'none', cursor: 'pointer', textAlign: 'left',
-                            background: isActive ? 'var(--solar-soft, rgba(245,158,11,0.1))' : 'transparent',
-                            color: isActive ? 'var(--solar, #f59e0b)' : 'var(--text-primary, #111)',
-                            fontSize: 13, transition: 'background 0.1s',
-                          }}
-                          onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card-muted, #f0f0f0)'; }}
-                          onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
-                        >
-                          <span style={{ fontWeight: isActive ? 600 : 400 }}>{loc.name}</span>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                            <span style={{ fontSize: 11, color: isActive ? 'var(--solar, #f59e0b)' : 'var(--text-tertiary, #999)' }}>
-                              {loc.annualAvgSunHours} PSH/day
-                            </span>
-                            {isActive && <CheckCircle2 style={{ width: 13, height: 13 }} />}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ));
-              })()}
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
       <EnergyReportModal
         isOpen={isReportOpen}
         onClose={() => setIsReportOpen(false)}
@@ -938,7 +945,7 @@ function DemoSimulationView({ onNavigateSection }: { onNavigateSection: (section
   );
 }
 
-function DemoConfigurationView() {
+function DemoConfigurationView({ activeLocation }: { activeLocation: LocationOption }) {
   return (
     <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
@@ -946,7 +953,7 @@ function DemoConfigurationView() {
           <h2 className="text-2xl font-bold text-[var(--text-primary)]">System Configuration</h2>
           <p className="text-sm text-[var(--text-tertiary)]">Configure solar panels, battery, EV chargers and load profiles</p>
         </div>
-        <PVSizingSection />
+        <PVSizingSection locationOverride={activeLocation} />
         <LoadConfigComponents />
       </div>
     </main>
