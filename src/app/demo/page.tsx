@@ -2,6 +2,7 @@
 /* eslint-disable */
 
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import type { DashboardSection } from '@/components/layout/DashboardSidebar';
@@ -36,16 +37,10 @@ import { useEnergySystemStore } from '@/stores/energySystemStore';
 import { SIZING_SIMULATOR_STORAGE_KEY, parseSimulatorSizingPayload } from '@/lib/pv-sizing';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { MapPin, Sun, Info } from 'lucide-react';
+import { MapPin, Sun, Info, Search, X, CheckCircle2 } from 'lucide-react';
+import { AFRICA_CITIES, type AfricaCity } from '@/lib/africa-locations-data';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { resampleTo5MinBucketsProgressive, resampleTo5MinBuckets } from '@/lib/graphSampler';
 import type { SimulationMinuteRecord } from '@/types/simulation-core';
@@ -88,7 +83,7 @@ const SOLAR_MODEL_SUNRISE_HOUR = 6;
 const SOLAR_MODEL_DAYLIGHT_HOURS = 12;
 const SOLAR_MODEL_PERFORMANCE_RATIO = 0.82;
 
-// ─── Location picker data ────────────────────────────────────────────────────
+// ─── Location picker data ─────────────────────────────────────────────────────
 interface LocationOption {
   name: string;
   displayName: string;
@@ -101,45 +96,20 @@ interface LocationOption {
   countyNote: string;
 }
 
-type KenyaCountyPreset = {
-  county: string;
-  locationName: string;
-  displayName: string;
-  latitude: number;
-  longitude: number;
-  annualAvgSunHours: number;
-  electrificationRatePct: number | null;
-  isKosapTarget: boolean;
-  countyNote: string;
-};
-
-const KENYA_COUNTY_PRESETS: KenyaCountyPreset[] = (
-  (kenyaIrradiancePresets as { counties?: KenyaCountyPreset[] }).counties ?? []
-);
-
-const KENYA_LOCATIONS: LocationOption[] = KENYA_COUNTY_PRESETS.map((preset) => ({
-  name: preset.locationName,
-  displayName: preset.displayName,
-  county: preset.county,
-  latitude: preset.latitude,
-  longitude: preset.longitude,
-  annualAvgSunHours: preset.annualAvgSunHours,
-  isKosapTarget: preset.isKosapTarget,
-  electrificationRatePct: preset.electrificationRatePct,
-  countyNote: preset.countyNote,
-}));
-
-const DEFAULT_LOCATION: LocationOption = KENYA_LOCATIONS[0] ?? {
-  name: 'Nairobi',
-  displayName: 'Nairobi, Kenya',
-  county: 'Nairobi',
-  latitude: -1.2921,
-  longitude: 36.8219,
-  annualAvgSunHours: 5.4,
+// Map Africa-wide city data (Meteonorm-approximate) to LocationOption
+const AFRICA_LOCATIONS: LocationOption[] = AFRICA_CITIES.map((city: AfricaCity) => ({
+  name: city.name,
+  displayName: `${city.name}, ${city.country}`,
+  county: city.country,
+  latitude: city.lat,
+  longitude: city.lon,
+  annualAvgSunHours: city.avgDailyPsh,
   isKosapTarget: false,
   electrificationRatePct: null,
-  countyNote: 'Nairobi has strong year-round irradiance and supports high daytime demand.',
-};
+  countyNote: `${city.region} — elevation ${city.elevation} m, avg ${city.avgTempC}°C, annual GHI ${city.annualGHI} kWh/m².`,
+}));
+
+const DEFAULT_LOCATION: LocationOption = AFRICA_LOCATIONS.find(l => l.name === 'Nairobi') ?? AFRICA_LOCATIONS[0];
 
 const KENYA_HOUSEHOLD_ANNUAL_KWH = 1200;
 const KEROSENE_DISPLACEMENT_L_PER_KWH = 0.8;
@@ -299,6 +269,7 @@ function DemoDashboardView({
 
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
+  const [locationSearch, setLocationSearch] = useState('');
   const [activeLocation, setActiveLocation] = useState<LocationOption>(DEFAULT_LOCATION);
 
   const handleReset = useCallback(() => {
@@ -793,41 +764,133 @@ function DemoDashboardView({
         </main>
       </div>
 
-      <Dialog open={locationPickerOpen} onOpenChange={setLocationPickerOpen}>
-        <DialogContent className="bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)] max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-[var(--solar)]" />
-              Select Location
-            </DialogTitle>
-            <DialogDescription className="text-[var(--text-secondary)]">
-              Choose a Kenyan city to calibrate solar irradiance data for the simulation.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="mt-2 flex flex-col gap-1.5">
-            {KENYA_LOCATIONS.map((loc) => (
-              <Button
-                key={loc.name}
-                variant="ghost"
-                onClick={() => handleSelectLocation(loc)}
-                className={[
-                  'h-auto justify-between rounded-lg px-3 py-2 text-sm transition-all duration-150',
-                  activeLocation.name === loc.name
-                    ? 'bg-[var(--solar-soft)] text-[var(--solar)] font-semibold'
-                    : 'text-[var(--text-primary)] hover:bg-[var(--bg-card-muted)]',
-                ].join(' ')}
-              >
-                <div className="min-w-0 text-left">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate">{loc.displayName}</span>
-                  </div>
+      {locationPickerOpen && typeof document !== 'undefined' && createPortal(
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, boxSizing: 'border-box' }}
+        >
+          {/* backdrop */}
+          <div
+            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)' }}
+            onClick={() => { setLocationPickerOpen(false); setLocationSearch(''); }}
+          />
+          {/* panel */}
+          <div
+            style={{
+              position: 'relative', zIndex: 1,
+              width: '100%', maxWidth: 480,
+              background: 'var(--bg-card, #fff)',
+              border: '1px solid var(--border, rgba(0,0,0,0.1))',
+              borderRadius: 14,
+              overflow: 'hidden',
+              boxShadow: '0 24px 80px rgba(0,0,0,0.22)',
+              display: 'flex', flexDirection: 'column',
+              maxHeight: 'calc(100vh - 80px)',
+            }}
+          >
+            {/* header */}
+            <div style={{ padding: '16px 16px 0', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <MapPin style={{ width: 16, height: 16, color: 'var(--solar, #f59e0b)', flexShrink: 0 }} />
+                  <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary, #111)', letterSpacing: '-0.02em' }}>
+                    Select Location
+                  </span>
                 </div>
-                <span className="text-xs text-[var(--text-tertiary)]">{loc.annualAvgSunHours} sun-hrs/day</span>
-              </Button>
-            ))}
+                <button
+                  onClick={() => { setLocationPickerOpen(false); setLocationSearch(''); }}
+                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', padding: 4, color: 'var(--text-tertiary, #999)', lineHeight: 1 }}
+                  aria-label="Close"
+                >
+                  <X style={{ width: 16, height: 16 }} />
+                </button>
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary, #666)', marginBottom: 10, marginTop: 2 }}>
+                212 cities across Africa — Meteonorm irradiance data
+              </p>
+              {/* search */}
+              <div style={{ position: 'relative', marginBottom: 10 }}>
+                <Search style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, color: 'var(--text-tertiary, #999)', pointerEvents: 'none' }} />
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Search city or country…"
+                  value={locationSearch}
+                  onChange={e => setLocationSearch(e.target.value)}
+                  style={{
+                    width: '100%', boxSizing: 'border-box',
+                    paddingLeft: 32, paddingRight: 12, paddingTop: 8, paddingBottom: 8,
+                    fontSize: 13, borderRadius: 8,
+                    border: '1px solid var(--border, rgba(0,0,0,0.12))',
+                    background: 'var(--bg-card-muted, #f8f8f8)',
+                    color: 'var(--text-primary, #111)',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+            </div>
+            {/* city list grouped by country */}
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {(() => {
+                const q = locationSearch.trim().toLowerCase();
+                const filtered = q
+                  ? AFRICA_LOCATIONS.filter(l => l.name.toLowerCase().includes(q) || l.county.toLowerCase().includes(q))
+                  : AFRICA_LOCATIONS;
+                // group by country
+                const byCountry: Record<string, LocationOption[]> = {};
+                for (const loc of filtered) {
+                  if (!byCountry[loc.county]) byCountry[loc.county] = [];
+                  byCountry[loc.county].push(loc);
+                }
+                const countries = Object.keys(byCountry).sort();
+                if (countries.length === 0) {
+                  return <p style={{ padding: 20, textAlign: 'center', fontSize: 13, color: 'var(--text-tertiary, #999)' }}>No cities found for "{locationSearch}"</p>;
+                }
+                return countries.map(country => (
+                  <div key={country}>
+                    <div style={{
+                      position: 'sticky', top: 0,
+                      padding: '4px 16px',
+                      fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+                      color: 'var(--text-tertiary, #999)',
+                      background: 'var(--bg-secondary, #f5f5f5)',
+                      borderBottom: '1px solid var(--border, rgba(0,0,0,0.06))',
+                    }}>
+                      {country}
+                    </div>
+                    {byCountry[country].map(loc => {
+                      const isActive = activeLocation.name === loc.name && activeLocation.county === loc.county;
+                      return (
+                        <button
+                          key={loc.displayName}
+                          onClick={() => { handleSelectLocation(loc); setLocationSearch(''); }}
+                          style={{
+                            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '8px 16px', border: 'none', cursor: 'pointer', textAlign: 'left',
+                            background: isActive ? 'var(--solar-soft, rgba(245,158,11,0.1))' : 'transparent',
+                            color: isActive ? 'var(--solar, #f59e0b)' : 'var(--text-primary, #111)',
+                            fontSize: 13, transition: 'background 0.1s',
+                          }}
+                          onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card-muted, #f0f0f0)'; }}
+                          onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+                        >
+                          <span style={{ fontWeight: isActive ? 600 : 400 }}>{loc.name}</span>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                            <span style={{ fontSize: 11, color: isActive ? 'var(--solar, #f59e0b)' : 'var(--text-tertiary, #999)' }}>
+                              {loc.annualAvgSunHours} PSH/day
+                            </span>
+                            {isActive && <CheckCircle2 style={{ width: 13, height: 13 }} />}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ));
+              })()}
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>,
+        document.body
+      )}
 
       <EnergyReportModal
         isOpen={isReportOpen}
