@@ -58,7 +58,7 @@ export default function FinancialDashboard({
   const expectedYield = expectedYieldKwh ?? snapshot.energy.avgDailySolarKWh * DEFAULT_EXPECTED_YIELD_MULTIPLIER;
   const yieldDelta = actualYield - expectedYield;
   const deviationPct = expectedYield === 0 ? 0 : (yieldDelta / expectedYield) * 100;
-  const deviationClass = Math.abs(deviationPct) <= 5 ? 'text-green-600 bg-green-50' : Math.abs(deviationPct) <= 15 ? 'text-yellow-600 bg-yellow-50' : 'text-red-600 bg-red-50';
+  const deviationClass = Math.abs(deviationPct) <= 5 ? 'text-green-500 bg-green-500/10' : Math.abs(deviationPct) <= 15 ? 'text-yellow-500 bg-yellow-500/10' : 'text-red-500 bg-red-500/10';
   const revenueImpact = yieldDelta * tariffRate;
 
   return (
@@ -75,7 +75,7 @@ export default function FinancialDashboard({
         </div>
 
         {!hasSimulationData ? (
-          <div className="grid min-h-[380px] gap-6 rounded-[32px] border border-dashed border-[var(--border)] bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.12),transparent_34%),linear-gradient(180deg,rgba(17,24,39,0.96),rgba(15,23,42,0.9))] p-6 items-stretch xl:grid-cols-[minmax(420px,1.25fr)_minmax(320px,0.75fr)] lg:p-8">
+          <div className="grid min-h-[380px] gap-6 rounded-[32px] border border-dashed border-[var(--border)] bg-[var(--bg-card-muted)] p-6 items-stretch xl:grid-cols-[minmax(420px,1.25fr)_minmax(320px,0.75fr)] lg:p-8" style={{ background: 'linear-gradient(135deg, var(--bg-card-muted) 0%, var(--bg-secondary) 100%)' }}>
             <div className="flex w-full min-w-0 flex-col justify-between gap-6 text-left">
               <div className="space-y-4 w-full min-w-0">
                 <div className="h-16 w-16 rounded-2xl border border-[var(--battery)]/20 bg-[var(--battery-soft)] flex items-center justify-center text-[var(--battery)] shadow-[0_0_0_8px_rgba(16,185,129,0.08)]">
@@ -139,22 +139,22 @@ export default function FinancialDashboard({
             <div className="rounded-2xl border border-[var(--border-strong)] p-4 bg-[var(--bg-secondary)] space-y-4">
               <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card-hover)] p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-muted-foreground">Expected yield vs actual yield</p>
+                  <p className="text-sm font-medium text-[var(--text-secondary)]">Expected yield vs actual yield</p>
                   <span className={`rounded-full px-2 py-1 text-xs font-semibold ${deviationClass}`}>
                     {deviationPct >= 0 ? '+' : ''}{deviationPct.toFixed(1)}%
                   </span>
                 </div>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                   <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] p-3">
-                    <p className="text-sm font-medium text-muted-foreground">Expected yield</p>
+                    <p className="text-sm font-medium text-[var(--text-secondary)]">Expected yield</p>
                     <p className="text-2xl font-bold text-[var(--text-primary)]">{formatNumber(expectedYield, 2)} kWh</p>
                   </div>
                   <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] p-3">
-                    <p className="text-sm font-medium text-muted-foreground">Actual yield</p>
+                    <p className="text-sm font-medium text-[var(--text-secondary)]">Actual yield</p>
                     <p className="text-2xl font-bold text-[var(--text-primary)]">{formatNumber(actualYield, 2)} kWh</p>
                   </div>
                   <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] p-3">
-                    <p className="text-sm font-medium text-muted-foreground">Estimated revenue impact</p>
+                    <p className="text-sm font-medium text-[var(--text-secondary)]">Estimated revenue impact</p>
                     <p className="text-2xl font-bold text-[var(--text-primary)]">
                       {formatCurrency(revenueImpact, 2)}
                     </p>

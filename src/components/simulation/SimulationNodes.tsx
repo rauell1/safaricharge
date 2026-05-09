@@ -34,6 +34,9 @@ import {
   Gauge,
   Car,
   BatteryCharging,
+  Building2,
+  Wind,
+  Settings2,
 } from 'lucide-react';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -249,7 +252,7 @@ SolarPanelProduct.displayName = 'SolarPanelProduct';
 // InverterProduct
 // ---------------------------------------------------------------------------
 export const InverterProduct = React.memo(
-  ({ power, ratedCapacityKw }: { id?: number | string; power: number; ratedCapacityKw: number }) => {
+  ({ id, power, ratedCapacityKw }: { id?: number | string; power: number; ratedCapacityKw: number }) => {
     const loadPct = ratedCapacityKw > 0 ? Math.min(100, (Math.abs(power) / ratedCapacityKw) * 100) : 0;
     const isActive = Math.abs(power) > 0.1;
     return (
@@ -257,7 +260,9 @@ export const InverterProduct = React.memo(
         isActive ? 'border-orange-400 shadow-[0_0_10px_rgba(251,146,60,0.3)]' : 'border-[var(--border)]'
       } w-36 p-3 gap-1.5 transition-all duration-500`}>
         <div className="w-full flex justify-between items-center">
-          <span className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-wide">Inverter · {ratedCapacityKw.toFixed(0)} kW</span>
+          <span className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-wide">
+            {id != null ? `INV ${id}` : 'Inverter'} · {ratedCapacityKw.toFixed(0)} kW
+          </span>
           <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-orange-400 animate-pulse' : 'bg-[var(--border)]'}`} />
         </div>
         <div className="bg-slate-800 rounded w-full h-9 flex items-center justify-center font-mono text-orange-400 text-sm shadow-inner">
@@ -566,11 +571,12 @@ function SimulationControls() {
 // SimulationNodes — SLD layout
 // ---------------------------------------------------------------------------
 export function SimulationNodes() {
-  const nodes        = useEnergySystemStore((s) => s.nodes);
-  const systemConfig = useEnergySystemStore((s) => s.systemConfig);
-  const timeOfDay    = useEnergySystemStore((s) => s.timeOfDay);
-  const simSpeed     = useEnergySystemStore((s) => s.simSpeed);
-  const minuteData   = useEnergySystemStore((s) => s.minuteData);
+  const nodes            = useEnergySystemStore((s) => s.nodes);
+  const systemConfig     = useEnergySystemStore((s) => s.systemConfig);
+  const fullSystemConfig = useEnergySystemStore((s) => s.fullSystemConfig);
+  const timeOfDay        = useEnergySystemStore((s) => s.timeOfDay);
+  const simSpeed         = useEnergySystemStore((s) => s.simSpeed);
+  const minuteData       = useEnergySystemStore((s) => s.minuteData);
 
   const solarNode   = nodes.solar;
   const batteryNode = nodes.battery;
@@ -621,6 +627,45 @@ export function SimulationNodes() {
   // Cable capacity references
   const dcCap = systemConfig.solarCapacityKW ?? 10;
   const acCap = inverterCapKw;
+
+  // ── Dynamic loads from fullSystemConfig ────────────────────────────────────
+  const evLoads    = (fullSystemConfig?.loads ?? []).filter((l: any) => l.enabled && l.type === 'ev');
+  const nonEvLoads = (fullSystemConfig?.loads ?? []).filter((l: any) => l.enabled && l.type !== 'ev');
+
+  // EV power: first 2 tracked in simulation data; additional EVs show 0
+  const getEvPower = (idx: number) => idx === 0 ? ev1Power : idx === 1 ? ev2Power : 0;
+  const getEvSoc   = (idx: number) => idx === 0 ? ev1Soc  : idx === 1 ? ev2Soc  : 66;
+
+  // Distribute homeLoadKw proportionally among non-EV loads by configured capacity
+  const timeSlot = Math.min(23, Math.floor(timeOfDay));
+  const totalNonEvConfigKw = nonEvLoads.reduce((sum: number, load: any) => {
+    if (load.type === 'home')       return sum + (load.hourlyProfile?.[timeSlot] ?? 3);
+    if (load.type === 'commercial') return sum + (load.constantKw ?? 5);
+    if (load.type === 'hvac')       return sum + (load.capacityKw ?? 2);
+    return sum + (load.constantKw ?? 1);
+  }, 0);
+
+  const getNonEvLoadPower = (load: any) => {
+    if (totalNonEvConfigKw <= 0 || homeLoadKw <= 0) return 0;
+    let ck = 0;
+    if (load.type === 'home')       ck = load.hourlyProfile?.[timeSlot] ?? 3;
+    else if (load.type === 'commercial') ck = load.constantKw ?? 5;
+    else if (load.type === 'hvac')       ck = load.capacityKw ?? 2;
+    else                                 ck = load.constantKw ?? 1;
+    return homeLoadKw * (ck / totalNonEvConfigKw);
+  };
+
+  const getLoadIcon = (type: string): React.ElementType => {
+    if (type === 'commercial') return Building2;
+    if (type === 'hvac')       return Wind;
+    if (type === 'custom')     return Settings2;
+    return Home;
+  };
+
+  // Inverter bank: derive unit count from total capacity ÷ 10 kW/unit
+  const inverterCount       = Math.min(5, Math.max(1, Math.round(inverterCapKw / 10)));
+  const perInverterCapKw    = inverterCapKw / inverterCount;
+  const perInverterPowerKw  = inverterPower / inverterCount;
 
   return (
     <div className="space-y-4">
@@ -722,6 +767,8 @@ export function SimulationNodes() {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="overflow-x-auto -mx-2 px-2">
+          <div className="min-w-[560px]">
 
           {/* ── Row 1: DC sources (Solar left, Battery right) ── */}
           <div className="flex justify-around items-end px-4 md:px-12 gap-4 mb-0">
@@ -786,13 +833,17 @@ export function SimulationNodes() {
             </div>
           </div>
 
-          {/* ── Row 3: Inverter ── */}
-          <div className="flex justify-center py-2">
-            <InverterProduct
-              id={1}
-              power={inverterPower}
-              ratedCapacityKw={inverterCapKw}
-            />
+          {/* ── Row 3: Inverter bank (1–5 units based on capacity ÷ 10 kW) ── */}
+          <div className="flex justify-center gap-3 py-2 flex-wrap">
+            {Array.from({ length: inverterCount }, (_, i) => (
+              <div key={i} className="flex flex-col items-center gap-0">
+                <InverterProduct
+                  id={inverterCount > 1 ? i + 1 : undefined}
+                  power={perInverterPowerKw}
+                  ratedCapacityKw={perInverterCapKw}
+                />
+              </div>
+            ))}
           </div>
 
           {/* ── AC Bus bar label ── */}
@@ -814,11 +865,11 @@ export function SimulationNodes() {
             </div>
           </div>
 
-          {/* ── Row 4: AC loads (Grid · Home · EV1 · EV2) ── */}
-          <div className="flex flex-wrap justify-around items-start gap-x-4 gap-y-6 px-2 pt-4">
+          {/* ── Row 4: AC loads — dynamic from fullSystemConfig.loads ── */}
+          <div className="flex flex-nowrap justify-start sm:justify-around items-start gap-x-4 gap-y-6 px-2 pt-4 pb-3">
 
-            {/* Grid */}
-            <div className="flex flex-col items-center gap-0">
+            {/* Grid — always first */}
+            <div className="flex flex-col items-center gap-0 flex-shrink-0">
               <RigidCable
                 height={36}
                 active={gridPower > 0.05}
@@ -838,73 +889,80 @@ export function SimulationNodes() {
               />
             </div>
 
-            {/* Home */}
-            <div className="flex flex-col items-center gap-0">
-              <RigidCable
-                height={36}
-                active={homeLoadKw > 0.1}
-                color="bg-blue-300"
-                glowColor="#93c5fd"
-                powerKw={homeLoadKw}
-                capacityKw={acCap}
-                flowDirection="down"
-                speed={simSpeed}
-                showLabel
-              />
-              <HomeProduct power={homeLoadKw} label="Home Load" />
-            </div>
+            {/* Non-EV loads: home, commercial/field, HVAC, custom */}
+            {nonEvLoads.length === 0 ? (
+              /* Fallback: show a generic Home Load if no loads configured */
+              <div className="flex flex-col items-center gap-0 flex-shrink-0">
+                <RigidCable height={36} active={homeLoadKw > 0.1} color="bg-blue-300" glowColor="#93c5fd" powerKw={homeLoadKw} capacityKw={acCap} flowDirection="down" speed={simSpeed} showLabel />
+                <HomeProduct power={homeLoadKw} label="Home Load" />
+              </div>
+            ) : nonEvLoads.map((load: any, i: number) => {
+              const loadPower = getNonEvLoadPower(load);
+              const LoadIcon  = getLoadIcon(load.type);
+              const cableColors = ['bg-blue-300', 'bg-emerald-300', 'bg-cyan-300', 'bg-purple-300', 'bg-rose-300'];
+              const glowColors  = ['#93c5fd', '#6ee7b7', '#67e8f9', '#c4b5fd', '#fda4af'];
+              return (
+                <div key={load.id ?? i} className="flex flex-col items-center gap-0 flex-shrink-0">
+                  <RigidCable
+                    height={36}
+                    active={loadPower > 0.05}
+                    color={cableColors[i % cableColors.length]}
+                    glowColor={glowColors[i % glowColors.length]}
+                    powerKw={loadPower}
+                    capacityKw={acCap}
+                    flowDirection="down"
+                    speed={simSpeed}
+                    showLabel
+                  />
+                  <HomeProduct power={loadPower} label={load.name} icon={LoadIcon} />
+                </div>
+              );
+            })}
 
-            {/* EV 1 */}
-            <div className="flex flex-col items-center gap-0">
-              <RigidCable
-                height={36}
-                active={ev1Power > 0.1}
-                color="bg-sky-400"
-                glowColor="#38bdf8"
-                powerKw={ev1Power}
-                capacityKw={acCap}
-                flowDirection="down"
-                speed={simSpeed}
-                showLabel
-              />
-              <EVChargerProduct
-                id={1}
-                status={ev1Status}
-                power={ev1Power}
-                soc={ev1Soc}
-                carName="EV Commuter"
-                capacity={systemConfig.ev1CapacityKWh ?? 80}
-                maxRate={22}
-                onToggle={() => {}}
-              />
-            </div>
-
-            {/* EV 2 */}
-            <div className="flex flex-col items-center gap-0">
-              <RigidCable
-                height={36}
-                active={ev2Power > 0.1}
-                color="bg-violet-400"
-                glowColor="#a78bfa"
-                powerKw={ev2Power}
-                capacityKw={acCap}
-                flowDirection="down"
-                speed={simSpeed}
-                showLabel
-              />
-              <EVChargerProduct
-                id={2}
-                status={ev2Status}
-                power={ev2Power}
-                soc={ev2Soc}
-                carName="EV Fleet"
-                capacity={systemConfig.ev2CapacityKWh ?? 118}
-                maxRate={50}
-                onToggle={() => {}}
-              />
-            </div>
+            {/* EV loads — dynamic from fullSystemConfig.loads */}
+            {evLoads.length === 0 ? null : evLoads.map((load: any, idx: number) => {
+              const evPow  = getEvPower(idx);
+              const evSocV = getEvSoc(idx);
+              const evStat = evPow > 0.1 ? 'Charging' : 'Idle';
+              const evPalette = [
+                { cable: 'bg-sky-400',    glow: '#38bdf8' },
+                { cable: 'bg-violet-400', glow: '#a78bfa' },
+                { cable: 'bg-pink-400',   glow: '#f472b6' },
+                { cable: 'bg-teal-400',   glow: '#2dd4bf' },
+                { cable: 'bg-orange-400', glow: '#fb923c' },
+              ];
+              const col = evPalette[idx % evPalette.length];
+              return (
+                <div key={load.id ?? idx} className="flex flex-col items-center gap-0 flex-shrink-0">
+                  <RigidCable
+                    height={36}
+                    active={evPow > 0.1}
+                    color={col.cable}
+                    glowColor={col.glow}
+                    powerKw={evPow}
+                    capacityKw={acCap}
+                    flowDirection="down"
+                    speed={simSpeed}
+                    showLabel
+                  />
+                  <EVChargerProduct
+                    id={idx + 1}
+                    status={evStat}
+                    power={evPow}
+                    soc={evSocV}
+                    carName={load.name}
+                    capacity={load.batteryKwh ?? 80}
+                    maxRate={load.onboardChargerKw ?? 22}
+                    onToggle={() => {}}
+                    v2g={load.supportsV2G ?? false}
+                  />
+                </div>
+              );
+            })}
 
           </div>
+          </div>{/* min-w wrapper */}
+          </div>{/* overflow-x-auto wrapper */}
         </CardContent>
       </Card>
 
