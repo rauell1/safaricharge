@@ -44,7 +44,16 @@ type KenyaIrradiancePresetsFile = {
 
 const typedPresets = presetsData as KenyaIrradiancePresetsFile;
 
-export function PVSizingSection() {
+interface LocationOverride {
+  name: string;
+  displayName: string;
+  county: string;
+  latitude: number;
+  longitude: number;
+  annualAvgSunHours: number;
+}
+
+export function PVSizingSection({ locationOverride }: { locationOverride?: LocationOverride }) {
   const router = useRouter();
   const [dailyLoadKwh, setDailyLoadKwh] = useState(10);
   const [county, setCounty] = useState(typedPresets.presets[0]?.county ?? 'Nairobi');
@@ -59,23 +68,26 @@ export function PVSizingSection() {
     [county]
   );
 
+  const effectiveSunHours = locationOverride?.annualAvgSunHours ?? selectedPreset.avgDailySunHours;
+  const derivedAnnualYield = Math.round(effectiveSunHours * 365 * performanceRatio);
+
   const result = useMemo(
     () =>
       computeSizingResult({
         dailyLoadKwh,
-        avgDailySunHours: selectedPreset.avgDailySunHours,
+        avgDailySunHours: effectiveSunHours,
         performanceRatio,
         systemType,
         batteryChemistry,
         autonomyDays,
         panelWattage,
       }),
-    [dailyLoadKwh, selectedPreset.avgDailySunHours, performanceRatio, systemType, batteryChemistry, autonomyDays, panelWattage]
+    [dailyLoadKwh, effectiveSunHours, performanceRatio, systemType, batteryChemistry, autonomyDays, panelWattage]
   );
 
   const handleLoadIntoSimulator = () => {
     const payload: SimulatorSizingPayload = {
-      county: selectedPreset.county,
+      county: locationOverride ? locationOverride.name : selectedPreset.county,
       systemType,
       panelWattage,
       requiredPvCapacityKw: result.requiredPvCapacityKw,
@@ -120,19 +132,31 @@ export function PVSizingSection() {
         </div>
 
         <div className={field}>
-          <Label className={labelCls}>County / Location</Label>
-          <Select value={county} onValueChange={setCounty}>
-            <SelectTrigger style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-              <SelectValue placeholder="Select county" />
-            </SelectTrigger>
-            <SelectContent>
-              {typedPresets.presets.map((preset) => (
-                <SelectItem key={preset.county} value={preset.county}>
-                  {preset.county} ({preset.avgDailySunHours.toFixed(1)} sun-hrs/day)
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label className={labelCls}>Location</Label>
+          {locationOverride ? (
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 6, padding: '8px 12px', color: 'var(--text-primary)', fontSize: 13 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontWeight: 600 }}>{locationOverride.displayName}</span>
+                <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{locationOverride.annualAvgSunHours} PSH/day</span>
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                {locationOverride.county} · {locationOverride.latitude.toFixed(4)}°, {locationOverride.longitude.toFixed(4)}°
+              </div>
+            </div>
+          ) : (
+            <Select value={county} onValueChange={setCounty}>
+              <SelectTrigger style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                <SelectValue placeholder="Select county" />
+              </SelectTrigger>
+              <SelectContent>
+                {typedPresets.presets.map((preset) => (
+                  <SelectItem key={preset.county} value={preset.county}>
+                    {preset.county} ({preset.avgDailySunHours.toFixed(1)} sun-hrs/day)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         <div className={field}>
@@ -257,8 +281,9 @@ export function PVSizingSection() {
         </p>
         <p>
           <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Solar profile:</span>{' '}
-          {selectedPreset.county} • {selectedPreset.annualYieldKwhPerKwp} kWh/kWp/yr •
-          Peak: {selectedPreset.peakMonth} • Low: {selectedPreset.lowMonth}
+          {locationOverride
+            ? `${locationOverride.displayName} • ~${derivedAnnualYield} kWh/kWp/yr`
+            : `${selectedPreset.county} • ${selectedPreset.annualYieldKwhPerKwp} kWh/kWp/yr • Peak: ${selectedPreset.peakMonth} • Low: ${selectedPreset.lowMonth}`}
         </p>
         <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
           Battery DoD reference: {Math.round(BATTERY_DOD[batteryChemistry] * 100)}%
@@ -288,10 +313,16 @@ export function PVSizingSection() {
           </Button>
         </div>
 
-        <p className="text-xs" style={{ color: 'var(--text-tertiary)', paddingTop: '4px' }}>
-          Source: {typedPresets.source.name} ({typedPresets.source.url}), accessed{' '}
-          {typedPresets.source.accessed}
-        </p>
+        {locationOverride ? (
+          <p className="text-xs" style={{ color: 'var(--text-tertiary)', paddingTop: '4px' }}>
+            Solar data: Africa Cities database · {locationOverride.county} · {locationOverride.annualAvgSunHours} peak sun-hours/day
+          </p>
+        ) : (
+          <p className="text-xs" style={{ color: 'var(--text-tertiary)', paddingTop: '4px' }}>
+            Source: {typedPresets.source.name} ({typedPresets.source.url}), accessed{' '}
+            {typedPresets.source.accessed}
+          </p>
+        )}
       </div>
     </div>
   );
