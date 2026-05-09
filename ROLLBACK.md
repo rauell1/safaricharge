@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 186 | `rollback/merge-pull-request-242-from-rauell1-cl-2026-05-09-83682b1` | `83682b1` | Merge pull request #242 from rauell1/claude/fix-bugs-improve-ui-G0zsr | 2026-05-09 |
 | 185 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-09-f14e5dd` | `f14e5dd` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-09 |
 | 184 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-08-190553a` | `190553a` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-08 |
 | 183 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-07-76d01a0` | `76d01a0` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-07 |
@@ -1915,6 +1916,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-09-f14e5dd`
 - **Commit**: `f14e5dd749923cf3884cc5a23705d18dc85a2c4f`
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-05-09
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #186 — `rollback/merge-pull-request-242-from-rauell1-cl-2026-05-09-83682b1`
+
+- **Branch**: `rollback/merge-pull-request-242-from-rauell1-cl-2026-05-09-83682b1`
+- **Commit**: `83682b1645d63b1296174c06044265e8cb1c931b`
+- **Subject**: Merge pull request #242 from rauell1/claude/fix-bugs-improve-ui-G0zsr
 - **Date**: 2026-05-09
 - **Auto-generated**: yes (by update-rollback.yml)
 
