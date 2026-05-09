@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 193 | `rollback/improve-sld-ac-bus-visibility-configur-2026-05-10-cb1d1f1` | `cb1d1f1` | Improve SLD: AC Bus visibility, configurable EV & inverter panels (#249) | 2026-05-10 |
 | 192 | `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-05-09-dfbffcf` | `dfbffcf` | docs(auto): regenerate README.md [skip ci] | 2026-05-09 |
 | 191 | `rollback/fix-bugs-improve-ui-location-sync-live-2026-05-10-2be6dcc` | `2be6dcc` | Fix bugs & improve UI: location sync, live nodes, dark mode (#247) | 2026-05-10 |
 | 190 | `rollback/merge-pull-request-246-from-rauell1-cl-2026-05-10-889a0db` | `889a0db` | Merge pull request #246 from rauell1/claude/fix-bugs-improve-ui-G0zsr | 2026-05-10 |
@@ -1986,6 +1987,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Commit**: `dfbffcf5f4f05d7bdf3ef2bea2709962ca49c77e`
 - **Subject**: docs(auto): regenerate README.md [skip ci]
 - **Date**: 2026-05-09
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #193 — `rollback/improve-sld-ac-bus-visibility-configur-2026-05-10-cb1d1f1`
+
+- **Branch**: `rollback/improve-sld-ac-bus-visibility-configur-2026-05-10-cb1d1f1`
+- **Commit**: `cb1d1f1af1410b0a91174774a7a000ca619ddc24`
+- **Subject**: Improve SLD: AC Bus visibility, configurable EV & inverter panels (#249)
+- **Date**: 2026-05-10
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
