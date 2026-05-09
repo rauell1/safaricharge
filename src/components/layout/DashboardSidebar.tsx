@@ -293,7 +293,7 @@ export function DashboardSidebar({
       {/* Logo */}
       <SidebarHeader className="px-4 py-5 border-b border-[var(--border)] bg-[var(--bg-card)]">
         <div className="flex items-center justify-center">
-          <Image src="/logo.svg" alt="SafariCharge" width={140} height={80} className="object-contain" />
+          <Image src="/logo.png" alt="SafariCharge" width={140} height={80} className="object-contain" />
         </div>
       </SidebarHeader>
 

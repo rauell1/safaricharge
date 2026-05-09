@@ -14,15 +14,13 @@ export function BrandLogo({
   size = 'md',
   className = '',
 }: BrandLogoProps) {
-  // logo.svg (4.5 KB vector) replaces logo.png (6.48 MB raster).
-  // SVG scales perfectly at any DPI/zoom, loads ~1400× faster on mobile.
   const wrapperClassName = size === 'sm' ? 'h-8 w-[118px]' : 'h-10 w-[140px]';
 
   return (
     <Link href={href} className={`inline-flex items-center gap-2.5 ${className}`}>
       <span className={`relative shrink-0 ${wrapperClassName}`}>
         <Image
-          src="/logo.svg"
+          src="/logo.png"
           alt="SafariCharge logo"
           fill
           priority
