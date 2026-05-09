@@ -15,8 +15,12 @@ import {
   Sun,
   Moon,
   Download,
+  LogOut,
 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase';
 import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import {
@@ -152,7 +156,14 @@ export function DashboardSidebar({
   contextualMetrics = [],
 }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { isOpen: aiPanelOpen, toggleAI } = useAIAssistant();
+
+  const handleLogout = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/login')
+  };
 
   const resolvedActive: DashboardSection = useMemo(() => {
     if (activeSection && activeSection !== 'dashboard') return activeSection;
@@ -282,7 +293,7 @@ export function DashboardSidebar({
       {/* Logo */}
       <SidebarHeader className="px-4 py-5 border-b border-[var(--border)] bg-[var(--bg-card)]">
         <div className="flex items-center justify-center">
-          <img src="/logo.png" alt="SafariCharge" className="h-20 w-auto object-contain" />
+          <Image src="/logo.svg" alt="SafariCharge" width={140} height={80} className="object-contain" />
         </div>
       </SidebarHeader>
 
@@ -360,9 +371,16 @@ export function DashboardSidebar({
         </SidebarGroup>
       </SidebarContent>
 
-      {/* Footer: theme toggle + status */}
+      {/* Footer: theme toggle + logout + status */}
       <SidebarFooter className="px-4 py-4 border-t border-[var(--border)] bg-[var(--bg-card)] space-y-3">
         <ThemeToggle />
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--alert)] transition-colors"
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          Sign out
+        </button>
         <div className="flex items-center gap-2.5">
           <span className="h-2 w-2 rounded-full shrink-0 status-online bg-[var(--battery)]" />
           <span className="text-xs text-[var(--text-tertiary)]">System Online</span>

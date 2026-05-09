@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase'
 import { BrandLogo } from '@/components/brand-logo'
 import { ThemeToggle } from '@/components/theme-toggle'
 
-type OAuthProvider = 'google' | 'azure'
+type OAuthProvider = 'google' | 'apple'
 type Mode = 'signin' | 'register'
 
 function GoogleIcon() {
@@ -22,13 +22,10 @@ function GoogleIcon() {
   )
 }
 
-function MicrosoftIcon() {
+function AppleIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect x="1" y="1" width="10.5" height="10.5" fill="#F25022"/>
-      <rect x="12.5" y="1" width="10.5" height="10.5" fill="#7FBA00"/>
-      <rect x="1" y="12.5" width="10.5" height="10.5" fill="#00A4EF"/>
-      <rect x="12.5" y="12.5" width="10.5" height="10.5" fill="#FFB900"/>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
     </svg>
   )
 }
@@ -37,7 +34,9 @@ function Divider() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '6px 0' }}>
       <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-      <span style={{ color: 'var(--text-tertiary)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>or continue with email</span>
+      <span style={{ color: 'var(--text-tertiary)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+        or continue with email
+      </span>
       <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
     </div>
   )
@@ -46,11 +45,16 @@ function Divider() {
 function Field({ id, label, icon, ...props }: any) {
   return (
     <div>
-      <label htmlFor={id} style={{ display: 'block', color: 'var(--text-secondary)', fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>
+      <label
+        htmlFor={id}
+        style={{ display: 'block', color: 'var(--text-secondary)', fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}
+      >
         {label}
       </label>
       <div style={{ position: 'relative' }}>
-        <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>{icon}</div>
+        <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>
+          {icon}
+        </div>
         <input
           id={id}
           {...props}
@@ -68,12 +72,18 @@ function LoginForm() {
   const initialError = useMemo(() => {
     const reason = searchParams.get('reason')
     const err = searchParams.get('error')
-    if (reason === 'session_expired') return 'Your session expired after 15 minutes of inactivity. Please sign in again.'
+    if (reason === 'session_expired') return 'Your session expired after 1 hour of inactivity. Please sign in again.'
     if (err === 'auth_failed') return 'We could not verify your sign-in request. Please try again.'
     return ''
   }, [searchParams])
 
-  const [mode, setMode] = useState<Mode>('signin')
+  // Default to 'register' so new visitors see account creation first.
+  // If they're returning after a session expiry, show sign-in directly.
+  const initialMode = useMemo<Mode>(() => {
+    const reason = searchParams.get('reason')
+    return reason === 'session_expired' ? 'signin' : 'register'
+  }, [searchParams])
+  const [mode, setMode] = useState<Mode>(initialMode)
   const [error, setError] = useState(initialError)
   const [success, setSuccess] = useState('')
   const [oauthLoading, setOauthLoading] = useState<OAuthProvider | null>(null)
@@ -95,7 +105,6 @@ function LoginForm() {
       provider,
       options: {
         redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
-        scopes: provider === 'azure' ? 'openid email profile' : undefined,
       },
     })
     if (e) { setError(e.message || `Could not sign in with ${provider}.`); setOauthLoading(null) }
@@ -168,11 +177,12 @@ function LoginForm() {
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.55 }}>
           {mode === 'signin'
-            ? 'Sessions expire after 15 minutes of inactivity for security.'
+            ? 'Sessions expire after 1 hour of inactivity for security.'
             : 'Clean energy professionals workspace. Your details personalise your experience.'}
         </p>
       </div>
 
+      {/* Mode switcher */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 18 }}>
         {(['signin', 'register'] as Mode[]).map(t => (
           <button key={t} onClick={() => { setMode(t); reset() }} style={{
@@ -186,14 +196,27 @@ function LoginForm() {
         ))}
       </div>
 
+      {/* OAuth buttons */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
-        <button onClick={() => handleOAuth('google')} disabled={!!oauthLoading || loading} style={{ ...oauthBtn, opacity: oauthLoading && oauthLoading !== 'google' ? 0.45 : 1 }}>
-          {oauthLoading === 'google' ? <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} /> : <GoogleIcon />}
+        <button
+          onClick={() => handleOAuth('google')}
+          disabled={!!oauthLoading || loading}
+          style={{ ...oauthBtn, opacity: oauthLoading && oauthLoading !== 'google' ? 0.45 : 1 }}
+        >
+          {oauthLoading === 'google'
+            ? <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} />
+            : <GoogleIcon />}
           Continue with Google
         </button>
-        <button onClick={() => handleOAuth('azure')} disabled={!!oauthLoading || loading} style={{ ...oauthBtn, opacity: oauthLoading && oauthLoading !== 'azure' ? 0.45 : 1 }}>
-          {oauthLoading === 'azure' ? <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} /> : <MicrosoftIcon />}
-          Continue with Microsoft
+        <button
+          onClick={() => handleOAuth('apple')}
+          disabled={!!oauthLoading || loading}
+          style={{ ...oauthBtn, opacity: oauthLoading && oauthLoading !== 'apple' ? 0.45 : 1 }}
+        >
+          {oauthLoading === 'apple'
+            ? <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} />
+            : <AppleIcon />}
+          Continue with Apple
         </button>
       </div>
 
@@ -204,29 +227,75 @@ function LoginForm() {
 
       {mode === 'signin' && (
         <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
-          <Field id="email" label="Work email" type="email" autoComplete="email" placeholder="name@company.com" value={email} onChange={(e: any) => setEmail(e.target.value)} icon={<Mail size={15} />} required />
+          <Field
+            id="email" label="Work email" type="email" autoComplete="email"
+            placeholder="name@company.com" value={email}
+            onChange={(e: any) => setEmail(e.target.value)}
+            icon={<Mail size={15} />} required
+          />
           <div>
-            <Field id="password" label="Password" type="password" autoComplete="current-password" placeholder="Your password" value={password} onChange={(e: any) => setPassword(e.target.value)} icon={<LockKeyhole size={15} />} required />
+            <Field
+              id="password" label="Password" type="password" autoComplete="current-password"
+              placeholder="Your password" value={password}
+              onChange={(e: any) => setPassword(e.target.value)}
+              icon={<LockKeyhole size={15} />} required
+            />
             <div style={{ textAlign: 'right', marginTop: 6 }}>
-              <Link href="/forgot-password" style={{ color: 'var(--text-tertiary)', fontSize: 12, textDecoration: 'none' }}>Forgot password?</Link>
+              <Link href="/landing" style={{ color: 'var(--text-tertiary)', fontSize: 12, textDecoration: 'none' }}>
+                Forgot password?
+              </Link>
             </div>
           </div>
           <button type="submit" disabled={loading || !!oauthLoading} style={{ ...primaryBtn, opacity: loading ? 0.7 : 1 }}>
-            {loading ? <><Loader2 style={{ width: 15, height: 15, animation: 'spin 1s linear infinite' }} />Signing in…</> : 'Sign in to dashboard'}
+            {loading
+              ? <><Loader2 style={{ width: 15, height: 15, animation: 'spin 1s linear infinite' }} />Signing in…</>
+              : 'Sign in to dashboard'}
           </button>
         </form>
       )}
 
       {mode === 'register' && (
         <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
-          <Field id="full-name" label="Full name" type="text" autoComplete="name" placeholder="Jane Njeri" value={fullName} onChange={(e: any) => setFullName(e.target.value)} icon={<UserRound size={15} />} required />
-          <Field id="organization" label="Organisation" type="text" autoComplete="organization" placeholder="e.g. Kenya Power, KETRACO, NGO" value={organization} onChange={(e: any) => setOrganization(e.target.value)} icon={<Building2 size={15} />} required />
-          <Field id="phone" label="Phone (optional)" type="tel" autoComplete="tel" placeholder="+254 700 000 000" value={phone} onChange={(e: any) => setPhone(e.target.value)} icon={<Phone size={15} />} />
-          <Field id="reg-email" label="Work email" type="email" autoComplete="email" placeholder="name@company.com" value={email} onChange={(e: any) => setEmail(e.target.value)} icon={<Mail size={15} />} required />
-          <Field id="reg-password" label="Password" type="password" autoComplete="new-password" placeholder="Min. 8 characters" value={password} onChange={(e: any) => setPassword(e.target.value)} icon={<LockKeyhole size={15} />} required />
-          <Field id="confirm-password" label="Confirm password" type="password" autoComplete="new-password" placeholder="Re-enter password" value={confirmPassword} onChange={(e: any) => setConfirmPassword(e.target.value)} icon={<LockKeyhole size={15} />} required />
+          <Field
+            id="full-name" label="Full name" type="text" autoComplete="name"
+            placeholder="Jane Njeri" value={fullName}
+            onChange={(e: any) => setFullName(e.target.value)}
+            icon={<UserRound size={15} />} required
+          />
+          <Field
+            id="organization" label="Organisation" type="text" autoComplete="organization"
+            placeholder="e.g. Kenya Power, KETRACO, NGO" value={organization}
+            onChange={(e: any) => setOrganization(e.target.value)}
+            icon={<Building2 size={15} />} required
+          />
+          <Field
+            id="phone" label="Phone (optional)" type="tel" autoComplete="tel"
+            placeholder="+254 700 000 000" value={phone}
+            onChange={(e: any) => setPhone(e.target.value)}
+            icon={<Phone size={15} />}
+          />
+          <Field
+            id="reg-email" label="Work email" type="email" autoComplete="email"
+            placeholder="name@company.com" value={email}
+            onChange={(e: any) => setEmail(e.target.value)}
+            icon={<Mail size={15} />} required
+          />
+          <Field
+            id="reg-password" label="Password" type="password" autoComplete="new-password"
+            placeholder="Min. 8 characters" value={password}
+            onChange={(e: any) => setPassword(e.target.value)}
+            icon={<LockKeyhole size={15} />} required
+          />
+          <Field
+            id="confirm-password" label="Confirm password" type="password" autoComplete="new-password"
+            placeholder="Re-enter password" value={confirmPassword}
+            onChange={(e: any) => setConfirmPassword(e.target.value)}
+            icon={<LockKeyhole size={15} />} required
+          />
           <button type="submit" disabled={loading || !!oauthLoading} style={{ ...primaryBtn, opacity: loading ? 0.7 : 1 }}>
-            {loading ? <><Loader2 style={{ width: 15, height: 15, animation: 'spin 1s linear infinite' }} />Creating account…</> : 'Create account'}
+            {loading
+              ? <><Loader2 style={{ width: 15, height: 15, animation: 'spin 1s linear infinite' }} />Creating account…</>
+              : 'Create account'}
           </button>
           <p style={{ color: 'var(--text-tertiary)', fontSize: 11.5, lineHeight: 1.55 }}>
             By creating an account you agree to SafariCharge&apos;s terms of service and privacy policy.
@@ -245,8 +314,8 @@ export default function LoginPage() {
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
       <div style={{ position: 'fixed', inset: 0, background: 'var(--bg-primary)', fontFamily: "'Inter', system-ui, sans-serif", display: 'flex', flexDirection: 'column' }}>
-        <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px)', backgroundSize: '64px 64px', pointerEvents: 'none' }} />
-        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 55% 45% at 50% 0%, rgba(16,185,129,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(var(--site-grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--site-grid-line) 1px, transparent 1px)', backgroundSize: '64px 64px', pointerEvents: 'none' }} />
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 55% 45% at 50% 0%, var(--site-top-glow) 0%, transparent 70%)', pointerEvents: 'none' }} />
         <header style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', height: 60, borderBottom: '1px solid var(--border)' }}>
           <BrandLogo href="/landing" size="sm" />
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

@@ -3,10 +3,10 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 // Exact public paths or path prefixes that do NOT require authentication.
-const PUBLIC_EXACT: Set<string> = new Set(['/', '/login', '/landing'])
+const PUBLIC_EXACT: Set<string> = new Set(['/', '/login'])
 const PUBLIC_PREFIXES: string[] = ['/auth/', '/api/', '/forgot-password', '/signup']
 
-const SESSION_TTL_MS = 15 * 60 * 1000
+const SESSION_TTL_MS = 60 * 60 * 1000
 const SESSION_TOUCH_COOKIE = 'sc_last_seen'
 const AUTH_VALIDATED_AT_COOKIE = 'sc_auth_checked_at'
 const AUTH_VALIDATION_WINDOW_MS = Number(process.env.AUTH_VALIDATION_WINDOW_MS ?? 60_000)
@@ -155,7 +155,7 @@ export async function proxy(request: NextRequest) {
     sameSite: 'lax',
     secure: true,
     path: '/',
-    maxAge: 15 * 60,
+    maxAge: 60 * 60,
   })
 
   const totalMs = Date.now() - middlewareStart
