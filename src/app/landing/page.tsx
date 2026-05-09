@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   Sun, Zap, BarChart3, Battery, ArrowRight, Shield,
   Globe, TrendingDown, Check, Activity, ChevronRight, Cpu, Leaf, Quote, ArrowUpRight,
+  Menu, X,
 } from 'lucide-react';
 import { BrandLogo } from '@/components/brand-logo';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -144,7 +146,16 @@ const testimonials = [
   },
 ];
 
+const NAV_LINKS = [
+  { label: 'Features', href: '#features' },
+  { label: 'Performance', href: '#stats' },
+  { label: 'Pricing', href: '#pricing' },
+  { label: 'GitHub', href: 'https://github.com/rauell1/safaricharge', external: true },
+] as const;
+
 export default function LandingPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <div
       className="min-h-screen antialiased"
@@ -205,17 +216,12 @@ export default function LandingPage() {
           <BrandLogo href="/landing" />
 
           <nav className="hidden md:flex items-center gap-1">
-            {[
-              { label: 'Features', href: '#features' },
-              { label: 'Performance', href: '#stats' },
-              { label: 'Pricing', href: '#pricing' },
-              { label: 'GitHub', href: 'https://github.com/rauell1/safaricharge', external: true },
-            ].map((item) => (
+            {NAV_LINKS.map((item) => (
               <a
                 key={item.label}
                 href={item.href}
-                target={item.external ? '_blank' : undefined}
-                rel={item.external ? 'noopener noreferrer' : undefined}
+                target={'external' in item && item.external ? '_blank' : undefined}
+                rel={'external' in item && item.external ? 'noopener noreferrer' : undefined}
                 className="text-sm px-3.5 py-2 rounded-lg transition-colors"
                 style={{ color: 'var(--site-nav-link)', background: 'transparent' }}
                 onMouseEnter={(e) => {
@@ -247,15 +253,58 @@ export default function LandingPage() {
             </Link>
             <Link
               href="/demo"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-1.5 rounded-lg transition-colors"
+              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-1.5 rounded-lg transition-colors"
               style={{ background: 'var(--battery)', color: '#fff' }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--battery-bright)'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--battery)'; }}
             >
               Open app <ArrowRight className="w-3.5 h-3.5" />
             </Link>
+            {/* Mobile hamburger */}
+            <button
+              type="button"
+              className="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
+              style={{ color: 'var(--site-page-muted)', border: '1px solid var(--site-page-border)' }}
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileMenuOpen}
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+            >
+              {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div
+            className="md:hidden border-t px-6 py-4 flex flex-col gap-1"
+            style={{ borderColor: 'var(--site-page-border)', background: 'var(--site-nav-bg)' }}
+          >
+            {NAV_LINKS.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                target={'external' in item && item.external ? '_blank' : undefined}
+                rel={'external' in item && item.external ? 'noopener noreferrer' : undefined}
+                className="text-sm px-3 py-2.5 rounded-lg transition-colors"
+                style={{ color: 'var(--site-nav-link)' }}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {item.label}
+              </a>
+            ))}
+            <div className="mt-2 pt-3" style={{ borderTop: '1px solid var(--site-page-border)' }}>
+              <Link
+                href="/demo"
+                className="flex items-center justify-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl text-white transition-colors"
+                style={{ background: 'var(--battery)' }}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Open app <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* ── Hero ── */}
