@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 192 | `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-05-09-dfbffcf` | `dfbffcf` | docs(auto): regenerate README.md [skip ci] | 2026-05-09 |
 | 191 | `rollback/fix-bugs-improve-ui-location-sync-live-2026-05-10-2be6dcc` | `2be6dcc` | Fix bugs & improve UI: location sync, live nodes, dark mode (#247) | 2026-05-10 |
 | 190 | `rollback/merge-pull-request-246-from-rauell1-cl-2026-05-10-889a0db` | `889a0db` | Merge pull request #246 from rauell1/claude/fix-bugs-improve-ui-G0zsr | 2026-05-10 |
 | 189 | `rollback/merge-pull-request-245-from-rauell1-cl-2026-05-10-7e34dc3` | `7e34dc3` | Merge pull request #245 from rauell1/claude/fix-bugs-improve-ui-G0zsr | 2026-05-10 |
@@ -1976,6 +1977,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Commit**: `2be6dccdb95159eac01a2b036b4aee1c4903ba05`
 - **Subject**: Fix bugs & improve UI: location sync, live nodes, dark mode (#247)
 - **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #192 — `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-05-09-dfbffcf`
+
+- **Branch**: `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-05-09-dfbffcf`
+- **Commit**: `dfbffcf5f4f05d7bdf3ef2bea2709962ca49c77e`
+- **Subject**: docs(auto): regenerate README.md [skip ci]
+- **Date**: 2026-05-09
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
