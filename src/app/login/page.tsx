@@ -148,7 +148,7 @@ function LoginForm() {
   }
 
   const primaryBtn: React.CSSProperties = {
-    width: '100%', background: 'linear-gradient(135deg, #059669, #10b981)', border: 'none', borderRadius: 10,
+    width: '100%', background: 'var(--battery)', border: 'none', borderRadius: 10,
     padding: '13px', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
     boxShadow: '0 0 28px rgba(16,185,129,0.22)', transition: 'opacity 0.15s',
@@ -178,8 +178,8 @@ function LoginForm() {
           <button key={t} onClick={() => { setMode(t); reset() }} style={{
             borderRadius: 8, border: '1px solid var(--border)', padding: '9px',
             fontSize: 12, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase',
-            background: mode === t ? 'rgba(16,185,129,0.18)' : 'rgba(255,255,255,0.03)',
-            color: mode === t ? '#d1fae5' : 'var(--text-secondary)', cursor: 'pointer',
+            background: mode === t ? 'var(--battery-soft)' : 'var(--bg-card-muted)',
+            color: mode === t ? 'var(--battery)' : 'var(--text-secondary)', cursor: 'pointer',
           }}>
             {t === 'signin' ? 'Sign in' : 'Create account'}
           </button>
@@ -199,8 +199,8 @@ function LoginForm() {
 
       <Divider />
 
-      {error && <p style={{ color: '#fca5a5', fontSize: 13, marginBottom: 10 }}>{error}</p>}
-      {success && <p style={{ color: '#86efac', fontSize: 13, marginBottom: 10 }}>{success}</p>}
+      {error && <p style={{ color: 'var(--alert)', fontSize: 13, marginBottom: 10 }}>{error}</p>}
+      {success && <p style={{ color: 'var(--battery)', fontSize: 13, marginBottom: 10 }}>{success}</p>}
 
       {mode === 'signin' && (
         <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>

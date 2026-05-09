@@ -252,6 +252,10 @@
   The overflow guard is on .page-shell instead, which protects the
   content area from layout overflow without affecting any overlay.
 */
+html {
+  scroll-behavior: smooth;
+}
+
 html, body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
@@ -620,7 +624,7 @@ input[type='range']::-moz-range-thumb:hover { transform: scale(1.15); }
 .animate-pulse-glow       { animation: pulse-glow 2.2s ease-in-out infinite; }
 .animate-flow-horizontal  { animation: flow-left-to-right 2s ease-in-out infinite; }
 .status-online            { animation: pulse-status 2.4s ease-in-out infinite; }
-.animate-scale-in         { animation: scale-in 0.18s cubic-bezier(0.16,1,0.3,1)); }
+.animate-scale-in         { animation: scale-in 0.18s cubic-bezier(0.16,1,0.3,1); }
 
 /* ─── Global interactive transitions ────────────────────────── */
 a, button, input, select, textarea,
