@@ -24,7 +24,9 @@ function Field({ id, label, icon, ...props }: any) {
 function OnboardingForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const next = searchParams.get('next') ?? '/dashboard'
+  const nextParam = searchParams.get('next') ?? '/dashboard'
+  // Always route new users through site setup before the app.
+  const next = `/site-setup?next=${encodeURIComponent(nextParam)}`
 
   const [fullName, setFullName] = useState('')
   const [organization, setOrganization] = useState('')

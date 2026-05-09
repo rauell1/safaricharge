@@ -4,10 +4,11 @@
  */
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
   MapPin, Target, TrendingUp, DollarSign, Battery, Sun, Zap, Leaf,
-  AlertCircle, CheckCircle2, Loader2, ChevronDown, ChevronUp, Info
+  AlertCircle, CheckCircle2, Loader2, ChevronDown, ChevronUp, Info, Search, X
 } from 'lucide-react';
 import {
   KENYA_LOCATIONS,
@@ -16,6 +17,7 @@ import {
   fetchSolarData,
   getSolarDataForLocation
 } from '@/lib/nasa-power-api';
+import { AFRICA_CITIES, type AfricaCity } from '@/lib/africa-locations-data';
 import type { HardwareRecommendation, LoadProfile } from '@/lib/recommendation-engine';
 import { generateRecommendation, createLoadProfileFromSimulation } from '@/lib/recommendation-engine';
 import type { SimulationMinuteRecord } from '@/types/simulation-core';
@@ -38,8 +40,48 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
   const [customCoords, setCustomCoords] = useState({ lat: '', lon: '' });
   const [error, setError] = useState<string | null>(null);
   const [dataSourceLabel, setDataSourceLabel] = useState<string>('');
+  const [search, setSearch] = useState('');
+  const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
   const fallbackCacheRef = useRef<Record<string, { data: SolarIrradianceData; fetchedAt: number }>>({});
   const localCacheRef = cacheRef ?? fallbackCacheRef;
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Group Africa cities by country, filtered by search query
+  const filteredCities = React.useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const cities = q
+      ? AFRICA_CITIES.filter(c => c.name.toLowerCase().includes(q) || c.country.toLowerCase().includes(q))
+      : AFRICA_CITIES;
+    // Group by country
+    const byCountry: Record<string, AfricaCity[]> = {};
+    for (const city of cities) {
+      if (!byCountry[city.country]) byCountry[city.country] = [];
+      byCountry[city.country].push(city);
+    }
+    return byCountry;
+  }, [search]);
+
+  const openPopup = useCallback(() => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const popupWidth = Math.min(360, window.innerWidth - 24);
+      let left = rect.right - popupWidth;
+      if (left < 12) left = 12;
+      setPopupStyle({ position: 'fixed', top: rect.bottom + 8, left, width: popupWidth, zIndex: 9999 });
+    }
+    setIsOpen(v => !v);
+  }, []);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (buttonRef.current && !buttonRef.current.contains(target)) setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [isOpen]);
 
   const handleLocationSelect = async (location: LocationCoordinates) => {
     setIsLoading(true); setError(null); setDataSourceLabel(''); onLoadingChange?.(true);
@@ -66,11 +108,16 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
     }
   };
 
+  const handleAfricaSelect = (city: AfricaCity) => {
+    const loc: LocationCoordinates = { latitude: city.lat, longitude: city.lon, name: `${city.name}, ${city.country}` };
+    handleLocationSelect(loc);
+  };
+
   const handleCustomLocation = async () => {
     const lat = parseFloat(customCoords.lat);
     const lon = parseFloat(customCoords.lon);
-    if (isNaN(lat) || isNaN(lon) || lat < -5 || lat > 5 || lon < 33 || lon > 42) {
-      setError('Please enter valid Kenya coordinates (Lat: -5 to 5, Lon: 33 to 42)');
+    if (isNaN(lat) || isNaN(lon) || lat < -38 || lat > 40 || lon < -20 || lon > 55) {
+      setError('Please enter valid Africa coordinates (Lat: -38 to 40, Lon: -20 to 55)');
       return;
     }
     const location: LocationCoordinates = { latitude: lat, longitude: lon, name: `Custom (${lat.toFixed(2)}°, ${lon.toFixed(2)}°)` };
@@ -100,50 +147,105 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
     );
   }
 
+  const popup = isOpen ? (
+    <div
+      style={popupStyle}
+      className="bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden"
+    >
+      {/* Header */}
+      <div className="p-3 bg-slate-900 text-white">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm font-bold">
+            <MapPin size={15} className="text-sky-400" />
+            Select Location
+          </div>
+          <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-white transition-colors">
+            <X size={14} />
+          </button>
+        </div>
+        <p className="text-xs text-slate-400 mt-1">Affects solar irradiance calculations</p>
+        {/* Search box */}
+        <div className="relative mt-2">
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            autoFocus
+            type="text"
+            placeholder="Search city or country…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-8 pr-3 py-1.5 rounded-lg text-xs bg-slate-800 border border-slate-700 text-white placeholder:text-slate-500 outline-none focus:border-sky-500"
+          />
+        </div>
+      </div>
+
+      {/* City list grouped by country */}
+      <div className="overflow-y-auto" style={{ maxHeight: 320 }}>
+        {Object.keys(filteredCities).length === 0 ? (
+          <p className="p-4 text-xs text-slate-400 text-center">No cities found for "{search}"</p>
+        ) : (
+          Object.entries(filteredCities).map(([country, cities]) => (
+            <div key={country}>
+              <p className="sticky top-0 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-50 border-b border-slate-100">
+                {country}
+              </p>
+              {cities.map(city => {
+                const locName = `${city.name}, ${city.country}`;
+                const isActive = currentLocation.name === locName;
+                return (
+                  <button
+                    key={city.name}
+                    onClick={() => handleAfricaSelect(city)}
+                    disabled={isLoading}
+                    className={`w-full text-left px-3 py-2 text-sm transition-colors flex items-center justify-between gap-2 ${isActive ? 'bg-sky-50 text-sky-700' : 'text-slate-700 hover:bg-slate-50'} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <span>
+                      <span className="font-medium">{city.name}</span>
+                      <span className="ml-2 text-xs text-slate-400">{city.avgDailyPsh} PSH · {city.avgTempC}°C</span>
+                    </span>
+                    {isActive && <CheckCircle2 size={13} className="text-sky-600 shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          ))
+        )}
+
+        {/* Custom coords */}
+        <div className="p-3 border-t border-slate-200 bg-slate-50">
+          <p className="text-xs font-bold text-slate-500 uppercase mb-2">Custom Coordinates (Africa)</p>
+          <div className="flex gap-2 mb-2">
+            <input type="number" placeholder="Latitude" value={customCoords.lat} onChange={(e) => setCustomCoords({ ...customCoords, lat: e.target.value })} className="flex-1 px-2 py-1 text-xs border border-slate-300 rounded" step="0.01" />
+            <input type="number" placeholder="Longitude" value={customCoords.lon} onChange={(e) => setCustomCoords({ ...customCoords, lon: e.target.value })} className="flex-1 px-2 py-1 text-xs border border-slate-300 rounded" step="0.01" />
+          </div>
+          <button onClick={handleCustomLocation} disabled={isLoading} className="w-full bg-sky-600 text-white text-xs font-bold py-2 rounded hover:bg-sky-700 transition-colors disabled:opacity-50">
+            {isLoading ? <span className="flex items-center justify-center gap-2"><Loader2 size={12} className="animate-spin" />Loading…</span> : 'Apply Custom Location'}
+          </button>
+        </div>
+
+        <div className="p-3 border-t border-slate-200 bg-white">
+          <button onClick={() => { if (onInvalidateCache) onInvalidateCache(); if (!cacheRef) localCacheRef.current = {}; setDataSourceLabel(''); }} className="w-full text-xs font-bold text-red-600 border border-red-200 bg-red-50 hover:bg-red-100 rounded-lg py-2 transition-colors">
+            Invalidate Cache
+          </button>
+        </div>
+      </div>
+
+      {error && <div className="p-2 bg-red-50 border-t border-red-200"><p className="text-xs text-red-600 flex items-center gap-1"><AlertCircle size={12} />{error}</p></div>}
+    </div>
+  ) : null;
+
   return (
     <div className="relative">
-      <button onClick={() => setIsOpen(!isOpen)} className="flex items-center gap-2 text-slate-500 text-xs font-medium bg-slate-100 px-3 py-1 rounded-full hover:bg-slate-200 transition-colors" title={dataSourceLabel || 'Click to select location'}>
+      <button
+        ref={buttonRef}
+        onClick={openPopup}
+        className="flex items-center gap-2 text-slate-500 text-xs font-medium bg-slate-100 px-3 py-1 rounded-full hover:bg-slate-200 transition-colors"
+        title={dataSourceLabel || 'Click to select location'}
+      >
         <MapPin size={14} className="text-sky-500" />
         {label ? `${label}: ${currentLocation.name}` : currentLocation.name}
         {isOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
       </button>
-      {isOpen && (
-        <div className="absolute top-full right-0 mt-2 w-[min(20rem,calc(100vw-1.5rem))] bg-white rounded-lg shadow-xl border border-slate-200 z-50 overflow-hidden">
-          <div className="p-3 bg-slate-900 text-white text-sm font-bold">
-            <div className="flex items-center gap-2"><MapPin size={16} className="text-sky-400" />Select Location</div>
-            <p className="text-xs text-slate-400 mt-1 font-normal">Location affects solar irradiance calculations</p>
-          </div>
-          <div className="max-h-96 overflow-y-auto">
-            <div className="p-2">
-              <p className="text-xs font-bold text-slate-500 uppercase px-2 py-1">Kenya Cities</p>
-              {KENYA_LOCATIONS.map((location) => (
-                <button key={location.name} onClick={() => handleLocationSelect(location)} disabled={isLoading}
-                  className={`w-full text-left px-3 py-2 text-sm rounded hover:bg-slate-100 transition-colors ${currentLocation.name === location.name ? 'bg-sky-50 text-sky-600 font-medium' : 'text-slate-700'} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                  <div className="flex items-center justify-between">
-                    <span>{location.name}</span>
-                    {currentLocation.name === location.name && <CheckCircle2 size={14} className="text-sky-600" />}
-                  </div>
-                  <span className="text-xs text-slate-400">{location.latitude.toFixed(2)}°, {location.longitude.toFixed(2)}°</span>
-                </button>
-              ))}
-            </div>
-            <div className="p-3 border-t border-slate-200 bg-slate-50">
-              <p className="text-xs font-bold text-slate-500 uppercase mb-2">Custom Coordinates</p>
-              <div className="flex gap-2 mb-2">
-                <input type="number" placeholder="Latitude" value={customCoords.lat} onChange={(e) => setCustomCoords({ ...customCoords, lat: e.target.value })} className="flex-1 px-2 py-1 text-sm border border-slate-300 rounded" step="0.01" />
-                <input type="number" placeholder="Longitude" value={customCoords.lon} onChange={(e) => setCustomCoords({ ...customCoords, lon: e.target.value })} className="flex-1 px-2 py-1 text-sm border border-slate-300 rounded" step="0.01" />
-              </div>
-              <button onClick={handleCustomLocation} disabled={isLoading} className="w-full bg-sky-600 text-white text-xs font-bold py-2 rounded hover:bg-sky-700 transition-colors disabled:opacity-50">
-                {isLoading ? <span className="flex items-center justify-center gap-2"><Loader2 size={12} className="animate-spin" />Loading...</span> : 'Apply Custom Location'}
-              </button>
-            </div>
-            <div className="p-3 border-t border-slate-200 bg-white">
-              <button onClick={() => { if (onInvalidateCache) onInvalidateCache(); if (!cacheRef) localCacheRef.current = {}; setDataSourceLabel(''); }} className="w-full text-xs font-bold text-red-600 border border-red-200 bg-red-50 hover:bg-red-100 rounded-lg py-2 transition-colors">Invalidate Cache</button>
-            </div>
-          </div>
-          {error && <div className="p-2 bg-red-50 border-t border-red-200"><p className="text-xs text-red-600 flex items-center gap-1"><AlertCircle size={12} />{error}</p></div>}
-        </div>
-      )}
+      {typeof document !== 'undefined' && popup ? createPortal(popup, document.body) : null}
     </div>
   );
 };
