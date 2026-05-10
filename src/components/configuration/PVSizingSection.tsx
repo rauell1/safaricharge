@@ -6,6 +6,14 @@
  *
  * The "Load into simulator" flow writes to localStorage (SIZING_SIMULATOR_STORAGE_KEY)
  * and navigates to /simulation — identical behaviour to the previous standalone /sizing page.
+ *
+ * Label change: "System Type" → "Installation Type"
+ *   Rationale: the field only gates battery sizing (off-grid requires battery capacity +
+ *   autonomy days; on-grid/hybrid skips it). It is NOT the same as the simulation's
+ *   "System Mode" toggle (which controls grid export, net-metering and anti-islanding).
+ *   Using distinct labels removes the visual ambiguity spotted in the UI.
+ *   The value is still written to SimulatorSizingPayload.systemType and consumed by
+ *   the simulation to pre-set System Mode on load.
  */
 'use client';
 
@@ -88,6 +96,7 @@ export function PVSizingSection({ locationOverride }: { locationOverride?: Locat
   const handleLoadIntoSimulator = () => {
     const payload: SimulatorSizingPayload = {
       county: locationOverride ? locationOverride.name : selectedPreset.county,
+      // systemType is passed through so the simulation can pre-set its System Mode
       systemType,
       panelWattage,
       requiredPvCapacityKw: result.requiredPvCapacityKw,
@@ -102,6 +111,7 @@ export function PVSizingSection({ locationOverride }: { locationOverride?: Locat
 
   const field = 'space-y-1.5';
   const labelCls = 'text-xs font-medium text-[var(--text-secondary)]';
+  const hintCls = 'text-[10px] text-[var(--text-tertiary)] mt-0.5';
 
   return (
     <div className="space-y-6">
@@ -159,8 +169,23 @@ export function PVSizingSection({ locationOverride }: { locationOverride?: Locat
           )}
         </div>
 
+        {/*
+          ── Installation Type ──────────────────────────────────────────
+          Renamed from "System Type" to avoid confusion with the simulation's
+          "System Mode" toggle (On-Grid / Off-Grid / Hybrid) which appears
+          further down the page and controls grid export & anti-islanding.
+
+          This field's only effect on sizing:
+            • off-grid  → battery capacity + autonomy days are required
+            • on-grid   → no battery sizing; payback uses grid savings
+            • hybrid    → no battery sizing in this calculator (battery
+                          is sized separately in the simulation config)
+
+          When "Load into simulator" is clicked, this value pre-sets the
+          simulation's System Mode so both controls stay in sync.
+        */}
         <div className={field}>
-          <Label className={labelCls}>System Type</Label>
+          <Label className={labelCls}>Installation Type</Label>
           <Select value={systemType} onValueChange={(v) => setSystemType(v as SystemType)}>
             <SelectTrigger style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
               <SelectValue />
@@ -171,6 +196,10 @@ export function PVSizingSection({ locationOverride }: { locationOverride?: Locat
               <SelectItem value="hybrid">Hybrid</SelectItem>
             </SelectContent>
           </Select>
+          <p className={hintCls}>
+            Determines whether battery storage is required for sizing.
+            Sets the simulation's System Mode when loaded.
+          </p>
         </div>
 
         <div className={field}>
