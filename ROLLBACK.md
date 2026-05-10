@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 195 | `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-05-10-226a27e` | `226a27e` | docs(auto): regenerate README.md [skip ci] | 2026-05-10 |
 | 194 | `rollback/africa-inverter-presets-move-config-to-2026-05-10-1849c7c` | `1849c7c` | Africa inverter presets, move config to System Config, add PDF report | 2026-05-10 |
 | 193 | `rollback/improve-sld-ac-bus-visibility-configur-2026-05-10-cb1d1f1` | `cb1d1f1` | Improve SLD: AC Bus visibility, configurable EV & inverter panels (#249) | 2026-05-10 |
 | 192 | `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-05-09-dfbffcf` | `dfbffcf` | docs(auto): regenerate README.md [skip ci] | 2026-05-09 |
@@ -2005,6 +2006,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/africa-inverter-presets-move-config-to-2026-05-10-1849c7c`
 - **Commit**: `1849c7c8ac8c0d99dbb650cb9524ae0a422e36d7`
 - **Subject**: Africa inverter presets, move config to System Config, add PDF report
+- **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #195 — `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-05-10-226a27e`
+
+- **Branch**: `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-05-10-226a27e`
+- **Commit**: `226a27e8d07cabfb0ae95035b74aa51c415142dd`
+- **Subject**: docs(auto): regenerate README.md [skip ci]
 - **Date**: 2026-05-10
 - **Auto-generated**: yes (by update-rollback.yml)
 
