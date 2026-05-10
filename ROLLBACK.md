@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 204 | `rollback/feat-wire-real-world-physics-from-cata-2026-05-10-900a10c` | `900a10c` | feat: wire real-world physics from catalog IDs into simulation engine | 2026-05-10 |
 | 203 | `rollback/rename-system-type-installation-type-i-2026-05-10-e6e0d1d` | `e6e0d1d` | rename System Type → Installation Type in PV sizing section to reduce UI ambiguity with System Mode simulation control | 2026-05-10 |
 | 202 | `rollback/add-setsystemmode-action-to-keep-ui-sy-2026-05-10-5a61fea` | `5a61fea` | Add setSystemMode action to keep UI system type and simulation mode in sync | 2026-05-10 |
 | 201 | `rollback/wire-installed-catalog-ids-into-system-2026-05-10-7482d1d` | `7482d1d` | Wire installed catalog IDs into SystemConfiguration, add installed-components summary helper, and feed catalog-based physics into simulation | 2026-05-10 |
@@ -2095,6 +2096,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/rename-system-type-installation-type-i-2026-05-10-e6e0d1d`
 - **Commit**: `e6e0d1de7941526325171eb67e0f229d2a59016b`
 - **Subject**: rename System Type → Installation Type in PV sizing section to reduce UI ambiguity with System Mode simulation control
+- **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #204 — `rollback/feat-wire-real-world-physics-from-cata-2026-05-10-900a10c`
+
+- **Branch**: `rollback/feat-wire-real-world-physics-from-cata-2026-05-10-900a10c`
+- **Commit**: `900a10c106ea3600126c92c4786c2b5e1d55270f`
+- **Subject**: feat: wire real-world physics from catalog IDs into simulation engine
 - **Date**: 2026-05-10
 - **Auto-generated**: yes (by update-rollback.yml)
 
