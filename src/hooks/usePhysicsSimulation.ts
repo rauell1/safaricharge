@@ -37,6 +37,10 @@ import {
 } from '@/lib/physics-engine';
 import type { SystemConfiguration } from '@/lib/system-config';
 import { SOILING_LOSS_PER_DAY, SOILING_MIN_FACTOR } from '@/lib/config';
+import {
+  resolveCatalogPhysicsParams,
+  DEFAULT_CATALOG_PHYSICS_PARAMS,
+} from '@/lib/catalog-physics-bridge';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -208,6 +212,20 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
       const hour = timeOfDay;
       const isPeakTime = hour >= peakWindow[0] && hour < peakWindow[1];
 
+      // Resolve catalog-based physics parameters from installed component IDs.
+      const hasIds =
+        !!systemConfig.installedModuleId ||
+        !!systemConfig.installedInverterId ||
+        !!systemConfig.installedBatteryId;
+
+      const catalogParams = hasIds
+        ? resolveCatalogPhysicsParams(
+            systemConfig.installedModuleId,
+            systemConfig.installedInverterId,
+            systemConfig.installedBatteryId
+          )
+        : DEFAULT_CATALOG_PHYSICS_PARAMS;
+
       // Run physics
       const result = calculateInstantPhysics(
         systemConfig,
@@ -219,7 +237,8 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
         gridEnabled,
         isPeakTime,
         peakRate,
-        offPeakRate
+        offPeakRate,
+        catalogParams
       );
 
       let adjustedBatteryPowerKw = result.batteryPowerKw;
@@ -314,33 +333,33 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
         {
           from: 'solar',
           to: 'home',
-            powerKW: Math.min(result.solarPowerKw, result.totalLoadKw),
-            active: result.solarPowerKw > 0.01,
-          },
+          powerKW: Math.min(result.solarPowerKw, result.totalLoadKw),
+          active: result.solarPowerKw > 0.01,
+        },
         {
           from: 'solar',
           to: 'battery',
-            powerKW: Math.max(0, adjustedBatteryPowerKw),
-            active: adjustedBatteryPowerKw > 0.01,
-          },
-          {
-            from: 'solar',
-            to: 'grid',
-            powerKW: adjustedGridExportKw,
-            active: adjustedGridExportKw > 0.01,
-          },
-          {
-            from: 'battery',
-            to: 'home',
-            powerKW: Math.max(0, -adjustedBatteryPowerKw),
-            active: adjustedBatteryPowerKw < -0.01,
-          },
-          {
-            from: 'grid',
-            to: 'home',
-            powerKW: adjustedGridImportKw,
-            active: adjustedGridImportKw > 0.01,
-          },
+          powerKW: Math.max(0, adjustedBatteryPowerKw),
+          active: adjustedBatteryPowerKw > 0.01,
+        },
+        {
+          from: 'solar',
+          to: 'grid',
+          powerKW: adjustedGridExportKw,
+          active: adjustedGridExportKw > 0.01,
+        },
+        {
+          from: 'battery',
+          to: 'home',
+          powerKW: Math.max(0, -adjustedBatteryPowerKw),
+          active: adjustedBatteryPowerKw < -0.01,
+        },
+        {
+          from: 'grid',
+          to: 'home',
+          powerKW: adjustedGridImportKw,
+          active: adjustedGridImportKw > 0.01,
+        },
       ];
       // -----------------------------------------------------------------------
       // 4. Build MinuteDataPoint and tick deltas

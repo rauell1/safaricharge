@@ -193,6 +193,14 @@ export interface SystemConfiguration {
   /** Additional partial shading loss percentage (0–50). */
   shadingLossPct: number;
 
+  /**
+   * Catalog IDs for installed hardware, linked into SOLAR_COMPONENT_CATALOG.
+   * These drive both physics (via catalog-physics-bridge) and UI (docs hub).
+   */
+  installedModuleId?: string;
+  installedInverterId?: string;
+  installedBatteryId?: string;
+
   /** Legacy scaling factors (for backward compatibility) */
   legacy?: {
     loadScale: number;
@@ -316,6 +324,9 @@ export const DEFAULT_SYSTEM_CONFIG: SystemConfiguration = {
   ],
   performanceRatio: 0.8,
   shadingLossPct: 0,
+  installedModuleId: 'jinko-tiger-neo-66hl4m-bdv',
+  installedInverterId: 'deye-sun-sg04lp1-3-6k',
+  installedBatteryId: 'pylontech-us5000',
   legacy: {
     loadScale: 1.0,
     evCommuterScale: 1.0,
