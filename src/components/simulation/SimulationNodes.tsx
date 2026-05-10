@@ -1066,6 +1066,144 @@ export function SimulationNodes() {
       </Card>
 
       {/* ══════════════════════════════════════════
+           INVERTER CONFIGURATION
+         ══════════════════════════════════════════ */}
+      <Card className="dashboard-card">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2 text-[var(--text-primary)]">
+            <Settings2 className="h-4 w-4 text-[var(--solar)]" />
+            Inverter Configuration
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-[var(--text-secondary)]">Make / Model</Label>
+              <Select
+                value={invPresetId}
+                onValueChange={(v) => {
+                  setInvPresetId(v);
+                  const p = INVERTER_PRESETS.find((x) => x.id === v);
+                  if (p && v !== 'custom') setInvKwPerUnit(p.kw);
+                }}
+              >
+                <SelectTrigger style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {INVERTER_PRESETS.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-[var(--text-secondary)]">Rated kW per unit</Label>
+              <Input
+                type="number"
+                min={1}
+                max={200}
+                step={0.5}
+                value={invKwPerUnit}
+                onChange={(e) => { setInvKwPerUnit(Number(e.target.value || 1)); setInvPresetId('custom'); }}
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-[var(--text-secondary)]">Units in parallel</Label>
+              <div className="flex items-center gap-2">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setInvUnits(n)}
+                    className={[
+                      'h-9 flex-1 rounded-lg text-sm font-bold border transition-all',
+                      invUnits === n
+                        ? 'bg-[var(--solar)] border-[var(--solar)] text-white shadow-sm'
+                        : 'bg-[var(--bg-card-muted)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--solar)] hover:text-[var(--solar)]',
+                    ].join(' ')}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-[var(--text-secondary)]">
+            <span className="flex items-center gap-1">
+              <Zap className="h-3 w-3 text-[var(--solar)]" />
+              Total capacity:
+              <strong className="text-[var(--text-primary)] ml-1">{(invKwPerUnit * invUnits).toFixed(1)} kW</strong>
+            </span>
+            {invUnits > 1 && (
+              <span className="text-[var(--text-tertiary)]">{invUnits} × {invKwPerUnit} kW in parallel</span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ══════════════════════════════════════════
+           EV CHARGER CONFIGURATION
+         ══════════════════════════════════════════ */}
+      <Card className="dashboard-card">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2 text-[var(--text-primary)]">
+            <Car className="h-4 w-4 text-sky-400" />
+            EV Charger Configuration
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-[var(--text-secondary)]">Charger Type</Label>
+              <Select value={evPresetId} onValueChange={setEvPresetId}>
+                <SelectTrigger style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {EV_CHARGER_PRESETS.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-[var(--text-secondary)]">Number of chargers</Label>
+              <div className="flex items-center gap-2">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setEvChargerCount(n)}
+                    className={[
+                      'h-9 flex-1 rounded-lg text-sm font-bold border transition-all',
+                      evChargerCount === n
+                        ? 'bg-sky-500 border-sky-500 text-white shadow-sm'
+                        : 'bg-[var(--bg-card-muted)] border-[var(--border)] text-[var(--text-secondary)] hover:border-sky-400 hover:text-sky-400',
+                    ].join(' ')}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+            <div className="rounded border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2 text-[var(--text-secondary)]">
+              Connection: <strong className="text-[var(--text-primary)]">{selectedEvPreset.connectionType}</strong>
+            </div>
+            <div className="rounded border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2 text-[var(--text-secondary)]">
+              Per charger: <strong className="text-[var(--text-primary)]">{selectedEvPreset.maxKw} kW max</strong>
+            </div>
+            <div className="rounded border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2 text-[var(--text-secondary)]">
+              Total capacity: <strong className="text-[var(--text-primary)]">{selectedEvPreset.maxKw * evChargerCount} kW</strong>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ══════════════════════════════════════════
            SESSION TOTALS
          ══════════════════════════════════════════ */}
       <Card className="dashboard-card">
