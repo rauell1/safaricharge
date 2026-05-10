@@ -27,7 +27,12 @@ import type {
   HVACLoadConfig,
   CustomLoadConfig,
 } from '@/lib/system-config';
-import { createLoadTemplate } from '@/lib/system-config';
+import { createLoadTemplate, validateSystemConfig } from '@/lib/system-config';
+import {
+  BATTERY_MODULE_CATALOG,
+  resolveBatteryBankConfig,
+} from '@/lib/catalog-physics-bridge';
+import { buildInstalledComponentSummaries } from '@/lib/installed-components';
 import {
   computeDaysOfAutonomy,
   computeNetMeteringCreditKesPerMonth,
@@ -48,72 +53,50 @@ const EV_CHARGER_PRESETS = [
 ];
 
 const INVERTER_PRESETS_CONFIG = [
-  // ── Deye single-phase SG04LP1 (97.6% eff, 16-unit parallel, IP65) ──────────────────
-  { id: 'deye-3.6',  label: 'Deye SUN-3.6K-SG04LP1-EU-SM2 (3.6 kW, 1Ø)',  kw: 3.6  },
-  { id: 'deye-5sp',  label: 'Deye SUN-5K-SG04LP1-EU-SM2 (5 kW, 1Ø)',       kw: 5    },
-  { id: 'deye-6sp',  label: 'Deye SUN-6K-SG04LP1-EU-SM2 (6 kW, 1Ø)',       kw: 6    },
-  // ── Deye three-phase SG05LP3 3–12 kW (97.6% eff, 10-unit parallel, 240 A batt) ─────
-  { id: 'deye-3',    label: 'Deye SUN-3K-SG05LP3-EU-SM2 (3 kW, 3Ø)',       kw: 3    },
-  { id: 'deye-5',    label: 'Deye SUN-5K-SG05LP3-EU-SM2 (5 kW, 3Ø)',       kw: 5    },
-  { id: 'deye-8',    label: 'Deye SUN-8K-SG05LP3-EU-SM2 (8 kW, 3Ø)',       kw: 8    },
-  { id: 'deye-12',   label: 'Deye SUN-12K-SG05LP3-EU-SM2 (12 kW, 3Ø)',     kw: 12   },
-  // ── Deye three-phase SG05LP3 14–20 kW (97.6% eff, 10-unit parallel, 350 A batt) ─────
-  { id: 'deye-14',   label: 'Deye SUN-14K-SG05LP3-EU-SM2 (14 kW, 3Ø)',     kw: 14   },
-  { id: 'deye-16',   label: 'Deye SUN-16K-SG05LP3-EU-SM2 (16 kW, 3Ø)',     kw: 16   },
-  { id: 'deye-18',   label: 'Deye SUN-18K-SG05LP3-EU-SM2 (18 kW, 3Ø)',     kw: 18   },
-  { id: 'deye-20',   label: 'Deye SUN-20K-SG05LP3-EU-SM2 (20 kW, 3Ø)',     kw: 20   },
-  { id: 'growatt-3',   label: 'Growatt SPF 3000TL LVM (3 kW)',   kw: 3    },
-  { id: 'growatt-5',   label: 'Growatt SPF 5000TL LVM (5 kW)',   kw: 5    },
-  { id: 'growatt-10',  label: 'Growatt SPF 10000TL LVM (10 kW)', kw: 10   },
-  { id: 'growatt-15',  label: 'Growatt MID 15KTL3-X (15 kW)',    kw: 15   },
-  { id: 'growatt-20',  label: 'Growatt MID 20KTL3-X (20 kW)',    kw: 20   },
-  { id: 'solis-5',    label: 'Solis S5-EH1P5K (5 kW)',           kw: 5    },
-  { id: 'solis-10',   label: 'Solis S6-EH1P10K (10 kW)',         kw: 10   },
-  { id: 'solis-15',   label: 'Solis S5-EH3P15K (15 kW)',         kw: 15   },
-  { id: 'solis-25',   label: 'Solis S5-EH3P25K (25 kW)',         kw: 25   },
-  { id: 'sunsynk-5',   label: 'Sunsynk 5kW Hybrid',              kw: 5    },
-  { id: 'sunsynk-8',   label: 'Sunsynk 8kW Hybrid',              kw: 8    },
-  { id: 'sunsynk-10',  label: 'Sunsynk 10kW Hybrid',             kw: 10   },
-  { id: 'sunsynk-12',  label: 'Sunsynk 12kW Hybrid',             kw: 12   },
-  { id: 'victron-5',   label: 'Victron MultiPlus-II 5kVA',       kw: 5    },
-  { id: 'victron-8',   label: 'Victron Quattro 8kVA',            kw: 8    },
-  { id: 'victron-15',  label: 'Victron Quattro 15kVA',           kw: 15   },
-  { id: 'victron-30',  label: 'Victron Quattro 30kVA',           kw: 30   },
-  { id: 'jinko-5',    label: 'Jinko JKS-H 5K-LL1 (5 kW)',        kw: 5    },
-  { id: 'jinko-10',   label: 'Jinko JKS-H 10K-LL3 (10 kW)',      kw: 10   },
-  { id: 'invt-6',    label: 'INVT Solar MG 6K LV (6 kW)',         kw: 6    },
-  { id: 'invt-10',   label: 'INVT Solar MG 10K LV (10 kW)',       kw: 10   },
-  { id: 'goodwe-5',  label: 'Goodwe GW5000-ET (5 kW)',            kw: 5    },
-  { id: 'goodwe-10', label: 'Goodwe GW10K-ET (10 kW)',            kw: 10   },
-  { id: 'sma-15',    label: 'SMA Sunny Island 15kW',              kw: 15   },
-  { id: 'must-5',    label: 'Must Solar PH18-5048 (5 kW)',         kw: 5    },
-  { id: 'custom',    label: 'Custom / Other',                      kw: 10   },
+  { id: 'deye-sun-sg04lp1-3-6k', label: 'Deye SUN SG04LP1 (single phase)', kw: 6, phase: 'single' as const, voltage: 'low' as const, maxEfficiency: 0.976 },
+  { id: 'deye-sun-sg05lp3-3-12k', label: 'Deye SUN SG05LP3 (three phase)', kw: 12, phase: 'three' as const, voltage: 'high' as const, maxEfficiency: 0.976 },
+  { id: 'sungrow-sh5rs', label: 'Sungrow SH5.0RS', kw: 5, phase: 'single' as const, voltage: 'low' as const, maxEfficiency: 0.977 },
+  { id: 'sungrow-sh8rs', label: 'Sungrow SH8.0RS', kw: 8, phase: 'single' as const, voltage: 'low' as const, maxEfficiency: 0.977 },
+  { id: 'sungrow-sh10rt', label: 'Sungrow SH10RT', kw: 10, phase: 'three' as const, voltage: 'high' as const, maxEfficiency: 0.984 },
+  { id: 'sma-sunny-boy-storage', label: 'SMA Sunny Boy Storage', kw: 6, phase: 'single' as const, voltage: 'high' as const, maxEfficiency: 0.975 },
+  { id: 'fronius-symo-gen24', label: 'Fronius Symo GEN24 Plus', kw: 10, phase: 'three' as const, voltage: 'high' as const, maxEfficiency: 0.982 },
 ];
 
-function InverterConfigSection() {
-  const saveToStorage = (presetId: string, kwPerUnit: number, units: number) => {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem('sc_inverter_config', JSON.stringify({ presetId, kwPerUnit, units }));
-  };
-  const loadFromStorage = () => {
-    try {
-      const raw = typeof window !== 'undefined' ? localStorage.getItem('sc_inverter_config') : null;
-      return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
-  };
-  const saved = loadFromStorage();
-  const [presetId, setPresetId] = useState<string>(saved?.presetId ?? 'deye-12');
-  const [kwPerUnit, setKwPerUnit] = useState<number>(saved?.kwPerUnit ?? 12);
-  const [units, setUnits] = useState<number>(saved?.units ?? 1);
+function InverterConfigSection({
+  config,
+  onConfigChange,
+}: {
+  config: SystemConfiguration;
+  onConfigChange: (next: SystemConfiguration) => void;
+}) {
+  const presetId = config.installedInverterId ?? INVERTER_PRESETS_CONFIG[0].id;
+  const selected = INVERTER_PRESETS_CONFIG.find((p) => p.id === presetId) ?? INVERTER_PRESETS_CONFIG[0];
 
-  const handlePresetChange = (v: string) => {
-    setPresetId(v);
-    const p = INVERTER_PRESETS_CONFIG.find(x => x.id === v);
-    if (p && v !== 'custom') { setKwPerUnit(p.kw); saveToStorage(v, p.kw, units); }
-    else saveToStorage(v, kwPerUnit, units);
+  const handlePresetChange = (id: string) => {
+    const preset = INVERTER_PRESETS_CONFIG.find((p) => p.id === id);
+    if (!preset) return;
+    onConfigChange({
+      ...config,
+      installedInverterId: preset.id,
+      inverter: {
+        ...config.inverter,
+        capacityKw: preset.kw,
+        phase: preset.phase,
+        voltage: preset.voltage,
+        maxEfficiency: preset.maxEfficiency,
+      },
+    });
   };
-  const handleKwChange = (v: number) => { setKwPerUnit(v); setPresetId('custom'); saveToStorage('custom', v, units); };
-  const handleUnitsChange = (n: number) => { setUnits(n); saveToStorage(presetId, kwPerUnit, n); };
+
+  const handleKwChange = (kw: number) => {
+    onConfigChange({
+      ...config,
+      inverter: {
+        ...config.inverter,
+        capacityKw: Math.max(1, kw),
+      },
+    });
+  };
 
   return (
     <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-hover)] p-4 space-y-4">
@@ -129,7 +112,7 @@ function InverterConfigSection() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="space-y-1.5">
           <Label className="text-xs font-medium text-[var(--text-secondary)]">Make / Model</Label>
-          <Select value={presetId} onValueChange={handlePresetChange}>
+          <Select value={selected.id} onValueChange={handlePresetChange}>
             <SelectTrigger style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
               <SelectValue />
             </SelectTrigger>
@@ -141,42 +124,137 @@ function InverterConfigSection() {
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-[var(--text-secondary)]">Rated kW per unit</Label>
+          <Label className="text-xs font-medium text-[var(--text-secondary)]">Rated kW</Label>
           <Input
-            type="number" min={1} max={200} step={0.5} value={kwPerUnit}
+            type="number" min={1} max={200} step={0.5} value={config.inverter.capacityKw}
             onChange={e => handleKwChange(Number(e.target.value || 1))}
             style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
           />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-[var(--text-secondary)]">Units in parallel</Label>
-          <div className="flex gap-1.5">
-            {[1, 2, 3, 4, 5].map(n => (
-              <button key={n} type="button" onClick={() => handleUnitsChange(n)}
-                className={[
-                  'h-9 flex-1 rounded-lg text-sm font-bold border transition-all',
-                  units === n
-                    ? 'bg-[var(--solar)] border-[var(--solar)] text-white shadow-sm'
-                    : 'bg-[var(--bg-card-muted)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--solar)] hover:text-[var(--solar)]',
-                ].join(' ')}
-              >{n}</button>
-            ))}
+          <Label className="text-xs font-medium text-[var(--text-secondary)]">Phase</Label>
+          <div className="h-9 rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-3 flex items-center text-sm text-[var(--text-primary)]">
+            {config.inverter.phase === 'three' ? 'Three-phase' : 'Single-phase'}
           </div>
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-3 pt-1 border-t border-[var(--border)]">
         <span className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
           <Zap size={12} className="text-[var(--solar)]" />
-          Total capacity:
-          <strong className="text-[var(--text-primary)] ml-1">{(kwPerUnit * units).toFixed(1)} kW</strong>
+          Inverter capacity:
+          <strong className="text-[var(--text-primary)] ml-1">{config.inverter.capacityKw.toFixed(1)} kW</strong>
         </span>
-        {units > 1 && (
-          <span className="text-xs text-[var(--text-tertiary)]">{units} × {kwPerUnit} kW in parallel</span>
-        )}
+        <span className="text-xs text-[var(--text-tertiary)]">{config.inverter.voltage === 'high' ? 'High voltage' : 'Low voltage'}</span>
         <Badge variant="outline" className="ml-auto text-[10px] border-[var(--solar)] text-[var(--solar)]">
-          {INVERTER_PRESETS_CONFIG.find(p => p.id === presetId)?.label?.split(' ')[0] ?? 'Custom'}
+          ηmax {(config.inverter.maxEfficiency ?? selected.maxEfficiency ?? 0.97).toFixed(3)}
         </Badge>
       </div>
+    </div>
+  );
+}
+
+function BatteryBankConfigSection({
+  config,
+  onConfigChange,
+}: {
+  config: SystemConfiguration;
+  onConfigChange: (next: SystemConfiguration) => void;
+}) {
+  const [sizeMode, setSizeMode] = useState<'modules' | 'kwh'>('modules');
+  const selectedSpec =
+    BATTERY_MODULE_CATALOG.find((s) => s.catalogId === config.installedBatteryId || s.id === config.installedBatteryId)
+    ?? BATTERY_MODULE_CATALOG[0];
+  const currentModules = config.battery.bankModules ?? selectedSpec.minModules;
+  const validation = validateSystemConfig(config);
+  const cRateWarnings = validation.warnings.filter((w) => /Battery charge rate|Battery discharge rate/.test(w));
+
+  const applySpec = (specId: string) => {
+    const spec = BATTERY_MODULE_CATALOG.find((s) => s.id === specId);
+    if (!spec) return;
+    const resolved = resolveBatteryBankConfig(spec, Math.max(spec.minModules, config.battery.bankModules ?? spec.minModules));
+    onConfigChange({
+      ...config,
+      installedBatteryId: spec.catalogId,
+      battery: { ...config.battery, ...resolved },
+    });
+  };
+
+  const handleModulesChange = (modules: number) => {
+    const resolved = resolveBatteryBankConfig(selectedSpec, modules);
+    onConfigChange({
+      ...config,
+      installedBatteryId: selectedSpec.catalogId,
+      battery: { ...config.battery, ...resolved },
+    });
+  };
+
+  const handleKwhChange = (kwh: number) => {
+    const modules = Math.round(Math.max(0.1, kwh) / selectedSpec.usableKwh);
+    handleModulesChange(modules);
+  };
+
+  return (
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-hover)] p-4 space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-bold text-[var(--text-primary)]">Battery Bank Configuration</h3>
+          <p className="text-xs text-[var(--text-tertiary)]">Catalog model + modules/kWh sizing (single source of truth)</p>
+        </div>
+        <div className="flex gap-1">
+          <button type="button" onClick={() => setSizeMode('modules')} className={`px-2 py-1 rounded text-xs border ${sizeMode === 'modules' ? 'bg-[var(--battery)] text-white border-[var(--battery)]' : 'border-[var(--border)] text-[var(--text-secondary)]'}`}>Modules</button>
+          <button type="button" onClick={() => setSizeMode('kwh')} className={`px-2 py-1 rounded text-xs border ${sizeMode === 'kwh' ? 'bg-[var(--battery)] text-white border-[var(--battery)]' : 'border-[var(--border)] text-[var(--text-secondary)]'}`}>kWh</button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-[var(--text-secondary)]">Brand / Model</Label>
+          <Select value={selectedSpec.id} onValueChange={applySpec}>
+            <SelectTrigger style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              {BATTERY_MODULE_CATALOG.map((spec) => (
+                <SelectItem key={spec.id} value={spec.id}>{spec.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-[var(--text-secondary)]">{sizeMode === 'modules' ? 'Modules' : 'Total kWh'}</Label>
+          <Input
+            type="number"
+            min={sizeMode === 'modules' ? selectedSpec.minModules : 0.1}
+            max={sizeMode === 'modules' ? selectedSpec.maxModules : 1000}
+            step={sizeMode === 'modules' ? 1 : 0.1}
+            value={sizeMode === 'modules' ? currentModules : config.battery.capacityKwh}
+            onChange={(e) => sizeMode === 'modules'
+              ? handleModulesChange(Number(e.target.value || selectedSpec.minModules))
+              : handleKwhChange(Number(e.target.value || config.battery.capacityKwh))}
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-[var(--text-secondary)]">Chemistry</Label>
+          <div className="h-9 rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-3 flex items-center text-sm text-[var(--text-primary)] uppercase">
+            {config.battery.chemistry}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2">Capacity: <strong>{config.battery.capacityKwh.toFixed(1)} kWh</strong></div>
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2">Max charge: <strong>{config.battery.maxChargeKw.toFixed(1)} kW</strong></div>
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2">Max discharge: <strong>{config.battery.maxDischargeKw.toFixed(1)} kW</strong></div>
+      </div>
+
+      {cRateWarnings.length > 0 && (
+        <div className="space-y-1">
+          {cRateWarnings.map((warning) => (
+            <div key={warning} className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">{warning}</div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -598,6 +676,7 @@ function getLoadSummary(load: LoadConfig): string {
 export function LoadConfigComponents() {
   const fullSystemConfig = useEnergySystemStore((s) => s.fullSystemConfig);
   const updateFullSystemConfig = useEnergySystemStore((s) => s.updateFullSystemConfig);
+  const updateNode = useEnergySystemStore((s) => s.updateNode);
   const minuteData = useEnergySystemStore((s) => s.minuteData);
   const modeConfig = useEnergySystemStore((s) => s.systemConfig);
   const updateSystemConfig = useEnergySystemStore((s) => s.updateSystemConfig);
@@ -612,6 +691,18 @@ export function LoadConfigComponents() {
   );
   const netMeteringCreditKes = computeNetMeteringCreditKesPerMonth(dailyExportKwh);
   const offGridPvKw = computeOffGridPvRecommendation(modeConfig.solarCapacityKW);
+  const installedComponents = buildInstalledComponentSummaries(fullSystemConfig);
+
+  const applyFullConfig = (next: SystemConfiguration) => {
+    updateFullSystemConfig(next);
+    updateSystemConfig({
+      solarCapacityKW: next.solar.totalCapacityKw,
+      inverterKW: next.inverter.capacityKw,
+      batteryCapacityKWh: next.battery.capacityKwh,
+    });
+    updateNode('solar', { capacityKW: next.solar.totalCapacityKw });
+    updateNode('battery', { capacityKWh: next.battery.capacityKwh });
+  };
 
   return (
     <div className="space-y-4">
@@ -720,8 +811,31 @@ export function LoadConfigComponents() {
         )}
       </div>
 
-      <InverterConfigSection />
+      <InverterConfigSection config={fullSystemConfig} onConfigChange={applyFullConfig} />
+      <BatteryBankConfigSection config={fullSystemConfig} onConfigChange={applyFullConfig} />
       <EVChargerConfigSection />
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-hover)] p-4 space-y-3">
+        <h3 className="text-sm font-bold text-[var(--text-primary)]">Installed Components</h3>
+        <div className="space-y-2">
+          {installedComponents.map((component) => (
+            <div key={component.role} className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2 text-xs">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-semibold text-[var(--text-primary)]">{component.brand} {component.model}</span>
+                <span className="text-[var(--text-tertiary)] uppercase">{component.role}</span>
+              </div>
+              <div className="mt-1 text-[var(--text-secondary)]">
+                {component.role === 'module' && `${component.sizing.capacityKw?.toFixed(1)} kWp (${component.sizing.panelCount} × ${component.sizing.panelWattage} W)`}
+                {component.role === 'inverter' && `${component.sizing.capacityKw?.toFixed(1)} kW AC`}
+                {component.role === 'battery' && `${component.sizing.capacityKwh?.toFixed(1)} kWh • ${component.sizing.maxChargeKw?.toFixed(1)} / ${component.sizing.maxDischargeKw?.toFixed(1)} kW`}
+              </div>
+              <div className="mt-1 flex gap-3">
+                {component.datasheetUrl && <a href={component.datasheetUrl} target="_blank" rel="noreferrer" className="text-[var(--battery)] hover:underline">Datasheet</a>}
+                {component.manualUrl && <a href={component.manualUrl} target="_blank" rel="noreferrer" className="text-[var(--grid)] hover:underline">Manual</a>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
       <LoadList config={fullSystemConfig} onConfigChange={updateFullSystemConfig} />
     </div>
   );

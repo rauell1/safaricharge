@@ -3,6 +3,8 @@
 import React, { useMemo, useState } from 'react';
 import { SOLAR_COMPONENT_CATALOG, SolarComponentCategory } from '@/lib/solar-component-catalog';
 import { ExternalLink, FileText, BookOpen, Search, Globe, LogIn, Zap } from 'lucide-react';
+import { useEnergySystemStore } from '@/stores/energySystemStore';
+import { applyCatalogComponentToSystemConfig } from '@/lib/system-config-catalog-sync';
 
 // ─── Brand-level metadata ────────────────────────────────────────────────────
 
@@ -98,6 +100,10 @@ function getBrandEntries(brand: string) {
 
 function BrandCard({ brand, category }: { brand: string; category: SolarComponentCategory }) {
   const entries = getBrandEntries(brand);
+  const fullSystemConfig = useEnergySystemStore((s) => s.fullSystemConfig);
+  const updateFullSystemConfig = useEnergySystemStore((s) => s.updateFullSystemConfig);
+  const updateSystemConfig = useEnergySystemStore((s) => s.updateSystemConfig);
+  const updateNode = useEnergySystemStore((s) => s.updateNode);
   const meta = BRAND_META[brand];
   const downloadCentre = meta?.downloadCentre ?? entries[0]?.manualUrl ?? '#';
   const access: AccessType = meta?.access ?? 'public';
@@ -115,6 +121,20 @@ function BrandCard({ brand, category }: { brand: string; category: SolarComponen
     'Solar Module':  'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
     'EV Charger':    'bg-purple-500/10 text-purple-400 border-purple-500/20',
     Monitoring:      'bg-sky-500/10 text-sky-400 border-sky-500/20',
+  };
+
+  const handleUseComponent = () => {
+    const entry = entries[0];
+    if (!entry) return;
+    const next = applyCatalogComponentToSystemConfig(fullSystemConfig, entry);
+    updateFullSystemConfig(next);
+    updateSystemConfig({
+      solarCapacityKW: next.solar.totalCapacityKw,
+      inverterKW: next.inverter.capacityKw,
+      batteryCapacityKWh: next.battery.capacityKwh,
+    });
+    updateNode('solar', { capacityKW: next.solar.totalCapacityKw });
+    updateNode('battery', { capacityKWh: next.battery.capacityKwh });
   };
 
   return (
@@ -210,6 +230,13 @@ function BrandCard({ brand, category }: { brand: string; category: SolarComponen
           >
             <ExternalLink className="w-3.5 h-3.5" /> Download Centre
           </a>
+          <button
+            type="button"
+            onClick={handleUseComponent}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-[11px] font-medium text-emerald-300 hover:bg-emerald-500/15 transition-colors"
+          >
+            Use this component
+          </button>
         </div>
       </div>
     </div>
