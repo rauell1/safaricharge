@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 199 | `rollback/feat-sim-wire-catalog-datasheet-specs-2026-05-10-99ab6c8` | `99ab6c8` | feat(sim): wire catalog datasheet specs into physics engine | 2026-05-10 |
 | 198 | `rollback/feat-add-branddocshub-component-with-t-2026-05-10-89eebfc` | `89eebfc` | feat: add BrandDocsHub component with Tier 1 brand documentation links | 2026-05-10 |
 | 197 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-10-07f7b6f` | `07f7b6f` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-10 |
 | 196 | `rollback/real-hardware-specs-from-deye-jinko-da-2026-05-10-909d6f8` | `909d6f8` | Real hardware specs from Deye & Jinko datasheets wired into simulation | 2026-05-10 |
@@ -2045,6 +2046,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/feat-add-branddocshub-component-with-t-2026-05-10-89eebfc`
 - **Commit**: `89eebfca76db306ef79146825d41d861be90d6bf`
 - **Subject**: feat: add BrandDocsHub component with Tier 1 brand documentation links
+- **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #199 — `rollback/feat-sim-wire-catalog-datasheet-specs-2026-05-10-99ab6c8`
+
+- **Branch**: `rollback/feat-sim-wire-catalog-datasheet-specs-2026-05-10-99ab6c8`
+- **Commit**: `99ab6c8a2bbbd913a67fcb6eba3de45695c8e404`
+- **Subject**: feat(sim): wire catalog datasheet specs into physics engine
 - **Date**: 2026-05-10
 - **Auto-generated**: yes (by update-rollback.yml)
 
