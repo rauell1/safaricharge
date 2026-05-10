@@ -5,6 +5,11 @@
  * hardware specifications, and validation functions.
  */
 
+import {
+  DEFAULT_SOLAR_SITE_CONFIG,
+  type SolarSiteConfig,
+} from '@/lib/solar-site-config';
+
 // ---------------------------------------------------------------------------
 // Load Configuration Types
 // ---------------------------------------------------------------------------
@@ -142,6 +147,8 @@ export interface InverterConfig {
   phase: InverterPhase;
   /** Voltage type */
   voltage: VoltageType;
+  /** Datasheet max efficiency (fraction) when known. */
+  maxEfficiency?: number;
 }
 
 export interface BatteryConfig {
@@ -218,6 +225,9 @@ export interface SystemConfiguration {
   installedModuleId?: string;
   installedInverterId?: string;
   installedBatteryId?: string;
+
+  /** Site-level irradiance assumptions used by the physics engine. */
+  solarSite?: SolarSiteConfig;
 
   /** Legacy scaling factors (for backward compatibility) */
   legacy?: {
@@ -336,6 +346,7 @@ export const DEFAULT_SYSTEM_CONFIG: SystemConfiguration = {
     capacityKw: 48,
     phase: 'three',
     voltage: 'high',
+    maxEfficiency: 0.976,
   },
   battery: {
     capacityKwh: 19.2,       // 4 × Pylontech US5000 × 4.8 kWh usable
@@ -356,6 +367,7 @@ export const DEFAULT_SYSTEM_CONFIG: SystemConfiguration = {
   installedModuleId:   'jinko-tiger-neo-66hl4m-bdv',
   installedInverterId: 'deye-sun-sg04lp1-3-6k',
   installedBatteryId:  'pylontech-us5000',
+  solarSite: DEFAULT_SOLAR_SITE_CONFIG,
   legacy: {
     loadScale: 1.0,
     evCommuterScale: 1.0,

@@ -309,7 +309,7 @@ export function resolveCatalogPhysicsParams(
 export const DEFAULT_CATALOG_PHYSICS_PARAMS: CatalogPhysicsParams =
   resolveCatalogPhysicsParams(
     'jinko-tiger-neo-66hl4m-bdv',   // Jinko Tiger Neo 66HL4M-BDV — verified datasheet
-    undefined,                       // Deye inverter not in catalog yet; uses config.ts
+    'deye-sun-sg04lp1-3-6k',         // Deye SG04LP1 series — verified datasheet
     'pylontech-us5000'               // Pylontech US5000 — 96 % RTE from datasheet library
   );
 
@@ -424,6 +424,32 @@ export const BATTERY_MODULE_CATALOG: BatteryModuleSpec[] = [
     minModules: 1,
     maxModules: 4,
     catalogId: 'sungrow-sbr128',
+  },
+  {
+    id: 'sungrow-sbr192',
+    label: 'Sungrow SBR192 19.2 kWh',
+    usableKwh: 19.2,
+    nominalVoltageV: 100,
+    maxChargeKwPerModule: 9.6,
+    maxDischargeKwPerModule: 9.6,
+    chemistry: 'lifepo4',
+    rte: 0.96,
+    minModules: 1,
+    maxModules: 4,
+    catalogId: 'sungrow-sbr192',
+  },
+  {
+    id: 'sungrow-sbr256',
+    label: 'Sungrow SBR256 25.6 kWh',
+    usableKwh: 25.6,
+    nominalVoltageV: 100,
+    maxChargeKwPerModule: 12.8,
+    maxDischargeKwPerModule: 12.8,
+    chemistry: 'lifepo4',
+    rte: 0.96,
+    minModules: 1,
+    maxModules: 4,
+    catalogId: 'sungrow-sbr256',
   },
   {
     id: 'tesla-powerwall-3',

@@ -33,8 +33,14 @@ import {
   SOILING_MIN_FACTOR,
   SIM_STEPS_PER_DAY,
   SIM_STEP_DURATION_HOURS,
+  PANEL_ANNUAL_DEGRADATION_RATE,
+  PANEL_FIRST_YEAR_DEGRADATION,
 } from '@/lib/config';
 import type { CatalogPhysicsParams } from '@/lib/catalog-physics-bridge';
+import {
+  DEFAULT_SOLAR_SITE_CONFIG,
+  type SolarSiteConfig,
+} from '@/lib/solar-site-config';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -147,10 +153,13 @@ function clamp(v: number, lo: number, hi: number): number {
 /**
  * Simple sinusoidal solar irradiance model.
  * Returns irradiance fraction 0-1 for a given hour of day.
- * Sunrise ≈ 6 h, sunset ≈ 18 h (equatorial Kenya).
+ * Sunrise/sunset are provided via SolarSiteConfig.
  */
-function solarFraction(timeOfDay: number): number {
-  return Math.max(0, Math.sin(((timeOfDay - 6) / 12) * Math.PI));
+function solarFraction(timeOfDay: number, site: SolarSiteConfig): number {
+  const sunrise = site.sunriseHour;
+  const sunset = site.sunsetHour;
+  const daylightHours = Math.max(0.5, sunset - sunrise);
+  return Math.max(0, Math.sin(((timeOfDay - sunrise) / daylightHours) * Math.PI));
 }
 
 /**
@@ -333,8 +342,8 @@ export function calculateInstantPhysics(
 
   // Annual degradation from state.panelAgeYears (if tracked by caller)
   const panelAgeYears = state.panelAgeYears ?? 0;
-  const annualDeg = catalogParams?.panelAnnualDegradationRate ?? 0.004;
-  const firstYearDeg = catalogParams?.panelFirstYearDegradation ?? 0.01;
+  const annualDeg = catalogParams?.panelAnnualDegradationRate ?? PANEL_ANNUAL_DEGRADATION_RATE;
+  const firstYearDeg = catalogParams?.panelFirstYearDegradation ?? PANEL_FIRST_YEAR_DEGRADATION;
   // Total lifetime derating: year-1 loss + subsequent annual loss
   const degradationFactor = panelAgeYears <= 0
     ? 1.0
@@ -345,10 +354,20 @@ export function calculateInstantPhysics(
   // ------------------------------------------------------------------
   const month = scenario.monthIndex;
   const monthlyTemp = solarData.monthlyAvgTemp?.[month] ?? 25;
+  const siteConfig = config.solarSite ?? DEFAULT_SOLAR_SITE_CONFIG;
+  const monthlyPeakSunHours = siteConfig.peakSunHoursByMonth?.[month]
+    ?? solarData.monthlyAvgKwhPerKwp?.[month]
+    ?? solarData.annualAvgKwhPerKwp
+    ?? DEFAULT_SOLAR_SITE_CONFIG.peakSunHoursByMonth[month]
+    ?? 5.4;
+  const baselinePeakSunHours =
+    (siteConfig.peakSunHoursByMonth?.reduce((sum, v) => sum + v, 0)
+      ?? DEFAULT_SOLAR_SITE_CONFIG.peakSunHoursByMonth.reduce((sum, v) => sum + v, 0)) / 12;
+  const seasonalPeakSunFactor = clamp(monthlyPeakSunHours / Math.max(0.1, baselinePeakSunHours), 0.6, 1.4);
 
-  const irradianceFrac = solarFraction(timeOfDay);
+  const irradianceFrac = solarFraction(timeOfDay, siteConfig);
   const peakSolarKw = config.solar.totalCapacityKw * scenario.solarMultiplier * state.soilingFactor;
-  const rawSolarKw = peakSolarKw * irradianceFrac;
+  const rawSolarKw = peakSolarKw * irradianceFrac * seasonalPeakSunFactor;
   const performanceRatio = clamp(config.performanceRatio ?? 0.8, 0.65, 0.95);
   const shadingLossPct = clamp(config.shadingLossPct ?? 0, 0, 50);
 
