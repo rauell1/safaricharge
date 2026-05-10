@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 201 | `rollback/wire-installed-catalog-ids-into-system-2026-05-10-7482d1d` | `7482d1d` | Wire installed catalog IDs into SystemConfiguration, add installed-components summary helper, and feed catalog-based physics into simulation | 2026-05-10 |
 | 200 | `rollback/add-useinstalledcomponents-hook-and-ca-2026-05-10-b3c6b41` | `b3c6b41` | Add useInstalledComponents hook and catalog-driven wiring for installed components | 2026-05-10 |
 | 199 | `rollback/feat-sim-wire-catalog-datasheet-specs-2026-05-10-99ab6c8` | `99ab6c8` | feat(sim): wire catalog datasheet specs into physics engine | 2026-05-10 |
 | 198 | `rollback/feat-add-branddocshub-component-with-t-2026-05-10-89eebfc` | `89eebfc` | feat: add BrandDocsHub component with Tier 1 brand documentation links | 2026-05-10 |
@@ -2065,6 +2066,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/add-useinstalledcomponents-hook-and-ca-2026-05-10-b3c6b41`
 - **Commit**: `b3c6b414db55e9095ef2e1c2e58a0631f9376641`
 - **Subject**: Add useInstalledComponents hook and catalog-driven wiring for installed components
+- **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #201 — `rollback/wire-installed-catalog-ids-into-system-2026-05-10-7482d1d`
+
+- **Branch**: `rollback/wire-installed-catalog-ids-into-system-2026-05-10-7482d1d`
+- **Commit**: `7482d1da8c83c694d6773c9404752db6732354a0`
+- **Subject**: Wire installed catalog IDs into SystemConfiguration, add installed-components summary helper, and feed catalog-based physics into simulation
 - **Date**: 2026-05-10
 - **Auto-generated**: yes (by update-rollback.yml)
 
