@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 196 | `rollback/real-hardware-specs-from-deye-jinko-da-2026-05-10-909d6f8` | `909d6f8` | Real hardware specs from Deye & Jinko datasheets wired into simulation | 2026-05-10 |
 | 195 | `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-05-10-226a27e` | `226a27e` | docs(auto): regenerate README.md [skip ci] | 2026-05-10 |
 | 194 | `rollback/africa-inverter-presets-move-config-to-2026-05-10-1849c7c` | `1849c7c` | Africa inverter presets, move config to System Config, add PDF report | 2026-05-10 |
 | 193 | `rollback/improve-sld-ac-bus-visibility-configur-2026-05-10-cb1d1f1` | `cb1d1f1` | Improve SLD: AC Bus visibility, configurable EV & inverter panels (#249) | 2026-05-10 |
@@ -2015,6 +2016,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-05-10-226a27e`
 - **Commit**: `226a27e8d07cabfb0ae95035b74aa51c415142dd`
 - **Subject**: docs(auto): regenerate README.md [skip ci]
+- **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #196 — `rollback/real-hardware-specs-from-deye-jinko-da-2026-05-10-909d6f8`
+
+- **Branch**: `rollback/real-hardware-specs-from-deye-jinko-da-2026-05-10-909d6f8`
+- **Commit**: `909d6f81b15934f1c6d033c0306708d54aeb8ee9`
+- **Subject**: Real hardware specs from Deye & Jinko datasheets wired into simulation
 - **Date**: 2026-05-10
 - **Auto-generated**: yes (by update-rollback.yml)
 
