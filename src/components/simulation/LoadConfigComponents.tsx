@@ -10,8 +10,14 @@
 import React, { useState } from 'react';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
 import {
-  Plus, Trash2, Edit, Save, Home, Car, Building2, Wind, Zap, ChevronDown, ChevronUp, AlertTriangle, Info
+  Plus, Trash2, Edit, Save, Home, Car, Building2, Wind, Zap, ChevronDown, ChevronUp, AlertTriangle, Info, Settings2,
 } from 'lucide-react';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import type {
   SystemConfiguration,
   LoadConfig,
@@ -31,6 +37,217 @@ import {
   SYSTEM_MODE_LABELS,
 } from '@/lib/system-mode-metrics';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+const EV_CHARGER_PRESETS = [
+  { id: 'ac7',   label: '7.4 kW AC — Level 2 Home',       maxKw: 7.4,  connectionType: 'AC' as const },
+  { id: 'ac22',  label: '22 kW AC — Three-Phase Type 2',   maxKw: 22,   connectionType: 'AC' as const },
+  { id: 'dc50',  label: '50 kW DC — Fast Charge CCS2',     maxKw: 50,   connectionType: 'DC' as const },
+  { id: 'dc120', label: '120 kW DC — Ultra-Fast CCS2',     maxKw: 120,  connectionType: 'DC' as const },
+  { id: 'dc150', label: '150 kW DC — HPC (High Power)',    maxKw: 150,  connectionType: 'DC' as const },
+  { id: 'dc350', label: '350 kW DC — Hypercharger',        maxKw: 350,  connectionType: 'DC' as const },
+];
+
+const INVERTER_PRESETS_CONFIG = [
+  { id: 'deye-3.6',  label: 'Deye SUN-3.6K-SG04LP1 (3.6 kW)',  kw: 3.6  },
+  { id: 'deye-5',    label: 'Deye SUN-5K-SG04LP1 (5 kW)',        kw: 5    },
+  { id: 'deye-8',    label: 'Deye SUN-8K-SG04LP3 (8 kW)',        kw: 8    },
+  { id: 'deye-12',   label: 'Deye SUN-12K-SG04LP3 (12 kW)',      kw: 12   },
+  { id: 'deye-16',   label: 'Deye SUN-16K-SG04LP3 (16 kW)',      kw: 16   },
+  { id: 'deye-30',   label: 'Deye SUN-30K-SG04LP3 (30 kW)',      kw: 30   },
+  { id: 'deye-50',   label: 'Deye SUN-50K-SG04LP3 (50 kW)',      kw: 50   },
+  { id: 'growatt-3',   label: 'Growatt SPF 3000TL LVM (3 kW)',   kw: 3    },
+  { id: 'growatt-5',   label: 'Growatt SPF 5000TL LVM (5 kW)',   kw: 5    },
+  { id: 'growatt-10',  label: 'Growatt SPF 10000TL LVM (10 kW)', kw: 10   },
+  { id: 'growatt-15',  label: 'Growatt MID 15KTL3-X (15 kW)',    kw: 15   },
+  { id: 'growatt-20',  label: 'Growatt MID 20KTL3-X (20 kW)',    kw: 20   },
+  { id: 'solis-5',    label: 'Solis S5-EH1P5K (5 kW)',           kw: 5    },
+  { id: 'solis-10',   label: 'Solis S6-EH1P10K (10 kW)',         kw: 10   },
+  { id: 'solis-15',   label: 'Solis S5-EH3P15K (15 kW)',         kw: 15   },
+  { id: 'solis-25',   label: 'Solis S5-EH3P25K (25 kW)',         kw: 25   },
+  { id: 'sunsynk-5',   label: 'Sunsynk 5kW Hybrid',              kw: 5    },
+  { id: 'sunsynk-8',   label: 'Sunsynk 8kW Hybrid',              kw: 8    },
+  { id: 'sunsynk-10',  label: 'Sunsynk 10kW Hybrid',             kw: 10   },
+  { id: 'sunsynk-12',  label: 'Sunsynk 12kW Hybrid',             kw: 12   },
+  { id: 'victron-5',   label: 'Victron MultiPlus-II 5kVA',       kw: 5    },
+  { id: 'victron-8',   label: 'Victron Quattro 8kVA',            kw: 8    },
+  { id: 'victron-15',  label: 'Victron Quattro 15kVA',           kw: 15   },
+  { id: 'victron-30',  label: 'Victron Quattro 30kVA',           kw: 30   },
+  { id: 'jinko-5',    label: 'Jinko JKS-H 5K-LL1 (5 kW)',        kw: 5    },
+  { id: 'jinko-10',   label: 'Jinko JKS-H 10K-LL3 (10 kW)',      kw: 10   },
+  { id: 'invt-6',    label: 'INVT Solar MG 6K LV (6 kW)',         kw: 6    },
+  { id: 'invt-10',   label: 'INVT Solar MG 10K LV (10 kW)',       kw: 10   },
+  { id: 'goodwe-5',  label: 'Goodwe GW5000-ET (5 kW)',            kw: 5    },
+  { id: 'goodwe-10', label: 'Goodwe GW10K-ET (10 kW)',            kw: 10   },
+  { id: 'sma-15',    label: 'SMA Sunny Island 15kW',              kw: 15   },
+  { id: 'must-5',    label: 'Must Solar PH18-5048 (5 kW)',         kw: 5    },
+  { id: 'custom',    label: 'Custom / Other',                      kw: 10   },
+];
+
+function InverterConfigSection() {
+  const saveToStorage = (presetId: string, kwPerUnit: number, units: number) => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('sc_inverter_config', JSON.stringify({ presetId, kwPerUnit, units }));
+  };
+  const loadFromStorage = () => {
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('sc_inverter_config') : null;
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  };
+  const saved = loadFromStorage();
+  const [presetId, setPresetId] = useState<string>(saved?.presetId ?? 'deye-12');
+  const [kwPerUnit, setKwPerUnit] = useState<number>(saved?.kwPerUnit ?? 12);
+  const [units, setUnits] = useState<number>(saved?.units ?? 1);
+
+  const handlePresetChange = (v: string) => {
+    setPresetId(v);
+    const p = INVERTER_PRESETS_CONFIG.find(x => x.id === v);
+    if (p && v !== 'custom') { setKwPerUnit(p.kw); saveToStorage(v, p.kw, units); }
+    else saveToStorage(v, kwPerUnit, units);
+  };
+  const handleKwChange = (v: number) => { setKwPerUnit(v); setPresetId('custom'); saveToStorage('custom', v, units); };
+  const handleUnitsChange = (n: number) => { setUnits(n); saveToStorage(presetId, kwPerUnit, n); };
+
+  return (
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-hover)] p-4 space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="h-9 w-9 rounded-xl bg-[var(--solar-soft)] border border-[var(--solar)]/20 flex items-center justify-center shrink-0">
+          <Settings2 size={18} className="text-[var(--solar)]" />
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-[var(--text-primary)]">Inverter Configuration</h3>
+          <p className="text-xs text-[var(--text-tertiary)]">Select make/model, capacity per unit, and units in parallel</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-[var(--text-secondary)]">Make / Model</Label>
+          <Select value={presetId} onValueChange={handlePresetChange}>
+            <SelectTrigger style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              {INVERTER_PRESETS_CONFIG.map(p => (
+                <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-[var(--text-secondary)]">Rated kW per unit</Label>
+          <Input
+            type="number" min={1} max={200} step={0.5} value={kwPerUnit}
+            onChange={e => handleKwChange(Number(e.target.value || 1))}
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-[var(--text-secondary)]">Units in parallel</Label>
+          <div className="flex gap-1.5">
+            {[1, 2, 3, 4, 5].map(n => (
+              <button key={n} type="button" onClick={() => handleUnitsChange(n)}
+                className={[
+                  'h-9 flex-1 rounded-lg text-sm font-bold border transition-all',
+                  units === n
+                    ? 'bg-[var(--solar)] border-[var(--solar)] text-white shadow-sm'
+                    : 'bg-[var(--bg-card-muted)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--solar)] hover:text-[var(--solar)]',
+                ].join(' ')}
+              >{n}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-3 pt-1 border-t border-[var(--border)]">
+        <span className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
+          <Zap size={12} className="text-[var(--solar)]" />
+          Total capacity:
+          <strong className="text-[var(--text-primary)] ml-1">{(kwPerUnit * units).toFixed(1)} kW</strong>
+        </span>
+        {units > 1 && (
+          <span className="text-xs text-[var(--text-tertiary)]">{units} × {kwPerUnit} kW in parallel</span>
+        )}
+        <Badge variant="outline" className="ml-auto text-[10px] border-[var(--solar)] text-[var(--solar)]">
+          {INVERTER_PRESETS_CONFIG.find(p => p.id === presetId)?.label?.split(' ')[0] ?? 'Custom'}
+        </Badge>
+      </div>
+    </div>
+  );
+}
+
+function EVChargerConfigSection() {
+  const saveToStorage = (presetId: string, count: number) => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('sc_ev_charger_config', JSON.stringify({ presetId, count }));
+  };
+  const loadFromStorage = () => {
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('sc_ev_charger_config') : null;
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  };
+  const saved = loadFromStorage();
+  const [presetId, setPresetId] = useState<string>(saved?.presetId ?? 'ac22');
+  const [count, setCount] = useState<number>(saved?.count ?? 2);
+  const selectedPreset = EV_CHARGER_PRESETS.find(p => p.id === presetId) ?? EV_CHARGER_PRESETS[1];
+
+  const handlePresetChange = (v: string) => { setPresetId(v); saveToStorage(v, count); };
+  const handleCountChange = (n: number) => { setCount(n); saveToStorage(presetId, n); };
+
+  return (
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-hover)] p-4 space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="h-9 w-9 rounded-xl bg-[var(--ev-soft)] border border-[var(--ev)]/20 flex items-center justify-center shrink-0">
+          <Car size={18} className="text-[var(--ev)]" />
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-[var(--text-primary)]">EV Charger Configuration</h3>
+          <p className="text-xs text-[var(--text-tertiary)]">Choose charger type and number of charging points</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-[var(--text-secondary)]">Charger Type</Label>
+          <Select value={presetId} onValueChange={handlePresetChange}>
+            <SelectTrigger style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {EV_CHARGER_PRESETS.map(p => (
+                <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-[var(--text-secondary)]">Number of chargers (1–5)</Label>
+          <div className="flex gap-1.5">
+            {[1, 2, 3, 4, 5].map(n => (
+              <button key={n} type="button" onClick={() => handleCountChange(n)}
+                className={[
+                  'h-9 flex-1 rounded-lg text-sm font-bold border transition-all',
+                  count === n
+                    ? 'bg-[var(--ev)] border-[var(--ev)] text-white shadow-sm'
+                    : 'bg-[var(--bg-card-muted)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--ev)] hover:text-[var(--ev)]',
+                ].join(' ')}
+              >{n}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2 pt-1 border-t border-[var(--border)]">
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2 text-xs text-[var(--text-secondary)]">
+          Connection: <strong className="text-[var(--text-primary)]">{selectedPreset.connectionType}</strong>
+        </div>
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2 text-xs text-[var(--text-secondary)]">
+          Per charger: <strong className="text-[var(--text-primary)]">{selectedPreset.maxKw} kW</strong>
+        </div>
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2 text-xs text-[var(--text-secondary)]">
+          Total: <strong className="text-[var(--text-primary)]">{selectedPreset.maxKw * count} kW</strong>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface LoadListProps {
   config: SystemConfiguration;
@@ -86,21 +303,31 @@ export function LoadList({ config, onConfigChange }: LoadListProps) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700">System Loads</h3>
-        <button onClick={() => setIsAddingLoad(!isAddingLoad)} className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors">
+      <div className="flex items-center gap-3">
+        <div className="h-9 w-9 rounded-xl bg-[var(--battery-soft)] border border-[var(--battery)]/20 flex items-center justify-center shrink-0">
+          <Zap size={16} className="text-[var(--battery)]" />
+        </div>
+        <div className="flex-1">
+          <h3 className="text-sm font-bold text-[var(--text-primary)]">System Loads</h3>
+          <p className="text-xs text-[var(--text-tertiary)]">Configure connected loads and consumption profiles</p>
+        </div>
+        <button
+          onClick={() => setIsAddingLoad(!isAddingLoad)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white rounded-full transition-all hover:opacity-90"
+          style={{ background: 'var(--battery)' }}
+        >
           <Plus className="w-3 h-3" />Add Load
         </button>
       </div>
 
-      <div className="p-3 bg-gray-50 border border-gray-200 rounded space-y-3">
-        <h3 className="text-sm font-semibold text-gray-700">PV Performance Derates</h3>
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-hover)] p-4 space-y-3">
+        <h3 className="text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">PV Performance Derates</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-2">
-            <label className="flex items-center gap-1 text-xs font-medium text-gray-700">
+            <label className="flex items-center gap-1 text-xs font-medium text-[var(--text-secondary)]">
               Performance Ratio
               <Info
-                className="w-3.5 h-3.5 text-gray-500"
+                className="w-3.5 h-3.5 text-[var(--text-tertiary)]"
                 title="Real-world PV derate for inverter, wiring, mismatch and temperature losses. Typical Kenya rooftop systems run around 75–90%."
               />
             </label>
@@ -121,16 +348,17 @@ export function LoadList({ config, onConfigChange }: LoadListProps) {
                 step={0.01}
                 value={performanceRatio}
                 onChange={(e) => handlePerformanceRatioChange(parseFloat(e.target.value) || 0.8)}
-                className="w-20 px-2 py-1 text-sm border border-gray-300 rounded"
+                className="w-20 px-2 py-1 text-sm rounded"
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="flex items-center gap-1 text-xs font-medium text-gray-700">
+            <label className="flex items-center gap-1 text-xs font-medium text-[var(--text-secondary)]">
               Shading Loss (%)
               <Info
-                className="w-3.5 h-3.5 text-gray-500"
+                className="w-3.5 h-3.5 text-[var(--text-tertiary)]"
                 title="Extra partial-shading loss. In Kenya urban rooftops, antennae, trees or nearby buildings can shade small panel areas and sharply reduce output (sometimes >80% on affected modules)."
               />
             </label>
@@ -151,7 +379,8 @@ export function LoadList({ config, onConfigChange }: LoadListProps) {
                 step={1}
                 value={shadingLossPct}
                 onChange={(e) => handleShadingLossChange(parseFloat(e.target.value) || 0)}
-                className="w-20 px-2 py-1 text-sm border border-gray-300 rounded"
+                className="w-20 px-2 py-1 text-sm rounded"
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
               />
             </div>
           </div>
@@ -159,16 +388,16 @@ export function LoadList({ config, onConfigChange }: LoadListProps) {
       </div>
 
       {isAddingLoad && (
-        <div className="p-3 bg-gray-50 border border-gray-200 rounded space-y-2">
-          <p className="text-xs font-medium text-gray-700">Select Load Type:</p>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-muted)] p-4 space-y-2">
+          <p className="text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Select Load Type:</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {(['home', 'ev', 'commercial', 'hvac', 'custom'] as const).map(type => (
-              <button key={type} onClick={() => handleAddLoad(type)} className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded transition-colors">
+              <button key={type} onClick={() => handleAddLoad(type)} className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-[var(--text-primary)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border)] rounded-xl transition-colors">
                 {getLoadIcon(type)}{getLoadTypeName(type)}
               </button>
             ))}
           </div>
-          <button onClick={() => setIsAddingLoad(false)} className="w-full px-3 py-1 text-xs text-gray-600 hover:text-gray-800">Cancel</button>
+          <button onClick={() => setIsAddingLoad(false)} className="w-full px-3 py-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]">Cancel</button>
         </div>
       )}
 
@@ -182,7 +411,7 @@ export function LoadList({ config, onConfigChange }: LoadListProps) {
       </div>
 
       {config.loads.length === 0 && (
-        <div className="p-6 text-center text-sm text-gray-500 border border-dashed border-gray-300 rounded">No loads configured. Add a load to begin.</div>
+        <div className="p-6 text-center text-sm text-[var(--text-tertiary)] border border-dashed border-[var(--border)] rounded-xl">No loads configured. Add a load to begin.</div>
       )}
     </div>
   );
@@ -201,39 +430,39 @@ interface LoadCardProps {
 function LoadCard({ load, isEditing, onEdit, onSave, onRemove, onToggleEnabled, onUpdate }: LoadCardProps) {
   const [expanded, setExpanded] = useState(false);
   return (
-    <div className={`p-3 border rounded transition-all ${load.enabled ? 'bg-white border-gray-300' : 'bg-gray-50 border-gray-200 opacity-60'}`}>
+    <div className={`p-3 border rounded-xl transition-all ${load.enabled ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-[var(--bg-card-muted)] border-[var(--border)] opacity-60'}`}>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2 flex-1">
           {getLoadIcon(load.type)}
           <div className="flex-1">
             <div className="flex items-center gap-2">
               {isEditing ? (
-                <input type="text" value={load.name} onChange={e => onUpdate({ ...load, name: e.target.value })} className="w-full sm:w-auto px-2 py-1 text-sm font-medium border border-gray-300 rounded" />
+                <input type="text" value={load.name} onChange={e => onUpdate({ ...load, name: e.target.value })} className="w-full sm:w-auto px-2 py-1 text-sm font-medium rounded" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
               ) : (
-                <h4 className="text-sm font-medium text-gray-800">{load.name}</h4>
+                <h4 className="text-sm font-medium text-[var(--text-primary)]">{load.name}</h4>
               )}
-              <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">{getLoadTypeName(load.type)}</span>
+              <span className="text-xs px-2 py-0.5 bg-[var(--grid-soft)] text-[var(--grid)] rounded-full font-semibold">{getLoadTypeName(load.type)}</span>
             </div>
-            <p className="text-xs text-gray-500 mt-0.5">{getLoadSummary(load)}</p>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">{getLoadSummary(load)}</p>
           </div>
         </div>
         <div className="flex items-center justify-end gap-1 flex-wrap">
-          <button onClick={onToggleEnabled} className={`px-2 py-1 text-xs font-medium rounded transition-colors ${load.enabled ? 'text-green-700 bg-green-100 hover:bg-green-200' : 'text-gray-600 bg-gray-200 hover:bg-gray-300'}`}>
+          <button onClick={onToggleEnabled} className={`px-2 py-1 text-xs font-semibold rounded-full transition-colors ${load.enabled ? 'text-[var(--battery)] bg-[var(--battery-soft)]' : 'text-[var(--text-tertiary)] bg-[var(--bg-card-muted)]'}`}>
             {load.enabled ? 'ON' : 'OFF'}
           </button>
           {isEditing ? (
-            <button onClick={onSave} className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors" title="Save"><Save className="w-4 h-4" /></button>
+            <button onClick={onSave} className="p-1 text-[var(--battery)] hover:bg-[var(--battery-soft)] rounded transition-colors" title="Save"><Save className="w-4 h-4" /></button>
           ) : (
-            <button onClick={onEdit} className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors" title="Edit"><Edit className="w-4 h-4" /></button>
+            <button onClick={onEdit} className="p-1 text-[var(--grid)] hover:bg-[var(--grid-soft)] rounded transition-colors" title="Edit"><Edit className="w-4 h-4" /></button>
           )}
-          <button onClick={() => setExpanded(!expanded)} className="p-1 text-gray-600 hover:bg-gray-100 rounded transition-colors">
+          <button onClick={() => setExpanded(!expanded)} className="p-1 text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] rounded transition-colors">
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
           <button onClick={onRemove} className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors" title="Remove"><Trash2 className="w-4 h-4" /></button>
         </div>
       </div>
       {expanded && isEditing && (
-        <div className="mt-3 pt-3 border-t border-gray-200"><LoadEditor load={load} onUpdate={onUpdate} /></div>
+        <div className="mt-3 pt-3 border-t border-[var(--border)]"><LoadEditor load={load} onUpdate={onUpdate} /></div>
       )}
     </div>
   );
@@ -251,18 +480,18 @@ function EVLoadEditor({ load, onUpdate }: { load: EVLoadConfig; onUpdate: (load:
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div><label className="block text-xs font-medium text-gray-700 mb-1">Battery Capacity (kWh)</label>
-          <input type="number" value={load.batteryKwh} onChange={e => onUpdate({ ...load, batteryKwh: parseFloat(e.target.value) || 0 })} className="w-full px-2 py-1 text-sm border border-gray-300 rounded" min="0" step="1" /></div>
-        <div><label className="block text-xs font-medium text-gray-700 mb-1">Onboard Charger (kW)</label>
-          <input type="number" value={load.onboardChargerKw} onChange={e => onUpdate({ ...load, onboardChargerKw: parseFloat(e.target.value) || 0 })} className="w-full px-2 py-1 text-sm border border-gray-300 rounded" min="0" step="0.1" /></div>
-        <div><label className="block text-xs font-medium text-gray-700 mb-1">Depart Time (hour)</label>
-          <input type="number" value={load.departTime} onChange={e => onUpdate({ ...load, departTime: parseFloat(e.target.value) || 0 })} className="w-full px-2 py-1 text-sm border border-gray-300 rounded" min="0" max="24" step="0.5" /></div>
-        <div><label className="block text-xs font-medium text-gray-700 mb-1">Return Time (hour)</label>
-          <input type="number" value={load.returnTime} onChange={e => onUpdate({ ...load, returnTime: parseFloat(e.target.value) || 0 })} className="w-full px-2 py-1 text-sm border border-gray-300 rounded" min="0" max="24" step="0.5" /></div>
+        <div><label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Battery Capacity (kWh)</label>
+          <input type="number" value={load.batteryKwh} onChange={e => onUpdate({ ...load, batteryKwh: parseFloat(e.target.value) || 0 })} className="w-full px-2 py-1 text-sm rounded" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} min="0" step="1" /></div>
+        <div><label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Onboard Charger (kW)</label>
+          <input type="number" value={load.onboardChargerKw} onChange={e => onUpdate({ ...load, onboardChargerKw: parseFloat(e.target.value) || 0 })} className="w-full px-2 py-1 text-sm rounded" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} min="0" step="0.1" /></div>
+        <div><label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Depart Time (hour)</label>
+          <input type="number" value={load.departTime} onChange={e => onUpdate({ ...load, departTime: parseFloat(e.target.value) || 0 })} className="w-full px-2 py-1 text-sm rounded" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} min="0" max="24" step="0.5" /></div>
+        <div><label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Return Time (hour)</label>
+          <input type="number" value={load.returnTime} onChange={e => onUpdate({ ...load, returnTime: parseFloat(e.target.value) || 0 })} className="w-full px-2 py-1 text-sm rounded" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} min="0" max="24" step="0.5" /></div>
       </div>
       <div className="flex items-center gap-2">
         <input type="checkbox" id={`v2g-${load.id}`} checked={load.supportsV2G} onChange={e => onUpdate({ ...load, supportsV2G: e.target.checked })} className="w-4 h-4" />
-        <label htmlFor={`v2g-${load.id}`} className="text-xs font-medium text-gray-700">Supports V2G (Vehicle-to-Grid)</label>
+        <label htmlFor={`v2g-${load.id}`} className="text-xs font-medium text-[var(--text-secondary)]">Supports V2G (Vehicle-to-Grid)</label>
       </div>
     </div>
   );
@@ -272,14 +501,14 @@ function HomeLoadEditor({ load, onUpdate }: { load: HomeLoadConfig; onUpdate: (l
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div><label className="block text-xs font-medium text-gray-700 mb-1">Weekend Multiplier</label>
-          <input type="number" value={load.weekendMultiplier} onChange={e => onUpdate({ ...load, weekendMultiplier: parseFloat(e.target.value) || 1 })} className="w-full px-2 py-1 text-sm border border-gray-300 rounded" min="0" max="2" step="0.1" /></div>
-        <div><label className="block text-xs font-medium text-gray-700 mb-1">HVAC Base (kW)</label>
-          <input type="number" value={load.hvacBaseKw} onChange={e => onUpdate({ ...load, hvacBaseKw: parseFloat(e.target.value) || 0 })} className="w-full px-2 py-1 text-sm border border-gray-300 rounded" min="0" step="0.5" disabled={!load.includeHVAC} /></div>
+        <div><label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Weekend Multiplier</label>
+          <input type="number" value={load.weekendMultiplier} onChange={e => onUpdate({ ...load, weekendMultiplier: parseFloat(e.target.value) || 1 })} className="w-full px-2 py-1 text-sm rounded" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} min="0" max="2" step="0.1" /></div>
+        <div><label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">HVAC Base (kW)</label>
+          <input type="number" value={load.hvacBaseKw} onChange={e => onUpdate({ ...load, hvacBaseKw: parseFloat(e.target.value) || 0 })} className="w-full px-2 py-1 text-sm rounded" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} min="0" step="0.5" disabled={!load.includeHVAC} /></div>
       </div>
       <div className="flex items-center gap-2">
         <input type="checkbox" id={`hvac-${load.id}`} checked={load.includeHVAC} onChange={e => onUpdate({ ...load, includeHVAC: e.target.checked })} className="w-4 h-4" />
-        <label htmlFor={`hvac-${load.id}`} className="text-xs font-medium text-gray-700">Include Weather-Dependent HVAC</label>
+        <label htmlFor={`hvac-${load.id}`} className="text-xs font-medium text-[var(--text-secondary)]">Include Weather-Dependent HVAC</label>
       </div>
     </div>
   );
@@ -288,11 +517,11 @@ function HomeLoadEditor({ load, onUpdate }: { load: HomeLoadConfig; onUpdate: (l
 function CommercialLoadEditor({ load, onUpdate }: { load: CommercialLoadConfig; onUpdate: (load: LoadConfig) => void }) {
   return (
     <div className="space-y-3">
-      <div><label className="block text-xs font-medium text-gray-700 mb-1">Constant Load (kW)</label>
-        <input type="number" value={load.constantKw} onChange={e => onUpdate({ ...load, constantKw: parseFloat(e.target.value) || 0 })} className="w-full px-2 py-1 text-sm border border-gray-300 rounded" min="0" step="0.5" /></div>
+      <div><label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Constant Load (kW)</label>
+        <input type="number" value={load.constantKw} onChange={e => onUpdate({ ...load, constantKw: parseFloat(e.target.value) || 0 })} className="w-full px-2 py-1 text-sm rounded" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} min="0" step="0.5" /></div>
       <div className="flex items-center gap-2">
         <input type="checkbox" id={`weekends-${load.id}`} checked={load.operatesWeekends} onChange={e => onUpdate({ ...load, operatesWeekends: e.target.checked })} className="w-4 h-4" />
-        <label htmlFor={`weekends-${load.id}`} className="text-xs font-medium text-gray-700">Operates on Weekends</label>
+        <label htmlFor={`weekends-${load.id}`} className="text-xs font-medium text-[var(--text-secondary)]">Operates on Weekends</label>
       </div>
     </div>
   );
@@ -301,13 +530,13 @@ function CommercialLoadEditor({ load, onUpdate }: { load: CommercialLoadConfig; 
 function HVACLoadEditor({ load, onUpdate }: { load: HVACLoadConfig; onUpdate: (load: LoadConfig) => void }) {
   return (
     <div className="space-y-3">
-      <div><label className="block text-xs font-medium text-gray-700 mb-1">Capacity (kW)</label>
-        <input type="number" value={load.capacityKw} onChange={e => onUpdate({ ...load, capacityKw: parseFloat(e.target.value) || 0 })} className="w-full px-2 py-1 text-sm border border-gray-300 rounded" min="0" step="0.5" /></div>
+      <div><label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Capacity (kW)</label>
+        <input type="number" value={load.capacityKw} onChange={e => onUpdate({ ...load, capacityKw: parseFloat(e.target.value) || 0 })} className="w-full px-2 py-1 text-sm rounded" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} min="0" step="0.5" /></div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div><label className="block text-xs font-medium text-gray-700 mb-1">Operating Start (hour)</label>
-          <input type="number" value={load.operatingHours.start} onChange={e => onUpdate({ ...load, operatingHours: { ...load.operatingHours, start: parseFloat(e.target.value) || 0 } })} className="w-full px-2 py-1 text-sm border border-gray-300 rounded" min="0" max="24" /></div>
-        <div><label className="block text-xs font-medium text-gray-700 mb-1">Operating End (hour)</label>
-          <input type="number" value={load.operatingHours.end} onChange={e => onUpdate({ ...load, operatingHours: { ...load.operatingHours, end: parseFloat(e.target.value) || 0 } })} className="w-full px-2 py-1 text-sm border border-gray-300 rounded" min="0" max="24" /></div>
+        <div><label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Operating Start (hour)</label>
+          <input type="number" value={load.operatingHours.start} onChange={e => onUpdate({ ...load, operatingHours: { ...load.operatingHours, start: parseFloat(e.target.value) || 0 } })} className="w-full px-2 py-1 text-sm rounded" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} min="0" max="24" /></div>
+        <div><label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Operating End (hour)</label>
+          <input type="number" value={load.operatingHours.end} onChange={e => onUpdate({ ...load, operatingHours: { ...load.operatingHours, end: parseFloat(e.target.value) || 0 } })} className="w-full px-2 py-1 text-sm rounded" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} min="0" max="24" /></div>
       </div>
     </div>
   );
@@ -316,15 +545,15 @@ function HVACLoadEditor({ load, onUpdate }: { load: HVACLoadConfig; onUpdate: (l
 function CustomLoadEditor({ load, onUpdate }: { load: CustomLoadConfig; onUpdate: (load: LoadConfig) => void }) {
   return (
     <div className="space-y-3">
-      <div><label className="block text-xs font-medium text-gray-700 mb-1">Mode</label>
-        <select value={load.mode} onChange={e => onUpdate({ ...load, mode: e.target.value as 'constant' | 'profile' })} className="w-full px-2 py-1 text-sm border border-gray-300 rounded">
+      <div><label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Mode</label>
+        <select value={load.mode} onChange={e => onUpdate({ ...load, mode: e.target.value as 'constant' | 'profile' })} className="w-full px-2 py-1 text-sm rounded" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
           <option value="constant">Constant</option>
           <option value="profile">Hourly Profile</option>
         </select>
       </div>
       {load.mode === 'constant' && (
-        <div><label className="block text-xs font-medium text-gray-700 mb-1">Constant Load (kW)</label>
-          <input type="number" value={load.constantKw || 0} onChange={e => onUpdate({ ...load, constantKw: parseFloat(e.target.value) || 0 })} className="w-full px-2 py-1 text-sm border border-gray-300 rounded" min="0" step="0.5" /></div>
+        <div><label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Constant Load (kW)</label>
+          <input type="number" value={load.constantKw || 0} onChange={e => onUpdate({ ...load, constantKw: parseFloat(e.target.value) || 0 })} className="w-full px-2 py-1 text-sm rounded" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} min="0" step="0.5" /></div>
       )}
     </div>
   );
@@ -379,17 +608,17 @@ export function LoadConfigComponents() {
 
   return (
     <div className="space-y-4">
-      <div className="p-4 border border-gray-200 rounded-lg bg-white space-y-3">
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-hover)] p-4 space-y-3">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-semibold text-gray-800">System mode</span>
+          <span className="text-sm font-bold text-[var(--text-primary)]">System Mode</span>
           {(['on-grid', 'off-grid', 'hybrid'] as const).map((mode) => (
             <button
               key={mode}
               onClick={() => updateSystemConfig({ systemMode: mode })}
-              className={`px-3 py-1 text-xs font-semibold rounded border transition-colors ${
+              className={`px-3 py-1 text-xs font-semibold rounded-full border transition-colors ${
                 modeConfig.systemMode === mode
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                  ? 'bg-[var(--battery)] text-white border-[var(--battery)] shadow-sm'
+                  : 'bg-[var(--bg-card-muted)] text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--battery)] hover:text-[var(--battery)]'
               }`}
             >
               {SYSTEM_MODE_LABELS[mode]}
@@ -406,33 +635,35 @@ export function LoadConfigComponents() {
               </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <label className="text-xs font-medium text-gray-700">
+              <label className="text-xs font-medium text-[var(--text-secondary)]">
                 Battery DoD (%)
-                <input
+                <Input
                   type="number"
-                  className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                  className="mt-1 w-full"
                   min="1"
                   max="100"
                   value={modeConfig.batteryDodPct}
                   onChange={(e) => updateSystemConfig({ batteryDodPct: clampPercentage(e.target.value, DEFAULT_BATTERY_DOD_PCT) })}
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
                 />
               </label>
-              <label className="text-xs font-medium text-gray-700">
+              <label className="text-xs font-medium text-[var(--text-secondary)]">
                 Generator threshold (% SOC)
-                <input
+                <Input
                   type="number"
-                  className="mt-1 w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                  className="mt-1 w-full"
                   min="1"
                   max="100"
                   value={modeConfig.generatorThresholdPct}
                   onChange={(e) => updateSystemConfig({ generatorThresholdPct: clampPercentage(e.target.value, DEFAULT_GENERATOR_THRESHOLD_PCT) })}
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
                 />
               </label>
             </div>
             <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
               Recommended off-grid PV size: <strong>{offGridPvKw.toFixed(1)} kW</strong> (25% above on-grid equivalent).
             </div>
-            <div className="text-xs text-gray-700">
+            <div className="text-xs text-[var(--text-secondary)]">
               Days of autonomy: <strong>{autonomyDays.toFixed(2)} days</strong>
             </div>
           </div>
@@ -441,10 +672,10 @@ export function LoadConfigComponents() {
         {modeConfig.systemMode === 'on-grid' && (
           <div className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="rounded border border-gray-200 bg-gray-50 px-3 py-2">
+              <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2">
                 Grid export: <strong>{dailyExportKwh.toFixed(2)} kWh/day</strong>
               </div>
-              <div className="rounded border border-gray-200 bg-gray-50 px-3 py-2">
+              <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2">
                 Net-metering credit: <strong>KES {Math.round(netMeteringCreditKes).toLocaleString()}/month</strong>
               </div>
             </div>
@@ -456,13 +687,13 @@ export function LoadConfigComponents() {
                 onChange={(e) => updateSystemConfig({ gridOutageEnabled: e.target.checked })}
                 className="h-4 w-4"
               />
-              <label htmlFor="grid-outage-toggle" className="text-xs font-medium text-gray-700">
+              <label htmlFor="grid-outage-toggle" className="text-xs font-medium text-[var(--text-secondary)]">
                 Simulate grid outage (anti-islanding)
               </label>
               <TooltipProvider delayDuration={150}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button type="button" className="text-gray-500 hover:text-gray-700">
+                    <button type="button" className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">
                       <Info className="h-3.5 w-3.5" />
                     </button>
                   </TooltipTrigger>
@@ -476,12 +707,14 @@ export function LoadConfigComponents() {
         )}
 
         {modeConfig.systemMode === 'hybrid' && (
-          <div className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+          <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2 text-xs text-[var(--text-secondary)]">
             Hybrid mode active: battery storage and grid import/export are both enabled.
           </div>
         )}
       </div>
 
+      <InverterConfigSection />
+      <EVChargerConfigSection />
       <LoadList config={fullSystemConfig} onConfigChange={updateFullSystemConfig} />
     </div>
   );

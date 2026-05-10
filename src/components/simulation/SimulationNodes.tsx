@@ -59,6 +59,7 @@ import {
   DEFAULT_GENERATOR_THRESHOLD_PCT,
   SYSTEM_MODE_LABELS,
 } from '@/lib/system-mode-metrics';
+import { GenerateReportButton } from '@/components/reports/GenerateReportButton';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -425,16 +426,55 @@ const EV_CHARGER_PRESETS = [
 ];
 
 const INVERTER_PRESETS = [
-  { id: 'victron-8',   label: 'Victron Quattro 8kVA',       kw: 8   },
-  { id: 'victron-15',  label: 'Victron Quattro 15kVA',      kw: 15  },
-  { id: 'victron-30',  label: 'Victron Quattro 30kVA',      kw: 30  },
-  { id: 'growatt-10',  label: 'Growatt SPF-10K',            kw: 10  },
-  { id: 'growatt-20',  label: 'Growatt SPF-20K',            kw: 20  },
-  { id: 'deye-12',     label: 'Deye SUN-12K-SG04LP3',       kw: 12  },
-  { id: 'sma-15',      label: 'SMA Sunny Island 15kW',      kw: 15  },
-  { id: 'luxpower-12', label: 'LuxPower LXP 12kW',          kw: 12  },
-  { id: 'phocos-15',   label: 'Phocos Any-Grid 15kW',       kw: 15  },
-  { id: 'custom',      label: 'Custom / Other',             kw: 10  },
+  // ── Deye (most common in Kenya / East Africa) ──────────────────────────
+  { id: 'deye-3.6',  label: 'Deye SUN-3.6K-SG04LP1 (3.6 kW)',  kw: 3.6  },
+  { id: 'deye-5',    label: 'Deye SUN-5K-SG04LP1 (5 kW)',        kw: 5    },
+  { id: 'deye-8',    label: 'Deye SUN-8K-SG04LP3 (8 kW)',        kw: 8    },
+  { id: 'deye-12',   label: 'Deye SUN-12K-SG04LP3 (12 kW)',      kw: 12   },
+  { id: 'deye-16',   label: 'Deye SUN-16K-SG04LP3 (16 kW)',      kw: 16   },
+  { id: 'deye-30',   label: 'Deye SUN-30K-SG04LP3 (30 kW)',      kw: 30   },
+  { id: 'deye-50',   label: 'Deye SUN-50K-SG04LP3 (50 kW)',      kw: 50   },
+  // ── Growatt (popular budget option across Africa) ───────────────────────
+  { id: 'growatt-3',   label: 'Growatt SPF 3000TL LVM (3 kW)',   kw: 3    },
+  { id: 'growatt-5',   label: 'Growatt SPF 5000TL LVM (5 kW)',   kw: 5    },
+  { id: 'growatt-10',  label: 'Growatt SPF 10000TL LVM (10 kW)', kw: 10   },
+  { id: 'growatt-15',  label: 'Growatt MID 15KTL3-X (15 kW)',    kw: 15   },
+  { id: 'growatt-20',  label: 'Growatt MID 20KTL3-X (20 kW)',    kw: 20   },
+  // ── Solis / Ginlong (growing East Africa market share) ─────────────────
+  { id: 'solis-5',    label: 'Solis S5-EH1P5K (5 kW)',           kw: 5    },
+  { id: 'solis-6',    label: 'Solis S6-EH1P6K (6 kW)',           kw: 6    },
+  { id: 'solis-10',   label: 'Solis S6-EH1P10K (10 kW)',         kw: 10   },
+  { id: 'solis-15',   label: 'Solis S5-EH3P15K (15 kW)',         kw: 15   },
+  { id: 'solis-25',   label: 'Solis S5-EH3P25K (25 kW)',         kw: 25   },
+  // ── Sunsynk (very popular sub-Saharan Africa) ───────────────────────────
+  { id: 'sunsynk-3.6', label: 'Sunsynk 3.6kW Hybrid',           kw: 3.6  },
+  { id: 'sunsynk-5',   label: 'Sunsynk 5kW Hybrid',             kw: 5    },
+  { id: 'sunsynk-8',   label: 'Sunsynk 8kW Hybrid',             kw: 8    },
+  { id: 'sunsynk-10',  label: 'Sunsynk 10kW Hybrid',            kw: 10   },
+  { id: 'sunsynk-12',  label: 'Sunsynk 12kW Hybrid',            kw: 12   },
+  // ── Victron (premium off-grid / marine) ────────────────────────────────
+  { id: 'victron-3',   label: 'Victron MultiPlus-II 3kVA',      kw: 3    },
+  { id: 'victron-5',   label: 'Victron MultiPlus-II 5kVA',      kw: 5    },
+  { id: 'victron-8',   label: 'Victron Quattro 8kVA',           kw: 8    },
+  { id: 'victron-15',  label: 'Victron Quattro 15kVA',          kw: 15   },
+  { id: 'victron-30',  label: 'Victron Quattro 30kVA',          kw: 30   },
+  // ── Jinko Solar JKS Hybrid series ──────────────────────────────────────
+  { id: 'jinko-5',    label: 'Jinko JKS-H 5K-LL1 (5 kW)',       kw: 5    },
+  { id: 'jinko-8',    label: 'Jinko JKS-H 8K-LL3 (8 kW)',       kw: 8    },
+  { id: 'jinko-10',   label: 'Jinko JKS-H 10K-LL3 (10 kW)',     kw: 10   },
+  // ── INVT (growing presence in East Africa) ──────────────────────────────
+  { id: 'invt-3',    label: 'INVT Solar MG 3K LV (3 kW)',        kw: 3    },
+  { id: 'invt-6',    label: 'INVT Solar MG 6K LV (6 kW)',        kw: 6    },
+  { id: 'invt-10',   label: 'INVT Solar MG 10K LV (10 kW)',      kw: 10   },
+  // ── Goodwe ─────────────────────────────────────────────────────────────
+  { id: 'goodwe-5',  label: 'Goodwe GW5000-ET (5 kW)',           kw: 5    },
+  { id: 'goodwe-10', label: 'Goodwe GW10K-ET (10 kW)',           kw: 10   },
+  // ── SMA ────────────────────────────────────────────────────────────────
+  { id: 'sma-5',     label: 'SMA Sunny Island 4.4M (5 kW)',      kw: 5    },
+  { id: 'sma-15',    label: 'SMA Sunny Island 15kW',             kw: 15   },
+  // ── Budget / Custom ─────────────────────────────────────────────────────
+  { id: 'must-5',    label: 'Must Solar PH18-5048 (5 kW)',        kw: 5    },
+  { id: 'custom',    label: 'Custom / Other',                     kw: 10   },
 ];
 
 // ---------------------------------------------------------------------------
@@ -585,6 +625,9 @@ function SimulationControls() {
             ))}
           </div>
 
+          {/* ── Report ── */}
+          <GenerateReportButton className="hidden sm:flex" />
+
           {/* ── Reset ── */}
           <Button
             variant="ghost"
@@ -644,15 +687,28 @@ export function SimulationNodes() {
 
   const weather = isNight ? 'Night' : solarPower > (systemConfig.solarCapacityKW ?? 10) * 0.7 ? 'Sunny' : 'Cloudy';
 
-  // Local config state — EV chargers
-  const [evPresetId, setEvPresetId] = React.useState('ac22');
-  const [evChargerCount, setEvChargerCount] = React.useState(2);
-  const selectedEvPreset = EV_CHARGER_PRESETS.find(p => p.id === evPresetId) ?? EV_CHARGER_PRESETS[1];
+  // Read shared config from localStorage (written by System Configuration page)
+  const getSharedConfig = () => {
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('sc_inverter_config') : null;
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  };
+  const getSharedEvConfig = () => {
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('sc_ev_charger_config') : null;
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  };
+  const sharedInv = getSharedConfig();
+  const sharedEv  = getSharedEvConfig();
 
-  // Local config state — Inverter bank
-  const [invPresetId, setInvPresetId] = React.useState('growatt-10');
-  const [invKwPerUnit, setInvKwPerUnit] = React.useState(10);
-  const [invUnits, setInvUnits] = React.useState(Math.min(5, Math.max(1, Math.round((systemConfig.inverterKW ?? 10) / 10))));
+  const [invPresetId]    = React.useState<string>(sharedInv?.presetId    ?? 'deye-12');
+  const [invKwPerUnit]   = React.useState<number>(sharedInv?.kwPerUnit   ?? 12);
+  const [invUnits]       = React.useState<number>(sharedInv?.units       ?? 1);
+  const [evPresetId]     = React.useState<string>(sharedEv?.presetId     ?? 'ac22');
+  const [evChargerCount] = React.useState<number>(sharedEv?.count        ?? 2);
+  const selectedEvPreset = EV_CHARGER_PRESETS.find(p => p.id === evPresetId) ?? EV_CHARGER_PRESETS[1];
 
   // Session totals
   const totalSolarKWh   = minuteData.reduce((s, d) => s + d.solarEnergyKWh, 0);
@@ -1006,144 +1062,6 @@ export function SimulationNodes() {
           </div>
           </div>{/* min-w wrapper */}
           </div>{/* overflow-x-auto wrapper */}
-        </CardContent>
-      </Card>
-
-      {/* ══════════════════════════════════════════
-           INVERTER CONFIGURATION
-         ══════════════════════════════════════════ */}
-      <Card className="dashboard-card">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2 text-[var(--text-primary)]">
-            <Settings2 className="h-4 w-4 text-[var(--solar)]" />
-            Inverter Configuration
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="space-y-1.5">
-              <Label className="text-xs text-[var(--text-secondary)]">Make / Model</Label>
-              <Select
-                value={invPresetId}
-                onValueChange={(v) => {
-                  setInvPresetId(v);
-                  const p = INVERTER_PRESETS.find((x) => x.id === v);
-                  if (p && v !== 'custom') setInvKwPerUnit(p.kw);
-                }}
-              >
-                <SelectTrigger style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {INVERTER_PRESETS.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-[var(--text-secondary)]">Rated kW per unit</Label>
-              <Input
-                type="number"
-                min={1}
-                max={200}
-                step={0.5}
-                value={invKwPerUnit}
-                onChange={(e) => { setInvKwPerUnit(Number(e.target.value || 1)); setInvPresetId('custom'); }}
-                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-[var(--text-secondary)]">Units in parallel</Label>
-              <div className="flex items-center gap-2">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setInvUnits(n)}
-                    className={[
-                      'h-9 flex-1 rounded-lg text-sm font-bold border transition-all',
-                      invUnits === n
-                        ? 'bg-[var(--solar)] border-[var(--solar)] text-white shadow-sm'
-                        : 'bg-[var(--bg-card-muted)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--solar)] hover:text-[var(--solar)]',
-                    ].join(' ')}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-[var(--text-secondary)]">
-            <span className="flex items-center gap-1">
-              <Zap className="h-3 w-3 text-[var(--solar)]" />
-              Total capacity:
-              <strong className="text-[var(--text-primary)] ml-1">{(invKwPerUnit * invUnits).toFixed(1)} kW</strong>
-            </span>
-            {invUnits > 1 && (
-              <span className="text-[var(--text-tertiary)]">{invUnits} × {invKwPerUnit} kW in parallel</span>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ══════════════════════════════════════════
-           EV CHARGER CONFIGURATION
-         ══════════════════════════════════════════ */}
-      <Card className="dashboard-card">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2 text-[var(--text-primary)]">
-            <Car className="h-4 w-4 text-sky-400" />
-            EV Charger Configuration
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label className="text-xs text-[var(--text-secondary)]">Charger Type</Label>
-              <Select value={evPresetId} onValueChange={setEvPresetId}>
-                <SelectTrigger style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {EV_CHARGER_PRESETS.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-[var(--text-secondary)]">Number of chargers</Label>
-              <div className="flex items-center gap-2">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setEvChargerCount(n)}
-                    className={[
-                      'h-9 flex-1 rounded-lg text-sm font-bold border transition-all',
-                      evChargerCount === n
-                        ? 'bg-sky-500 border-sky-500 text-white shadow-sm'
-                        : 'bg-[var(--bg-card-muted)] border-[var(--border)] text-[var(--text-secondary)] hover:border-sky-400 hover:text-sky-400',
-                    ].join(' ')}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-            <div className="rounded border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2 text-[var(--text-secondary)]">
-              Connection: <strong className="text-[var(--text-primary)]">{selectedEvPreset.connectionType}</strong>
-            </div>
-            <div className="rounded border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2 text-[var(--text-secondary)]">
-              Per charger: <strong className="text-[var(--text-primary)]">{selectedEvPreset.maxKw} kW max</strong>
-            </div>
-            <div className="rounded border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2 text-[var(--text-secondary)]">
-              Total capacity: <strong className="text-[var(--text-primary)]">{selectedEvPreset.maxKw * evChargerCount} kW</strong>
-            </div>
-          </div>
         </CardContent>
       </Card>
 
