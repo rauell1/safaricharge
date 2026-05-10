@@ -306,10 +306,11 @@ export function calculateInstantPhysics(
   const shadingLossPct = clamp(config.shadingLossPct ?? 0, 0, 50);
   const deratedSolarKw = rawSolarKw * performanceRatio * (1 - shadingLossPct / 100);
 
-  const inverterEff = 0.97;
-  // Temperature derating: -0.4%/°C above 25°C (NOCT model)
+  // Deye SG05LP3/SG04LP1 series: 97.6% max efficiency × >99% MPPT
+  const inverterEff = 0.976 * 0.99;
+  // Jinko Tiger Neo N-type TOPCon: -0.29%/°C (vs generic mono-Si -0.40%/°C)
   const cellTemp = monthlyTemp + irradianceFrac * 25;
-  const tempDerate = 1 - 0.004 * Math.max(0, cellTemp - 25);
+  const tempDerate = 1 - 0.0029 * Math.max(0, cellTemp - 25);
   const solarPowerKw = Math.max(0, deratedSolarKw * inverterEff * tempDerate);
 
   // ------------------------------------------------------------------

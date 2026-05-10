@@ -426,14 +426,20 @@ const EV_CHARGER_PRESETS = [
 ];
 
 const INVERTER_PRESETS = [
-  // ── Deye (most common in Kenya / East Africa) ──────────────────────────
-  { id: 'deye-3.6',  label: 'Deye SUN-3.6K-SG04LP1 (3.6 kW)',  kw: 3.6  },
-  { id: 'deye-5',    label: 'Deye SUN-5K-SG04LP1 (5 kW)',        kw: 5    },
-  { id: 'deye-8',    label: 'Deye SUN-8K-SG04LP3 (8 kW)',        kw: 8    },
-  { id: 'deye-12',   label: 'Deye SUN-12K-SG04LP3 (12 kW)',      kw: 12   },
-  { id: 'deye-16',   label: 'Deye SUN-16K-SG04LP3 (16 kW)',      kw: 16   },
-  { id: 'deye-30',   label: 'Deye SUN-30K-SG04LP3 (30 kW)',      kw: 30   },
-  { id: 'deye-50',   label: 'Deye SUN-50K-SG04LP3 (50 kW)',      kw: 50   },
+  // ── Deye — single-phase SG04LP1 series (3–6 kW, 97.6% eff, 16-unit parallel) ────────
+  { id: 'deye-3.6',  label: 'Deye SUN-3.6K-SG04LP1-EU-SM2 (3.6 kW, 1Ø)',  kw: 3.6  },
+  { id: 'deye-5sp',  label: 'Deye SUN-5K-SG04LP1-EU-SM2 (5 kW, 1Ø)',       kw: 5    },
+  { id: 'deye-6sp',  label: 'Deye SUN-6K-SG04LP1-EU-SM2 (6 kW, 1Ø)',       kw: 6    },
+  // ── Deye — three-phase SG05LP3 series (3–12 kW, 97.6% eff, 10-unit parallel) ─────────
+  { id: 'deye-3',    label: 'Deye SUN-3K-SG05LP3-EU-SM2 (3 kW, 3Ø)',       kw: 3    },
+  { id: 'deye-5',    label: 'Deye SUN-5K-SG05LP3-EU-SM2 (5 kW, 3Ø)',       kw: 5    },
+  { id: 'deye-8',    label: 'Deye SUN-8K-SG05LP3-EU-SM2 (8 kW, 3Ø)',       kw: 8    },
+  { id: 'deye-12',   label: 'Deye SUN-12K-SG05LP3-EU-SM2 (12 kW, 3Ø)',     kw: 12   },
+  // ── Deye — three-phase SG05LP3 large series (14–20 kW, 97.6% eff, 350 A batt) ────────
+  { id: 'deye-14',   label: 'Deye SUN-14K-SG05LP3-EU-SM2 (14 kW, 3Ø)',     kw: 14   },
+  { id: 'deye-16',   label: 'Deye SUN-16K-SG05LP3-EU-SM2 (16 kW, 3Ø)',     kw: 16   },
+  { id: 'deye-18',   label: 'Deye SUN-18K-SG05LP3-EU-SM2 (18 kW, 3Ø)',     kw: 18   },
+  { id: 'deye-20',   label: 'Deye SUN-20K-SG05LP3-EU-SM2 (20 kW, 3Ø)',     kw: 20   },
   // ── Growatt (popular budget option across Africa) ───────────────────────
   { id: 'growatt-3',   label: 'Growatt SPF 3000TL LVM (3 kW)',   kw: 3    },
   { id: 'growatt-5',   label: 'Growatt SPF 5000TL LVM (5 kW)',   kw: 5    },
