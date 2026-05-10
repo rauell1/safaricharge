@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 197 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-10-07f7b6f` | `07f7b6f` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-10 |
 | 196 | `rollback/real-hardware-specs-from-deye-jinko-da-2026-05-10-909d6f8` | `909d6f8` | Real hardware specs from Deye & Jinko datasheets wired into simulation | 2026-05-10 |
 | 195 | `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-05-10-226a27e` | `226a27e` | docs(auto): regenerate README.md [skip ci] | 2026-05-10 |
 | 194 | `rollback/africa-inverter-presets-move-config-to-2026-05-10-1849c7c` | `1849c7c` | Africa inverter presets, move config to System Config, add PDF report | 2026-05-10 |
@@ -2025,6 +2026,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/real-hardware-specs-from-deye-jinko-da-2026-05-10-909d6f8`
 - **Commit**: `909d6f81b15934f1c6d033c0306708d54aeb8ee9`
 - **Subject**: Real hardware specs from Deye & Jinko datasheets wired into simulation
+- **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #197 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-10-07f7b6f`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-10-07f7b6f`
+- **Commit**: `07f7b6f36d3b942d8406f62efbe53c4e77c022e6`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-05-10
 - **Auto-generated**: yes (by update-rollback.yml)
 
