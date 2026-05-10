@@ -6,6 +6,11 @@
  *
  * Called every simulation tick from usePhysicsSimulation (hook).
  * State is persisted across ticks via PhysicsEngineState (mutated in-place).
+ *
+ * All physical constants are imported from config.ts (single source of truth).
+ * Component-specific overrides (temp coefficient, inverter efficiency, etc.)
+ * are accepted via the optional CatalogPhysicsParams argument — resolved by
+ * catalog-physics-bridge.ts from the SOLAR_COMPONENT_CATALOG datasheet specs.
  */
 
 import type {
@@ -20,7 +25,16 @@ import type {
 import {
   BATTERY_ROUND_TRIP_EFFICIENCY,
   FEED_IN_TARIFF_RATE_KES,
+  INVERTER_MAX_EFFICIENCY,
+  MPPT_EFFICIENCY,
+  PANEL_TEMP_COEFFICIENT_PER_DEG_C,
+  BIFACIAL_GAIN_FACTOR,
+  SOILING_LOSS_PER_DAY,
+  SOILING_MIN_FACTOR,
+  SIM_STEPS_PER_DAY,
+  SIM_STEP_DURATION_HOURS,
 } from '@/lib/config';
+import type { CatalogPhysicsParams } from '@/lib/catalog-physics-bridge';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -68,6 +82,11 @@ export interface PhysicsEngineState {
   evIsHome: Record<string, boolean>;
   /** Current soiling loss factor (0–1, 1 = clean). */
   soilingFactor: number;
+  /**
+   * Accumulated age in fractional years — used to apply annual panel
+   * degradation across long-run simulations.
+   */
+  panelAgeYears?: number;
 }
 
 /** Hourly load profile for a single load over one day. */
@@ -113,6 +132,8 @@ export interface PhysicsTickResult {
   evStates: Record<string, { soc: number; isHome: boolean; isCharging: boolean }>;
   /** Savings this tick in KES. */
   savingsKES: number;
+  /** Debug: which catalog-physics params were active. */
+  catalogSources?: CatalogPhysicsParams['sources'];
 }
 
 // ---------------------------------------------------------------------------
@@ -277,6 +298,10 @@ function buildLoadProfile(
  *
  * Mutates `state.batteryKwh` and `state.evSocs` in-place so SOC
  * accumulates correctly across ticks.
+ *
+ * @param catalogParams - Optional component-specific physics overrides
+ *   resolved from SOLAR_COMPONENT_CATALOG datasheet specs via
+ *   catalog-physics-bridge.ts. Falls back to config.ts constants when omitted.
  */
 export function calculateInstantPhysics(
   config: SystemConfiguration,
@@ -288,10 +313,32 @@ export function calculateInstantPhysics(
   gridEnabled: boolean,
   isPeakTime: boolean,
   peakRate: number,
-  offPeakRate: number
+  offPeakRate: number,
+  catalogParams?: CatalogPhysicsParams
 ): PhysicsTickResult {
-  const TICK_HOURS = 24 / 420; // ~3.43-min intervals → 420 ticks/day
+  // SIM_STEP_DURATION_HOURS = 24 / SIM_STEPS_PER_DAY ≈ 0.05714 h per tick
+  const TICK_HOURS = SIM_STEP_DURATION_HOURS;
   const hour = Math.floor(timeOfDay);
+
+  // Resolve physics constants: catalog-derived values take precedence,
+  // then config.ts constants (which are already datasheet-sourced).
+  const tempCoeff = catalogParams?.panelTempCoefficientPerDegC ?? PANEL_TEMP_COEFFICIENT_PER_DEG_C;
+  const isBifacial = catalogParams?.isBifacial ?? false;
+  const bifacialGain = (isBifacial ? (catalogParams?.bifacialGainFactor ?? BIFACIAL_GAIN_FACTOR) : 0);
+  const invEff = catalogParams?.inverterMaxEfficiency ?? INVERTER_MAX_EFFICIENCY;
+  const mpptEff = catalogParams?.mpptEfficiency ?? MPPT_EFFICIENCY;
+  const batRTE = catalogParams?.batteryRoundTripEfficiency ?? BATTERY_ROUND_TRIP_EFFICIENCY;
+  const batChargeEff = Math.sqrt(batRTE);
+  const batDischargeEff = Math.sqrt(batRTE);
+
+  // Annual degradation from state.panelAgeYears (if tracked by caller)
+  const panelAgeYears = state.panelAgeYears ?? 0;
+  const annualDeg = catalogParams?.panelAnnualDegradationRate ?? 0.004;
+  const firstYearDeg = catalogParams?.panelFirstYearDegradation ?? 0.01;
+  // Total lifetime derating: year-1 loss + subsequent annual loss
+  const degradationFactor = panelAgeYears <= 0
+    ? 1.0
+    : (1 - firstYearDeg) * Math.pow(1 - annualDeg, Math.max(0, panelAgeYears - 1));
 
   // ------------------------------------------------------------------
   // 1. Solar generation — use monthly avg kWh/kWp if available
@@ -304,14 +351,22 @@ export function calculateInstantPhysics(
   const rawSolarKw = peakSolarKw * irradianceFrac;
   const performanceRatio = clamp(config.performanceRatio ?? 0.8, 0.65, 0.95);
   const shadingLossPct = clamp(config.shadingLossPct ?? 0, 0, 50);
-  const deratedSolarKw = rawSolarKw * performanceRatio * (1 - shadingLossPct / 100);
 
-  // Deye SG05LP3/SG04LP1 series: 97.6% max efficiency × >99% MPPT
-  const inverterEff = 0.976 * 0.99;
-  // Jinko Tiger Neo N-type TOPCon: -0.29%/°C (vs generic mono-Si -0.40%/°C)
+  // Apply degradation and bifacial gain
+  const deratedSolarKw =
+    rawSolarKw *
+    performanceRatio *
+    (1 - shadingLossPct / 100) *
+    degradationFactor *
+    (1 + bifacialGain);
+
+  // Inverter efficiency from config.ts / catalog:
+  //   Deye SG05LP3/SG04LP1: 97.6 % max × >99 % MPPT (from INVERTER_MAX_EFFICIENCY × MPPT_EFFICIENCY)
+  //   Jinko Tiger Neo N-type TOPCon temp coeff: −0.29 %/°C (from PANEL_TEMP_COEFFICIENT_PER_DEG_C)
   const cellTemp = monthlyTemp + irradianceFrac * 25;
-  const tempDerate = 1 - 0.0029 * Math.max(0, cellTemp - 25);
-  const solarPowerKw = Math.max(0, deratedSolarKw * inverterEff * tempDerate);
+  // tempCoeff is negative (e.g. −0.0029); clamp prevents positive derating below 25 °C
+  const tempDerate = 1 + tempCoeff * Math.max(0, cellTemp - 25);
+  const solarPowerKw = Math.max(0, deratedSolarKw * invEff * mpptEff * tempDerate);
 
   // ------------------------------------------------------------------
   // 2. Load this tick — use real hourly profiles from scenario
@@ -344,9 +399,6 @@ export function calculateInstantPhysics(
   const batMinKwh = batMaxKwh * ((bat.minReservePct ?? 20) / 100);
   const batMaxChargeKw = bat.maxChargeKw;
   const batMaxDischargeKw = bat.maxDischargeKw;
-  // Round-trip efficiency for LiFePO₄ — sourced from config.ts
-  const batChargeEff = Math.sqrt(BATTERY_ROUND_TRIP_EFFICIENCY);
-  const batDischargeEff = Math.sqrt(BATTERY_ROUND_TRIP_EFFICIENCY);
 
   // ------------------------------------------------------------------
   // 4. Net power balance & dispatch
@@ -420,6 +472,11 @@ export function calculateInstantPhysics(
   state.batteryKwh = clamp(state.batteryKwh, batMinKwh, batMaxKwh);
   const batteryLevelPct = (state.batteryKwh / batMaxKwh) * 100;
 
+  // Advance panel age counter (one tick = SIM_STEP_DURATION_HOURS / 8760 years)
+  if (state.panelAgeYears !== undefined) {
+    state.panelAgeYears += TICK_HOURS / 8760;
+  }
+
   // ------------------------------------------------------------------
   // 6. EV SOC updates
   // ------------------------------------------------------------------
@@ -463,5 +520,30 @@ export function calculateInstantPhysics(
     loadBreakdown,
     evStates,
     savingsKES,
+    catalogSources: catalogParams?.sources,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Soiling model (exported for use by usePhysicsSimulation)
+// ---------------------------------------------------------------------------
+
+/**
+ * Update the soiling factor in engine state.
+ * Called by usePhysicsSimulation at day boundaries.
+ *
+ * Uses SOILING_LOSS_PER_DAY and SOILING_MIN_FACTOR from config.ts.
+ * Rain resets factor to 1.0 (10% daily rain probability).
+ */
+export function updateSoilingFactor(state: PhysicsEngineState, date: Date): void {
+  const rainChance = dailyRandom(date, 99, 0, 1);
+  if (rainChance < 0.10) {
+    state.soilingFactor = 1.0; // rain cleans panels
+  } else {
+    state.soilingFactor = clamp(
+      state.soilingFactor - SOILING_LOSS_PER_DAY,
+      SOILING_MIN_FACTOR,
+      1.0
+    );
+  }
 }
