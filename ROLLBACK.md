@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 194 | `rollback/africa-inverter-presets-move-config-to-2026-05-10-1849c7c` | `1849c7c` | Africa inverter presets, move config to System Config, add PDF report | 2026-05-10 |
 | 193 | `rollback/improve-sld-ac-bus-visibility-configur-2026-05-10-cb1d1f1` | `cb1d1f1` | Improve SLD: AC Bus visibility, configurable EV & inverter panels (#249) | 2026-05-10 |
 | 192 | `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-05-09-dfbffcf` | `dfbffcf` | docs(auto): regenerate README.md [skip ci] | 2026-05-09 |
 | 191 | `rollback/fix-bugs-improve-ui-location-sync-live-2026-05-10-2be6dcc` | `2be6dcc` | Fix bugs & improve UI: location sync, live nodes, dark mode (#247) | 2026-05-10 |
@@ -1995,6 +1996,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/improve-sld-ac-bus-visibility-configur-2026-05-10-cb1d1f1`
 - **Commit**: `cb1d1f1af1410b0a91174774a7a000ca619ddc24`
 - **Subject**: Improve SLD: AC Bus visibility, configurable EV & inverter panels (#249)
+- **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #194 — `rollback/africa-inverter-presets-move-config-to-2026-05-10-1849c7c`
+
+- **Branch**: `rollback/africa-inverter-presets-move-config-to-2026-05-10-1849c7c`
+- **Commit**: `1849c7c8ac8c0d99dbb650cb9524ae0a422e36d7`
+- **Subject**: Africa inverter presets, move config to System Config, add PDF report
 - **Date**: 2026-05-10
 - **Auto-generated**: yes (by update-rollback.yml)
 
