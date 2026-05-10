@@ -26,7 +26,8 @@ export interface FinancialResult {
 }
 
 const PROJECT_YEARS = 25;
-const ANNUAL_DEGRADATION = 0.005;
+// Jinko Tiger Neo N-type TOPCon: 0.40%/yr (30-year linear warranty) vs old 0.50%/yr generic
+const ANNUAL_DEGRADATION = 0.004;
 const IRR_TOLERANCE = 1e-6;
 const IRR_MAX_ITERATIONS = 50;
 

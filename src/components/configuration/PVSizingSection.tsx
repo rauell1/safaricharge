@@ -61,7 +61,7 @@ export function PVSizingSection({ locationOverride }: { locationOverride?: Locat
   const [performanceRatio, setPerformanceRatio] = useState(0.8);
   const [batteryChemistry, setBatteryChemistry] = useState<BatteryChemistry>('lifepo4');
   const [autonomyDays, setAutonomyDays] = useState(2);
-  const [panelWattage, setPanelWattage] = useState(400);
+  const [panelWattage, setPanelWattage] = useState(625);
 
   const selectedPreset = useMemo(
     () => typedPresets.presets.find((p) => p.county === county) ?? typedPresets.presets[0],
@@ -197,9 +197,16 @@ export function PVSizingSection({ locationOverride }: { locationOverride?: Locat
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="300">300 W</SelectItem>
-              <SelectItem value="400">400 W</SelectItem>
-              <SelectItem value="500">500 W</SelectItem>
+              <SelectItem value="400">400 W — Generic mono-Si</SelectItem>
+              <SelectItem value="500">500 W — Generic mono-Si</SelectItem>
+              <SelectItem value="575">575 W — Jinko Tiger Neo 72HL4-BDV</SelectItem>
+              <SelectItem value="590">590 W — Jinko Tiger Neo 72HL4-BDV</SelectItem>
+              <SelectItem value="600">600 W — Jinko Tiger Neo 72HL4-BDV</SelectItem>
+              <SelectItem value="605">605 W — Jinko Tiger Neo 66HL4M-BDV</SelectItem>
+              <SelectItem value="615">615 W — Jinko Tiger Neo 66HL4M-BDV</SelectItem>
+              <SelectItem value="620">620 W — Jinko Tiger Neo 66HL4M-BDV</SelectItem>
+              <SelectItem value="625">625 W — Jinko Tiger Neo 66HL4M-BDV</SelectItem>
+              <SelectItem value="630">630 W — Jinko Tiger Neo 66HL4M-BDV</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -262,6 +269,11 @@ export function PVSizingSection({ locationOverride }: { locationOverride?: Locat
         <p>
           <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Suggested panels:</span>{' '}
           {result.suggestedPanelCount} × {panelWattage} W
+          {panelWattage >= 575 && (
+            <span style={{ fontSize: '0.75rem', color: 'var(--battery)', marginLeft: 6 }}>
+              N-type TOPCon · bifacial · −0.29 %/°C · 0.40 %/yr
+            </span>
+          )}
         </p>
         <p>
           <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Required battery capacity:</span>{' '}

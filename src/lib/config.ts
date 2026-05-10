@@ -52,9 +52,47 @@ export const GRID_EMISSION_FACTOR_KG_CO2_PER_KWH = 0.47;
 
 /**
  * PV panel temperature derating coefficient (%/°C above 25 °C STC).
- * Typical monocrystalline silicon value: −0.5 %/°C → −0.005 as a fraction.
+ * Jinko Tiger Neo N-type TOPCon (66HL4M-BDV / 72HL4-BDV): −0.29 %/°C → −0.0029 as a fraction.
+ * Significantly better than older mono-Si (−0.40 %/°C) and poly-Si (−0.45 %/°C).
  */
-export const PANEL_TEMP_COEFFICIENT_PER_DEG_C = -0.005;
+export const PANEL_TEMP_COEFFICIENT_PER_DEG_C = -0.0029;
+
+/**
+ * Annual PV panel output degradation rate (fraction/year), applied after year 1.
+ * Jinko Tiger Neo linear warranty guarantees ≤ 0.40 %/yr over 30 years.
+ */
+export const PANEL_ANNUAL_DEGRADATION_RATE = 0.004;
+
+/**
+ * First-year PV panel degradation (fraction).
+ * Jinko Tiger Neo: 1% first-year degradation (LID/LeTID minimised by N-type TOPCon).
+ */
+export const PANEL_FIRST_YEAR_DEGRADATION = 0.01;
+
+/**
+ * Bifacial energy gain factor for bifacial dual-glass modules (e.g. Jinko Tiger Neo BDV).
+ * At rear irradiance of 135 W/m² (per Jinko BNPI test), bifacial gain ≈ 10 %.
+ * Applied when bifacial mode is enabled in simulation config.
+ */
+export const BIFACIAL_GAIN_FACTOR = 0.10;
+
+/**
+ * Deye hybrid inverter maximum efficiency (all SG05LP3 / SG04LP1 series).
+ * Datasheet value: 97.6 %. Used in physics engine solar-to-AC conversion.
+ */
+export const INVERTER_MAX_EFFICIENCY = 0.976;
+
+/**
+ * Deye hybrid inverter Euro weighted efficiency.
+ * Datasheet value: 97.0 % (three-phase), 96.5 % (single-phase SG04LP1).
+ */
+export const INVERTER_EURO_EFFICIENCY = 0.970;
+
+/**
+ * MPPT tracker efficiency (Deye all series: >99 %).
+ * Applied to DC power before the inverter AC conversion stage.
+ */
+export const MPPT_EFFICIENCY = 0.99;
 
 /**
  * Average annual CO₂ absorption per mature tree (kg/year).
