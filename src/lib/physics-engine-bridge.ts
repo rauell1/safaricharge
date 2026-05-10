@@ -24,6 +24,10 @@ import {
   type PriorityMode,
 } from './physics-engine';
 import {
+  resolveCatalogPhysicsParams,
+  type CatalogPhysicsParams,
+} from './catalog-physics-bridge';
+import {
   SIM_STEP_DURATION_HOURS,
   FEED_IN_TARIFF_RATE_KES,
   GRID_EMISSION_FACTOR_KG_CO2_PER_KWH,
@@ -54,6 +58,42 @@ export function createPhysicsState(config: SystemConfiguration): PhysicsEngineSt
     evIsHome,
     soilingFactor: 1.0,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Catalog params cache — recomputed only when installed IDs change
+// ---------------------------------------------------------------------------
+
+let _cachedCatalogParams: CatalogPhysicsParams | null = null;
+let _cachedModuleId: string | undefined;
+let _cachedInverterId: string | undefined;
+let _cachedBatteryId: string | undefined;
+
+/**
+ * Resolve CatalogPhysicsParams from the system config's installed component
+ * IDs. Results are memoised so the catalog lookup (string scanning) does not
+ * run on every 1-second tick.
+ */
+function getCatalogParams(config: SystemConfiguration): CatalogPhysicsParams {
+  if (
+    _cachedCatalogParams &&
+    _cachedModuleId   === config.installedModuleId &&
+    _cachedInverterId === config.installedInverterId &&
+    _cachedBatteryId  === config.installedBatteryId
+  ) {
+    return _cachedCatalogParams;
+  }
+
+  _cachedModuleId   = config.installedModuleId;
+  _cachedInverterId = config.installedInverterId;
+  _cachedBatteryId  = config.installedBatteryId;
+  _cachedCatalogParams = resolveCatalogPhysicsParams(
+    config.installedModuleId,
+    config.installedInverterId,
+    config.installedBatteryId,
+  );
+
+  return _cachedCatalogParams;
 }
 
 // ---------------------------------------------------------------------------
@@ -93,6 +133,11 @@ export interface TickPhysicsParams {
 /**
  * Run one physics step, persist state, update the store, and append minute data.
  *
+ * Physics parameters (temp coefficient, degradation, inverter efficiency, battery
+ * RTE, etc.) are resolved from the installed component IDs in systemConfig via the
+ * catalog-physics-bridge so every tick uses real datasheet values rather than
+ * generic industry defaults.
+ *
  * @returns The raw InstantPhysicsResult for any additional processing the
  *          caller needs (e.g. logging, accumulator rollups).
  */
@@ -113,7 +158,10 @@ export function tickPhysicsEngine(params: TickPhysicsParams) {
     updateAccumulators,
   } = params;
 
-  // 1. Generate a day scenario using the current EV SOC states from persistent state
+  // 1. Resolve catalog-driven physics params (memoised by installed IDs)
+  const catalogParams = getCatalogParams(systemConfig);
+
+  // 2. Generate a day scenario using the current EV SOC states from persistent state
   const scenario = generateDayScenario(
     systemConfig,
     currentDate,
@@ -121,7 +169,12 @@ export function tickPhysicsEngine(params: TickPhysicsParams) {
     state.evSocs  // ← use live EV SOCs, not stale initial values
   );
 
-  // 2. Run physics — state.batteryKwh is mutated in place ✅
+  // 3. Run physics — state.batteryKwh is mutated in place ✅
+  //    catalogParams carries datasheet-derived: panelTempCoefficientPerDegC,
+  //    panelFirstYearDegradation, panelAnnualDegradationRate, isBifacial,
+  //    bifacialGainFactor, inverterMaxEfficiency, mpptEfficiency,
+  //    batteryRoundTripEfficiency — all resolved from the component IDs in
+  //    systemConfig.installedModuleId / installedInverterId / installedBatteryId.
   const result = calculateInstantPhysics(
     systemConfig,
     scenario,
@@ -132,10 +185,11 @@ export function tickPhysicsEngine(params: TickPhysicsParams) {
     gridEnabled,
     isPeakTime,
     peakRate,
-    offPeakRate
+    offPeakRate,
+    catalogParams // ← NEW: real-world physics from datasheets
   );
 
-  // 3. Wire results into energySystemStore nodes so live tiles update
+  // 4. Wire results into energySystemStore nodes so live tiles update
   updateNode('battery', {
     soc: result.batteryLevelPct,
     powerKW: result.batteryPowerKw,
@@ -194,7 +248,7 @@ export function tickPhysicsEngine(params: TickPhysicsParams) {
     });
   }
 
-  // 4. Build and append the full MinuteDataPoint
+  // 5. Build and append the full MinuteDataPoint
   const minuteH = Math.floor(hour);
   const minuteM = Math.round((hour - minuteH) * 60);
   const timestampDate = new Date(currentDate);
@@ -242,7 +296,7 @@ export function tickPhysicsEngine(params: TickPhysicsParams) {
 
   addMinuteData(dataPoint);
 
-  // 5. Update running accumulators
+  // 6. Update running accumulators
   updateAccumulators({
     solar: dataPoint.solarEnergyKWh,
     savings: result.savingsKES,

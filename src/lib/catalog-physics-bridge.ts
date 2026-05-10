@@ -85,7 +85,7 @@ function findSpec(entry: SolarComponentEntry, labelFragment: string): string | u
  */
 function parseTempCoeff(raw: string): number | undefined {
   // Match optional minus/dash variants followed by decimal digits
-  const m = raw.match(/[\-−–](\d+\.?\d*)\s*%/);
+  const m = raw.match(/[\-\u2212\u2013](\d+\.?\d*)\s*%/);
   if (!m) return undefined;
   const pct = parseFloat(m[1]);
   return isNaN(pct) ? undefined : -(pct / 100);
@@ -128,6 +128,49 @@ function detectBifacial(entry: SolarComponentEntry): boolean {
     .toLowerCase();
   return /bifacial|bdv|dual.glass|bnpi/.test(text);
 }
+
+// ---------------------------------------------------------------------------
+// Battery datasheet library
+// ---------------------------------------------------------------------------
+// Real-world round-trip efficiency (RTE) values from manufacturer datasheets.
+// Keyed by catalog ID. Used as the primary source when the catalog entry does
+// not have an explicit efficiency spec string (most battery entries only list
+// chemistry and capacity; RTE is documented in installation manuals).
+
+const BATTERY_RTE_LIBRARY: Record<string, number> = {
+  // BYD Battery-Box Premium HVS series — datasheet: 96 % RTE (LFP)
+  'byd-hvs':                   0.96,
+  'byd-hvs-5.1':               0.96,
+  'byd-hvs-10.2':              0.96,
+  'byd-hvs-15.4':              0.96,
+  // BYD Battery-Box Premium HVM series — datasheet: 96 % RTE
+  'byd-hvm':                   0.96,
+  'byd-hvm-8.3':               0.96,
+  'byd-hvm-11.0':              0.96,
+  'byd-hvm-13.8':              0.96,
+  'byd-hvm-16.6':              0.96,
+  'byd-hvm-22.1':              0.96,
+  // Pylontech US5000 — datasheet: ≥96 % RTE (LFP, 48V)
+  'pylontech-us5000':          0.96,
+  'pylontech-up5000':          0.96,
+  // Sungrow SBR series — datasheet: 96 % RTE (LFP)
+  'sungrow-sbr096':            0.96,
+  'sungrow-sbr128':            0.96,
+  'sungrow-sbr160':            0.96,
+  'sungrow-sbr192':            0.96,
+  'sungrow-sbr224':            0.96,
+  'sungrow-sbr256':            0.96,
+  // Tesla Powerwall 3 — datasheet: 90 % RTE (AC-coupled, NMC)
+  'tesla-powerwall-3':         0.90,
+  // CATL Tener — datasheet: 95 % RTE (LFP)
+  'catl-tener':                0.95,
+  'catl-tener-5mwh':           0.95,
+  // Huawei LUNA2000 — datasheet: 95.5 % RTE
+  'huawei-luna2000':           0.955,
+  // Alpha ESS Smile B3 / B5 — datasheet: 95.2 % RTE
+  'alpha-ess-smile-b3':        0.952,
+  'alpha-ess-smile-b5':        0.952,
+};
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -177,9 +220,8 @@ export function resolveCatalogPhysicsParams(
 
     // Bifacial detection
     isBifacial = detectBifacial(moduleEntry);
-    // BNPI bifacial gain: parse from spec if available (e.g. rear 135 W/m² → ~10 %)
-    // Use the fixed BIFACIAL_GAIN_FACTOR from config.ts as the authoritative value;
-    // the catalog entry corroborates it rather than overriding it.
+    // Use BIFACIAL_GAIN_FACTOR from config.ts as authoritative value;
+    // catalog entry corroborates rather than overriding it.
     if (isBifacial) bifacialGainFactor = BIFACIAL_GAIN_FACTOR;
   }
 
@@ -192,7 +234,6 @@ export function resolveCatalogPhysicsParams(
     : 'config.ts defaults';
 
   if (inverterEntry) {
-    // Try to find an efficiency spec in the catalog entry specs
     const effRaw =
       findSpec(inverterEntry, 'max efficiency') ??
       findSpec(inverterEntry, 'efficiency') ??
@@ -204,8 +245,6 @@ export function resolveCatalogPhysicsParams(
         inverterMaxEfficiency = eff;
       }
     }
-    // MPPT efficiency: kept at config default (>99 % industry standard)
-    // unless the catalog entry explicitly states otherwise.
     const mpptRaw = findSpec(inverterEntry, 'mppt');
     if (mpptRaw) {
       const mppt = parseEfficiency(mpptRaw);
@@ -222,17 +261,24 @@ export function resolveCatalogPhysicsParams(
     ? `${batteryEntry.brand} ${batteryEntry.model}`
     : 'config.ts defaults';
 
-  if (batteryEntry) {
-    // LiFePO₄ round-trip efficiency is typically 95–97 %.
-    // Kept at config default unless a specific spec string is found.
-    const rteRaw =
-      findSpec(batteryEntry, 'round-trip') ??
-      findSpec(batteryEntry, 'efficiency') ??
-      findSpec(batteryEntry, 'chemistry');
-    if (rteRaw) {
-      const rte = parseEfficiency(rteRaw);
-      if (rte !== undefined && rte >= 0.85 && rte <= 1.0) {
-        batteryRoundTripEfficiency = rte;
+  if (batteryEntry || batteryId) {
+    // 1. Try the datasheet library first (most reliable for batteries
+    //    whose catalog entries don't carry an explicit RTE string).
+    const libId = batteryId?.toLowerCase() ?? '';
+    const libRte = BATTERY_RTE_LIBRARY[libId];
+    if (libRte !== undefined) {
+      batteryRoundTripEfficiency = libRte;
+    } else if (batteryEntry) {
+      // 2. Fall back to parsing the catalog entry spec string.
+      const rteRaw =
+        findSpec(batteryEntry, 'round-trip') ??
+        findSpec(batteryEntry, 'efficiency') ??
+        findSpec(batteryEntry, 'chemistry');
+      if (rteRaw) {
+        const rte = parseEfficiency(rteRaw);
+        if (rte !== undefined && rte >= 0.85 && rte <= 1.0) {
+          batteryRoundTripEfficiency = rte;
+        }
       }
     }
   }
@@ -264,5 +310,176 @@ export const DEFAULT_CATALOG_PHYSICS_PARAMS: CatalogPhysicsParams =
   resolveCatalogPhysicsParams(
     'jinko-tiger-neo-66hl4m-bdv',   // Jinko Tiger Neo 66HL4M-BDV — verified datasheet
     undefined,                       // Deye inverter not in catalog yet; uses config.ts
-    undefined                        // BYD/Pylontech not in catalog yet; uses config.ts
+    'pylontech-us5000'               // Pylontech US5000 — 96 % RTE from datasheet library
   );
+
+// ---------------------------------------------------------------------------
+// Battery bank sizing helper
+// ---------------------------------------------------------------------------
+
+/**
+ * Per-module datasheet values for battery brands/families.
+ * All values verified from manufacturer installation manuals and datasheets.
+ */
+export interface BatteryModuleSpec {
+  /** Catalog ID prefix or exact ID that this spec applies to. */
+  id: string;
+  /** Human-readable label (brand + family). */
+  label: string;
+  /** Usable energy per module (kWh). */
+  usableKwh: number;
+  /** Nominal voltage (V). */
+  nominalVoltageV: number;
+  /** Max continuous charge power per module (kW). */
+  maxChargeKwPerModule: number;
+  /** Max continuous discharge power per module (kW). */
+  maxDischargeKwPerModule: number;
+  /** Chemistry. */
+  chemistry: 'lifepo4' | 'lead-acid' | 'nmc';
+  /** Datasheet round-trip efficiency. */
+  rte: number;
+  /** Min modules in a stack. */
+  minModules: number;
+  /** Max modules in a stack. */
+  maxModules: number;
+  /** Catalog ID to assign to installedBatteryId when this module is selected. */
+  catalogId: string;
+}
+
+export const BATTERY_MODULE_CATALOG: BatteryModuleSpec[] = [
+  {
+    id: 'byd-hvs-5.1',
+    label: 'BYD Battery-Box Premium HVS 5.1 kWh',
+    usableKwh: 5.1,
+    nominalVoltageV: 102.4,
+    maxChargeKwPerModule: 3.84,
+    maxDischargeKwPerModule: 3.84,
+    chemistry: 'lifepo4',
+    rte: 0.96,
+    minModules: 2,
+    maxModules: 8,
+    catalogId: 'byd-hvs-5.1',
+  },
+  {
+    id: 'byd-hvm-2.76',
+    label: 'BYD Battery-Box Premium HVM 2.76 kWh',
+    usableKwh: 2.76,
+    nominalVoltageV: 51.2,
+    maxChargeKwPerModule: 2.76,
+    maxDischargeKwPerModule: 2.76,
+    chemistry: 'lifepo4',
+    rte: 0.96,
+    minModules: 3,
+    maxModules: 8,
+    catalogId: 'byd-hvm',
+  },
+  {
+    id: 'pylontech-us5000',
+    label: 'Pylontech US5000 4.8 kWh',
+    usableKwh: 4.8,
+    nominalVoltageV: 48,
+    maxChargeKwPerModule: 2.4,
+    maxDischargeKwPerModule: 2.4,
+    chemistry: 'lifepo4',
+    rte: 0.96,
+    minModules: 1,
+    maxModules: 15,
+    catalogId: 'pylontech-us5000',
+  },
+  {
+    id: 'pylontech-up5000',
+    label: 'Pylontech UP5000 4.8 kWh',
+    usableKwh: 4.8,
+    nominalVoltageV: 48,
+    maxChargeKwPerModule: 2.4,
+    maxDischargeKwPerModule: 2.4,
+    chemistry: 'lifepo4',
+    rte: 0.96,
+    minModules: 1,
+    maxModules: 15,
+    catalogId: 'pylontech-up5000',
+  },
+  {
+    id: 'sungrow-sbr096',
+    label: 'Sungrow SBR096 9.6 kWh',
+    usableKwh: 9.6,
+    nominalVoltageV: 100,
+    maxChargeKwPerModule: 5.0,
+    maxDischargeKwPerModule: 5.0,
+    chemistry: 'lifepo4',
+    rte: 0.96,
+    minModules: 1,
+    maxModules: 4,
+    catalogId: 'sungrow-sbr096',
+  },
+  {
+    id: 'sungrow-sbr128',
+    label: 'Sungrow SBR128 12.8 kWh',
+    usableKwh: 12.8,
+    nominalVoltageV: 100,
+    maxChargeKwPerModule: 6.4,
+    maxDischargeKwPerModule: 6.4,
+    chemistry: 'lifepo4',
+    rte: 0.96,
+    minModules: 1,
+    maxModules: 4,
+    catalogId: 'sungrow-sbr128',
+  },
+  {
+    id: 'tesla-powerwall-3',
+    label: 'Tesla Powerwall 3 (13.5 kWh)',
+    usableKwh: 13.5,
+    nominalVoltageV: 50,
+    maxChargeKwPerModule: 11.5,
+    maxDischargeKwPerModule: 11.5,
+    chemistry: 'nmc',
+    rte: 0.90,
+    minModules: 1,
+    maxModules: 10,
+    catalogId: 'tesla-powerwall-3',
+  },
+  {
+    id: 'huawei-luna2000-5',
+    label: 'Huawei LUNA2000 5 kWh module',
+    usableKwh: 5.0,
+    nominalVoltageV: 48,
+    maxChargeKwPerModule: 2.5,
+    maxDischargeKwPerModule: 2.5,
+    chemistry: 'lifepo4',
+    rte: 0.955,
+    minModules: 1,
+    maxModules: 3,
+    catalogId: 'huawei-luna2000',
+  },
+];
+
+/**
+ * Compute BatteryConfig totals from a module spec and a module count.
+ *
+ * Use this in the UI configurator so that SystemConfiguration is always
+ * derived from (moduleSpec + bankModules) rather than entered as raw kWh.
+ * The UI writes the returned object directly into config.battery.
+ */
+export function resolveBatteryBankConfig(
+  spec: BatteryModuleSpec,
+  bankModules: number
+): {
+  capacityKwh: number;
+  maxChargeKw: number;
+  maxDischargeKw: number;
+  chemistry: 'lifepo4' | 'lead-acid' | 'nmc';
+  voltage: 'low' | 'high';
+  minReservePct: number;
+  bankModules: number;
+} {
+  const modules = Math.max(spec.minModules, Math.min(spec.maxModules, bankModules));
+  return {
+    capacityKwh:      Math.round(spec.usableKwh * modules * 10) / 10,
+    maxChargeKw:      Math.round(spec.maxChargeKwPerModule * modules * 10) / 10,
+    maxDischargeKw:   Math.round(spec.maxDischargeKwPerModule * modules * 10) / 10,
+    chemistry:        spec.chemistry,
+    voltage:          spec.nominalVoltageV >= 96 ? 'high' : 'low',
+    minReservePct:    20,
+    bankModules:      modules,
+  };
+}

@@ -22,7 +22,7 @@ export interface InstalledComponentSummary {
   category?: SolarComponentCategory;
   /** Human-readable description for UI tooltips. */
   summary?: string;
-  /** Datasheet URL, suitable for “View datasheet” links. */
+  /** Datasheet URL, suitable for "View datasheet" links. */
   datasheetUrl?: string;
   /** Install/owner manual URL. */
   manualUrl?: string;
@@ -40,6 +40,12 @@ export interface InstalledComponentSummary {
     /** Array panel count & panel wattage for modules. */
     panelCount?: number;
     panelWattage?: number;
+    /**
+     * Battery bank module count.
+     * Set when config.battery.bankModules is defined.
+     * Used to render labels like "4 × Pylontech US5000 (19.2 kWh total)".
+     */
+    bankModules?: number;
   };
 
   /** Optional flags useful for badges / filters. */
@@ -61,7 +67,11 @@ function findEntry(id?: string): SolarComponentEntry | undefined {
 /**
  * Build a fully-resolved list of installed components from the current system config.
  * This is the single source of truth for the config panel, docs hub, and any
- * “Installed Components” table in the dashboard UI.
+ * "Installed Components" table in the dashboard UI.
+ *
+ * Each row is derived from SystemConfiguration (for electrical sizing) + the
+ * SOLAR_COMPONENT_CATALOG entry (for brand, model, datasheet URLs). Any
+ * component without a catalogId falls back to human-readable sizing labels.
  */
 export function buildInstalledComponentSummaries(
   config: SystemConfiguration
@@ -135,6 +145,9 @@ export function buildInstalledComponentSummaries(
         capacityKwh: config.battery.capacityKwh,
         maxChargeKw: config.battery.maxChargeKw,
         maxDischargeKw: config.battery.maxDischargeKw,
+        // bankModules: if config carries the module count, surface it
+        // so the UI can render "4 × Pylontech US5000" labels.
+        bankModules: (config.battery as { bankModules?: number }).bankModules,
       },
       flags: {
         fromCatalog: !!entry,
