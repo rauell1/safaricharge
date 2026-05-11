@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 206 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-11-67191a2` | `67191a2` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-11 |
 | 205 | `rollback/merge-pull-request-254-from-rauell1-co-2026-05-10-cdb3b7e` | `cdb3b7e` | Merge pull request #254 from rauell1/copilot/enhance-solar-simulation-engine | 2026-05-10 |
 | 204 | `rollback/feat-wire-real-world-physics-from-cata-2026-05-10-900a10c` | `900a10c` | feat: wire real-world physics from catalog IDs into simulation engine | 2026-05-10 |
 | 203 | `rollback/rename-system-type-installation-type-i-2026-05-10-e6e0d1d` | `e6e0d1d` | rename System Type → Installation Type in PV sizing section to reduce UI ambiguity with System Mode simulation control | 2026-05-10 |
@@ -2116,6 +2117,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Commit**: `cdb3b7eaf6340452f3e82e0e66e81f19b1abc39c`
 - **Subject**: Merge pull request #254 from rauell1/copilot/enhance-solar-simulation-engine
 - **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #206 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-11-67191a2`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-11-67191a2`
+- **Commit**: `67191a2c02414f1876ad9d7d91ada77eecba0937`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-05-11
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
