@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 208 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-13-d6cd31c` | `d6cd31c` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-13 |
 | 207 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-12-c8099e6` | `c8099e6` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-12 |
 | 206 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-11-67191a2` | `67191a2` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-11 |
 | 205 | `rollback/merge-pull-request-254-from-rauell1-co-2026-05-10-cdb3b7e` | `cdb3b7e` | Merge pull request #254 from rauell1/copilot/enhance-solar-simulation-engine | 2026-05-10 |
@@ -2136,6 +2137,15 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Commit**: `c8099e62025c92f9fc34a4eb6df64d27ead078a1`
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-05-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #208 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-13-d6cd31c`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-13-d6cd31c`
+- **Commit**: `d6cd31cb3fea27dde17c7ac8368b0bf84c2cafe1`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-05-13
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
