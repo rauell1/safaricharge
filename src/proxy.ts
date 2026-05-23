@@ -38,7 +38,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Secure admin backend dashboard
-  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin-login')) {
+  if (pathname.startsWith('/admin') && pathname !== '/admin-login') {
     const secret = process.env.ADMIN_SESSION_SECRET
     const token = request.cookies.get('sc_admin_token')?.value ?? ''
 
