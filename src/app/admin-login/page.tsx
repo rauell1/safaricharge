@@ -35,10 +35,11 @@ export default function AdminLoginPage() {
       const trimmedEmail = email.trim().toLowerCase()
       const trimmedPassword = password.trim()
 
-      const isEmailValid = trimmedEmail === 'royokola3@gmail.com' || trimmedEmail === 'info@rauell.systems'
-      const isPasswordValid = trimmedPassword === 'info@rauell.systems' || trimmedPassword === 'royokola3@gmail.com' || trimmedPassword === 'SafariChargeAdmin2026!'
+      const isValid =
+        trimmedEmail === 'royokola3@gmail.com' &&
+        trimmedPassword === 'SafariChargeAdmin2026!'
 
-      if (isEmailValid && isPasswordValid) {
+      if (isValid) {
         setStatusText('Access Granted. Establishing Uplink...')
         
         // Write the secure admin cookie
