@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 224 | `rollback/merge-pull-request-258-from-rauell1-co-2026-05-24-af9cd36` | `af9cd36` | Merge pull request #258 from rauell1/copilot/fix-middleware-conflict (2f +12/-33) | 2026-05-24 |
 | 223 | `rollback/merge-remote-tracking-branch-origin-ma-2026-05-23-3a70a2f` | `3a70a2f` | Merge remote-tracking branch 'origin/main' (3f +14/-1) | 2026-05-23 |
 | 222 | `rollback/merge-remote-tracking-branch-origin-ma-2026-05-23-f598a72` | `f598a72` | Merge remote-tracking branch 'origin/main' (3f +17/-1) | 2026-05-23 |
 | 221 | `rollback/merge-remote-tracking-branch-origin-ma-2026-05-23-1638082` | `1638082` | Merge remote-tracking branch 'origin/main' (5f +420/-94) | 2026-05-23 |
@@ -2310,6 +2311,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: Merge remote-tracking branch 'origin/main'
 - **Date**: 2026-05-23
 - **Changed**: 3 file(s), +14/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #224 — `rollback/merge-pull-request-258-from-rauell1-co-2026-05-24-af9cd36`
+
+- **Branch**: `rollback/merge-pull-request-258-from-rauell1-co-2026-05-24-af9cd36`
+- **Commit**: `af9cd36250aca9fa73866f226e819cd4c6541b14`
+- **Subject**: Merge pull request #258 from rauell1/copilot/fix-middleware-conflict
+- **Date**: 2026-05-24
+- **Changed**: 2 file(s), +12/-33 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
