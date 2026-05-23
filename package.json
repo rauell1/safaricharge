@@ -21,7 +21,8 @@
     "workflow:local:ci": "node scripts/run-workflow-local.mjs ci",
     "workflow:local:readme": "node scripts/run-workflow-local.mjs readme",
     "workflow:local:codebase-map": "node scripts/run-workflow-local.mjs codebase-map",
-    "workflow:local:rollback": "node scripts/run-workflow-local.mjs rollback"
+    "workflow:local:rollback": "node scripts/run-workflow-local.mjs rollback",
+    "seed": "npx tsx scripts/seed-database.ts"
   },
   "dependencies": {
     "@dnd-kit/sortable": "^10.0.0",

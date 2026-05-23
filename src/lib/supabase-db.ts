@@ -232,6 +232,7 @@ export async function saveSimulationRun(
       latitude: run.latitude ?? null,
       longitude: run.longitude ?? null,
       summary_json: run.summaryJson,
+      total_minutes: run.minuteData.length,
     })
     .select('id')
     .single();
