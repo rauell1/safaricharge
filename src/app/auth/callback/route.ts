@@ -114,59 +114,6 @@ export async function GET(request: Request) {
         console.error('[auth/callback] Profile upsert failed:', profileError.message)
       }
 
-      // OAuth users who haven't filled in their profile yet go to onboarding.
-      const onboardingCheckStart = Date.now()
-      if (isOAuth) {
-        const needsOnboarding = profileError
-          ? (!fullName || !organization)
-          : (!profileRow?.full_name || !profileRow?.organization)
-
-        const onboardingCheckMs = Date.now() - onboardingCheckStart
-
-        if (needsOnboarding) {
-          const response = NextResponse.redirect(`${origin}/onboarding?next=${encodeURIComponent(safeNext)}`)
-          response.cookies.set('sc_last_seen', String(Date.now()), {
-            httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: 60 * 60,
-          })
-          response.cookies.set(AUTH_VALIDATED_AT_COOKIE, String(Date.now()), {
-            httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: Math.max(30, Math.floor(AUTH_VALIDATION_WINDOW_MS / 1000)),
-          })
-          const totalMs = Date.now() - callbackStart
-          if (AUTH_TIMING_DEBUG) {
-            console.info(
-              `[auth-timing][callback] exchange=${exchangeMs}ms upsert=${profileUpsertMs}ms onboarding_check=${onboardingCheckMs}ms total=${totalMs}ms target=onboarding`
-            )
-          }
-          return withTimingHeaders(response, {
-            exchange_code_for_session: exchangeMs,
-            profile_upsert: profileUpsertMs,
-            onboarding_check: onboardingCheckMs,
-            total: totalMs,
-          })
-        }
-
-        const totalMs = Date.now() - callbackStart
-        if (AUTH_TIMING_DEBUG) {
-          console.info(
-            `[auth-timing][callback] exchange=${exchangeMs}ms upsert=${profileUpsertMs}ms onboarding_check=${onboardingCheckMs}ms total=${totalMs}ms target=next`
-          )
-        }
-
-        const response = NextResponse.redirect(`${origin}${safeNext}`)
-        response.cookies.set('sc_last_seen', String(Date.now()), {
-          httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: 60 * 60,
-        })
-        response.cookies.set(AUTH_VALIDATED_AT_COOKIE, String(Date.now()), {
-          httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: Math.max(30, Math.floor(AUTH_VALIDATION_WINDOW_MS / 1000)),
-        })
-        return withTimingHeaders(response, {
-          exchange_code_for_session: exchangeMs,
-          profile_upsert: profileUpsertMs,
-          onboarding_check: onboardingCheckMs,
-          total: totalMs,
-        })
-      }
-
       const response = NextResponse.redirect(`${origin}${safeNext}`)
       response.cookies.set('sc_last_seen', String(Date.now()), {
         httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: 60 * 60,

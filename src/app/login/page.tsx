@@ -129,8 +129,6 @@ function LoginForm() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault(); reset()
-    if (!fullName.trim()) { setError('Please enter your full name.'); return }
-    if (!organization.trim()) { setError('Please enter your organisation.'); return }
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
     if (password !== confirmPassword) { setError('Passwords do not match.'); return }
     setLoading(true)
@@ -140,14 +138,13 @@ function LoginForm() {
       email: normalizedEmail,
       password,
       options: {
-        data: { full_name: fullName.trim(), phone: phone.trim(), organization: organization.trim() },
         emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
       },
     })
     if (signUpErr) { setError(signUpErr.message || 'Unable to create your account right now.'); setLoading(false); return }
     setSuccess('Account created! Check your email to confirm, then sign in.')
     setMode('signin')
-    setPassword(''); setConfirmPassword(''); setFullName(''); setPhone(''); setOrganization('')
+    setPassword(''); setConfirmPassword('');
     setLoading(false)
   }
 
@@ -251,24 +248,7 @@ function LoginForm() {
 
       {mode === 'register' && (
         <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
-          <Field
-            id="full-name" label="Full name" type="text" autoComplete="name"
-            placeholder="Jane Njeri" value={fullName}
-            onChange={(e: any) => setFullName(e.target.value)}
-            icon={<UserRound size={15} />} required
-          />
-          <Field
-            id="organization" label="Organisation" type="text" autoComplete="organization"
-            placeholder="e.g. Kenya Power, KETRACO, NGO" value={organization}
-            onChange={(e: any) => setOrganization(e.target.value)}
-            icon={<Building2 size={15} />} required
-          />
-          <Field
-            id="phone" label="Phone (optional)" type="tel" autoComplete="tel"
-            placeholder="+254 700 000 000" value={phone}
-            onChange={(e: any) => setPhone(e.target.value)}
-            icon={<Phone size={15} />}
-          />
+
           <Field
             id="reg-email" label="Work email" type="email" autoComplete="email"
             placeholder="name@company.com" value={email}
