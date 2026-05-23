@@ -91,6 +91,9 @@ function createAdminClient() {
 export async function GET(): Promise<NextResponse> {
   // 1. Build the SSR client — reads the user's session from the http-only cookie.
   const supabase = await createServerSupabaseClient();
+  if (!supabase) {
+    return NextResponse.json({ error: 'Server misconfiguration: missing Supabase credentials.' }, { status: 500 });
+  }
 
   // 2. Verify the session.  getUser() always makes a network call to Supabase Auth
   //    to validate the JWT, unlike getSession() which only checks local storage.
@@ -147,6 +150,9 @@ export async function GET(): Promise<NextResponse> {
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const supabase = await createServerSupabaseClient();
+  if (!supabase) {
+    return NextResponse.json({ error: 'Server misconfiguration: missing Supabase credentials.' }, { status: 500 });
+  }
 
   const {
     data: { user },

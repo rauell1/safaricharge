@@ -38,6 +38,10 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createServerSupabaseClient()
+    if (!supabase) {
+      console.error('[auth/callback] Missing Supabase server client')
+      return NextResponse.redirect(`${origin}/login?error=missing_credentials`)
+    }
     const exchangeStart = Date.now()
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     const exchangeMs = Date.now() - exchangeStart

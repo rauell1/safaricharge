@@ -3,6 +3,9 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 
 export default async function RootPage() {
   const supabase = await createServerSupabaseClient()
+  if (!supabase) {
+    redirect('/landing')
+  }
   const {
     data: { user },
   } = await supabase.auth.getUser()

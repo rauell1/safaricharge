@@ -11,6 +11,12 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 export async function POST(request: Request) {
   // Verify the caller has a valid session first.
   const supabase = await createServerSupabaseClient()
+  if (!supabase) {
+    return NextResponse.json(
+      { error: 'Server misconfiguration: missing Supabase credentials.' },
+      { status: 500 }
+    )
+  }
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user) {

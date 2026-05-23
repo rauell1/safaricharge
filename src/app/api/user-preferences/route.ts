@@ -13,6 +13,7 @@ function createAdminClient() {
 async function getAuthUser() {
   try {
     const client = await createServerSupabaseClient();
+    if (!client) return null;
     const { data: { user } } = await client.auth.getUser();
     return user;
   } catch {

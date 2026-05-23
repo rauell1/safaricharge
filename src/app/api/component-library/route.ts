@@ -139,6 +139,7 @@ export async function GET(request: Request) {
   let uploadedAssets: UploadedAsset[] = [];
   try {
     const serverClient = await createServerSupabaseClient();
+    if (!serverClient) throw new Error('Missing Supabase credentials');
     const { data: { user } } = await serverClient.auth.getUser();
 
     if (user) {
@@ -190,6 +191,7 @@ export async function POST(request: Request) {
   let userId: string | null = null;
   try {
     const serverClient = await createServerSupabaseClient();
+    if (!serverClient) throw new Error('Missing Supabase credentials');
     const { data: { user } } = await serverClient.auth.getUser();
     userId = user?.id ?? null;
   } catch {

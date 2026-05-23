@@ -30,6 +30,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   const supabase = await createServerSupabaseClient();
+  if (!supabase) {
+    return NextResponse.json({ error: 'Server misconfiguration: missing Supabase credentials.' }, { status: 500 });
+  }
 
   const {
     data: { user },
@@ -103,6 +106,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   const supabase = await createServerSupabaseClient();
+  if (!supabase) {
+    return NextResponse.json({ error: 'Server misconfiguration: missing Supabase credentials.' }, { status: 500 });
+  }
 
   const {
     data: { user },
