@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 // Exact public paths or path prefixes that do NOT require authentication.
-const PUBLIC_EXACT: Set<string> = new Set(['/', '/login', '/landing', '/demo', '/pricing', '/reset-password'])
+const PUBLIC_EXACT: Set<string> = new Set(['/', '/login', '/landing', '/demo', '/pricing', '/reset-password', '/admin-login'])
 const PUBLIC_PREFIXES: string[] = ['/auth/', '/api/', '/forgot-password', '/signup']
 
 const SESSION_TTL_MS = 60 * 60 * 1000
@@ -35,6 +35,17 @@ function isPublic(pathname: string): boolean {
 export async function proxy(request: NextRequest) {
   const middlewareStart = Date.now()
   const { pathname } = request.nextUrl
+
+  // Secure admin backend dashboard
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+    const adminToken = request.cookies.get('sc_admin_token')?.value
+    if (adminToken === 'safaricharge-admin-session-active') {
+      return NextResponse.next()
+    }
+    const loginUrl = new URL('/admin-login', request.url)
+    return NextResponse.redirect(loginUrl)
+  }
+
   if (isPublic(pathname)) return NextResponse.next()
 
   // ── Session TTL check (cookie-only, zero network cost) ──────────────────
