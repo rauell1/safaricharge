@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 228 | `rollback/feat-simplify-registration-by-removing-2026-05-24-257e25b` | `257e25b` | feat: simplify registration by removing site details and enable auto-seeding of admin email (5f +121/-75) | 2026-05-24 |
 | 227 | `rollback/feat-enforce-email-confirmation-checks-2026-05-24-f2ed12c` | `f2ed12c` | feat: enforce email confirmation checks for routing and authentication (4f +11/-3) | 2026-05-24 |
 | 226 | `rollback/fix-add-vercel-environment-naming-fall-2026-05-24-bd70b8e` | `bd70b8e` | fix: add Vercel environment naming fallbacks for Supabase client (6f +13/-13) | 2026-05-24 |
 | 225 | `rollback/fix-resolve-typescript-server-client-n-2026-05-24-7562f17` | `7562f17` | fix: resolve TypeScript server client null-safety crashes on Vercel deployment (9f +51/-23) | 2026-05-24 |
@@ -2354,6 +2355,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat: enforce email confirmation checks for routing and authentication
 - **Date**: 2026-05-24
 - **Changed**: 4 file(s), +11/-3 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #228 — `rollback/feat-simplify-registration-by-removing-2026-05-24-257e25b`
+
+- **Branch**: `rollback/feat-simplify-registration-by-removing-2026-05-24-257e25b`
+- **Commit**: `257e25bb5976d6cab82970e8dec263e5872b340c`
+- **Subject**: feat: simplify registration by removing site details and enable auto-seeding of admin email
+- **Date**: 2026-05-24
+- **Changed**: 5 file(s), +121/-75 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
