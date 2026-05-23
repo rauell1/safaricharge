@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 221 | `rollback/merge-remote-tracking-branch-origin-ma-2026-05-23-1638082` | `1638082` | Merge remote-tracking branch 'origin/main' (5f +420/-94) | 2026-05-23 |
 | 220 | `rollback/feat-implement-advanced-operator-conso-2026-05-23-ebf24aa` | `ebf24aa` | feat: implement advanced operator console improvements: interactive SVG hovers, real-time Supabase sync logs tab, and write-back configuration override panel (1f +374/-92) | 2026-05-23 |
 | 219 | `rollback/fix-make-admin-dashboard-login-credent-2026-05-23-e6e0263` | `e6e0263` | fix: make admin dashboard login credentials validation extremely robust and flexible to prevent typos or field swaps (1f +6/-1) | 2026-05-23 |
 | 218 | `rollback/merge-remote-tracking-branch-origin-ma-2026-05-23-fc50ad9` | `fc50ad9` | Merge remote-tracking branch 'origin/main' (3f +37/-15) | 2026-05-23 |
@@ -2277,6 +2278,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat: implement advanced operator console improvements: interactive SVG hovers, real-time Supabase sync logs tab, and write-back configuration override panel
 - **Date**: 2026-05-23
 - **Changed**: 1 file(s), +374/-92 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #221 — `rollback/merge-remote-tracking-branch-origin-ma-2026-05-23-1638082`
+
+- **Branch**: `rollback/merge-remote-tracking-branch-origin-ma-2026-05-23-1638082`
+- **Commit**: `16380826147dfb86a8dc9712ee6a2b19665f9f01`
+- **Subject**: Merge remote-tracking branch 'origin/main'
+- **Date**: 2026-05-23
+- **Changed**: 5 file(s), +420/-94 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
