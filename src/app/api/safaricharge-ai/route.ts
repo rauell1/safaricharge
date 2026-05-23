@@ -32,6 +32,21 @@ Mode selection:
 1) Dashboard mode (default when system data is relevant): diagnose performance and optimize results.
 2) General research mode (when user asks outside current dashboard data): provide direct, research-backed guidance.
 
+Kenya-specific context:
+- KPLC tariff structure (EPRA 2025/26): peak window 18:00–22:00 EAT daily at ~KES 27/kWh; off-peak all other hours at ~KES 23/kWh. Always reference the correct rate when computing savings.
+- Kenya grid emission factor: 0.50 kg CO₂/kWh (EPRA 2025). Use this for all carbon calculations.
+- Solar irradiance seasonality: long rains March–May and short rains October–December reduce solar yield by 15–25%; factor this into generation forecasts and battery sizing advice.
+- Primary hardware in this region: Deye SG04LP1 / SG05LP3 inverters (97.6% efficiency); Jinko Tiger Neo N-type TOPCon panels (temperature coefficient −0.29 %/°C, annual degradation 0.40 %/yr). Reference these specs when diagnosing performance.
+
+CO₂ savings guidance:
+- When the user asks about CO₂, emissions, or environmental impact: calculate avoided emissions as solar_kwh × 0.50 kg/kWh and express the result in kg or convert to tonnes for large numbers.
+- Always accompany the raw figure with a real-world equivalent, e.g. "equivalent to approximately X car-km not driven (avg 120 g CO₂/km)".
+
+Response length calibration:
+- Simple factual questions (yes/no, single number, brief status): answer in 1–3 sentences maximum, no headers, no bullet points.
+- Optimization, diagnosis, or multi-factor questions: use the full structured format below.
+- General research questions: 2–4 paragraphs with sources.
+
 Global response rules:
 - Be specific, practical, and thorough by default (avoid over-summarizing).
 - Ground every non-trivial claim in provided data or clearly labeled assumptions.
@@ -40,7 +55,7 @@ Global response rules:
 - Prefer the highest-impact actions first (cost savings, self-consumption, reliability, battery longevity).
 - When trade-offs exist, state them briefly.
 - Show key calculations explicitly (formula + substituted values + result) when recommending an action.
-- Use clear section headings and bullet points. Keep writing compact only if the user explicitly asks for a short answer.
+- Use clear section headings and bullet points for structured responses.
 
 Dashboard mode requirements:
 - Use real numbers from the payload and compare against relevant benchmarks when helpful.
@@ -48,6 +63,7 @@ Dashboard mode requirements:
 - Prioritize 3-5 actions by impact and feasibility.
 - Quantify expected benefit for each action using kWh, %, cost, or battery life impact where possible.
 - If battery efficiency drop exceeds 0.10, explicitly flag severity, likely causes, and corrective plan.
+- If battery_health_score < 70, flag the battery status as CRITICAL and explicitly recommend scheduling a professional inspection or capacity test within 30 days.
 - Include a "Detailed rationale" subsection that explains why each action ranks where it does.
 
 General research mode requirements:
@@ -413,6 +429,23 @@ Use these PERSONALISED patterns to give specific, data-driven advice rather than
 High-priority: Battery efficiency has dropped significantly. Highlight the degradation, suggest likely causes, and give corrective actions to restore efficiency.`
       : '';
 
+  // Compute KPLC tariff zone from timestamp
+  const now = new Date(systemData.timestamp);
+  const hourEAT = (now.getUTCHours() + 3) % 24; // UTC+3
+  const isPeakKPLC = hourEAT >= 18 && hourEAT < 22;
+  const tariffZone = isPeakKPLC ? 'PEAK (KES 27/kWh, 18:00–22:00)' : 'OFF-PEAK (KES 23/kWh)';
+  const hoursUntilPeak = isPeakKPLC ? 0 : (18 - hourEAT > 0 ? 18 - hourEAT : 24 - hourEAT + 18);
+  const kplcSection = `KPLC tariff context:
+- Current time (EAT): ${hourEAT.toString().padStart(2, '0')}:00
+- Tariff zone: ${tariffZone}
+- Next zone change: ${isPeakKPLC ? '22:00 → off-peak' : `${hoursUntilPeak}h until peak`}`;
+
+  const co2Saved = systemData.solar.daily_kwh * 0.50; // kg, Kenya grid factor
+  const co2Section = `CO₂ context:
+- Today's solar generation: ${systemData.solar.daily_kwh.toFixed(1)} kWh
+- Estimated CO₂ avoided: ${co2Saved.toFixed(1)} kg (Kenya grid: 0.50 kg/kWh)
+- Car-km equivalent: ~${(co2Saved / 0.12).toFixed(0)} km not driven (avg 120g/km)`;
+
   return [
     { role: 'system', content: SYSTEM_PROMPT },
     {
@@ -425,6 +458,10 @@ ${JSON.stringify(systemData, null, 2)}
 
 ${derivedSection}
 ${learningSection}
+
+${kplcSection}
+
+${co2Section}
 
 Analyze this system and provide optimization insights.
 Keep the structure: Insight, Recommendation, Expected benefit (with kWh/KES/% where possible).

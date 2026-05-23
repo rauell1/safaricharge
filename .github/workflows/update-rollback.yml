@@ -60,6 +60,12 @@ jobs:
           printf 'subject=%s\n' "$SUBJECT"  >> $GITHUB_OUTPUT
           echo "slug=${SLUG}"               >> $GITHUB_OUTPUT
           echo "branch_name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+          FILES_CHANGED=$(git show --stat HEAD | tail -1 | grep -oE '[0-9]+ file' | grep -oE '[0-9]+' || echo '0')
+          INSERTIONS=$(git show --stat HEAD | tail -1 | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo '0')
+          DELETIONS=$(git show --stat HEAD | tail -1 | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+' || echo '0')
+          echo "files_changed=${FILES_CHANGED}" >> $GITHUB_OUTPUT
+          echo "insertions=${INSERTIONS}"       >> $GITHUB_OUTPUT
+          echo "deletions=${DELETIONS}"         >> $GITHUB_OUTPUT
           echo "DEBUG slug:        ${SLUG}"
           echo "DEBUG date:        ${DATE}"
           echo "DEBUG branch_name: ${BRANCH_NAME}"
@@ -85,11 +91,14 @@ jobs:
 
       - name: Commit and push ROLLBACK.md
         env:
-          SHA:         ${{ steps.meta.outputs.sha }}
-          SHA_SHORT:   ${{ steps.meta.outputs.sha_short }}
-          DATE:        ${{ steps.meta.outputs.date }}
-          SUBJECT:     ${{ steps.meta.outputs.subject }}
-          BRANCH_NAME: ${{ steps.meta.outputs.branch_name }}
+          SHA:           ${{ steps.meta.outputs.sha }}
+          SHA_SHORT:     ${{ steps.meta.outputs.sha_short }}
+          DATE:          ${{ steps.meta.outputs.date }}
+          SUBJECT:       ${{ steps.meta.outputs.subject }}
+          BRANCH_NAME:   ${{ steps.meta.outputs.branch_name }}
+          FILES_CHANGED: ${{ steps.meta.outputs.files_changed }}
+          INSERTIONS:    ${{ steps.meta.outputs.insertions }}
+          DELETIONS:     ${{ steps.meta.outputs.deletions }}
         run: |
           git config user.name  'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'

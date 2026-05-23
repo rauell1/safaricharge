@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: ['**']
+    branches: [main]
   pull_request:
-    branches: ['**']
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -16,59 +16,162 @@ jobs:
   # 1. Type-check (tsc --noEmit)
   # ─────────────────────────────────────────────
   typecheck:
-    name: Type-check
-    if: |
-      (github.event_name == 'push' && github.ref_name == 'main') ||
-      (github.event_name == 'pull_request' && github.base_ref == 'main') ||
-      (github.event_name == 'workflow_dispatch')
+    name: Type-check (node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ['22']
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node 22
+      - name: Setup Node ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ matrix.node-version }}
           cache: 'npm'
 
       - name: Install dependencies
-        run: |
-          npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
 
       - name: Run tsc
         run: npx tsc --noEmit
 
   # ─────────────────────────────────────────────
-  # 2. Build — only after typecheck passes
+  # 2. Lint — runs in parallel with typecheck
   # ─────────────────────────────────────────────
-  build:
-    name: Build
-    if: |
-      (github.event_name == 'push' && github.ref_name == 'main') ||
-      (github.event_name == 'pull_request' && github.base_ref == 'main') ||
-      (github.event_name == 'workflow_dispatch')
+  lint:
+    name: Lint (node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
-    needs: [typecheck]
+    strategy:
+      matrix:
+        node-version: ['22']
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node 22
+      - name: Setup Node ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ matrix.node-version }}
           cache: 'npm'
 
       - name: Install dependencies
-        run: |
-          npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+
+      - name: Run lint
+        run: npm run lint
+
+  # ─────────────────────────────────────────────
+  # 3. Test — runs in parallel with typecheck
+  # ─────────────────────────────────────────────
+  test:
+    name: Test (node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ['22']
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+
+      - name: Run tests
+        run: npm run test
+
+  # ─────────────────────────────────────────────
+  # 4. Security audit — non-blocking
+  # ─────────────────────────────────────────────
+  security-audit:
+    name: Security audit (node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ['22']
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+
+      - name: Run npm audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+  # ─────────────────────────────────────────────
+  # 5. Build — only after typecheck + lint + test
+  # ─────────────────────────────────────────────
+  build:
+    name: Build (node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    needs: [typecheck, lint, test]
+    strategy:
+      matrix:
+        node-version: ['22']
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
 
       - name: Production build
         run: npm run build
         env:
           NEXT_TELEMETRY_DISABLED: '1'
+
+      - name: Upload .next artifact
+        if: github.event_name == 'push' && github.ref_name == 'main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build-${{ matrix.node-version }}
+          path: .next/
+          retention-days: 3
+
+  # ─────────────────────────────────────────────
+  # 6. Summary — runs last, reports all job statuses
+  # ─────────────────────────────────────────────
+  summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [typecheck, lint, test, security-audit, build]
+    steps:
+      - name: Report job statuses
+        run: |
+          echo "## CI Job Status Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          echo '${{ toJSON(needs) }}' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

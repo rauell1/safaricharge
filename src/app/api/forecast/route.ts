@@ -9,19 +9,30 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { buildCorsHeaders } from '@/lib/security';
+import { checkRateLimit } from '@/lib/rate-limiter';
 
 const FORECAST_SERVICE_URL =
   process.env.FORECAST_SERVICE_URL ?? 'http://localhost:8001';
 
-interface ClientMinutePoint {
-  timestamp: string;
-  solarKW: number;
-  homeLoadKW: number;
-  ev1LoadKW: number;
-  ev2LoadKW: number;
-  temperature_c?: number;
-  cloud_cover_pct?: number;
-}
+const minutePointSchema = z.object({
+  timestamp: z.string().min(1),
+  solarKW: z.number().nonnegative(),
+  homeLoadKW: z.number().nonnegative(),
+  ev1LoadKW: z.number().nonnegative(),
+  ev2LoadKW: z.number().nonnegative(),
+  temperature_c: z.number().optional(),
+  cloud_cover_pct: z.number().min(0).max(100).optional(),
+});
+
+const bodySchema = z.object({
+  minuteData: z.array(minutePointSchema).min(1).max(10_080), // max 1 week of minute data
+  solarCapacityKw: z.number().positive().max(10_000),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
+  horizonHours: z.number().int().min(1).max(168).optional(), // max 1 week forecast
+});
 
 interface HistoricalPoint {
   timestamp: string;
@@ -31,32 +42,30 @@ interface HistoricalPoint {
   cloud_cover_pct: number;
 }
 
-interface ForecastRequestBody {
-  minuteData: ClientMinutePoint[];
-  solarCapacityKw: number;
-  latitude?: number;
-  longitude?: number;
-  horizonHours?: number;
-}
-
 export async function POST(req: NextRequest) {
-  let body: ForecastRequestBody;
+  const { headers } = buildCorsHeaders(req);
+
+  const rl = checkRateLimit(req, 'api', headers);
+  if (rl) return rl;
+
+  let raw: unknown;
   try {
-    body = (await req.json()) as ForecastRequestBody;
+    raw = await req.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400, headers });
   }
 
-  if (!body.minuteData || !Array.isArray(body.minuteData)) {
-    return NextResponse.json({ error: 'minuteData array is required' }, { status: 400 });
+  const parsed = bodySchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Invalid payload', details: parsed.error.flatten() },
+      { status: 400, headers },
+    );
   }
-
-  if (typeof body.solarCapacityKw !== 'number' || body.solarCapacityKw <= 0) {
-    return NextResponse.json({ error: 'solarCapacityKw must be a positive number' }, { status: 400 });
-  }
+  const body = parsed.data;
 
   // Downsample to hourly by picking one point per hour (the last in each hour bucket)
-  const hourlyMap = new Map<string, ClientMinutePoint>();
+  const hourlyMap = new Map<string, (typeof body.minuteData)[number]>();
   for (const pt of body.minuteData) {
     const ts = new Date(pt.timestamp);
     if (isNaN(ts.getTime())) continue;
@@ -92,18 +101,17 @@ export async function POST(req: NextRequest) {
       const text = await upstream.text().catch(() => '');
       return NextResponse.json(
         { error: `Forecast service error: ${upstream.status}`, detail: text },
-        { status: upstream.status },
+        { status: upstream.status, headers },
       );
     }
 
     const data = await upstream.json();
-    return NextResponse.json(data);
+    return NextResponse.json(data, { headers });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    // Network / connection errors → 503 so the client can degrade gracefully
     return NextResponse.json(
       { error: 'Forecast service unavailable', detail: message },
-      { status: 503 },
+      { status: 503, headers },
     );
   }
 }
