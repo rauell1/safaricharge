@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 212 | `rollback/fix-auth-ai-resolve-next-js-16-duplica-2026-05-23-fa4b668` | `fa4b668` | fix(auth,ai): resolve Next.js 16 duplicate middleware conflict and AI Assistant prerender TypeError (4f +10/-84) | 2026-05-23 |
 | 211 | `rollback/fix-ci-failures-typescript-errors-lint-2026-05-23-5e70f20` | `5e70f20` | Fix CI failures: TypeScript errors, lint rules, test path alias (#256) (10f +42/-26) | 2026-05-23 |
 | 210 | `rollback/production-release-hardware-specs-secu-2026-05-23-2bd2f7c` | `2bd2f7c` | Production release: hardware specs, security hardening, agent improvements (#255) (16f +1031/-250) | 2026-05-23 |
 | 209 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-23-e265115` | `e265115` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-23 |
@@ -2178,6 +2179,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: Fix CI failures: TypeScript errors, lint rules, test path alias (#256)
 - **Date**: 2026-05-23
 - **Changed**: 10 file(s), +42/-26 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #212 — `rollback/fix-auth-ai-resolve-next-js-16-duplica-2026-05-23-fa4b668`
+
+- **Branch**: `rollback/fix-auth-ai-resolve-next-js-16-duplica-2026-05-23-fa4b668`
+- **Commit**: `fa4b668b73f2eb49f272704ab07a4f0483cefb9a`
+- **Subject**: fix(auth,ai): resolve Next.js 16 duplicate middleware conflict and AI Assistant prerender TypeError
+- **Date**: 2026-05-23
+- **Changed**: 4 file(s), +10/-84 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
