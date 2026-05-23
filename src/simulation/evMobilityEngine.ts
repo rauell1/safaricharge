@@ -1,4 +1,5 @@
 import { clamp, gaussianRandom } from './mathUtils';
+import { MAX_BATTERY_CHARGE_RATE_KW } from '@/lib/config';
 
 export interface EVFleetConfig {
   useCase: 'residential' | 'fleet-depot' | 'public-station';
@@ -128,6 +129,8 @@ export function simulateEVFleet(
   isPeakTime: boolean,
   gridFrequencyHz: number,
   dtHours: number,
+  batterySocPct?: number,
+  batteryReservePct?: number,
 ): EVFleetResult {
   const safeDt = Math.max(0, dtHours);
   const vehicleCount = Math.max(0, Math.floor(config.vehicleCount));
@@ -140,6 +143,16 @@ export function simulateEVFleet(
 
   if (isPeakTime) observedPeakTariff = Math.max(observedPeakTariff, tariffRate);
   const cheapTariff = tariffRate < 0.5 * Math.max(1e-6, observedPeakTariff);
+
+  const batterySoc = batterySocPct ?? 100;
+  const batteryReserve = batteryReservePct ?? 20;
+  const maxBatteryChargeRate = MAX_BATTERY_CHARGE_RATE_KW; // 30.0
+  const batteryHasHeadroom = batterySoc < 99.9;
+  const batteryBelowReserve = batterySoc < (batteryReserve + 5);
+
+  const surplusAfterBattery = batteryHasHeadroom
+    ? Math.max(0, solarSurplusKw - (maxBatteryChargeRate * (1 - batterySoc / 100)))
+    : solarSurplusKw;
 
   let totalLoadKw = 0;
   let sessionCount = 0;
@@ -190,7 +203,7 @@ export function simulateEVFleet(
       const connected = connectedBySchedule || (
         config.smartChargingEnabled &&
         inSolarWindow &&
-        solarSurplusKw > 0
+        surplusAfterBattery > 0
       );
 
       if (!connected) continue;
@@ -199,9 +212,9 @@ export function simulateEVFleet(
 
       let shouldCharge = chargingWindow;
       if (config.smartChargingEnabled) {
-        if (inSolarWindow && solarSurplusKw > 0) {
+        if (inSolarWindow && surplusAfterBattery > 0) {
           shouldCharge = true;
-        } else if (!isPeakTime && !cheapTariff && smartCanDefer(soc, config.minSocForV2g, hour)) {
+        } else if (!isPeakTime && !cheapTariff && !batteryBelowReserve && smartCanDefer(soc, config.minSocForV2g, hour)) {
           shouldCharge = false;
           smartChargingDeferralKw += baseLoad;
         }
@@ -221,7 +234,8 @@ export function simulateEVFleet(
   }
 
   let v2gExportKw = 0;
-  if (config.v2gEnabled && isPeakTime && safeDt > 0) {
+  const isUnderFrequencyV2g = gridFrequencyHz < 49.8;
+  if (config.v2gEnabled && (isPeakTime || isUnderFrequencyV2g) && safeDt > 0) {
     for (let i = 0; i < vehicleSocs.length; i += 1) {
       const soc = vehicleSocs[i];
       if (soc <= config.minSocForV2g) continue;

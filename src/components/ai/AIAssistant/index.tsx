@@ -283,11 +283,11 @@ export const SafariChargeAIAssistant = ({
   const learningCtx = useMemo(() => buildLearningContext(minuteData ?? []), [minuteData]);
 
   const latest = minuteData?.[minuteData.length - 1];
-  const liveSolar   = data?.solar?.production_kw     ?? latest?.solarKW        ?? 0;
-  const liveBattery = data?.battery?.current_charge  ?? latest?.batteryLevelPct ?? 0;
-  const liveNetGrid = data
+  const liveSolar   = data?.solar?.production_kw     ?? (data as any)?.solarR          ?? latest?.solarKW        ?? 0;
+  const liveBattery = data?.battery?.current_charge  ?? (data as any)?.batteryLevel    ?? latest?.batteryLevelPct ?? 0;
+  const liveNetGrid = data?.grid
     ? (data.grid.import_kwh - data.grid.export_kwh)
-    : ((latest?.gridImportKW ?? 0) - (latest?.gridExportKW ?? 0));
+    : ((data as any)?.netGridPower ?? ((latest?.gridImportKW ?? 0) - (latest?.gridExportKW ?? 0)));
   const liveEv1V2g  = false;
   const liveEv2V2g  = false;
 

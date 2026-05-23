@@ -163,6 +163,12 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
             .map((l) => [l.id, true])
         ),
         soilingFactor: 1.0,
+        panelAgeYears: 0,
+        batteryCycles: 0,
+        batteryHealthPct: 100,
+        batteryTempC: 25,
+        chargeAcceptancePct: 100,
+        gridFrequencyHz: 50.0,
       };
     }
     return physicsStateRef.current;
@@ -176,23 +182,30 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
       const dayKey = date.toISOString().slice(0, 10);
       if (dayKey === lastDayKeyRef.current) return;
 
-      // Advance soiling
-      soilingDaysRef.current += 1;
-      const newSoiling = Math.max(
-        SOILING_MIN_FACTOR,
-        1.0 - SOILING_LOSS_PER_DAY * soilingDaysRef.current
-      );
-      state.soilingFactor = newSoiling;
-
       // Build EV SOC map from current state
       const evSocStates = { ...state.evSocs };
 
-      currentDayScenarioRef.current = generateDayScenario(
+      const scenario = generateDayScenario(
         systemConfig,
         date,
         solarData,
         evSocStates
       );
+
+      // Rain detection: solarMultiplier < 0.65 represents a cloudy/rainy day
+      const isRainy = scenario.solarMultiplier < 0.65;
+      if (isRainy) {
+        soilingDaysRef.current = 0; // rain cleans panels
+      } else {
+        soilingDaysRef.current += 1;
+      }
+
+      state.soilingFactor = Math.max(
+        SOILING_MIN_FACTOR,
+        1.0 - SOILING_LOSS_PER_DAY * soilingDaysRef.current
+      );
+
+      currentDayScenarioRef.current = scenario;
       lastDayKeyRef.current = dayKey;
     },
     [systemConfig, solarData]
@@ -404,6 +417,7 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
         ev2LoadKWh: ev2LoadKw * timeStep,
         gridImportKWh: adjustedGridImportKw * timeStep,
         gridExportKWh: adjustedGridExportKw * timeStep,
+        gridFrequencyHz: result.frequencyHz,
       };
 
       // -----------------------------------------------------------------------

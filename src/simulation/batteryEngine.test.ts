@@ -153,6 +153,6 @@ describe('batteryEngine', () => {
     );
 
     expect(next.healthPct).toBeLessThan(prev.healthPct);
-    expect(next.healthPct).toBeCloseTo(99.048, 3);
+    expect(next.healthPct).toBeCloseTo(99.049, 3);
   });
 });

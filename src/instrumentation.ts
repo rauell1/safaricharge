@@ -10,10 +10,5 @@
  * @see https://nextjs.org/docs/app/building-your-application/optimizing/instrumentation
  */
 export async function register() {
-  // Only run validation in the Node.js runtime, not in the Edge runtime or
-  // during client-side bundle compilation.
-  if (process.env.NEXT_RUNTIME === 'nodejs') {
-    const { validateEnv } = await import('./lib/validateEnv');
-    validateEnv();
-  }
+  // Environment database checks are disabled since Prisma has been fully removed.
 }

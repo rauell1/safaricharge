@@ -2,26 +2,24 @@ import type { DerivedSystemConfig } from '@/types/simulation-core';
 import type { DayScenario } from './timeEngine';
 import type { SolarIrradianceData } from '@/lib/nasa-power-api';
 import { buildHourlyIrradianceProfile } from '@/lib/nasa-power-api';
+import {
+  PANEL_ANNUAL_DEGRADATION_RATE,
+  PANEL_FIRST_YEAR_DEGRADATION,
+  SOILING_LOSS_PER_DAY,
+  PANEL_NOCT_CELSIUS,
+  PANEL_TEMP_COEFFICIENT_PER_DEG_C,
+} from '@/lib/config';
+import { getCountyPreset } from '@/lib/kenya-irradiance-data';
 
-// ---------------------------------------------------------------------------
-// Nairobi TMY hourly irradiance lookup (12-month, kW/m² at solar noon normalised)
-// Source: NASA POWER monthly GHI averages for -1.286°N, 36.817°E (2000–2023)
-// Replaces Gaussian fallback which under-predicted by ~2 % systematically.
-// ---------------------------------------------------------------------------
-const NAIROBI_TMY_MONTHLY_GHI: Readonly<number[]> = [
-  5.62, // Jan
-  5.98, // Feb
-  5.89, // Mar
-  5.51, // Apr
-  5.18, // May
-  4.95, // Jun
-  4.87, // Jul
-  5.03, // Aug
-  5.41, // Sep
-  5.68, // Oct
-  5.55, // Nov
-  5.38, // Dec
-];
+export interface SolarEngineInputs {
+  timeOfDay: number;
+  scenario: DayScenario;
+  systemConfig: DerivedSystemConfig;
+  cloudNoise: number;
+  dayOfSimulation?: number;
+  systemAgeYears?: number;
+  solarData?: SolarIrradianceData;
+}
 
 const clamp = (value: number, min: number, max: number): number =>
   Math.max(min, Math.min(max, value));
@@ -39,8 +37,8 @@ const clamp = (value: number, min: number, max: number): number =>
 export const getPanelTempEffect = (
   irradianceKwM2: number,
   ambientTempC: number,
-  noctC: number = 45,
-  tempCoeffPerDegC: number = -0.004,
+  noctC: number = PANEL_NOCT_CELSIUS,
+  tempCoeffPerDegC: number = PANEL_TEMP_COEFFICIENT_PER_DEG_C,
   windSpeed_m_s: number = 1.0
 ): number => {
   const irradianceWm2 = Math.max(0, irradianceKwM2 * 1000);
@@ -60,7 +58,11 @@ function nairobiTmyFallback(
   peakSolarHour: number,
   month: number // 1-indexed
 ): number {
-  const monthlyPeak = NAIROBI_TMY_MONTHLY_GHI[Math.max(0, Math.min(11, month - 1))];
+  const nairobiPreset = getCountyPreset('Nairobi');
+  const monthlyPsh = nairobiPreset?.monthlyPsh ?? [
+    5.6, 5.8, 5.4, 5.1, 5.0, 4.8, 4.9, 5.2, 5.6, 5.7, 5.5, 5.4
+  ];
+  const monthlyPeak = monthlyPsh[Math.max(0, Math.min(11, month - 1))];
   // Gaussian width ≈ 2.8 h (σ²≈8) — calibrated to Nairobi flat-terrain sunrise/set
   const raw = Math.exp(-Math.pow(timeOfDay - peakSolarHour, 2) / 8.0);
   // Normalise so that the integral over daylight ≈ monthlyPeak (daily kWh/m²)
@@ -69,31 +71,56 @@ function nairobiTmyFallback(
 }
 
 export const simulateSolar = (
-  timeOfDay: number,
-  scenario: DayScenario,
-  systemConfig: DerivedSystemConfig,
-  cloudNoise: number,
+  firstArg: number | SolarEngineInputs,
+  scenario?: DayScenario,
+  systemConfig?: DerivedSystemConfig,
+  cloudNoise?: number,
   solarData?: SolarIrradianceData
 ): number => {
+  let timeOfDay: number;
+  let sc: DayScenario;
+  let sysConfig: DerivedSystemConfig;
+  let noiseVal: number;
+  let dayOfSim = 0;
+  let sysAgeY = 0;
+  let sData: SolarIrradianceData | undefined;
+
+  if (typeof firstArg === 'object' && firstArg !== null) {
+    timeOfDay = firstArg.timeOfDay;
+    sc = firstArg.scenario;
+    sysConfig = firstArg.systemConfig;
+    noiseVal = firstArg.cloudNoise;
+    dayOfSim = firstArg.dayOfSimulation ?? 0;
+    sysAgeY = firstArg.systemAgeYears ?? 0;
+    sData = firstArg.solarData;
+  } else {
+    timeOfDay = firstArg;
+    sc = scenario!;
+    sysConfig = systemConfig!;
+    noiseVal = cloudNoise!;
+    sData = solarData;
+    dayOfSim = 0;
+    sysAgeY = 0;
+  }
+
   let solar = 0;
   const {
     month,
     peakSolarHour,
     weatherFactor,
     monthlyTemperature,
-    soilingFactor,
     windSpeed_m_s,
-  } = scenario as DayScenario & { windSpeed_m_s?: number };
+  } = sc as DayScenario & { windSpeed_m_s?: number };
 
   if (timeOfDay > 6.2 && timeOfDay < 18.8) {
-    const noise = cloudNoise * 0.15;
+    const noise = noiseVal * 0.15;
     const hourIndex = Math.min(23, Math.max(0, Math.floor(timeOfDay)));
-    const monthlyIrrad = solarData?.monthlyAverage;
+    const monthlyIrrad = sData?.monthlyAverage;
     const nProfile = monthlyIrrad
       ? buildHourlyIrradianceProfile(
           monthlyIrrad,
           month,
-          solarData?.latitude ?? (scenario as { latitude?: number }).latitude ?? -1.286,
+          sData?.latitude ?? (sc as { latitude?: number }).latitude ?? -1.286,
           1
         )
       : null;
@@ -103,7 +130,7 @@ export const simulateSolar = (
       : nairobiTmyFallback(timeOfDay, peakSolarHour, month);
 
     const ambientTemp =
-      solarData?.monthlyTemperature?.[month - 1] ??
+      sData?.monthlyTemperature?.[month - 1] ??
       monthlyTemperature?.[month - 1] ??
       25;
 
@@ -111,21 +138,31 @@ export const simulateSolar = (
     const tempEffect = getPanelTempEffect(
       effectiveIrradiance,
       ambientTemp,
-      45,
-      -0.004,
+      PANEL_NOCT_CELSIUS,
+      PANEL_TEMP_COEFFICIENT_PER_DEG_C,
       windSpeed_m_s ?? 2.0 // Nairobi mean surface wind ~2 m/s (NASA POWER)
     );
 
-    const performanceRatio = clamp(systemConfig.performanceRatio ?? 0.8, 0.65, 0.95);
-    const shadingLossPct = clamp(systemConfig.shadingLossPct ?? 0, 0, 50);
+    const performanceRatio = clamp(sysConfig.performanceRatio ?? 0.8, 0.65, 0.95);
+    const shadingLossPct = clamp(sysConfig.shadingLossPct ?? 0, 0, 50);
     const shadingFactor = 1 - shadingLossPct / 100;
+
+    const resolvedSoilingFactor = dayOfSim > 0
+      ? Math.max(0.85, 1.0 - SOILING_LOSS_PER_DAY * dayOfSim)
+      : (sc.soilingFactor ?? 1.0);
+
+    const degradationFactor = sysAgeY <= 0
+      ? 1.0
+      : (1 - PANEL_FIRST_YEAR_DEGRADATION) * Math.pow(1 - PANEL_ANNUAL_DEGRADATION_RATE, sysAgeY - 1);
+
     solar =
-      systemConfig.pvCapacityKw *
+      sysConfig.pvCapacityKw *
       effectiveIrradiance *
-      soilingFactor *
+      resolvedSoilingFactor *
       tempEffect *
       performanceRatio *
-      shadingFactor;
+      shadingFactor *
+      degradationFactor;
     solar = Math.max(0, solar);
   }
 
