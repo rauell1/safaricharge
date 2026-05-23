@@ -26,6 +26,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import {
   calculateInstantPhysics,
   generateDayScenario,
@@ -36,22 +37,24 @@ import {
   DEFAULT_SYSTEM_CONFIG,
   type SystemConfiguration,
 } from '@/lib/system-config';
+import { buildCorsHeaders } from '@/lib/security';
+import { checkRateLimit } from '@/lib/rate-limiter';
 
 // ---------------------------------------------------------------------------
-// Types
+// Schema
 // ---------------------------------------------------------------------------
 
-interface EngineOutputRequestBody {
-  latitude?: number;
-  longitude?: number;
-  solarCapacityKw?: number;
-  batteryCapacityKwh?: number;
-  tiltDeg?: number;
-  azimuthDeg?: number;
-  performanceRatio?: number;
-  shadingLossPct?: number;
-  simulationYear?: number;
-}
+const bodySchema = z.object({
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
+  solarCapacityKw: z.number().positive().max(10_000).optional(),
+  batteryCapacityKwh: z.number().nonnegative().max(100_000).optional(),
+  tiltDeg: z.number().min(0).max(90).optional(),
+  azimuthDeg: z.number().min(0).max(360).optional(),
+  performanceRatio: z.number().min(0.1).max(1).optional(),
+  shadingLossPct: z.number().min(0).max(50).optional(),
+  simulationYear: z.number().int().min(2000).max(2100).optional(),
+});
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -70,12 +73,26 @@ const TICK_HOURS = 1; // hourly resolution for 8 760-step annual run
 // ---------------------------------------------------------------------------
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  let body: EngineOutputRequestBody = {};
+  const { headers } = buildCorsHeaders(request);
+
+  const rl = checkRateLimit(request, 'api', headers);
+  if (rl) return rl;
+
+  let rawBody: unknown = {};
   try {
-    body = (await request.json()) as EngineOutputRequestBody;
+    rawBody = await request.json();
   } catch {
-    // Empty or invalid body – use all defaults
+    // empty body — apply all defaults
   }
+
+  const parsed = bodySchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Invalid payload', details: parsed.error.flatten() },
+      { status: 400, headers },
+    );
+  }
+  const body = parsed.data;
 
   const latitude = body.latitude ?? -1.2921;
   const longitude = body.longitude ?? 36.8219;

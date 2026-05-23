@@ -1,0 +1,95 @@
+# Universal Security Directives — SafariCharge
+
+## Core Principle
+
+You are a security-first engineering assistant. When generating, refactoring, or reviewing code in this repository, prioritize secure architecture over development speed.
+
+---
+
+## 1. Access Control Matrix
+
+Never assume a user has permission to access data or execute an action. Verify compliance with the matrix below before writing any data-fetching or state-mutating logic.
+
+| Role | Allowed Actions |
+|---|---|
+| **Unauthenticated** | View `/login`, `/signup`, `/pricing`, `/demo`, `/landing`, `/auth/*`, POST `/api/health` |
+| **Authenticated (active subscription)** | All dashboard, simulation, configuration, financial, scenarios, AI-assistant, and report pages; all `/api/*` routes that the dashboard depends on |
+| **Authenticated (inactive subscription)** | Redirected to `/pricing`; no access to dashboard or protected pages |
+| **Service / server-to-server** | All `/api/*` routes when `Authorization: Bearer <API_SERVICE_TOKEN>` is present and `API_SERVICE_TOKEN` is set |
+| **Admin (RBAC role = admin)** | All routes, including `/api/dvshave-harness` and `/api/export-report` |
+| **Analyst (RBAC role = analyst)** | `/api/dvshave-harness`, `/api/export-report`, `/api/safaricharge-ai` |
+| **Operator / Viewer** | `/api/safaricharge-ai` only |
+
+**Directive:** Before writing any server action, API route handler, or data mutation, verify the caller's role and subscription status. Fail explicitly with 401/403; never degrade silently.
+
+---
+
+## 2. Data Validation & Sanitization
+
+- **Validate all incoming data at the API boundary** using Zod schemas before touching business logic.
+- Use `z.safeParse()` and return a structured 400 with `parsed.error.flatten()` on failure — never `z.parse()` unguarded.
+- **Reject unexpected fields** (Zod strips extra keys by default; do not use `.passthrough()` on untrusted input).
+- Never trust client-side validation as the only check.
+- Enforce numeric bounds on all numeric fields (min/max, not just type).
+- CSV exports must run `sanitiseCsvCell()` on every field to prevent formula injection.
+
+---
+
+## 3. Secrets Management
+
+- **Never hardcode** API keys, tokens, passwords, or connection strings anywhere in source code.
+- All sensitive config lives in `src/lib/serverConfig.ts`, reading exclusively from `process.env.*`.
+- Only `NEXT_PUBLIC_` prefixed variables may be read in `'use client'` components.
+  - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are safe (public by design).
+  - `SUPABASE_SERVICE_ROLE_KEY`, `API_SERVICE_TOKEN`, `WEBHOOK_SECRET`, `RESEND_API_KEY` are **server-only** — never import or reference them in client components or client-side utilities.
+- New secrets must be added to `.env.example` (with placeholder value) and to `serverConfig.ts`.
+
+---
+
+## 4. Rate Limiting
+
+- **All public API routes** must call `checkRateLimit(request, 'api', headers)` from `@/lib/rate-limiter` at the top of the handler.
+- **AI route** (`/api/safaricharge-ai`): use tier `'ai'` (10 req/60 s default).
+- **Report routes** (`/api/export-report`, `/api/formal-report`): use tier `'report'` (5 req/60 s default).
+- Limits are configured via `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_API_PER_WINDOW`, `RATE_LIMIT_AI_PER_WINDOW`, `RATE_LIMIT_REPORT_PER_WINDOW` environment variables.
+- For multi-instance production, replace the in-memory store in `src/lib/rate-limiter.ts` with Upstash Redis.
+
+---
+
+## 5. Auth Middleware
+
+- `src/middleware.ts` protects all dashboard routes via Supabase session check.
+- **Do not add** new user-facing page routes under the protected prefixes without first verifying that the middleware matcher covers them.
+- **API routes** bypass middleware — they handle their own auth via `enforceServiceAuth()` and Supabase `getUser()` as appropriate.
+- The `/auth/callback` and `/login` paths must remain public.
+
+---
+
+## 6. Error Handling
+
+- **Never** expose stack traces, database error details, or internal service URLs in API responses sent to clients.
+- Use generic messages (`'Internal server error'`, `'Service unavailable'`) for 5xx responses.
+- Log detailed errors server-side (via `@/lib/logger`) before returning sanitized responses.
+- Do not return different error messages for "user not found" vs. "wrong password" — always use a generic auth failure message to prevent user enumeration.
+
+---
+
+## 7. CORS & Headers
+
+- Use `buildCorsHeaders(request)` from `@/lib/security` on every API route to enforce the `API_ALLOWED_ORIGINS` allowlist.
+- Never set `Access-Control-Allow-Origin: *` on credentialed endpoints.
+- Body size limits: enforce via `enforceBodySize()` on routes that accept large payloads.
+
+---
+
+## Route Security Checklist (apply to every new API route)
+
+```
+[ ] buildCorsHeaders() called — CORS origin checked
+[ ] checkRateLimit() called with appropriate tier
+[ ] enforceServiceAuth() called if route requires service token
+[ ] enforceRbac() called if route requires a specific role
+[ ] Zod schema with numeric bounds defined and safeParse() used
+[ ] No secrets or stack traces in error responses
+[ ] Body size limit enforced for large payload routes
+```

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { buildFinancialSnapshot } from '@/lib/financial-dashboard';
 import type { FinancialInputs } from '@/lib/financial-dashboard';
+import { buildCorsHeaders } from '@/lib/security';
+import { checkRateLimit } from '@/lib/rate-limiter';
 
 const DEFAULT_SOLAR_DATA = {
   annualAverage: 5.4,
@@ -73,6 +75,10 @@ function buildSyntheticMinuteData(
 }
 
 export async function POST(request: NextRequest) {
+  const { headers } = buildCorsHeaders(request);
+  const rl = checkRateLimit(request, 'api', headers);
+  if (rl) return rl;
+
   try {
     const body = (await request.json()) as {
       inputs: FinancialInputs;

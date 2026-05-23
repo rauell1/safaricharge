@@ -6,6 +6,8 @@ import {
   type GridConfig,
   type GridNode,
 } from '@/simulation/gridEngine';
+import { buildCorsHeaders } from '@/lib/security';
+import { checkRateLimit } from '@/lib/rate-limiter';
 
 const nodeSchema = z.object({
   id: z.string().min(1),
@@ -34,21 +36,26 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const { headers } = buildCorsHeaders(request);
+
+  const rl = checkRateLimit(request, 'api', headers);
+  if (rl) return rl;
+
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400, headers });
   }
 
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: 'Invalid payload', details: parsed.error.flatten() },
-      { status: 400 },
+      { status: 400, headers },
     );
   }
 
   const result = simulatePowerFlow(parsed.data.nodes, parsed.data.config);
-  return NextResponse.json(result);
+  return NextResponse.json(result, { headers });
 }
