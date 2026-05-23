@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AIAssistantProvider } from "@/contexts/AIAssistantContext";
+import { ScenarioLoader } from "@/components/ScenarioLoader";
 import "./globals.css";
 
 const inter = Inter({
@@ -48,6 +49,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider>
           <AIAssistantProvider>
+            <ScenarioLoader />
             {children}
           </AIAssistantProvider>
           <Analytics />
