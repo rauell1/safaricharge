@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { validateAdminToken } from '@/app/api/admin/auth/route'
 
 // Exact public paths or path prefixes that do NOT require authentication.
 const PUBLIC_EXACT: Set<string> = new Set(['/', '/login', '/landing', '/demo', '/pricing', '/reset-password', '/admin-login'])
@@ -36,17 +37,20 @@ export async function proxy(request: NextRequest) {
   const middlewareStart = Date.now()
   const { pathname } = request.nextUrl
 
-  // Secure admin backend dashboard
-  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
-    const adminToken = request.cookies.get('sc_admin_token')?.value
-    if (adminToken === 'safaricharge-admin-session-active') {
-      return NextResponse.next()
-    }
-    const loginUrl = new URL('/admin-login', request.url)
-    return NextResponse.redirect(loginUrl)
-  }
-
   if (isPublic(pathname)) return NextResponse.next()
+
+  // Secure admin backend dashboard
+  if (pathname.startsWith('/admin')) {
+    const secret = process.env.ADMIN_SESSION_SECRET
+    const token = request.cookies.get('sc_admin_token')?.value ?? ''
+
+    if (!secret || !validateAdminToken(token, secret)) {
+      const loginUrl = new URL('/admin-login', request.url)
+      return NextResponse.redirect(loginUrl)
+    }
+
+    return NextResponse.next()
+  }
 
   // ── Session TTL check (cookie-only, zero network cost) ──────────────────
   // Do this BEFORE the Supabase getUser() call. If the session has expired
