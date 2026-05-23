@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 210 | `rollback/production-release-hardware-specs-secu-2026-05-23-2bd2f7c` | `2bd2f7c` | Production release: hardware specs, security hardening, agent improvements (#255) (16f +1031/-250) | 2026-05-23 |
 | 209 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-23-e265115` | `e265115` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-23 |
 | 208 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-22-330c058` | `330c058` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-22 |
 | 207 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-12-c8099e6` | `c8099e6` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-12 |
@@ -2156,6 +2157,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Commit**: `e2651152b0448d8d92e484188425a8258b12d61b`
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-05-23
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #210 — `rollback/production-release-hardware-specs-secu-2026-05-23-2bd2f7c`
+
+- **Branch**: `rollback/production-release-hardware-specs-secu-2026-05-23-2bd2f7c`
+- **Commit**: `2bd2f7c5fcca0211af42065c0b617e29ba3f5431`
+- **Subject**: Production release: hardware specs, security hardening, agent improvements (#255)
+- **Date**: 2026-05-23
+- **Changed**: 16 file(s), +1031/-250 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 

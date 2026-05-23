@@ -86,7 +86,7 @@ export async function GET(request: Request) {
         organization?: string
       } = {
         id: data.user.id,
-        email: data.user.email,
+        email: data.user.email ?? null,
         subscription_status: 'inactive',
         plan: 'free',
       }

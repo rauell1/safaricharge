@@ -70,10 +70,5 @@ export type SimulationMinuteRecord = {
   evFleetLoadKw?: number;
   evV2gKw?: number;
   evSmartDeferralKw?: number;
-  // Grid outputs
-  gridFrequencyHz?: number;
-  gridLineLossKw?: number;
-  // Financial (rolling)
-  cumulativeSavingsKes?: number;
   lcoeRolling?: number;
 };
