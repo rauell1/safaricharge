@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 216 | `rollback/feat-add-real-time-supabase-connection-2026-05-23-9133f08` | `9133f08` | feat: add real-time Supabase connection status check and direct cloud portal link to admin workspace (1f +117/-4) | 2026-05-23 |
 | 215 | `rollback/feat-implement-secure-beautiful-backen-2026-05-23-c1bd302` | `c1bd302` | feat: implement secure, beautiful Backend Admin Dashboard layer with microgrid topology flow maps, customizable graphs, raw logs, and A4 reports (4f +1363/-1) | 2026-05-23 |
 | 214 | `rollback/refactor-overhaul-safaricharge-physics-2026-05-23-85f3943` | `85f3943` | refactor: Overhaul SafariCharge physics simulation pipeline for accuracy, dynamic soiling, grid frequency coupling, and CV tapering (12f +695/-719) | 2026-05-23 |
 | 213 | `rollback/merge-pull-request-257-from-rauell1-co-2026-05-23-925f780` | `925f780` | Merge pull request #257 from rauell1/copilot/fix-invalid-version-entries (1f +17/-0) | 2026-05-23 |
@@ -2222,6 +2223,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat: implement secure, beautiful Backend Admin Dashboard layer with microgrid topology flow maps, customizable graphs, raw logs, and A4 reports
 - **Date**: 2026-05-23
 - **Changed**: 4 file(s), +1363/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #216 — `rollback/feat-add-real-time-supabase-connection-2026-05-23-9133f08`
+
+- **Branch**: `rollback/feat-add-real-time-supabase-connection-2026-05-23-9133f08`
+- **Commit**: `9133f08deae0e8db5437d24b32547c46d75b4548`
+- **Subject**: feat: add real-time Supabase connection status check and direct cloud portal link to admin workspace
+- **Date**: 2026-05-23
+- **Changed**: 1 file(s), +117/-4 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
