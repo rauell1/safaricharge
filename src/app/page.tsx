@@ -11,7 +11,7 @@ export default async function RootPage() {
   } = await supabase.auth.getUser()
 
   // Authenticated users go straight to their dashboard
-  if (user) {
+  if (user && user.email_confirmed_at) {
     redirect('/dashboard')
   }
 

@@ -74,6 +74,7 @@ function LoginForm() {
     const err = searchParams.get('error')
     if (reason === 'session_expired') return 'Your session expired after 1 hour of inactivity. Please sign in again.'
     if (err === 'auth_failed') return 'We could not verify your sign-in request. Please try again.'
+    if (err === 'email_not_confirmed') return 'Please confirm your email address to authenticate and access the dashboard.'
     return ''
   }, [searchParams])
 

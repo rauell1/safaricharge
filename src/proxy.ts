@@ -112,9 +112,12 @@ export async function proxy(request: NextRequest) {
   const { data: { session }, error: sessionError } = await supabase.auth.getSession()
   const getSessionMs = Date.now() - getSessionStart
 
-  if (sessionError || !session?.user) {
+  if (sessionError || !session?.user || !session.user.email_confirmed_at) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('next', pathname)
+    if (session?.user && !session.user.email_confirmed_at) {
+      loginUrl.searchParams.set('error', 'email_not_confirmed')
+    }
     const response = NextResponse.redirect(loginUrl)
     const totalMs = Date.now() - middlewareStart
     if (AUTH_TIMING_DEBUG) {
@@ -139,9 +142,12 @@ export async function proxy(request: NextRequest) {
     const { data: { user }, error } = await supabase.auth.getUser()
     getUserMs = Date.now() - getUserStart
 
-    if (error || !user) {
+    if (error || !user || !user.email_confirmed_at) {
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('next', pathname)
+      if (user && !user.email_confirmed_at) {
+        loginUrl.searchParams.set('error', 'email_not_confirmed')
+      }
       const response = NextResponse.redirect(loginUrl)
       const totalMs = Date.now() - middlewareStart
       if (AUTH_TIMING_DEBUG) {
