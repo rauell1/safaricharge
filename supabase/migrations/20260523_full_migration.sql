@@ -47,26 +47,30 @@ create table if not exists public.saved_scenarios (
 
 alter table public.saved_scenarios enable row level security;
 
-create policy if not exists "saved_scenarios: users select own"
+drop policy if exists "saved_scenarios: users select own" on public.saved_scenarios;
+create policy "saved_scenarios: users select own"
   on public.saved_scenarios
   for select
   to authenticated
   using ((select auth.uid()) = user_id);
 
-create policy if not exists "saved_scenarios: users insert own"
+drop policy if exists "saved_scenarios: users insert own" on public.saved_scenarios;
+create policy "saved_scenarios: users insert own"
   on public.saved_scenarios
   for insert
   to authenticated
   with check ((select auth.uid()) = user_id);
 
-create policy if not exists "saved_scenarios: users update own"
+drop policy if exists "saved_scenarios: users update own" on public.saved_scenarios;
+create policy "saved_scenarios: users update own"
   on public.saved_scenarios
   for update
   to authenticated
   using  ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
 
-create policy if not exists "saved_scenarios: users delete own"
+drop policy if exists "saved_scenarios: users delete own" on public.saved_scenarios;
+create policy "saved_scenarios: users delete own"
   on public.saved_scenarios
   for delete
   to authenticated
@@ -113,14 +117,16 @@ create table if not exists public.solar_components_catalog (
 alter table public.solar_components_catalog enable row level security;
 
 -- Anyone (anon + authenticated) may read the full catalog
-create policy if not exists "solar_components_catalog: public read"
+drop policy if exists "solar_components_catalog: public read" on public.solar_components_catalog;
+create policy "solar_components_catalog: public read"
   on public.solar_components_catalog
   for select
   to anon, authenticated
   using (true);
 
 -- Authenticated users may insert their own (non-built-in) rows
-create policy if not exists "solar_components_catalog: users insert own"
+drop policy if exists "solar_components_catalog: users insert own" on public.solar_components_catalog;
+create policy "solar_components_catalog: users insert own"
   on public.solar_components_catalog
   for insert
   to authenticated
@@ -130,7 +136,8 @@ create policy if not exists "solar_components_catalog: users insert own"
   );
 
 -- Authenticated users may update only their own non-built-in rows
-create policy if not exists "solar_components_catalog: users update own"
+drop policy if exists "solar_components_catalog: users update own" on public.solar_components_catalog;
+create policy "solar_components_catalog: users update own"
   on public.solar_components_catalog
   for update
   to authenticated
@@ -144,7 +151,8 @@ create policy if not exists "solar_components_catalog: users update own"
   );
 
 -- Authenticated users may delete only their own non-built-in rows
-create policy if not exists "solar_components_catalog: users delete own"
+drop policy if exists "solar_components_catalog: users delete own" on public.solar_components_catalog;
+create policy "solar_components_catalog: users delete own"
   on public.solar_components_catalog
   for delete
   to authenticated
@@ -178,26 +186,30 @@ create table if not exists public.component_assets (
 
 alter table public.component_assets enable row level security;
 
-create policy if not exists "component_assets: users select own"
+drop policy if exists "component_assets: users select own" on public.component_assets;
+create policy "component_assets: users select own"
   on public.component_assets
   for select
   to authenticated
   using ((select auth.uid()) = user_id);
 
-create policy if not exists "component_assets: users insert own"
+drop policy if exists "component_assets: users insert own" on public.component_assets;
+create policy "component_assets: users insert own"
   on public.component_assets
   for insert
   to authenticated
   with check ((select auth.uid()) = user_id);
 
-create policy if not exists "component_assets: users update own"
+drop policy if exists "component_assets: users update own" on public.component_assets;
+create policy "component_assets: users update own"
   on public.component_assets
   for update
   to authenticated
   using  ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
 
-create policy if not exists "component_assets: users delete own"
+drop policy if exists "component_assets: users delete own" on public.component_assets;
+create policy "component_assets: users delete own"
   on public.component_assets
   for delete
   to authenticated
@@ -218,26 +230,30 @@ create table if not exists public.ai_conversations (
 
 alter table public.ai_conversations enable row level security;
 
-create policy if not exists "ai_conversations: users select own"
+drop policy if exists "ai_conversations: users select own" on public.ai_conversations;
+create policy "ai_conversations: users select own"
   on public.ai_conversations
   for select
   to authenticated
   using ((select auth.uid()) = user_id);
 
-create policy if not exists "ai_conversations: users insert own"
+drop policy if exists "ai_conversations: users insert own" on public.ai_conversations;
+create policy "ai_conversations: users insert own"
   on public.ai_conversations
   for insert
   to authenticated
   with check ((select auth.uid()) = user_id);
 
-create policy if not exists "ai_conversations: users update own"
+drop policy if exists "ai_conversations: users update own" on public.ai_conversations;
+create policy "ai_conversations: users update own"
   on public.ai_conversations
   for update
   to authenticated
   using  ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
 
-create policy if not exists "ai_conversations: users delete own"
+drop policy if exists "ai_conversations: users delete own" on public.ai_conversations;
+create policy "ai_conversations: users delete own"
   on public.ai_conversations
   for delete
   to authenticated
@@ -268,7 +284,8 @@ create table if not exists public.ai_messages (
 alter table public.ai_messages enable row level security;
 
 -- Users may read messages that belong to their own conversations
-create policy if not exists "ai_messages: users select own"
+drop policy if exists "ai_messages: users select own" on public.ai_messages;
+create policy "ai_messages: users select own"
   on public.ai_messages
   for select
   to authenticated
@@ -281,7 +298,8 @@ create policy if not exists "ai_messages: users select own"
     )
   );
 
-create policy if not exists "ai_messages: users insert own"
+drop policy if exists "ai_messages: users insert own" on public.ai_messages;
+create policy "ai_messages: users insert own"
   on public.ai_messages
   for insert
   to authenticated
@@ -294,7 +312,8 @@ create policy if not exists "ai_messages: users insert own"
     )
   );
 
-create policy if not exists "ai_messages: users update own"
+drop policy if exists "ai_messages: users update own" on public.ai_messages;
+create policy "ai_messages: users update own"
   on public.ai_messages
   for update
   to authenticated
@@ -315,7 +334,8 @@ create policy if not exists "ai_messages: users update own"
     )
   );
 
-create policy if not exists "ai_messages: users delete own"
+drop policy if exists "ai_messages: users delete own" on public.ai_messages;
+create policy "ai_messages: users delete own"
   on public.ai_messages
   for delete
   to authenticated
@@ -379,26 +399,30 @@ create table if not exists public.simulation_runs (
 
 alter table public.simulation_runs enable row level security;
 
-create policy if not exists "simulation_runs: users select own"
+drop policy if exists "simulation_runs: users select own" on public.simulation_runs;
+create policy "simulation_runs: users select own"
   on public.simulation_runs
   for select
   to authenticated
   using ((select auth.uid()) = user_id);
 
-create policy if not exists "simulation_runs: users insert own"
+drop policy if exists "simulation_runs: users insert own" on public.simulation_runs;
+create policy "simulation_runs: users insert own"
   on public.simulation_runs
   for insert
   to authenticated
   with check ((select auth.uid()) = user_id);
 
-create policy if not exists "simulation_runs: users update own"
+drop policy if exists "simulation_runs: users update own" on public.simulation_runs;
+create policy "simulation_runs: users update own"
   on public.simulation_runs
   for update
   to authenticated
   using  ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
 
-create policy if not exists "simulation_runs: users delete own"
+drop policy if exists "simulation_runs: users delete own" on public.simulation_runs;
+create policy "simulation_runs: users delete own"
   on public.simulation_runs
   for delete
   to authenticated
@@ -435,7 +459,8 @@ create index if not exists simulation_data_run_id_ts_idx
   on public.simulation_data (run_id, ts);
 
 -- Users may select data rows for their own runs
-create policy if not exists "simulation_data: users select own"
+drop policy if exists "simulation_data: users select own" on public.simulation_data;
+create policy "simulation_data: users select own"
   on public.simulation_data
   for select
   to authenticated
@@ -448,7 +473,8 @@ create policy if not exists "simulation_data: users select own"
     )
   );
 
-create policy if not exists "simulation_data: users insert own"
+drop policy if exists "simulation_data: users insert own" on public.simulation_data;
+create policy "simulation_data: users insert own"
   on public.simulation_data
   for insert
   to authenticated
@@ -461,7 +487,8 @@ create policy if not exists "simulation_data: users insert own"
     )
   );
 
-create policy if not exists "simulation_data: users delete own"
+drop policy if exists "simulation_data: users delete own" on public.simulation_data;
+create policy "simulation_data: users delete own"
   on public.simulation_data
   for delete
   to authenticated
