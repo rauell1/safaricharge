@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 225 | `rollback/fix-resolve-typescript-server-client-n-2026-05-24-7562f17` | `7562f17` | fix: resolve TypeScript server client null-safety crashes on Vercel deployment (9f +51/-23) | 2026-05-24 |
 | 224 | `rollback/merge-pull-request-258-from-rauell1-co-2026-05-24-af9cd36` | `af9cd36` | Merge pull request #258 from rauell1/copilot/fix-middleware-conflict (2f +12/-33) | 2026-05-24 |
 | 223 | `rollback/merge-remote-tracking-branch-origin-ma-2026-05-23-3a70a2f` | `3a70a2f` | Merge remote-tracking branch 'origin/main' (3f +14/-1) | 2026-05-23 |
 | 222 | `rollback/merge-remote-tracking-branch-origin-ma-2026-05-23-f598a72` | `f598a72` | Merge remote-tracking branch 'origin/main' (3f +17/-1) | 2026-05-23 |
@@ -2321,6 +2322,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: Merge pull request #258 from rauell1/copilot/fix-middleware-conflict
 - **Date**: 2026-05-24
 - **Changed**: 2 file(s), +12/-33 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #225 — `rollback/fix-resolve-typescript-server-client-n-2026-05-24-7562f17`
+
+- **Branch**: `rollback/fix-resolve-typescript-server-client-n-2026-05-24-7562f17`
+- **Commit**: `7562f17825524b7eb13bfd698d0cd567201b8bbd`
+- **Subject**: fix: resolve TypeScript server client null-safety crashes on Vercel deployment
+- **Date**: 2026-05-24
+- **Changed**: 9 file(s), +51/-23 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
