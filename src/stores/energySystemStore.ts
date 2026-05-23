@@ -31,8 +31,12 @@ function safeLocalStorage() {
     const mem: Record<string, string> = {};
     return createJSONStorage(() => ({
       getItem: (k: string) => mem[k] ?? null,
-      setItem: (k: string, v: string) => { mem[k] = v; },
-      removeItem: (k: string) => { delete mem[k]; },
+      setItem: (k: string, v: string) => {
+        mem[k] = v;
+      },
+      removeItem: (k: string) => {
+        delete mem[k];
+      },
     }));
   }
 }
@@ -58,7 +62,14 @@ export interface EnergyNode {
   capacityKW?: number;
   capacityKWh?: number;
   // Status indicators
-  status: 'online' | 'offline' | 'charging' | 'discharging' | 'idle' | 'exporting' | 'importing';
+  status:
+    | 'online'
+    | 'offline'
+    | 'charging'
+    | 'discharging'
+    | 'idle'
+    | 'exporting'
+    | 'importing';
   // Additional node-specific data
   soc?: number; // State of charge for battery/EVs (%)
   efficiency?: number; // Panel efficiency, battery health, etc.
@@ -213,7 +224,7 @@ interface EnergySystemState {
   // Historical data
   minuteData: MinuteDataPoint[];
 
-  // System configuration
+  // System configuration (UI-level snapshot)
   systemConfig: {
     solarCapacityKW: number;
     batteryCapacityKWh: number;
@@ -241,6 +252,7 @@ interface EnergySystemState {
   updateFlows: (flows: EnergyFlow[]) => void;
   selectNode: (nodeType: NodeType | null) => void;
   setTimeRange: (range: TimeRange) => void;
+  setSystemMode: (mode: SystemMode) => void;
   updateAccumulators: (updates: Partial<Accumulators>) => void;
   addMinuteData: (data: MinuteDataPoint) => void;
   applySimulationTick: (update: SimulationTickUpdate) => void;
@@ -338,13 +350,18 @@ function isScenarioShape(v: unknown): v is SavedScenario {
   if (!v || typeof v !== 'object') return false;
   const s = v as Record<string, unknown>;
   return (
-    typeof s.id         === 'string' && s.id.length > 0 &&
-    typeof s.name       === 'string' &&
-    typeof s.createdAt  === 'string' &&
-    typeof s.system     === 'object' && s.system !== null &&
-    typeof s.finance    === 'object' && s.finance !== null &&
-    typeof s.performance === 'object' && s.performance !== null &&
-    typeof s.location   === 'object' && s.location !== null
+    typeof s.id === 'string' &&
+    s.id.length > 0 &&
+    typeof s.name === 'string' &&
+    typeof s.createdAt === 'string' &&
+    typeof s.system === 'object' &&
+    s.system !== null &&
+    typeof s.finance === 'object' &&
+    s.finance !== null &&
+    typeof s.performance === 'object' &&
+    s.performance !== null &&
+    typeof s.location === 'object' &&
+    s.location !== null
   );
 }
 
@@ -352,128 +369,6 @@ function isScenarioShape(v: unknown): v is SavedScenario {
 export const useEnergySystemStore = create<EnergySystemState>()(
   persist(
     (set, get) => ({
-  nodes: initialNodes,
-  flows: [],
-  selectedNode: null,
-  timeRange: 'today',
-  currentDate: new Date('2026-01-01T00:00:00'),
-  timeOfDay: 0,
-  isAutoMode: false,
-  simSpeed: 1,
-  accumulators: initialAccumulators,
-  minuteData: [],
-  systemConfig: {
-    solarCapacityKW: 10,
-    batteryCapacityKWh: 50,
-    inverterKW: 10,
-    ev1CapacityKWh: 80,
-    ev2CapacityKWh: 118,
-    systemMode: 'hybrid',
-    batteryDodPct: DEFAULT_BATTERY_DOD_PCT,
-    generatorThresholdPct: DEFAULT_GENERATOR_THRESHOLD_PCT,
-    gridOutageEnabled: false,
-    gridTariff: {
-      peakRate: 24.31,
-      offPeakRate: 14.93,
-    },
-  },
-  fullSystemConfig: DEFAULT_SYSTEM_CONFIG,
-  solarData: DEMO_SOLAR_DATA,
-  scenarios: [],
-
-  updateNode: (nodeType, updates) =>
-    set((state) => ({
-      nodes: {
-        ...state.nodes,
-        [nodeType]: {
-          ...state.nodes[nodeType],
-          ...updates,
-        },
-      },
-    })),
-
-  updateFlows: (flows) => set({ flows }),
-
-  selectNode: (nodeType) => set({ selectedNode: nodeType }),
-
-  setTimeRange: (range) => set({ timeRange: range }),
-
-  updateAccumulators: (updates) =>
-    set((state) => ({
-      accumulators: {
-        ...state.accumulators,
-        ...updates,
-      },
-    })),
-
-  addMinuteData: (data) =>
-    set((state) => {
-      if (state.minuteData.length < MAX_MINUTE_DATA_POINTS) {
-        return { minuteData: [...state.minuteData, data] };
-      }
-
-      // Keep only the most recent N-1 points, then append the newest point.
-      // This avoids creating an oversized temporary array on overflow.
-      return {
-        minuteData: [
-          ...state.minuteData.slice(state.minuteData.length - (MAX_MINUTE_DATA_POINTS - 1)),
-          data,
-        ],
-      };
-    }),
-
-  applySimulationTick: (update) =>
-    set((state) => {
-      const nextNodes = { ...state.nodes };
-      for (const [nodeType, nodeUpdate] of Object.entries(update.nodeUpdates) as [NodeType, Partial<EnergyNode>][]) {
-        if (!nodeUpdate) continue;
-        nextNodes[nodeType] = {
-          ...nextNodes[nodeType],
-          ...nodeUpdate,
-        };
-      }
-
-      const minuteData =
-        state.minuteData.length < MAX_MINUTE_DATA_POINTS
-          ? [...state.minuteData, update.minutePoint]
-          : [
-              ...state.minuteData.slice(state.minuteData.length - (MAX_MINUTE_DATA_POINTS - 1)),
-              update.minutePoint,
-            ];
-
-      const accumulators: Accumulators = {
-        solar: state.accumulators.solar + (update.accumulatorDeltas.solar ?? 0),
-        savings: state.accumulators.savings + (update.accumulatorDeltas.savings ?? 0),
-        gridImport: state.accumulators.gridImport + (update.accumulatorDeltas.gridImport ?? 0),
-        carbonOffset: state.accumulators.carbonOffset + (update.accumulatorDeltas.carbonOffset ?? 0),
-        batDischargeKwh:
-          state.accumulators.batDischargeKwh + (update.accumulatorDeltas.batDischargeKwh ?? 0),
-        feedInEarnings:
-          state.accumulators.feedInEarnings + (update.accumulatorDeltas.feedInEarnings ?? 0),
-      };
-
-      return {
-        nodes: nextNodes,
-        flows: update.flows,
-        minuteData,
-        accumulators,
-      };
-    }),
-
-  setSimulationState: (updates) => set(updates),
-
-  updateSystemConfig: (config) =>
-    set((state) => ({
-      systemConfig: {
-        ...state.systemConfig,
-        ...config,
-      },
-    })),
-
-  updateFullSystemConfig: (config) => set({ fullSystemConfig: config }),
-
-  resetSystem: () =>
-    set({
       nodes: initialNodes,
       flows: [],
       selectedNode: null,
@@ -484,132 +379,315 @@ export const useEnergySystemStore = create<EnergySystemState>()(
       simSpeed: 1,
       accumulators: initialAccumulators,
       minuteData: [],
-      fullSystemConfig: DEFAULT_SYSTEM_CONFIG,
-    }),
-
-  saveScenario: (name, finance, location) =>
-    set((state) => {
-      const data = state.minuteData;
-      const totalSolarKWh = data.reduce((s, d) => s + d.solarEnergyKWh, 0);
-      const totalGridImportKWh = data.reduce((s, d) => s + d.gridImportKWh, 0);
-      const totalGridExportKWh = data.reduce((s, d) => s + d.gridExportKWh, 0);
-      const totalConsumptionKWh = data.reduce(
-        (s, d) => s + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh,
-        0
-      );
-      const totalSavingsKES = data.reduce((s, d) => s + d.savingsKES, 0);
-      const avgBatterySOC =
-        data.length > 0
-          ? data.reduce((s, d) => s + d.batteryLevelPct, 0) / data.length
-          : 0;
-      const selfSufficiencyPct =
-        totalConsumptionKWh > 0
-          ? Math.min(
-              100,
-              ((totalConsumptionKWh - totalGridImportKWh) / totalConsumptionKWh) * 100
-            )
-          : 0;
-
-      const scenario: SavedScenario = {
-        id: crypto.randomUUID(),
-        name,
-        createdAt: new Date().toISOString(),
-        system: { ...state.systemConfig },
-        finance,
-        performance: {
-          selfSufficiencyPct,
-          totalGridImportKWh,
-          totalGridExportKWh,
-          avgBatterySOC,
-          totalSolarKWh,
-          totalSavingsKES,
+      systemConfig: {
+        solarCapacityKW: 10,
+        batteryCapacityKWh: 50,
+        inverterKW: 10,
+        ev1CapacityKWh: 80,
+        ev2CapacityKWh: 118,
+        systemMode: 'hybrid',
+        batteryDodPct: DEFAULT_BATTERY_DOD_PCT,
+        generatorThresholdPct: DEFAULT_GENERATOR_THRESHOLD_PCT,
+        gridOutageEnabled: false,
+        gridTariff: {
+          peakRate: 24.31,
+          offPeakRate: 14.93,
         },
-        location,
-        engineering: (() => {
-          const durationHours = Math.max(data.length / 60, 1);
-          const currentMonth = new Date(state.currentDate).getMonth();
-          const monthlyPSH = state.solarData.monthlyAvgKwhPerKwp[currentMonth];
-          const irradianceKWhPerM2 = monthlyPSH * (durationHours / 24);
-          const result = computeEngineeringKpis({
-            totalSolarKWh,
-            dcCapacityKWp: state.systemConfig.solarCapacityKW,
-            durationHours,
-            totalBatDischargeKWh: state.accumulators.batDischargeKwh,
-            batteryCapacityKWh: state.systemConfig.batteryCapacityKWh,
-            planeIrradianceKWhPerM2: irradianceKWhPerM2 > 0 ? irradianceKWhPerM2 : undefined,
-          });
+      },
+      fullSystemConfig: DEFAULT_SYSTEM_CONFIG,
+      solarData: DEMO_SOLAR_DATA,
+      scenarios: [],
+
+      updateNode: (nodeType, updates) =>
+        set((state) => ({
+          nodes: {
+            ...state.nodes,
+            [nodeType]: {
+              ...state.nodes[nodeType],
+              ...updates,
+            },
+          },
+        })),
+
+      updateFlows: (flows) => set({ flows }),
+
+      selectNode: (nodeType) => set({ selectedNode: nodeType }),
+
+      setTimeRange: (range) => set({ timeRange: range }),
+
+      setSystemMode: (mode) =>
+        set((state) => ({
+          systemConfig: {
+            ...state.systemConfig,
+            systemMode: mode,
+          },
+        })),
+
+      updateAccumulators: (updates) =>
+        set((state) => ({
+          accumulators: {
+            ...state.accumulators,
+            ...updates,
+          },
+        })),
+
+      addMinuteData: (data) =>
+        set((state) => {
+          if (state.minuteData.length < MAX_MINUTE_DATA_POINTS) {
+            return { minuteData: [...state.minuteData, data] };
+          }
+
+          // Keep only the most recent N-1 points, then append the newest point.
+          // This avoids creating an oversized temporary array on overflow.
           return {
-            specificYieldKWhPerKWp: result.specificYieldKWhPerKWp,
-            performanceRatioPct: result.performanceRatioPct,
-            capacityFactorPct: result.capacityFactorPct,
-            batteryCycles: result.batteryCycles,
+            minuteData: [
+              ...state.minuteData.slice(
+                state.minuteData.length - (MAX_MINUTE_DATA_POINTS - 1)
+              ),
+              data,
+            ],
           };
-        })(),
-      };
+        }),
 
-      const updated = [...state.scenarios, scenario];
-      // Keep max MAX_SCENARIOS — drop oldest if exceeded
-      return { scenarios: updated.length > MAX_SCENARIOS ? updated.slice(updated.length - MAX_SCENARIOS) : updated };
-    }),
+      applySimulationTick: (update) =>
+        set((state) => {
+          const nextNodes = { ...state.nodes };
+          for (const [
+            nodeType,
+            nodeUpdate,
+          ] of Object.entries(update.nodeUpdates) as [
+            NodeType,
+            Partial<EnergyNode>,
+          ][]) {
+            if (!nodeUpdate) continue;
+            nextNodes[nodeType] = {
+              ...nextNodes[nodeType],
+              ...nodeUpdate,
+            };
+          }
 
-  deleteScenario: (id) =>
-    set((state) => ({
-      scenarios: state.scenarios.filter((s) => s.id !== id),
-    })),
+          const minuteData =
+            state.minuteData.length < MAX_MINUTE_DATA_POINTS
+              ? [...state.minuteData, update.minutePoint]
+              : [
+                  ...state.minuteData.slice(
+                    state.minuteData.length -
+                      (MAX_MINUTE_DATA_POINTS - 1)
+                  ),
+                  update.minutePoint,
+                ];
 
-  loadScenario: (id) =>
-    set((state) => {
-      const scenario = state.scenarios.find((s) => s.id === id);
-      if (!scenario) return {};
-      return { systemConfig: { ...scenario.system } };
-    }),
+          const accumulators: Accumulators = {
+            solar:
+              state.accumulators.solar +
+              (update.accumulatorDeltas.solar ?? 0),
+            savings:
+              state.accumulators.savings +
+              (update.accumulatorDeltas.savings ?? 0),
+            gridImport:
+              state.accumulators.gridImport +
+              (update.accumulatorDeltas.gridImport ?? 0),
+            carbonOffset:
+              state.accumulators.carbonOffset +
+              (update.accumulatorDeltas.carbonOffset ?? 0),
+            batDischargeKwh:
+              state.accumulators.batDischargeKwh +
+              (update.accumulatorDeltas.batDischargeKwh ?? 0),
+            feedInEarnings:
+              state.accumulators.feedInEarnings +
+              (update.accumulatorDeltas.feedInEarnings ?? 0),
+          };
 
-  renameScenario: (id, newName) =>
-    set((state) => ({
-      scenarios: state.scenarios.map((s) =>
-        s.id === id ? { ...s, name: newName } : s
-      ),
-    })),
+          return {
+            nodes: nextNodes,
+            flows: update.flows,
+            minuteData,
+            accumulators,
+          };
+        }),
 
-  importScenarios: (json: string): ImportScenariosResult => {
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(json);
-    } catch {
-      return { imported: 0, skipped: 0, error: 'Invalid JSON — could not parse the pasted text.' };
-    }
+      setSimulationState: (updates) => set(updates),
 
-    // Accept both a single scenario object and an array
-    const candidates: unknown[] = Array.isArray(parsed) ? parsed : [parsed];
+      updateSystemConfig: (config) =>
+        set((state) => ({
+          systemConfig: {
+            ...state.systemConfig,
+            ...config,
+          },
+        })),
 
-    const valid = candidates.filter(isScenarioShape);
-    if (valid.length === 0) {
-      return {
-        imported: 0,
-        skipped: 0,
-        error:
-          'No valid scenarios found. Make sure you pasted the full JSON exported from SafariCharge.',
-      };
-    }
+      updateFullSystemConfig: (config) => set({ fullSystemConfig: config }),
 
-    const existingIds = new Set(get().scenarios.map((s) => s.id));
-    const fresh = valid.filter((s) => !existingIds.has(s.id)) as SavedScenario[];
-    const skipped = valid.length - fresh.length;
+      resetSystem: () =>
+        set({
+          nodes: initialNodes,
+          flows: [],
+          selectedNode: null,
+          timeRange: 'today',
+          currentDate: new Date('2026-01-01T00:00:00'),
+          timeOfDay: 0,
+          isAutoMode: false,
+          simSpeed: 1,
+          accumulators: initialAccumulators,
+          minuteData: [],
+          fullSystemConfig: DEFAULT_SYSTEM_CONFIG,
+        }),
 
-    if (fresh.length > 0) {
-      set((state) => {
-        const merged: SavedScenario[] = [...state.scenarios, ...fresh];
-        return {
-          scenarios:
-            merged.length > MAX_SCENARIOS
-              ? merged.slice(merged.length - MAX_SCENARIOS)
-              : merged,
-        };
-      });
-    }
+      saveScenario: (name, finance, location) =>
+        set((state) => {
+          const data = state.minuteData;
+          const totalSolarKWh = data.reduce(
+            (s, d) => s + d.solarEnergyKWh,
+            0
+          );
+          const totalGridImportKWh = data.reduce(
+            (s, d) => s + d.gridImportKWh,
+            0
+          );
+          const totalGridExportKWh = data.reduce(
+            (s, d) => s + d.gridExportKWh,
+            0
+          );
+          const totalConsumptionKWh = data.reduce(
+            (s, d) => s + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh,
+            0
+          );
+          const totalSavingsKES = data.reduce(
+            (s, d) => s + d.savingsKES,
+            0
+          );
+          const avgBatterySOC =
+            data.length > 0
+              ? data.reduce((s, d) => s + d.batteryLevelPct, 0) /
+                data.length
+              : 0;
+          const selfSufficiencyPct =
+            totalConsumptionKWh > 0
+              ? Math.min(
+                  100,
+                  ((totalConsumptionKWh - totalGridImportKWh) /
+                    totalConsumptionKWh) *
+                    100
+                )
+              : 0;
 
-    return { imported: fresh.length, skipped };
-  },
+          const scenario: SavedScenario = {
+            id: crypto.randomUUID(),
+            name,
+            createdAt: new Date().toISOString(),
+            system: { ...state.systemConfig },
+            finance,
+            performance: {
+              selfSufficiencyPct,
+              totalGridImportKWh,
+              totalGridExportKWh,
+              avgBatterySOC,
+              totalSolarKWh,
+              totalSavingsKES,
+            },
+            location,
+            engineering: (() => {
+              const durationHours = Math.max(data.length / 60, 1);
+              const currentMonth = new Date(state.currentDate).getMonth();
+              const monthlyPSH =
+                state.solarData.monthlyAvgKwhPerKwp[currentMonth];
+              const irradianceKWhPerM2 = monthlyPSH * (durationHours / 24);
+              const result = computeEngineeringKpis({
+                totalSolarKWh,
+                dcCapacityKWp: state.systemConfig.solarCapacityKW,
+                durationHours,
+                totalBatDischargeKWh:
+                  state.accumulators.batDischargeKwh,
+                batteryCapacityKWh: state.systemConfig.batteryCapacityKWh,
+                planeIrradianceKWhPerM2:
+                  irradianceKWhPerM2 > 0
+                    ? irradianceKWhPerM2
+                    : undefined,
+              });
+              return {
+                specificYieldKWhPerKWp:
+                  result.specificYieldKWhPerKWp,
+                performanceRatioPct: result.performanceRatioPct,
+                capacityFactorPct: result.capacityFactorPct,
+                batteryCycles: result.batteryCycles,
+              };
+            })(),
+          };
+
+          const updated = [...state.scenarios, scenario];
+          // Keep max MAX_SCENARIOS — drop oldest if exceeded
+          return {
+            scenarios:
+              updated.length > MAX_SCENARIOS
+                ? updated.slice(updated.length - MAX_SCENARIOS)
+                : updated,
+          };
+        }),
+
+      deleteScenario: (id) =>
+        set((state) => ({
+          scenarios: state.scenarios.filter((s) => s.id !== id),
+        })),
+
+      loadScenario: (id) =>
+        set((state) => {
+          const scenario = state.scenarios.find((s) => s.id === id);
+          if (!scenario) return {};
+          return { systemConfig: { ...scenario.system } };
+        }),
+
+      renameScenario: (id, newName) =>
+        set((state) => ({
+          scenarios: state.scenarios.map((s) =>
+            s.id === id ? { ...s, name: newName } : s
+          ),
+        })),
+
+      importScenarios: (json: string): ImportScenariosResult => {
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(json);
+        } catch {
+          return {
+            imported: 0,
+            skipped: 0,
+            error: 'Invalid JSON — could not parse the pasted text.',
+          };
+        }
+
+        // Accept both a single scenario object and an array
+        const candidates: unknown[] = Array.isArray(parsed)
+          ? parsed
+          : [parsed];
+
+        const valid = candidates.filter(isScenarioShape);
+        if (valid.length === 0) {
+          return {
+            imported: 0,
+            skipped: 0,
+            error:
+              'No valid scenarios found. Make sure you pasted the full JSON exported from SafariCharge.',
+          };
+        }
+
+        const existingIds = new Set(get().scenarios.map((s) => s.id));
+        const fresh = valid.filter((s) => !existingIds.has(s.id)) as SavedScenario[];
+        const skipped = valid.length - fresh.length;
+
+        if (fresh.length > 0) {
+          set((state) => {
+            const merged: SavedScenario[] = [...state.scenarios, ...fresh];
+            return {
+              scenarios:
+                merged.length > MAX_SCENARIOS
+                  ? merged.slice(merged.length - MAX_SCENARIOS)
+                  : merged,
+            };
+          });
+        }
+
+        return { imported: fresh.length, skipped };
+      },
     }),
     {
       name: 'safaricharge-scenarios',

@@ -55,6 +55,20 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 209 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-23-e265115` | `e265115` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-23 |
+| 208 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-22-330c058` | `330c058` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-22 |
+| 207 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-12-c8099e6` | `c8099e6` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-12 |
+| 206 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-11-67191a2` | `67191a2` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-11 |
+| 205 | `rollback/merge-pull-request-254-from-rauell1-co-2026-05-10-cdb3b7e` | `cdb3b7e` | Merge pull request #254 from rauell1/copilot/enhance-solar-simulation-engine | 2026-05-10 |
+| 204 | `rollback/feat-wire-real-world-physics-from-cata-2026-05-10-900a10c` | `900a10c` | feat: wire real-world physics from catalog IDs into simulation engine | 2026-05-10 |
+| 203 | `rollback/rename-system-type-installation-type-i-2026-05-10-e6e0d1d` | `e6e0d1d` | rename System Type → Installation Type in PV sizing section to reduce UI ambiguity with System Mode simulation control | 2026-05-10 |
+| 202 | `rollback/add-setsystemmode-action-to-keep-ui-sy-2026-05-10-5a61fea` | `5a61fea` | Add setSystemMode action to keep UI system type and simulation mode in sync | 2026-05-10 |
+| 201 | `rollback/wire-installed-catalog-ids-into-system-2026-05-10-7482d1d` | `7482d1d` | Wire installed catalog IDs into SystemConfiguration, add installed-components summary helper, and feed catalog-based physics into simulation | 2026-05-10 |
+| 200 | `rollback/add-useinstalledcomponents-hook-and-ca-2026-05-10-b3c6b41` | `b3c6b41` | Add useInstalledComponents hook and catalog-driven wiring for installed components | 2026-05-10 |
+| 199 | `rollback/feat-sim-wire-catalog-datasheet-specs-2026-05-10-99ab6c8` | `99ab6c8` | feat(sim): wire catalog datasheet specs into physics engine | 2026-05-10 |
+| 198 | `rollback/feat-add-branddocshub-component-with-t-2026-05-10-89eebfc` | `89eebfc` | feat: add BrandDocsHub component with Tier 1 brand documentation links | 2026-05-10 |
+| 197 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-10-07f7b6f` | `07f7b6f` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] | 2026-05-10 |
+| 196 | `rollback/real-hardware-specs-from-deye-jinko-da-2026-05-10-909d6f8` | `909d6f8` | Real hardware specs from Deye & Jinko datasheets wired into simulation | 2026-05-10 |
 | 195 | `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-05-10-226a27e` | `226a27e` | docs(auto): regenerate README.md [skip ci] | 2026-05-10 |
 | 194 | `rollback/africa-inverter-presets-move-config-to-2026-05-10-1849c7c` | `1849c7c` | Africa inverter presets, move config to System Config, add PDF report | 2026-05-10 |
 | 193 | `rollback/improve-sld-ac-bus-visibility-configur-2026-05-10-cb1d1f1` | `cb1d1f1` | Improve SLD: AC Bus visibility, configurable EV & inverter panels (#249) | 2026-05-10 |
@@ -2016,6 +2030,132 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Commit**: `226a27e8d07cabfb0ae95035b74aa51c415142dd`
 - **Subject**: docs(auto): regenerate README.md [skip ci]
 - **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #196 — `rollback/real-hardware-specs-from-deye-jinko-da-2026-05-10-909d6f8`
+
+- **Branch**: `rollback/real-hardware-specs-from-deye-jinko-da-2026-05-10-909d6f8`
+- **Commit**: `909d6f81b15934f1c6d033c0306708d54aeb8ee9`
+- **Subject**: Real hardware specs from Deye & Jinko datasheets wired into simulation
+- **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #197 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-10-07f7b6f`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-10-07f7b6f`
+- **Commit**: `07f7b6f36d3b942d8406f62efbe53c4e77c022e6`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #198 — `rollback/feat-add-branddocshub-component-with-t-2026-05-10-89eebfc`
+
+- **Branch**: `rollback/feat-add-branddocshub-component-with-t-2026-05-10-89eebfc`
+- **Commit**: `89eebfca76db306ef79146825d41d861be90d6bf`
+- **Subject**: feat: add BrandDocsHub component with Tier 1 brand documentation links
+- **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #199 — `rollback/feat-sim-wire-catalog-datasheet-specs-2026-05-10-99ab6c8`
+
+- **Branch**: `rollback/feat-sim-wire-catalog-datasheet-specs-2026-05-10-99ab6c8`
+- **Commit**: `99ab6c8a2bbbd913a67fcb6eba3de45695c8e404`
+- **Subject**: feat(sim): wire catalog datasheet specs into physics engine
+- **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #200 — `rollback/add-useinstalledcomponents-hook-and-ca-2026-05-10-b3c6b41`
+
+- **Branch**: `rollback/add-useinstalledcomponents-hook-and-ca-2026-05-10-b3c6b41`
+- **Commit**: `b3c6b414db55e9095ef2e1c2e58a0631f9376641`
+- **Subject**: Add useInstalledComponents hook and catalog-driven wiring for installed components
+- **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #201 — `rollback/wire-installed-catalog-ids-into-system-2026-05-10-7482d1d`
+
+- **Branch**: `rollback/wire-installed-catalog-ids-into-system-2026-05-10-7482d1d`
+- **Commit**: `7482d1da8c83c694d6773c9404752db6732354a0`
+- **Subject**: Wire installed catalog IDs into SystemConfiguration, add installed-components summary helper, and feed catalog-based physics into simulation
+- **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #202 — `rollback/add-setsystemmode-action-to-keep-ui-sy-2026-05-10-5a61fea`
+
+- **Branch**: `rollback/add-setsystemmode-action-to-keep-ui-sy-2026-05-10-5a61fea`
+- **Commit**: `5a61fea9a0020cd351876be26a41e67e6b3ac2b3`
+- **Subject**: Add setSystemMode action to keep UI system type and simulation mode in sync
+- **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #203 — `rollback/rename-system-type-installation-type-i-2026-05-10-e6e0d1d`
+
+- **Branch**: `rollback/rename-system-type-installation-type-i-2026-05-10-e6e0d1d`
+- **Commit**: `e6e0d1de7941526325171eb67e0f229d2a59016b`
+- **Subject**: rename System Type → Installation Type in PV sizing section to reduce UI ambiguity with System Mode simulation control
+- **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #204 — `rollback/feat-wire-real-world-physics-from-cata-2026-05-10-900a10c`
+
+- **Branch**: `rollback/feat-wire-real-world-physics-from-cata-2026-05-10-900a10c`
+- **Commit**: `900a10c106ea3600126c92c4786c2b5e1d55270f`
+- **Subject**: feat: wire real-world physics from catalog IDs into simulation engine
+- **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #205 — `rollback/merge-pull-request-254-from-rauell1-co-2026-05-10-cdb3b7e`
+
+- **Branch**: `rollback/merge-pull-request-254-from-rauell1-co-2026-05-10-cdb3b7e`
+- **Commit**: `cdb3b7eaf6340452f3e82e0e66e81f19b1abc39c`
+- **Subject**: Merge pull request #254 from rauell1/copilot/enhance-solar-simulation-engine
+- **Date**: 2026-05-10
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #206 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-11-67191a2`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-11-67191a2`
+- **Commit**: `67191a2c02414f1876ad9d7d91ada77eecba0937`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-05-11
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #207 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-12-c8099e6`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-12-c8099e6`
+- **Commit**: `c8099e62025c92f9fc34a4eb6df64d27ead078a1`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-05-12
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #208 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-22-330c058`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-22-330c058`
+- **Commit**: `330c05862324b8a79e16fad7d14dff39e9085ff3`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-05-22
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #209 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-23-e265115`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-23-e265115`
+- **Commit**: `e2651152b0448d8d92e484188425a8258b12d61b`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-05-23
 - **Auto-generated**: yes (by update-rollback.yml)
 
 

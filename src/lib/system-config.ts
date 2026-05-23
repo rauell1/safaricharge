@@ -5,6 +5,11 @@
  * hardware specifications, and validation functions.
  */
 
+import {
+  DEFAULT_SOLAR_SITE_CONFIG,
+  type SolarSiteConfig,
+} from '@/lib/solar-site-config';
+
 // ---------------------------------------------------------------------------
 // Load Configuration Types
 // ---------------------------------------------------------------------------
@@ -142,21 +147,30 @@ export interface InverterConfig {
   phase: InverterPhase;
   /** Voltage type */
   voltage: VoltageType;
+  /** Datasheet max efficiency (fraction) when known. */
+  maxEfficiency?: number;
 }
 
 export interface BatteryConfig {
-  /** Usable capacity in kWh */
+  /** Usable capacity in kWh — always computed from (bankModules × perModuleKwh) when bankModules is set. */
   capacityKwh: number;
   /** Voltage type */
   voltage: VoltageType;
   /** Chemistry type (for degradation modeling) */
   chemistry: 'lifepo4' | 'lead-acid' | 'nmc';
-  /** Maximum charge rate in kW */
+  /** Maximum charge rate in kW — always computed from datasheet when bankModules is set. */
   maxChargeKw: number;
-  /** Maximum discharge rate in kW */
+  /** Maximum discharge rate in kW — always computed from datasheet when bankModules is set. */
   maxDischargeKw: number;
   /** Minimum reserve to maintain (% of capacity) */
   minReservePct: number;
+  /**
+   * Number of battery modules in the bank.
+   * When set, capacityKwh / maxChargeKw / maxDischargeKw are derived from
+   * (bankModules × BATTERY_MODULE_CATALOG[installedBatteryId]) so there are
+   * no manually entered total values that can go out of sync with the module spec.
+   */
+  bankModules?: number;
 }
 
 export interface SolarConfig {
@@ -192,6 +206,28 @@ export interface SystemConfiguration {
   performanceRatio: number;
   /** Additional partial shading loss percentage (0–50). */
   shadingLossPct: number;
+
+  /**
+   * Catalog IDs for installed hardware, linked into SOLAR_COMPONENT_CATALOG.
+   * These drive both physics (via catalog-physics-bridge) and UI (docs hub).
+   *
+   * When set, the physics engine resolves datasheet-accurate values for:
+   *   - Panel temperature coefficient (panelTempCoefficientPerDegC)
+   *   - Panel degradation (yr1 + annual)
+   *   - Bifacial gain (if module is bifacial)
+   *   - Inverter peak efficiency
+   *   - Battery round-trip efficiency
+   *
+   * The installed component list is built from these IDs via
+   * buildInstalledComponentSummaries() so the config panel and docs hub
+   * always reflect the same component choice without duplicating state.
+   */
+  installedModuleId?: string;
+  installedInverterId?: string;
+  installedBatteryId?: string;
+
+  /** Site-level irradiance assumptions used by the physics engine. */
+  solarSite?: SolarSiteConfig;
 
   /** Legacy scaling factors (for backward compatibility) */
   legacy?: {
@@ -287,7 +323,17 @@ export const DEFAULT_EV_FLEET: EVLoadConfig = {
 };
 
 /**
- * Default system configuration matching current implementation
+ * Default system configuration.
+ *
+ * Battery: 4 × Pylontech US5000 (4 × 4.8 kWh usable = 19.2 kWh total at
+ * 2.4 kW charge/discharge per module = 9.6 kW per direction).
+ * The installedBatteryId links this to BATTERY_MODULE_CATALOG['pylontech-us5000']
+ * so the physics engine resolves 96 % RTE from the datasheet library.
+ *
+ * NOTE: The 60 kWh / 30 kW / 40 kW numbers in previous versions reflected the
+ * legacy config constants. They are updated here to match the chosen bank spec
+ * (Pylontech US5000 × 4). Adjust bankModules and the inverter preset in the UI
+ * to change the bank size — all totals will recompute via resolveBatteryBankConfig.
  */
 export const DEFAULT_SYSTEM_CONFIG: SystemConfiguration = {
   mode: 'auto',
@@ -300,14 +346,16 @@ export const DEFAULT_SYSTEM_CONFIG: SystemConfiguration = {
     capacityKw: 48,
     phase: 'three',
     voltage: 'high',
+    maxEfficiency: 0.976,
   },
   battery: {
-    capacityKwh: 60,
-    voltage: 'high',
+    capacityKwh: 19.2,       // 4 × Pylontech US5000 × 4.8 kWh usable
+    voltage: 'low',
     chemistry: 'lifepo4',
-    maxChargeKw: 30,
-    maxDischargeKw: 40,
+    maxChargeKw: 9.6,         // 4 × 2.4 kW
+    maxDischargeKw: 9.6,      // 4 × 2.4 kW
     minReservePct: 20,
+    bankModules: 4,
   },
   loads: [
     DEFAULT_HOME_LOAD,
@@ -316,6 +364,10 @@ export const DEFAULT_SYSTEM_CONFIG: SystemConfiguration = {
   ],
   performanceRatio: 0.8,
   shadingLossPct: 0,
+  installedModuleId:   'jinko-tiger-neo-66hl4m-bdv',
+  installedInverterId: 'deye-sun-sg04lp1-3-6k',
+  installedBatteryId:  'pylontech-us5000',
+  solarSite: DEFAULT_SOLAR_SITE_CONFIG,
   legacy: {
     loadScale: 1.0,
     evCommuterScale: 1.0,
@@ -332,6 +384,7 @@ export function createPresetConfig(
   multiplier: number,
   presetName: string
 ): SystemConfiguration {
+  const bm = base.battery.bankModules;
   return {
     ...base,
     mode: 'auto',
@@ -346,9 +399,11 @@ export function createPresetConfig(
     },
     battery: {
       ...base.battery,
-      capacityKwh: base.battery.capacityKwh * multiplier,
-      maxChargeKw: base.battery.maxChargeKw * multiplier,
-      maxDischargeKw: base.battery.maxDischargeKw * multiplier,
+      capacityKwh:    Math.round(base.battery.capacityKwh    * multiplier * 10) / 10,
+      maxChargeKw:    Math.round(base.battery.maxChargeKw    * multiplier * 10) / 10,
+      maxDischargeKw: Math.round(base.battery.maxDischargeKw * multiplier * 10) / 10,
+      // bankModules scaled proportionally (rounded to nearest integer)
+      bankModules: bm ? Math.max(1, Math.round(bm * multiplier)) : undefined,
     },
     // Loads remain unchanged - scaling is via legacy factors if needed
   };
@@ -414,14 +469,13 @@ export function validateSystemConfig(config: SystemConfiguration): {
   }
 
   // ========================================================================
-  // NEW: DC:AC Ratio Analysis
+  // DC:AC Ratio Analysis
   // ========================================================================
   const dcAcRatio = config.solar.totalCapacityKw / config.inverter.capacityKw;
   let dcAcStatus: 'optimal' | 'acceptable' | 'too_low' | 'too_high';
 
   if (dcAcRatio >= 1.20 && dcAcRatio <= 1.30) {
     dcAcStatus = 'optimal';
-    // No warning - optimal configuration
   } else if (dcAcRatio >= 1.10 && dcAcRatio < 1.20) {
     dcAcStatus = 'acceptable';
     warnings.push(
@@ -450,7 +504,7 @@ export function validateSystemConfig(config: SystemConfiguration): {
   }
 
   // ========================================================================
-  // NEW: Battery C-Rate Validation
+  // Battery C-Rate Validation
   // ========================================================================
   const chargeRate_C = config.battery.maxChargeKw / config.battery.capacityKwh;
   const dischargeRate_C = config.battery.maxDischargeKw / config.battery.capacityKwh;

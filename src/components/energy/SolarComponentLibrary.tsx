@@ -18,6 +18,8 @@ import {
 import { useIsMobile } from '@/hooks/use-mobile';
 import { markExternalUploadActive, clearExternalUploadActive } from '@/lib/external-upload-guard';
 import { SOLAR_COMPONENT_CATALOG, type SolarComponentCategory, type SolarComponentEntry } from '@/lib/solar-component-catalog';
+import { useEnergySystemStore } from '@/stores/energySystemStore';
+import { applyCatalogComponentToSystemConfig } from '@/lib/system-config-catalog-sync';
 
 type SolarComponentLibraryProps = {
   standalone?: boolean;
@@ -59,6 +61,10 @@ const getOriginUrl = (url: string) => {
 
 export function SolarComponentLibrary({ standalone = false }: SolarComponentLibraryProps) {
   const isMobile = useIsMobile();
+  const fullSystemConfig = useEnergySystemStore((s) => s.fullSystemConfig);
+  const updateFullSystemConfig = useEnergySystemStore((s) => s.updateFullSystemConfig);
+  const updateSystemConfig = useEnergySystemStore((s) => s.updateSystemConfig);
+  const updateNode = useEnergySystemStore((s) => s.updateNode);
   const [catalog, setCatalog] = useState<SolarComponentEntry[]>(SOLAR_COMPONENT_CATALOG);
   const [assets, setAssets] = useState<UploadedAsset[]>([]);
   const [category, setCategory] = useState<SolarComponentCategory | 'All'>('All');
@@ -160,6 +166,20 @@ export function SolarComponentLibrary({ standalone = false }: SolarComponentLibr
     } finally {
       clearExternalUploadActive();
     }
+  };
+
+  const handleUseComponent = () => {
+    if (!selected) return;
+    const next = applyCatalogComponentToSystemConfig(fullSystemConfig, selected);
+    updateFullSystemConfig(next);
+    updateSystemConfig({
+      solarCapacityKW: next.solar.totalCapacityKw,
+      inverterKW: next.inverter.capacityKw,
+      batteryCapacityKWh: next.battery.capacityKwh,
+    });
+    updateNode('solar', { capacityKW: next.solar.totalCapacityKw });
+    updateNode('battery', { capacityKWh: next.battery.capacityKwh });
+    setStatus(`Configured ${selected.brand} ${cleanText(selected.model)} in system configuration.`);
   };
 
   void categoryCounts;
@@ -379,6 +399,9 @@ export function SolarComponentLibrary({ standalone = false }: SolarComponentLibr
                       <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">Open source <ExternalLink className="h-3.5 w-3.5" /></div>
                     </a>
                   </div>
+                  <Button onClick={handleUseComponent} className="w-full sm:w-auto rounded-xl bg-[var(--battery)] text-white hover:opacity-90">
+                    Use this component
+                  </Button>
                 </div>
               ) : (
                 <div className="flex min-h-[240px] items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--bg-card-muted)] text-sm text-[var(--text-secondary)]">
@@ -471,6 +494,9 @@ export function SolarComponentLibrary({ standalone = false }: SolarComponentLibr
                     <div className="mt-1 flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">Open source <ExternalLink className="h-3.5 w-3.5" /></div>
                   </a>
                 </div>
+                <Button onClick={handleUseComponent} className="w-full rounded-xl bg-[var(--battery)] text-white hover:opacity-90">
+                  Use this component
+                </Button>
               </div>
             </ScrollArea>
           )}
