@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 213 | `rollback/merge-pull-request-257-from-rauell1-co-2026-05-23-925f780` | `925f780` | Merge pull request #257 from rauell1/copilot/fix-invalid-version-entries (1f +17/-0) | 2026-05-23 |
 | 212 | `rollback/fix-auth-ai-resolve-next-js-16-duplica-2026-05-23-fa4b668` | `fa4b668` | fix(auth,ai): resolve Next.js 16 duplicate middleware conflict and AI Assistant prerender TypeError (4f +10/-84) | 2026-05-23 |
 | 211 | `rollback/fix-ci-failures-typescript-errors-lint-2026-05-23-5e70f20` | `5e70f20` | Fix CI failures: TypeScript errors, lint rules, test path alias (#256) (10f +42/-26) | 2026-05-23 |
 | 210 | `rollback/production-release-hardware-specs-secu-2026-05-23-2bd2f7c` | `2bd2f7c` | Production release: hardware specs, security hardening, agent improvements (#255) (16f +1031/-250) | 2026-05-23 |
@@ -2189,6 +2190,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix(auth,ai): resolve Next.js 16 duplicate middleware conflict and AI Assistant prerender TypeError
 - **Date**: 2026-05-23
 - **Changed**: 4 file(s), +10/-84 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #213 — `rollback/merge-pull-request-257-from-rauell1-co-2026-05-23-925f780`
+
+- **Branch**: `rollback/merge-pull-request-257-from-rauell1-co-2026-05-23-925f780`
+- **Commit**: `925f780040bfcc25bad65d479b56f6b2e232b8ac`
+- **Subject**: Merge pull request #257 from rauell1/copilot/fix-invalid-version-entries
+- **Date**: 2026-05-23
+- **Changed**: 1 file(s), +17/-0 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
