@@ -10,6 +10,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Sparkles, X, Send, Trash2, Copy, Check } from 'lucide-react';
 import { buildAiSystemData, buildLearningContext } from './helpers';
+import { createConversation, appendMessage } from '@/lib/supabase-db';
 import type { AssistantProps } from '@/types/dashboard';
 
 type Message = { role: string; text: string };
@@ -180,6 +181,7 @@ export const SafariChargeAIAssistant = ({
   const [lastSentMessage, setLastSentMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastUserMessage = useRef<string>('');
+  const conversationIdRef = useRef<string | null>(null);
 
   const systemSnapshot = useMemo(
     () =>
@@ -205,6 +207,13 @@ export const SafariChargeAIAssistant = ({
     setInputText('');
     setIsTyping(true);
     setError(null);
+
+    // Lazily create a Supabase conversation on the first user message
+    if (!conversationIdRef.current) {
+      void createConversation(text.slice(0, 60)).then((id) => {
+        conversationIdRef.current = id;
+      });
+    }
 
     const conversationHistory = messages
       .slice(1)
@@ -243,6 +252,13 @@ export const SafariChargeAIAssistant = ({
       }
 
       setMessages((prev) => [...prev, { role: 'assistant', text: payload!.response! }]);
+
+      // Persist both messages fire-and-forget once we have a conversation id
+      if (conversationIdRef.current) {
+        const convId = conversationIdRef.current;
+        void appendMessage(convId, 'user', text, systemSnapshot);
+        void appendMessage(convId, 'assistant', payload.response);
+      }
     } catch (err: unknown) {
       const message =
         err instanceof Error
@@ -341,7 +357,7 @@ export const SafariChargeAIAssistant = ({
           {/* Clear conversation button — only when there are user messages */}
           {messages.length > 1 && (
             <button
-              onClick={() => setMessages(INITIAL_MESSAGES)}
+              onClick={() => { setMessages(INITIAL_MESSAGES); conversationIdRef.current = null; }}
               aria-label="Clear conversation"
               title="Clear conversation"
               className="rounded-md p-1.5 transition-colors"

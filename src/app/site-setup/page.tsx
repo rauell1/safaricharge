@@ -4,6 +4,7 @@ import { Suspense, useState, useRef, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { BrandLogo } from '@/components/brand-logo'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { setUserPreference } from '@/lib/supabase-db'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -273,6 +274,28 @@ function SiteSetupForm() {
     evChargers: '0',
   })
 
+  // Hydrate from Supabase on mount (pre-fills form if user has a saved config)
+  useEffect(() => {
+    import('@/lib/supabase-db').then(({ getUserPreference }) => {
+      getUserPreference<typeof details & { pvCapacity?: string; batteryStorage?: string; peakLoad?: string; dailyEnergy?: string; evChargers?: string }>('sc_site_config').then((saved) => {
+        if (!saved) return
+        setDetails({
+          siteName: saved.siteName ?? '',
+          siteType: saved.siteType ?? '',
+          gridConnection: saved.gridConnection ?? '',
+          location: saved.location ?? null,
+        })
+        setSpecs({
+          pvCapacity: String(saved.pvCapacity ?? ''),
+          batteryStorage: String(saved.batteryStorage ?? ''),
+          peakLoad: String(saved.peakLoad ?? ''),
+          dailyEnergy: String(saved.dailyEnergy ?? ''),
+          evChargers: String(saved.evChargers ?? '0'),
+        })
+      })
+    })
+  }, [])
+
   // ── Step 1 submit ────────────────────────────────────────────────────────────
 
   function handleStep1(e: React.FormEvent) {
@@ -311,6 +334,7 @@ function SiteSetupForm() {
       evChargers: Number(specs.evChargers) || 0,
     }
     localStorage.setItem('sc_site_config', JSON.stringify(config))
+    void setUserPreference('sc_site_config', config)
     router.push(next)
   }
 

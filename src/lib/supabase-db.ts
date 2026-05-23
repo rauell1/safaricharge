@@ -427,3 +427,53 @@ export async function getMultiplePreferences(keys: string[]): Promise<Record<str
     return {};
   }
 }
+
+// ── AI conversations ──────────────────────────────────────────────────────────
+
+/**
+ * Create a new AI conversation row. Returns the new conversation id, or null
+ * if the user is not authenticated or the insert fails.
+ */
+export async function createConversation(title?: string): Promise<string | null> {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data, error } = await supabase
+      .from('ai_conversations')
+      .insert({ user_id: user.id, title: title ?? null })
+      .select('id')
+      .single();
+
+    if (error) {
+      console.error('[supabase-db] createConversation error:', error.message);
+      return null;
+    }
+    return (data as { id: string }).id;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Append a message to an existing conversation (fire-and-forget safe).
+ */
+export async function appendMessage(
+  conversationId: string,
+  role: 'user' | 'assistant',
+  content: string,
+  systemDataSnapshot?: unknown,
+): Promise<void> {
+  try {
+    const supabase = createClient();
+    await supabase.from('ai_messages').insert({
+      conversation_id: conversationId,
+      role,
+      content,
+      system_data_snapshot: systemDataSnapshot ?? null,
+    });
+  } catch {
+    // Fire-and-forget; never block the UI on a failed DB write
+  }
+}
