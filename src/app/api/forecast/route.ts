@@ -45,7 +45,7 @@ interface HistoricalPoint {
 export async function POST(req: NextRequest) {
   const { headers } = buildCorsHeaders(req);
 
-  const rl = checkRateLimit(req, 'api', headers);
+  const rl = await checkRateLimit(req, 'api', headers);
   if (rl) return rl;
 
   let raw: unknown;

@@ -75,7 +75,7 @@ const TICK_HOURS = 1; // hourly resolution for 8 760-step annual run
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const { headers } = buildCorsHeaders(request);
 
-  const rl = checkRateLimit(request, 'api', headers);
+  const rl = await checkRateLimit(request, 'api', headers);
   if (rl) return rl;
 
   let rawBody: unknown = {};

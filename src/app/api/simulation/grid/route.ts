@@ -38,7 +38,7 @@ const bodySchema = z.object({
 export async function POST(request: NextRequest) {
   const { headers } = buildCorsHeaders(request);
 
-  const rl = checkRateLimit(request, 'api', headers);
+  const rl = await checkRateLimit(request, 'api', headers);
   if (rl) return rl;
 
   let body: unknown;

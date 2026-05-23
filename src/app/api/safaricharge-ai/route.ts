@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { z } from 'zod';
+import { createClient } from '@supabase/supabase-js';
 import {
   AI_MAX_BODY_BYTES,
   AI_MAX_HISTORY_TURNS,
@@ -178,13 +179,18 @@ const GEMINI_MODELS = [
   'gemini-2.0-flash',
 ];
 
-// Simple in-memory cache for AI responses
-type CacheEntry = {
-  response: string;
-  timestamp: number;
-};
-
-const responseCache = new Map<string, CacheEntry>();
+// Supabase service-role client for cache operations (lazy singleton)
+let _cacheClient: ReturnType<typeof createClient> | null = null;
+function getCacheClient() {
+  if (!_cacheClient) {
+    _cacheClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+  }
+  return _cacheClient;
+}
 
 /**
  * Generate cache key from messages for deduplication
@@ -198,40 +204,62 @@ function getCacheKey(payload: AiRequest): string {
 }
 
 /**
- * Get cached response if available and not expired
+ * Get cached response from Supabase if available and not expired.
+ * Returns null on any error (fire-and-forget style).
  */
-function getCachedResponse(key: string): string | null {
-  const entry = responseCache.get(key);
-  if (!entry) return null;
+async function getCachedResponse(key: string): Promise<string | null> {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
+  try {
+    const { data, error } = (await getCacheClient()
+      .from('ai_response_cache')
+      .select('response')
+      .eq('cache_key', key)
+      .gt('expires_at', new Date().toISOString())
+      .maybeSingle()) as unknown as { data: { response: string } | null; error: { message: string } | null };
 
-  const age = Date.now() - entry.timestamp;
-  if (age > AI_CACHE_TTL_MS) {
-    responseCache.delete(key);
+    if (error) {
+      logger.warn('[AI] Cache read error', { message: error.message });
+      return null;
+    }
+
+    const row = data as { response: string } | null;
+    if (row?.response) {
+      logger.info('[AI] Cache hit');
+      return row.response;
+    }
+
+    return null;
+  } catch (err) {
+    logger.warn('[AI] Cache read exception', {
+      message: err instanceof Error ? err.message : String(err),
+    });
     return null;
   }
-
-  logger.info('[AI] Cache hit', { ageSeconds: Math.round(age / 1000) });
-  return entry.response;
 }
 
 /**
- * Store response in cache
+ * Store response in Supabase cache (fire-and-forget).
+ * Never throws — cache failures must not break the main response flow.
  */
 function setCachedResponse(key: string, response: string): void {
-  responseCache.set(key, {
-    response,
-    timestamp: Date.now(),
-  });
-
-  // Simple cleanup: remove expired entries when cache grows large
-  if (responseCache.size > 100) {
-    const now = Date.now();
-    for (const [k, v] of responseCache.entries()) {
-      if (now - v.timestamp > AI_CACHE_TTL_MS) {
-        responseCache.delete(k);
-      }
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return;
+  const expiresAt = new Date(Date.now() + AI_CACHE_TTL_MS).toISOString();
+  Promise.resolve(
+    getCacheClient()
+      .from('ai_response_cache')
+      .upsert(
+        { cache_key: key, response, expires_at: expiresAt } as never,
+        { onConflict: 'cache_key' }
+      )
+  ).then(({ error }: { error: { message: string } | null }) => {
+    if (error) {
+      logger.warn('[AI] Cache write error', { message: error.message });
     }
-  }
+  }).catch((err: unknown) => {
+    logger.warn('[AI] Cache write exception', {
+      message: err instanceof Error ? err.message : String(err),
+    });
+  });
 }
 
 /**
@@ -716,7 +744,7 @@ export async function POST(request: NextRequest) {
 
     // Check cache first
     const cacheKey = getCacheKey(payload);
-    const cachedResponse = getCachedResponse(cacheKey);
+    const cachedResponse = await getCachedResponse(cacheKey);
     if (cachedResponse) {
       return jsonResponse({ response: cachedResponse, cached: true }, { status: 200, headers });
     }

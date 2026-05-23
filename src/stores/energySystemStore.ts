@@ -1,11 +1,16 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import type { SystemConfiguration } from '@/lib/system-config';
 import { DEFAULT_SYSTEM_CONFIG } from '@/lib/system-config';
 import type { SolarData } from '@/lib/physics-engine';
 import { computeEngineeringKpis } from '@/lib/engineeringKpis';
+import {
+  fetchScenarios,
+  upsertScenario,
+  deleteScenarioById,
+  renameScenario as renameScenarioInDb,
+} from '@/lib/supabase-db';
 import {
   DEFAULT_BATTERY_DOD_PCT,
   DEFAULT_GENERATOR_THRESHOLD_PCT,
@@ -19,27 +24,6 @@ const DEMO_SOLAR_DATA: SolarData = {
   monthlyAvgKwhPerKwp: [5.5, 5.8, 5.6, 5.4, 5.2, 5.1, 5.0, 5.3, 5.7, 5.8, 5.4, 5.3],
   monthlyAvgTemp: [22, 23, 24, 23, 22, 21, 20, 21, 22, 23, 22, 22],
 };
-
-// ── Safe localStorage storage (falls back to in-memory if blocked) ────────────
-function safeLocalStorage() {
-  try {
-    localStorage.setItem('__sc_test__', '1');
-    localStorage.removeItem('__sc_test__');
-    return createJSONStorage(() => localStorage);
-  } catch {
-    // localStorage blocked (e.g. sandboxed iframe) — use in-memory fallback
-    const mem: Record<string, string> = {};
-    return createJSONStorage(() => ({
-      getItem: (k: string) => mem[k] ?? null,
-      setItem: (k: string, v: string) => {
-        mem[k] = v;
-      },
-      removeItem: (k: string) => {
-        delete mem[k];
-      },
-    }));
-  }
-}
 
 // Node types in the energy system
 export type NodeType = 'solar' | 'battery' | 'grid' | 'home' | 'ev1' | 'ev2';
@@ -268,6 +252,8 @@ interface EnergySystemState {
 
   // Scenarios
   scenarios: SavedScenario[];
+  /** Load scenarios from Supabase and replace local state. No-ops if not logged in. */
+  loadScenarios: () => Promise<void>;
   saveScenario: (
     name: string,
     finance: FinancialSnapshot,
@@ -365,10 +351,9 @@ function isScenarioShape(v: unknown): v is SavedScenario {
   );
 }
 
-// Create the store — scenarios slice is persisted to localStorage
+// Create the store — scenarios are persisted in Supabase (call loadScenarios on mount)
 export const useEnergySystemStore = create<EnergySystemState>()(
-  persist(
-    (set, get) => ({
+  (set, get) => ({
       nodes: initialNodes,
       flows: [],
       selectedNode: null,
@@ -397,6 +382,15 @@ export const useEnergySystemStore = create<EnergySystemState>()(
       fullSystemConfig: DEFAULT_SYSTEM_CONFIG,
       solarData: DEMO_SOLAR_DATA,
       scenarios: [],
+
+      loadScenarios: async () => {
+        try {
+          const remote = await fetchScenarios();
+          set({ scenarios: remote });
+        } catch (err) {
+          console.error('[energySystemStore] loadScenarios error:', err);
+        }
+      },
 
       updateNode: (nodeType, updates) =>
         set((state) => ({
@@ -616,18 +610,28 @@ export const useEnergySystemStore = create<EnergySystemState>()(
 
           const updated = [...state.scenarios, scenario];
           // Keep max MAX_SCENARIOS — drop oldest if exceeded
-          return {
-            scenarios:
-              updated.length > MAX_SCENARIOS
-                ? updated.slice(updated.length - MAX_SCENARIOS)
-                : updated,
-          };
+          const next =
+            updated.length > MAX_SCENARIOS
+              ? updated.slice(updated.length - MAX_SCENARIOS)
+              : updated;
+
+          // Fire-and-forget sync to Supabase; local state always updates first.
+          upsertScenario(scenario).catch((err) =>
+            console.error('[energySystemStore] upsertScenario error:', err)
+          );
+
+          return { scenarios: next };
         }),
 
-      deleteScenario: (id) =>
+      deleteScenario: (id) => {
         set((state) => ({
           scenarios: state.scenarios.filter((s) => s.id !== id),
-        })),
+        }));
+        // Fire-and-forget delete from Supabase
+        deleteScenarioById(id).catch((err) =>
+          console.error('[energySystemStore] deleteScenarioById error:', err)
+        );
+      },
 
       loadScenario: (id) =>
         set((state) => {
@@ -636,12 +640,17 @@ export const useEnergySystemStore = create<EnergySystemState>()(
           return { systemConfig: { ...scenario.system } };
         }),
 
-      renameScenario: (id, newName) =>
+      renameScenario: (id, newName) => {
         set((state) => ({
           scenarios: state.scenarios.map((s) =>
             s.id === id ? { ...s, name: newName } : s
           ),
-        })),
+        }));
+        // Fire-and-forget rename in Supabase
+        renameScenarioInDb(id, newName).catch((err) =>
+          console.error('[energySystemStore] renameScenario error:', err)
+        );
+      },
 
       importScenarios: (json: string): ImportScenariosResult => {
         let parsed: unknown;
@@ -688,11 +697,5 @@ export const useEnergySystemStore = create<EnergySystemState>()(
 
         return { imported: fresh.length, skipped };
       },
-    }),
-    {
-      name: 'safaricharge-scenarios',
-      storage: safeLocalStorage(),
-      partialize: (state) => ({ scenarios: state.scenarios }),
-    }
-  )
+  })
 );
