@@ -111,13 +111,17 @@ LIB_DESC = {
     'demoEnergyState.ts':         'Deterministic demo data generator',
     'dvshave-harness.ts':         'pvlib/SAM delta-validation harness',
     'engineeringKpis.ts':         'IEC 61724-1 KPI calculations',
-    'financial-dashboard.ts':     'Financial metrics aggregation',
+    'financial-dashboard.ts':     'EV charging financial snapshot aggregation (NPV, IRR, LCOE)',
     'intelligence.ts':            'AI insight generation orchestrator',
+    'kenya-irradiance-data.ts':   'Kenya location irradiance lookup (47 counties, PSH data)',
     'load-validator.ts':          'Load profile validation and normalisation',
     'logger.ts':                  'Structured logger (pino wrapper)',
     'nasa-power-api.ts':          'NASA POWER API client — irradiance, weather',
+    'optimizer-client.ts':        'MILP optimizer client — builds OptimizeRequest, calls Python solver',
     'physics-engine-bridge.ts':   'TS <-> Python physics engine IPC bridge',
     'physics-engine.ts':          'Core energy simulation physics',
+    'pv-sizing.ts':               'PV sizing calculator (capacity, panel count, battery, payback)',
+    'rate-limiter.ts':            'In-memory sliding-window rate limiter (api/ai/report tiers)',
     'recommendation-engine.ts':   'System optimisation recommendations',
     'security.ts':                'Input sanitisation, rate-limit, CSRF',
     'serverConfig.ts':            'Server-side validated env config',
@@ -127,6 +131,21 @@ LIB_DESC = {
     'tariff.ts':                  'Tariff calculation utilities',
     'utils.ts':                   'cn() and misc utilities',
     'validateEnv.ts':             'Env-var validation (zod)',
+}
+
+API_ROUTE_DESC = {
+    'safaricharge-ai':   'Conversational AI assistant (Gemini + Z.AI fallback, RBAC)',
+    'optimize':          'MILP dispatch optimizer bridge (Python Pyomo solver)',
+    'forecast':          'PV/load forecasting proxy (Python FastAPI, P10/P50/P90)',
+    'engine-output':     'Annual physics engine run — 8760 hourly AC output values',
+    'simulation':        'Financial & grid simulation endpoints',
+    'export-report':     'Authenticated CSV/PDF export (RBAC: analyst+)',
+    'formal-report':     'Authenticated full HTML report generation (RBAC: analyst+)',
+    'dvshave-harness':   'pvlib delta-validation harness (RBAC: analyst+)',
+    'component-library': 'Solar component catalog read/search',
+    'profile':           'User profile read/write (Supabase session required)',
+    'health':            'Readiness probe + uptime metadata (public)',
+    'signup':            'Deprecated — returns 410 Gone',
 }
 
 
@@ -157,16 +176,27 @@ def build_api_table():
     api_path = 'src/app/api'
     if os.path.isdir(api_path):
         for entry in sorted(os.listdir(api_path)):
-            rows.append('| `/api/{}` | — |'.format(entry))
+            desc = API_ROUTE_DESC.get(entry, '—')
+            rows.append('| `/api/{}` | {} |'.format(entry, desc))
     return '\n'.join(rows) if rows else '| *(none detected)* | — |'
 
 
-comp_table   = build_table('src/components/dashboard', DASHBOARD_DESC)
-lib_table    = build_table('src/lib', LIB_DESC, extensions=('.ts',))
-stores_table = build_stores_table()
-api_table    = build_api_table()
-root_tree    = tree_lines('.', 1)
-src_tree     = tree_lines('src', 3)
+def build_simulation_table():
+    rows = []
+    sim_path = 'src/app/api/simulation'
+    if os.path.isdir(sim_path):
+        for entry in sorted(os.listdir(sim_path)):
+            rows.append('| `/api/simulation/{}` | — |'.format(entry))
+    return '\n'.join(rows) if rows else '| *(none)* | — |'
+
+
+comp_table       = build_table('src/components/dashboard', DASHBOARD_DESC)
+lib_table        = build_table('src/lib', LIB_DESC, extensions=('.ts',))
+stores_table     = build_stores_table()
+api_table        = build_api_table()
+simulation_table = build_simulation_table()
+root_tree        = tree_lines('.', 1)
+src_tree         = tree_lines('src', 3)
 
 doc = """# SafariCharge — Codebase Map
 
@@ -214,6 +244,26 @@ doc = """# SafariCharge — Codebase Map
 | Route | Purpose |
 |---|---|
 {api_table}
+
+---
+
+## `src/app/api/simulation/` — Simulation Sub-routes
+
+| Route | Purpose |
+|---|---|
+{simulation_table}
+
+---
+
+## Security Layer
+
+| Component | File | Purpose |
+|---|---|---|
+| Auth middleware | `src/middleware.ts` | Supabase session gate on 14 protected page routes |
+| Security helpers | `src/lib/security.ts` | CORS, bearer auth, RBAC, HMAC signature, body size |
+| Rate limiter | `src/lib/rate-limiter.ts` | In-memory sliding-window (api/ai/report tiers) |
+| Server config | `src/lib/serverConfig.ts` | Validated env vars — secrets never reach client |
+| Directives | `.cursorrules` | Universal Security Directives + Access Control Matrix |
 
 ---
 
@@ -294,14 +344,15 @@ forecasting/
     now=now, commit=commit, author=author, date=date,
     branch=branch, total_ts=total_ts, total_py=total_py,
     root_tree=root_tree, src_tree=src_tree,
-    api_table=api_table, comp_table=comp_table,
+    api_table=api_table, simulation_table=simulation_table,
+    comp_table=comp_table,
     lib_table=lib_table, stores_table=stores_table,
 )
 
 doc = (
     doc.replace('—', '-')
        .replace('·', '-')
-       .replace('’', "'")
+       .replace('‘', "'")
        .replace('“', '"')
        .replace('”', '"')
 )

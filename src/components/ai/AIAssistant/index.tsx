@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Sparkles, X, Send } from 'lucide-react';
+import { Sparkles, X, Send, Trash2, Copy, Check } from 'lucide-react';
 import { buildAiSystemData, buildLearningContext } from './helpers';
 import type { AssistantProps } from '@/types/dashboard';
 
@@ -32,29 +32,133 @@ const INITIAL_MESSAGES: Message[] = [
   },
 ];
 
+/** Render inline spans: **bold**, `code`, plain text */
+function renderInline(raw: string): React.ReactNode[] {
+  // Split on **bold** and `code` spans
+  const tokens = raw.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+  return tokens.map((token, idx) => {
+    if (token.startsWith('**') && token.endsWith('**')) {
+      return (
+        <strong key={idx} style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+          {token.slice(2, -2)}
+        </strong>
+      );
+    }
+    if (token.startsWith('`') && token.endsWith('`')) {
+      return (
+        <code
+          key={idx}
+          style={{
+            background: 'var(--bg-card-muted)',
+            borderRadius: 3,
+            padding: '0 4px',
+            fontFamily: 'monospace',
+            fontSize: '0.8em',
+          }}
+        >
+          {token.slice(1, -1)}
+        </code>
+      );
+    }
+    return token;
+  });
+}
+
 export const AIMessageText = ({ text }: { text: string }) => {
   const lines = text.split('\n');
-  return (
-    <div className="space-y-1 ai-panel-message">
-      {lines.map((line, i) => {
-        if (!line.trim()) return <div key={i} className="h-1" />;
-        const parts = line.split(/(\*\*[^*]+\*\*)/g);
-        return (
-          <p key={i} className="leading-relaxed" style={{ color: 'inherit' }}>
-            {parts.map((part, j) =>
-              part.startsWith('**') && part.endsWith('**') ? (
-                <strong key={j} style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
-                  {part.slice(2, -2)}
-                </strong>
-              ) : (
-                part
-              )
-            )}
-          </p>
-        );
-      })}
-    </div>
-  );
+
+  type Block =
+    | { type: 'blank' }
+    | { type: 'heading'; level: number; content: string }
+    | { type: 'hr' }
+    | { type: 'bullet'; content: string }
+    | { type: 'ordered'; content: string }
+    | { type: 'para'; content: string };
+
+  const blocks: Block[] = lines.map((line) => {
+    if (!line.trim()) return { type: 'blank' };
+    if (/^---+$/.test(line.trim())) return { type: 'hr' };
+    const h2 = line.match(/^##\s+(.*)/);
+    if (h2) return { type: 'heading', level: 2, content: h2[1] };
+    const h3 = line.match(/^###\s+(.*)/);
+    if (h3) return { type: 'heading', level: 3, content: h3[1] };
+    const bullet = line.match(/^[-*]\s+(.*)/);
+    if (bullet) return { type: 'bullet', content: bullet[1] };
+    const ordered = line.match(/^\d+\.\s+(.*)/);
+    if (ordered) return { type: 'ordered', content: ordered[1] };
+    return { type: 'para', content: line };
+  });
+
+  // Group consecutive bullet/ordered lines into single list elements
+  const grouped: React.ReactNode[] = [];
+  let i = 0;
+  while (i < blocks.length) {
+    const block = blocks[i];
+    if (block.type === 'blank') {
+      grouped.push(<div key={i} className="h-1" />);
+      i++;
+    } else if (block.type === 'hr') {
+      grouped.push(
+        <hr key={i} style={{ borderColor: 'var(--border)', margin: '4px 0' }} />
+      );
+      i++;
+    } else if (block.type === 'heading') {
+      grouped.push(
+        <p
+          key={i}
+          className="leading-relaxed"
+          style={{
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            fontSize: '0.875rem',
+          }}
+        >
+          {renderInline(block.content)}
+        </p>
+      );
+      i++;
+    } else if (block.type === 'bullet') {
+      const items: string[] = [];
+      while (i < blocks.length && blocks[i].type === 'bullet') {
+        items.push((blocks[i] as { type: 'bullet'; content: string }).content);
+        i++;
+      }
+      grouped.push(
+        <ul key={i} style={{ listStyle: 'disc', paddingLeft: 16, margin: 0 }}>
+          {items.map((item, j) => (
+            <li key={j} className="leading-relaxed" style={{ color: 'inherit' }}>
+              {renderInline(item)}
+            </li>
+          ))}
+        </ul>
+      );
+    } else if (block.type === 'ordered') {
+      const items: string[] = [];
+      while (i < blocks.length && blocks[i].type === 'ordered') {
+        items.push((blocks[i] as { type: 'ordered'; content: string }).content);
+        i++;
+      }
+      grouped.push(
+        <ol key={i} style={{ listStyle: 'decimal', paddingLeft: 16, margin: 0 }}>
+          {items.map((item, j) => (
+            <li key={j} className="leading-relaxed" style={{ color: 'inherit' }}>
+              {renderInline(item)}
+            </li>
+          ))}
+        </ol>
+      );
+    } else {
+      // para
+      grouped.push(
+        <p key={i} className="leading-relaxed" style={{ color: 'inherit' }}>
+          {renderInline((block as { type: 'para'; content: string }).content)}
+        </p>
+      );
+      i++;
+    }
+  }
+
+  return <div className="space-y-1 ai-panel-message">{grouped}</div>;
 };
 
 export const SafariChargeAIAssistant = ({
@@ -72,7 +176,9 @@ export const SafariChargeAIAssistant = ({
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastUserMessage = useRef<string>('');
 
   const systemSnapshot = useMemo(
     () =>
@@ -92,6 +198,7 @@ export const SafariChargeAIAssistant = ({
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isTyping) return;
+    lastUserMessage.current = text;
     setMessages((prev) => [...prev, { role: 'user', text }]);
     setInputText('');
     setIsTyping(true);
@@ -154,6 +261,8 @@ export const SafariChargeAIAssistant = ({
 
   const handleSend = () => sendMessage(inputText);
   const handleChip = (chip: string) => sendMessage(chip);
+
+  const learningCtx = useMemo(() => buildLearningContext(minuteData ?? []), [minuteData]);
 
   const latest = minuteData?.[minuteData.length - 1];
   const liveSolar   = data?.solarR        ?? latest?.solarKW        ?? 0;
@@ -225,6 +334,32 @@ export const SafariChargeAIAssistant = ({
             />
             {isAutoMode ? 'Live' : 'Paused'}
           </div>
+          {/* Clear conversation button — only when there are user messages */}
+          {messages.length > 1 && (
+            <button
+              onClick={() => setMessages(INITIAL_MESSAGES)}
+              aria-label="Clear conversation"
+              title="Clear conversation"
+              className="rounded-md p-1.5 transition-colors"
+              style={{
+                color: 'var(--text-secondary)',
+                background: 'transparent',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--alert)';
+                e.currentTarget.style.background = 'var(--bg-card-muted)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--text-secondary)';
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              <Trash2
+                aria-hidden="true"
+                style={{ width: 'var(--icon-md)', height: 'var(--icon-md)' }}
+              />
+            </button>
+          )}
           {/* X close button */}
           <button
             onClick={onClose}
@@ -293,6 +428,15 @@ export const SafariChargeAIAssistant = ({
             </span>
           )}
         </div>
+        {/* Context data line — shown only when we have minute-level simulation data */}
+        {(minuteData?.length ?? 0) > 0 && (
+          <p
+            className="text-[10px] font-mono mt-1"
+            style={{ color: 'var(--text-tertiary)', fontSize: '10px' }}
+          >
+            &#x1F4CA; {learningCtx.totalSimDays ?? 0} simulation day{(learningCtx.totalSimDays ?? 0) !== 1 ? 's' : ''} of context &middot; {learningCtx.dataConfidence ?? 'low'} confidence
+          </p>
+        )}
       </div>
 
       {/* Messages */}

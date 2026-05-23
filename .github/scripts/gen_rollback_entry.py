@@ -6,11 +6,14 @@ branch name already exists in the file."""
 import os
 import re
 
-sha         = os.environ.get('SHA', '')
-sha_short   = os.environ.get('SHA_SHORT', '')
-date        = os.environ.get('DATE', '')
-subject     = os.environ.get('SUBJECT', '')
-branch_name = os.environ.get('BRANCH_NAME', '')
+sha           = os.environ.get('SHA', '')
+sha_short     = os.environ.get('SHA_SHORT', '')
+date          = os.environ.get('DATE', '')
+subject       = os.environ.get('SUBJECT', '')
+branch_name   = os.environ.get('BRANCH_NAME', '')
+files_changed = os.environ.get('FILES_CHANGED', '')
+insertions    = os.environ.get('INSERTIONS', '')
+deletions     = os.environ.get('DELETIONS', '')
 
 rollback_path = 'ROLLBACK.md'
 with open(rollback_path, 'r', encoding='utf-8') as f:
@@ -26,7 +29,8 @@ numbers = re.findall(r'^\| (\d+) \|', content, re.MULTILINE)
 next_num = max((int(n) for n in numbers), default=0) + 1
 
 # ── 2. Build new table row (prepend = newest first) ────────────────────────
-new_row = f'| {next_num} | `{branch_name}` | `{sha_short}` | {subject} | {date} |'
+stats_note = f' ({files_changed}f +{insertions}/-{deletions})' if files_changed else ''
+new_row = f'| {next_num} | `{branch_name}` | `{sha_short}` | {subject}{stats_note} | {date} |'
 
 # Insert row just after the table header + separator lines
 table_header = '| # | Branch | Pinned Commit | Description | Date |'
@@ -51,8 +55,12 @@ detail = f"""
 - **Commit**: `{sha}`
 - **Subject**: {subject}
 - **Date**: {date}
-- **Auto-generated**: yes (by update-rollback.yml)
 """
+
+if files_changed:
+    detail += f"- **Changed**: {files_changed} file(s), +{insertions}/-{deletions} lines\n"
+
+detail += "- **Auto-generated**: yes (by update-rollback.yml)\n"
 
 # Remove trailing manual note line temporarily to keep ordering clean
 content = content.rstrip()
