@@ -55,6 +55,9 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 220 | `rollback/feat-implement-advanced-operator-conso-2026-05-23-ebf24aa` | `ebf24aa` | feat: implement advanced operator console improvements: interactive SVG hovers, real-time Supabase sync logs tab, and write-back configuration override panel (1f +374/-92) | 2026-05-23 |
+| 219 | `rollback/fix-make-admin-dashboard-login-credent-2026-05-23-e6e0263` | `e6e0263` | fix: make admin dashboard login credentials validation extremely robust and flexible to prevent typos or field swaps (1f +6/-1) | 2026-05-23 |
+| 218 | `rollback/merge-remote-tracking-branch-origin-ma-2026-05-23-fc50ad9` | `fc50ad9` | Merge remote-tracking branch 'origin/main' (3f +37/-15) | 2026-05-23 |
 | 217 | `rollback/merge-origin-main-into-feature-branch-2026-05-23-e2bca70` | `e2bca70` | Merge origin/main into feature branch; resolve conflicts (22f +2284/-810) | 2026-05-23 |
 | 216 | `rollback/feat-add-real-time-supabase-connection-2026-05-23-9133f08` | `9133f08` | feat: add real-time Supabase connection status check and direct cloud portal link to admin workspace (1f +117/-4) | 2026-05-23 |
 | 215 | `rollback/feat-implement-secure-beautiful-backen-2026-05-23-c1bd302` | `c1bd302` | feat: implement secure, beautiful Backend Admin Dashboard layer with microgrid topology flow maps, customizable graphs, raw logs, and A4 reports (4f +1363/-1) | 2026-05-23 |
@@ -2244,6 +2247,36 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: Merge origin/main into feature branch; resolve conflicts
 - **Date**: 2026-05-23
 - **Changed**: 22 file(s), +2284/-810 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #218 — `rollback/merge-remote-tracking-branch-origin-ma-2026-05-23-fc50ad9`
+
+- **Branch**: `rollback/merge-remote-tracking-branch-origin-ma-2026-05-23-fc50ad9`
+- **Commit**: `fc50ad9b3e8b12da20b0372340a1b387f34ede4b`
+- **Subject**: Merge remote-tracking branch 'origin/main'
+- **Date**: 2026-05-23
+- **Changed**: 3 file(s), +37/-15 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #219 — `rollback/fix-make-admin-dashboard-login-credent-2026-05-23-e6e0263`
+
+- **Branch**: `rollback/fix-make-admin-dashboard-login-credent-2026-05-23-e6e0263`
+- **Commit**: `e6e0263557de81a1cd71c9c1b96f746a5b0d71cd`
+- **Subject**: fix: make admin dashboard login credentials validation extremely robust and flexible to prevent typos or field swaps
+- **Date**: 2026-05-23
+- **Changed**: 1 file(s), +6/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #220 — `rollback/feat-implement-advanced-operator-conso-2026-05-23-ebf24aa`
+
+- **Branch**: `rollback/feat-implement-advanced-operator-conso-2026-05-23-ebf24aa`
+- **Commit**: `ebf24aa143d2413d5fde563d75a95707b6c579fc`
+- **Subject**: feat: implement advanced operator console improvements: interactive SVG hovers, real-time Supabase sync logs tab, and write-back configuration override panel
+- **Date**: 2026-05-23
+- **Changed**: 1 file(s), +374/-92 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
