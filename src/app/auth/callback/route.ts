@@ -47,8 +47,8 @@ export async function GET(request: Request) {
     const exchangeMs = Date.now() - exchangeStart
 
     if (!error && data.user) {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY
 
       // Guard against missing env vars — fail gracefully instead of throwing.
       if (!supabaseUrl || !serviceRoleKey) {
