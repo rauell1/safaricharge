@@ -16,7 +16,6 @@ import {
   Moon,
   Download,
   LogOut,
-  Settings2,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -328,17 +327,6 @@ export function DashboardSidebar({
           <SidebarGroupContent>
             <SidebarMenu className="space-y-0.5">
               {toolsNavItems.map((item) => renderNavItem(item))}
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link
-                    href="/admin-login"
-                    className="flex items-center gap-3 w-full rounded-lg px-3 py-2 text-sm font-normal text-[var(--text-secondary)] hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)] transition-colors"
-                  >
-                    <Settings2 className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
-                    <span className="flex-1 truncate">Admin Portal</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
