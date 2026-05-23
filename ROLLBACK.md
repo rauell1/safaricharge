@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 227 | `rollback/feat-enforce-email-confirmation-checks-2026-05-24-f2ed12c` | `f2ed12c` | feat: enforce email confirmation checks for routing and authentication (4f +11/-3) | 2026-05-24 |
 | 226 | `rollback/fix-add-vercel-environment-naming-fall-2026-05-24-bd70b8e` | `bd70b8e` | fix: add Vercel environment naming fallbacks for Supabase client (6f +13/-13) | 2026-05-24 |
 | 225 | `rollback/fix-resolve-typescript-server-client-n-2026-05-24-7562f17` | `7562f17` | fix: resolve TypeScript server client null-safety crashes on Vercel deployment (9f +51/-23) | 2026-05-24 |
 | 224 | `rollback/merge-pull-request-258-from-rauell1-co-2026-05-24-af9cd36` | `af9cd36` | Merge pull request #258 from rauell1/copilot/fix-middleware-conflict (2f +12/-33) | 2026-05-24 |
@@ -2343,6 +2344,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix: add Vercel environment naming fallbacks for Supabase client
 - **Date**: 2026-05-24
 - **Changed**: 6 file(s), +13/-13 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #227 — `rollback/feat-enforce-email-confirmation-checks-2026-05-24-f2ed12c`
+
+- **Branch**: `rollback/feat-enforce-email-confirmation-checks-2026-05-24-f2ed12c`
+- **Commit**: `f2ed12cb82cd13b420f383d5fef00f800559bd83`
+- **Subject**: feat: enforce email confirmation checks for routing and authentication
+- **Date**: 2026-05-24
+- **Changed**: 4 file(s), +11/-3 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
