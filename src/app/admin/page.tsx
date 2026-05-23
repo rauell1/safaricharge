@@ -18,6 +18,40 @@ export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>('topology')
   const [sessionActive, setSessionActive] = useState(true)
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+  const supabaseProjRef = useMemo(() => {
+    if (!supabaseUrl) return null
+    const match = supabaseUrl.match(/https:\/\/([a-z0-9\-]+)\.supabase\.(?:co|net)/i)
+    return match ? match[1] : null
+  }, [supabaseUrl])
+
+  const supabaseDashboardLink = supabaseProjRef 
+    ? `https://supabase.com/dashboard/project/${supabaseProjRef}` 
+    : 'https://supabase.com/dashboard'
+
+  const [supabaseOnline, setSupabaseOnline] = useState<boolean | null>(null)
+  useEffect(() => {
+    const checkSupabase = async () => {
+      try {
+        const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+        const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        if (!url || !key) {
+          setSupabaseOnline(false)
+          return
+        }
+        const res = await fetch(`${url}/rest/v1/`, {
+          headers: { apikey: key }
+        })
+        setSupabaseOnline(res.ok)
+      } catch {
+        setSupabaseOnline(false)
+      }
+    }
+    checkSupabase()
+    const interval = setInterval(checkSupabase, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
   // Auth gate safety check (Double check client-side token)
   useEffect(() => {
     const checkToken = () => {
@@ -247,6 +281,10 @@ export default function AdminDashboardPage() {
     <>
       <style>{`
         body { background: #030712; color: #f3f4f6; font-family: 'Outfit', 'Inter', sans-serif; margin: 0; }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.35; transform: scale(0.95); }
+        }
         .tab-btn {
           display: flex; align-items: center; gap: 8px; border: 1px solid rgba(16,185,129,0.12);
           background: rgba(255,255,255,0.02); color: #9ca3af; padding: 10px 16px; borderRadius: 8px;
@@ -403,16 +441,50 @@ export default function AdminDashboardPage() {
             </button>
           </div>
 
-          <button onClick={handleLogout} style={{ border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.05)', color: '#f87171', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
-            <LogOut size={13} /> Exit Gate
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <a 
+              href={supabaseDashboardLink} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 8, 
+                padding: '8px 14px', 
+                borderRadius: 8, 
+                background: supabaseOnline === true ? 'rgba(16,185,129,0.06)' : supabaseOnline === false ? 'rgba(239,68,68,0.06)' : 'rgba(251,191,36,0.06)', 
+                border: supabaseOnline === true ? '1px solid rgba(16,185,129,0.2)' : supabaseOnline === false ? '1px solid rgba(239,68,68,0.2)' : '1px solid rgba(251,191,36,0.2)', 
+                color: supabaseOnline === true ? '#10b981' : supabaseOnline === false ? '#ef4444' : '#fbbf24', 
+                fontSize: 12.5, 
+                fontWeight: 600, 
+                textDecoration: 'none',
+                transition: 'all 0.2s',
+                boxShadow: '0 0 12px rgba(0,0,0,0.1)'
+              }}
+            >
+              <span style={{ 
+                width: 7, 
+                height: 7, 
+                borderRadius: '50%', 
+                background: supabaseOnline === true ? '#10b981' : supabaseOnline === false ? '#ef4444' : '#fbbf24', 
+                boxShadow: `0 0 8px ${supabaseOnline === true ? '#10b981' : supabaseOnline === false ? '#ef4444' : '#fbbf24'}`,
+                display: 'inline-block',
+                animation: 'pulse 2s infinite ease-in-out'
+              }} />
+              Supabase {supabaseProjRef ? `(${supabaseProjRef})` : 'Cloud'} ↗
+            </a>
+
+            <button onClick={handleLogout} style={{ border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.05)', color: '#f87171', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>
+              <LogOut size={13} /> Exit Gate
+            </button>
+          </div>
         </header>
 
         {/* Dashboard Main Workspace */}
         <main style={{ flex: 1, padding: 28, overflowY: 'auto' }}>
           {activeTab === 'topology' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 16 }}>
                 <div className="admin-card" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                   <div style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.2)', padding: 12, borderRadius: 12 }}>
                     <span style={{ fontSize: 20, color: '#fbbf24' }}>☀️</span>
@@ -451,6 +523,47 @@ export default function AdminDashboardPage() {
                     <span style={{ color: '#f3f4f6', fontSize: 22, fontWeight: 700 }}>{totalEvPower.toFixed(2)} kW</span>
                   </div>
                 </div>
+
+                <a 
+                  href={supabaseDashboardLink} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="admin-card" 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 16, 
+                    textDecoration: 'none', 
+                    border: '1px solid rgba(16,185,129,0.12)', 
+                    transition: 'all 0.2s ease-in-out'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(59,130,246,0.4)'
+                    e.currentTarget.style.background = 'rgba(59,130,246,0.04)'
+                    e.currentTarget.style.boxShadow = '0 0 16px rgba(59,130,246,0.1)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(16,185,129,0.12)'
+                    e.currentTarget.style.background = 'rgba(10,15,30,0.65)'
+                    e.currentTarget.style.boxShadow = 'none'
+                  }}
+                >
+                  <div style={{ 
+                    background: supabaseOnline === true ? 'rgba(16,185,129,0.1)' : supabaseOnline === false ? 'rgba(239,68,68,0.1)' : 'rgba(251,191,36,0.1)', 
+                    border: supabaseOnline === true ? '1px solid rgba(16,185,129,0.2)' : supabaseOnline === false ? '1px solid rgba(239,68,68,0.2)' : '1px solid rgba(251,191,36,0.2)', 
+                    padding: 12, 
+                    borderRadius: 12 
+                  }}>
+                    <span style={{ fontSize: 20, color: supabaseOnline === true ? '#10b981' : supabaseOnline === false ? '#ef4444' : '#fbbf24' }}>☁️</span>
+                  </div>
+                  <div>
+                    <span style={{ color: '#9ca3af', fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block' }}>Supabase Connection</span>
+                    <span style={{ color: supabaseOnline === true ? '#10b981' : supabaseOnline === false ? '#ef4444' : '#fbbf24', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {supabaseOnline === true ? 'Live Telemetry' : supabaseOnline === false ? 'Local Sandbox' : 'Verifying Link...'}
+                      <span style={{ fontSize: 10, color: '#6b7280' }}>↗</span>
+                    </span>
+                  </div>
+                </a>
               </div>
 
               {/* Topology SVG Canvas */}
