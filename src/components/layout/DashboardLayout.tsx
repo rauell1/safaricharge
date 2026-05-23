@@ -105,11 +105,12 @@ function DashboardLayoutInner({
         isOpen={aiOpen}
         onClose={closeAI}
         data={aiData as any}
-        timeOfDay={latestPoint?.timeOfDay ?? new Date().getHours() + new Date().getMinutes() / 60}
-        currentDate={currentDate ?? undefined}
+        timeOfDay={latestPoint ? latestPoint.hour + latestPoint.minute / 60 : new Date().getHours() + new Date().getMinutes() / 60}
+        weather="clear"
+        currentDate={currentDate ?? new Date()}
         isAutoMode={isAutoMode}
         minuteData={minuteData}
-        systemConfig={systemConfig}
+        systemConfig={systemConfig as unknown as import('@/types/dashboard').AssistantProps['systemConfig']}
       />
       <MobileBottomNav
         activeSection={activeSection}

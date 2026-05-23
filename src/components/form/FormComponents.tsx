@@ -68,7 +68,7 @@ export function FormInput({
 }
 
 interface FormRangeProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
   label: string;
   value: number;
   onChange: (value: number) => void;

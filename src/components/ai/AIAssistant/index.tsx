@@ -177,6 +177,7 @@ export const SafariChargeAIAssistant = ({
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const [lastSentMessage, setLastSentMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastUserMessage = useRef<string>('');
 
@@ -199,6 +200,7 @@ export const SafariChargeAIAssistant = ({
   const sendMessage = async (text: string) => {
     if (!text.trim() || isTyping) return;
     lastUserMessage.current = text;
+    setLastSentMessage(text);
     setMessages((prev) => [...prev, { role: 'user', text }]);
     setInputText('');
     setIsTyping(true);
@@ -265,11 +267,13 @@ export const SafariChargeAIAssistant = ({
   const learningCtx = useMemo(() => buildLearningContext(minuteData ?? []), [minuteData]);
 
   const latest = minuteData?.[minuteData.length - 1];
-  const liveSolar   = data?.solarR        ?? latest?.solarKW        ?? 0;
-  const liveBattery = data?.batteryLevel  ?? latest?.batteryLevelPct ?? 0;
-  const liveNetGrid = data?.netGridPower  ?? ((latest?.gridImportKW ?? 0) - (latest?.gridExportKW ?? 0));
-  const liveEv1V2g  = data?.ev1V2g       ?? false;
-  const liveEv2V2g  = data?.ev2V2g       ?? false;
+  const liveSolar   = data?.solar?.production_kw     ?? latest?.solarKW        ?? 0;
+  const liveBattery = data?.battery?.current_charge  ?? latest?.batteryLevelPct ?? 0;
+  const liveNetGrid = data
+    ? (data.grid.import_kwh - data.grid.export_kwh)
+    : ((latest?.gridImportKW ?? 0) - (latest?.gridExportKW ?? 0));
+  const liveEv1V2g  = false;
+  const liveEv2V2g  = false;
 
   const gridLabel = liveNetGrid > 0.1
     ? `Import ${liveNetGrid.toFixed(1)} kW`
@@ -598,7 +602,7 @@ export const SafariChargeAIAssistant = ({
             }}
           >
             <p className="text-center mb-2">{error}</p>
-            {lastUserMessage.current && (
+            {lastSentMessage && (
               <div className="flex justify-center">
                 <button
                   onClick={() => {

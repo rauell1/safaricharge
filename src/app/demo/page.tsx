@@ -1063,7 +1063,7 @@ function DemoAIAssistantView({ onNavigateSection }: { onNavigateSection: (sectio
         <SafariChargeAIAssistant
           isOpen={true}
           onClose={() => onNavigateSection('dashboard')}
-          data={null}
+          data={null as unknown as import('@/types/dashboard').AiSystemData}
           timeOfDay={currentDate ? currentDate.getHours() + currentDate.getMinutes() / 60 : 12}
           weather="clear"
           currentDate={currentDate ?? new Date()}

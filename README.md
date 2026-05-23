@@ -5,16 +5,15 @@
 <!-- AUTO-UPDATED: do not edit this block manually -->
 | | |
 |---|---|
-| **Last commit** | [`unknown`](https://github.com/rauell1/safaricharge/commit/) by unknown |
-| **Date** | unknown |
-| **Message** |  |
-| **Total commits** | ? |
-| **TypeScript files** | ? |
+| **Last commit** | [`b9fecd2`](https://github.com/rauell1/safaricharge/commit/b9fecd20c4217e33aee652f52d837e4ddb892e2b) by Claude |
+| **Date** | 2026-05-10 |
+| **Message** | Resolve merge conflicts: keep updated Deye datasheet model names |
+| **Total commits** | 109 |
+| **TypeScript files** | 252 |
 <!-- END AUTO-UPDATED -->
 
-
-
 SafariCharge is a **Next.js 15 + TypeScript** energy simulation and optimisation dashboard for solar PV, battery storage, grid interaction, and EV charging — built for the Kenyan and East African market.
+
 
 ---
 

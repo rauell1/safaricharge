@@ -446,7 +446,7 @@ export function LoadList({ config, onConfigChange }: LoadListProps) {
               Performance Ratio
               <Info
                 className="w-3.5 h-3.5 text-[var(--text-tertiary)]"
-                title="Real-world PV derate for inverter, wiring, mismatch and temperature losses. Typical Kenya rooftop systems run around 75–90%."
+                aria-label="Real-world PV derate for inverter, wiring, mismatch and temperature losses. Typical Kenya rooftop systems run around 75–90%."
               />
             </label>
             <div className="flex items-center gap-2">
@@ -477,7 +477,7 @@ export function LoadList({ config, onConfigChange }: LoadListProps) {
               Shading Loss (%)
               <Info
                 className="w-3.5 h-3.5 text-[var(--text-tertiary)]"
-                title="Extra partial-shading loss. In Kenya urban rooftops, antennae, trees or nearby buildings can shade small panel areas and sharply reduce output (sometimes >80% on affected modules)."
+                aria-label="Extra partial-shading loss. In Kenya urban rooftops, antennae, trees or nearby buildings can shade small panel areas and sharply reduce output (sometimes >80% on affected modules)."
               />
             </label>
             <div className="flex items-center gap-2">
