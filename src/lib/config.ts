@@ -162,3 +162,43 @@ export const SIM_STEPS_PER_DAY = 420;
 
 /** Duration of one simulation step in hours */
 export const SIM_STEP_DURATION_HOURS = 24 / SIM_STEPS_PER_DAY;
+
+// ---------------------------------------------------------------------------
+// Unified Physics Constants (SafariCharge Enhancements)
+// ---------------------------------------------------------------------------
+
+/** DC cable loss fraction (DC side resistance) */
+export const DC_CABLE_LOSS_FRACTION = 0.015;
+
+/** All-in KES/kWh peak rate for baseline comparison */
+export const PEAK_TARIFF_RATE_KES = 24.31;
+
+/** All-in KES/kWh off-peak rate for baseline comparison */
+export const OFF_PEAK_TARIFF_RATE_KES = 14.93;
+
+/** Target state-of-charge for residential EV charging */
+export const EV_TARGET_SOC_RESIDENTIAL = 0.9;
+
+/** Continuous V2G discharge window duration in hours */
+export const V2G_DISCHARGE_WINDOW_HOURS = 1;
+
+/** Base HVAC load in kW during peak heating/cooling conditions */
+export const HVAC_BASE_LOAD_KW = 3.5;
+
+/** Nominal Operating Cell Temperature (NOCT) of PV modules in °C */
+export const PANEL_NOCT_CELSIUS = 45;
+
+/** Battery Peukert exponent (empirically fitted for LFP cells) */
+export const BATTERY_PEUKERT_ALPHA = 1.1;
+
+/** Battery Peukert constant / coefficient k */
+export const BATTERY_PEUKERT_K = 0.04;
+
+/** Battery Peukert nominal/maximum cell-level efficiency at 0 C-rate */
+export const BATTERY_PEUKERT_ETA0 = 0.97;
+
+/** Battery capacity calendar fade per day (empirically 0.40% per year for LFP) */
+export const BATTERY_CALENDAR_FADE_PER_DAY = 0.0000110;
+
+/** Battery capacity fade coefficient per cycle equivalent */
+export const BATTERY_CYCLE_FADE_COEFFICIENT = 0.0003;
