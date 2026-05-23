@@ -37,8 +37,10 @@ export async function proxy(request: NextRequest) {
   const middlewareStart = Date.now()
   const { pathname } = request.nextUrl
 
+  if (isPublic(pathname)) return NextResponse.next()
+
   // Secure admin backend dashboard
-  if (pathname.startsWith('/admin') && pathname !== '/admin-login') {
+  if (pathname.startsWith('/admin')) {
     const secret = process.env.ADMIN_SESSION_SECRET
     const token = request.cookies.get('sc_admin_token')?.value ?? ''
 
@@ -49,8 +51,6 @@ export async function proxy(request: NextRequest) {
 
     return NextResponse.next()
   }
-
-  if (isPublic(pathname)) return NextResponse.next()
 
   // ── Session TTL check (cookie-only, zero network cost) ──────────────────
   // Do this BEFORE the Supabase getUser() call. If the session has expired
