@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 214 | `rollback/refactor-overhaul-safaricharge-physics-2026-05-23-85f3943` | `85f3943` | refactor: Overhaul SafariCharge physics simulation pipeline for accuracy, dynamic soiling, grid frequency coupling, and CV tapering (12f +695/-719) | 2026-05-23 |
 | 213 | `rollback/merge-pull-request-257-from-rauell1-co-2026-05-23-925f780` | `925f780` | Merge pull request #257 from rauell1/copilot/fix-invalid-version-entries (1f +17/-0) | 2026-05-23 |
 | 212 | `rollback/fix-auth-ai-resolve-next-js-16-duplica-2026-05-23-fa4b668` | `fa4b668` | fix(auth,ai): resolve Next.js 16 duplicate middleware conflict and AI Assistant prerender TypeError (4f +10/-84) | 2026-05-23 |
 | 211 | `rollback/fix-ci-failures-typescript-errors-lint-2026-05-23-5e70f20` | `5e70f20` | Fix CI failures: TypeScript errors, lint rules, test path alias (#256) (10f +42/-26) | 2026-05-23 |
@@ -2200,6 +2201,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: Merge pull request #257 from rauell1/copilot/fix-invalid-version-entries
 - **Date**: 2026-05-23
 - **Changed**: 1 file(s), +17/-0 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #214 — `rollback/refactor-overhaul-safaricharge-physics-2026-05-23-85f3943`
+
+- **Branch**: `rollback/refactor-overhaul-safaricharge-physics-2026-05-23-85f3943`
+- **Commit**: `85f3943d64be897e792d827185c02d2019a8d0b2`
+- **Subject**: refactor: Overhaul SafariCharge physics simulation pipeline for accuracy, dynamic soiling, grid frequency coupling, and CV tapering
+- **Date**: 2026-05-23
+- **Changed**: 12 file(s), +695/-719 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
