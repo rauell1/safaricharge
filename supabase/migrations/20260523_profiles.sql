@@ -24,7 +24,8 @@ alter table public.profiles add column if not exists updated_at   timestamptz no
 alter table public.profiles enable row level security;
 
 -- Authenticated users may read their own row
-create policy if not exists "profiles: users read own"
+drop policy if exists "profiles: users read own" on public.profiles;
+create policy "profiles: users read own"
   on public.profiles
   for select
   to authenticated
@@ -32,7 +33,8 @@ create policy if not exists "profiles: users read own"
 
 -- Authenticated users may update their own row
 -- (subscription_status and plan are set server-side only via service_role)
-create policy if not exists "profiles: users update own"
+drop policy if exists "profiles: users update own" on public.profiles;
+create policy "profiles: users update own"
   on public.profiles
   for update
   to authenticated
