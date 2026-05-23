@@ -480,11 +480,46 @@ export const SafariChargeAIAssistant = ({
                       background: 'var(--bg-card)',
                       border: '1px solid var(--border)',
                       color: 'var(--text-primary)',
+                      position: 'relative',
                     }
               }
             >
               {msg.role === 'assistant' ? (
-                <AIMessageText text={msg.text} />
+                <>
+                  <AIMessageText text={msg.text} />
+                  {/* Copy button — appears on hover via CSS group trick; using inline state */}
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(msg.text).catch(() => {});
+                      setCopiedIdx(idx);
+                      setTimeout(() => setCopiedIdx((prev) => (prev === idx ? null : prev)), 1500);
+                    }}
+                    aria-label="Copy message"
+                    title="Copy message"
+                    className="ai-copy-btn rounded p-0.5 transition-opacity"
+                    style={{
+                      position: 'absolute',
+                      top: '6px',
+                      right: '6px',
+                      opacity: copiedIdx === idx ? 1 : 0,
+                      background: 'var(--bg-card-muted)',
+                      border: '1px solid var(--border)',
+                      color: copiedIdx === idx ? 'var(--battery)' : 'var(--text-tertiary)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      transition: 'opacity 150ms',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
+                    onMouseLeave={(e) => { if (copiedIdx !== idx) e.currentTarget.style.opacity = '0'; }}
+                  >
+                    {copiedIdx === idx ? (
+                      <Check aria-hidden="true" style={{ width: '11px', height: '11px' }} />
+                    ) : (
+                      <Copy aria-hidden="true" style={{ width: '11px', height: '11px' }} />
+                    )}
+                  </button>
+                </>
               ) : (
                 <span className="text-sm leading-relaxed">{msg.text}</span>
               )}
@@ -555,14 +590,43 @@ export const SafariChargeAIAssistant = ({
 
         {error && (
           <div
-            className="text-xs text-center rounded-lg p-3 border break-words"
+            className="text-xs rounded-lg p-3 border break-words"
             style={{
               color: 'var(--alert)',
               background: 'var(--alert-soft)',
               borderColor: 'var(--alert)',
             }}
           >
-            {error}
+            <p className="text-center mb-2">{error}</p>
+            {lastUserMessage.current && (
+              <div className="flex justify-center">
+                <button
+                  onClick={() => {
+                    const msg = lastUserMessage.current;
+                    if (msg) {
+                      setError(null);
+                      // Remove the error assistant message added on failure before retrying
+                      setMessages((prev) => {
+                        const lastAsst = [...prev].reverse().findIndex((m) => m.role === 'assistant');
+                        if (lastAsst === -1) return prev;
+                        const realIdx = prev.length - 1 - lastAsst;
+                        return prev.filter((_, i) => i !== realIdx);
+                      });
+                      sendMessage(msg);
+                    }
+                  }}
+                  className="px-3 py-1 rounded-full text-[10px] font-medium transition-opacity hover:opacity-80 active:scale-95"
+                  style={{
+                    background: 'var(--alert)',
+                    color: '#fff',
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Retry
+                </button>
+              </div>
+            )}
           </div>
         )}
         <div ref={messagesEndRef} />
