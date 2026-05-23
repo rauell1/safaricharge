@@ -8,6 +8,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useUserPreference } from '@/hooks/useUserPreference';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
 import {
   Plus, Trash2, Edit, Save, Home, Car, Building2, Wind, Zap, ChevronDown, ChevronUp, AlertTriangle, Info, Settings2,
@@ -293,23 +294,16 @@ function BatteryBankConfigSection({
 }
 
 function EVChargerConfigSection() {
-  const saveToStorage = (presetId: string, count: number) => {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem('sc_ev_charger_config', JSON.stringify({ presetId, count }));
-  };
-  const loadFromStorage = () => {
-    try {
-      const raw = typeof window !== 'undefined' ? localStorage.getItem('sc_ev_charger_config') : null;
-      return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
-  };
-  const saved = loadFromStorage();
-  const [presetId, setPresetId] = useState<string>(saved?.presetId ?? 'ac22');
-  const [count, setCount] = useState<number>(saved?.count ?? 2);
+  const [evConfig, setEvConfig] = useUserPreference<{ presetId: string; count: number }>(
+    'sc_ev_charger_config',
+    { presetId: 'ac22', count: 2 },
+  );
+  const presetId = evConfig.presetId;
+  const count = evConfig.count;
   const selectedPreset = EV_CHARGER_PRESETS.find(p => p.id === presetId) ?? EV_CHARGER_PRESETS[1];
 
-  const handlePresetChange = (v: string) => { setPresetId(v); saveToStorage(v, count); };
-  const handleCountChange = (n: number) => { setCount(n); saveToStorage(presetId, n); };
+  const handlePresetChange = (v: string) => setEvConfig({ presetId: v, count });
+  const handleCountChange = (n: number) => setEvConfig({ presetId, count: n });
 
   return (
     <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card-hover)] p-4 space-y-4">

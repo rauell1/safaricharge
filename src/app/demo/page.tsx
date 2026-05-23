@@ -35,6 +35,7 @@ import { EnergyReportModal } from '@/components/energy/EnergyReportModal';
 import type { SolarIrradianceData } from '@/lib/nasa-power-api';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
 import { SIZING_SIMULATOR_STORAGE_KEY, parseSimulatorSizingPayload } from '@/lib/pv-sizing';
+import { getUserPreference } from '@/lib/supabase-db';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { Button } from '@/components/ui/button';
@@ -159,10 +160,15 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
   }, [activeSection, router]);
 
   useEffect(() => {
-    const payload = parseSimulatorSizingPayload(localStorage.getItem(SIZING_SIMULATOR_STORAGE_KEY));
-    if (!payload) return;
+    (async () => {
+      const localRaw = localStorage.getItem(SIZING_SIMULATOR_STORAGE_KEY);
+      const remoteRaw = localRaw ? null : await getUserPreference<unknown>(SIZING_SIMULATOR_STORAGE_KEY);
+      const payload = parseSimulatorSizingPayload(
+        localRaw ?? (remoteRaw ? JSON.stringify(remoteRaw) : null)
+      );
+      if (!payload) return;
 
-    localStorage.removeItem(SIZING_SIMULATOR_STORAGE_KEY);
+      localStorage.removeItem(SIZING_SIMULATOR_STORAGE_KEY);
 
     const store = useEnergySystemStore.getState();
     const nextBatteryCapacity = payload.systemType === 'off-grid'
@@ -201,6 +207,7 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
       title: 'Sizing loaded',
       description: `${payload.county} sizing preset loaded and simulation started.`,
     });
+    })();
   }, [toast]);
 
   return (

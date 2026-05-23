@@ -18,6 +18,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { setUserPreference } from '@/lib/supabase-db';
 import { useRouter } from 'next/navigation';
 import presetsData from '../../../forecasting/kenya-irradiance-presets.json';
 import { Button } from '@/components/ui/button';
@@ -106,6 +107,7 @@ export function PVSizingSection({ locationOverride }: { locationOverride?: Locat
       dailyLoadKwh,
     };
     localStorage.setItem(SIZING_SIMULATOR_STORAGE_KEY, JSON.stringify(payload));
+    void setUserPreference(SIZING_SIMULATOR_STORAGE_KEY, payload);
     router.push('/simulation');
   };
 

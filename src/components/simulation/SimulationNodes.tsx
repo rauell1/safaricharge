@@ -60,6 +60,7 @@ import {
   SYSTEM_MODE_LABELS,
 } from '@/lib/system-mode-metrics';
 import { GenerateReportButton } from '@/components/reports/GenerateReportButton';
+import { useUserPreference } from '@/hooks/useUserPreference';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -693,27 +694,15 @@ export function SimulationNodes() {
 
   const weather = isNight ? 'Night' : solarPower > (systemConfig.solarCapacityKW ?? 10) * 0.7 ? 'Sunny' : 'Cloudy';
 
-  // Read shared config from localStorage (written by System Configuration page)
-  const getSharedConfig = () => {
-    try {
-      const raw = typeof window !== 'undefined' ? localStorage.getItem('sc_inverter_config') : null;
-      return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
-  };
-  const getSharedEvConfig = () => {
-    try {
-      const raw = typeof window !== 'undefined' ? localStorage.getItem('sc_ev_charger_config') : null;
-      return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
-  };
-  const sharedInv = getSharedConfig();
-  const sharedEv  = getSharedEvConfig();
+  // Read shared config (synced via Supabase user preferences + localStorage)
+  const [invConfig]  = useUserPreference<{ presetId: string; kwPerUnit: number; units: number } | null>('sc_inverter_config', null);
+  const [evConfig]   = useUserPreference<{ presetId: string; count: number } | null>('sc_ev_charger_config', null);
 
-  const [invPresetId]    = React.useState<string>(sharedInv?.presetId    ?? 'deye-12');
-  const [invKwPerUnit]   = React.useState<number>(sharedInv?.kwPerUnit   ?? 12);
-  const [invUnits]       = React.useState<number>(sharedInv?.units       ?? 1);
-  const [evPresetId]     = React.useState<string>(sharedEv?.presetId     ?? 'ac22');
-  const [evChargerCount] = React.useState<number>(sharedEv?.count        ?? 2);
+  const invPresetId    = invConfig?.presetId    ?? 'deye-12';
+  const invKwPerUnit   = invConfig?.kwPerUnit   ?? 12;
+  const invUnits       = invConfig?.units       ?? 1;
+  const evPresetId     = evConfig?.presetId     ?? 'ac22';
+  const evChargerCount = evConfig?.count        ?? 2;
   const selectedEvPreset = EV_CHARGER_PRESETS.find(p => p.id === evPresetId) ?? EV_CHARGER_PRESETS[1];
 
   // Session totals

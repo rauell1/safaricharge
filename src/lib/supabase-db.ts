@@ -362,3 +362,68 @@ export async function setCachedAIResponse(
     console.error('[supabase-db] setCachedAIResponse unexpected error:', err);
   }
 }
+
+// ── User preferences ──────────────────────────────────────────────────────────
+
+/**
+ * Fetch a single user preference by key. Returns null if not found or not auth'd.
+ */
+export async function getUserPreference<T>(key: string): Promise<T | null> {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data } = await supabase
+      .from('user_preferences')
+      .select('value')
+      .eq('user_id', user.id)
+      .eq('key', key)
+      .maybeSingle();
+
+    return (data?.value as T) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Upsert a user preference. Fire-and-forget — callers should not await.
+ */
+export async function setUserPreference(key: string, value: unknown): Promise<void> {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    await supabase
+      .from('user_preferences')
+      .upsert(
+        { user_id: user.id, key, value, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id,key' }
+      );
+  } catch {
+    // Silently swallow — preferences are best-effort
+  }
+}
+
+/**
+ * Fetch multiple preferences in a single query. Returns a map of key → value.
+ */
+export async function getMultiplePreferences(keys: string[]): Promise<Record<string, unknown>> {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return {};
+
+    const { data } = await supabase
+      .from('user_preferences')
+      .select('key, value')
+      .eq('user_id', user.id)
+      .in('key', keys);
+
+    return Object.fromEntries((data ?? []).map((r: { key: string; value: unknown }) => [r.key, r.value]));
+  } catch {
+    return {};
+  }
+}

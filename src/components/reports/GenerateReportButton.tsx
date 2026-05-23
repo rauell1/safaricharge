@@ -8,6 +8,7 @@ import { buildFinancialSnapshot } from '@/lib/financial-dashboard';
 import type { FinancialInputs } from '@/lib/financial-dashboard';
 import type { SolarIrradianceData } from '@/lib/nasa-power-api';
 import { generateReportHTML, openReportWindow } from '@/lib/report-generator';
+import { useUserPreference } from '@/hooks/useUserPreference';
 
 const DEFAULT_FINANCIAL_INPUTS: FinancialInputs = {
   chargingTariffKes: 25,
@@ -48,14 +49,10 @@ export function GenerateReportButton({
 }: GenerateReportButtonProps) {
   const systemConfig  = useEnergySystemStore((s) => s.systemConfig);
   const minuteData    = useEnergySystemStore((s) => s.minuteData);
+  const [invConf]     = useUserPreference<{ presetId: string; kwPerUnit: number; units: number } | null>('sc_inverter_config', null);
+  const [evConf]      = useUserPreference<{ presetId: string; count: number; maxKw?: number } | null>('sc_ev_charger_config', null);
 
   const handleGenerate = useCallback(() => {
-    // Read inverter and EV config from localStorage (written by System Configuration page)
-    const readConfig = (key: string) => {
-      try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : null; } catch { return null; }
-    };
-    const invConf = readConfig('sc_inverter_config');
-    const evConf  = readConfig('sc_ev_charger_config');
 
     const solarData: SolarIrradianceData = {
       ...DEFAULT_SOLAR_DATA,
@@ -132,7 +129,7 @@ export function GenerateReportButton({
     });
 
     openReportWindow(html);
-  }, [systemConfig, minuteData, locationName, locationCountry, locationLat, locationLon, avgDailySunHours, financialInputs]);
+  }, [systemConfig, minuteData, invConf, evConf, locationName, locationCountry, locationLat, locationLon, avgDailySunHours, financialInputs]);
 
   return (
     <Button

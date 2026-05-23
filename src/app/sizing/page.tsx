@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { setUserPreference } from '@/lib/supabase-db';
 import presetsData from '../../../forecasting/kenya-irradiance-presets.json';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -79,6 +80,7 @@ export default function SizingPage() {
     };
 
     localStorage.setItem(SIZING_SIMULATOR_STORAGE_KEY, JSON.stringify(payload));
+    void setUserPreference(SIZING_SIMULATOR_STORAGE_KEY, payload);
     router.push('/simulation');
   };
 

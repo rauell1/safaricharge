@@ -1,11 +1,12 @@
 'use client';
 
 // Feature flag: ENABLE_GOVERNANCE_WIDGET
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { ShieldCheck } from 'lucide-react';
+import { useUserPreference } from '@/hooks/useUserPreference';
 
 interface GovernanceWidgetProps {
   currentSoc?: number;
@@ -32,23 +33,7 @@ export function GovernanceWidget({
   actualOutput = 0,
   expectedOutput = 0,
 }: GovernanceWidgetProps) {
-  const [checks, setChecks] = useState<Record<string, boolean>>(() => {
-    if (typeof window === 'undefined') return {};
-    try {
-      const raw = window.localStorage.getItem(CHECK_KEY);
-      return raw ? (JSON.parse(raw) as Record<string, boolean>) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(CHECK_KEY, JSON.stringify(checks));
-    } catch {
-      // local storage not available
-    }
-  }, [checks]);
+  const [checks, setChecks] = useUserPreference<Record<string, boolean>>(CHECK_KEY, {});
 
   const socCompliant = currentSoc >= minSoc && currentSoc <= maxSoc;
   const perfDeltaPct = expectedOutput <= 0 ? 0 : Math.abs(((actualOutput - expectedOutput) / expectedOutput) * 100);
@@ -89,7 +74,7 @@ export function GovernanceWidget({
                 id={checkboxId}
                 checked={Boolean(checks[item.key])}
                 onCheckedChange={(next) =>
-                  setChecks((prev) => ({ ...prev, [item.key]: Boolean(next) }))
+                  setChecks({ ...checks, [item.key]: Boolean(next) })
                 }
               />
               <span>{item.label}</span>
