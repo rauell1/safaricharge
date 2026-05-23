@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 226 | `rollback/fix-add-vercel-environment-naming-fall-2026-05-24-bd70b8e` | `bd70b8e` | fix: add Vercel environment naming fallbacks for Supabase client (6f +13/-13) | 2026-05-24 |
 | 225 | `rollback/fix-resolve-typescript-server-client-n-2026-05-24-7562f17` | `7562f17` | fix: resolve TypeScript server client null-safety crashes on Vercel deployment (9f +51/-23) | 2026-05-24 |
 | 224 | `rollback/merge-pull-request-258-from-rauell1-co-2026-05-24-af9cd36` | `af9cd36` | Merge pull request #258 from rauell1/copilot/fix-middleware-conflict (2f +12/-33) | 2026-05-24 |
 | 223 | `rollback/merge-remote-tracking-branch-origin-ma-2026-05-23-3a70a2f` | `3a70a2f` | Merge remote-tracking branch 'origin/main' (3f +14/-1) | 2026-05-23 |
@@ -2332,6 +2333,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix: resolve TypeScript server client null-safety crashes on Vercel deployment
 - **Date**: 2026-05-24
 - **Changed**: 9 file(s), +51/-23 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #226 — `rollback/fix-add-vercel-environment-naming-fall-2026-05-24-bd70b8e`
+
+- **Branch**: `rollback/fix-add-vercel-environment-naming-fall-2026-05-24-bd70b8e`
+- **Commit**: `bd70b8e1f427975a6be76e0475343575d7ee16e3`
+- **Subject**: fix: add Vercel environment naming fallbacks for Supabase client
+- **Date**: 2026-05-24
+- **Changed**: 6 file(s), +13/-13 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
