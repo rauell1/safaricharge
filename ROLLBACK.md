@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 223 | `rollback/merge-remote-tracking-branch-origin-ma-2026-05-23-3a70a2f` | `3a70a2f` | Merge remote-tracking branch 'origin/main' (3f +14/-1) | 2026-05-23 |
 | 222 | `rollback/merge-remote-tracking-branch-origin-ma-2026-05-23-f598a72` | `f598a72` | Merge remote-tracking branch 'origin/main' (3f +17/-1) | 2026-05-23 |
 | 221 | `rollback/merge-remote-tracking-branch-origin-ma-2026-05-23-1638082` | `1638082` | Merge remote-tracking branch 'origin/main' (5f +420/-94) | 2026-05-23 |
 | 220 | `rollback/feat-implement-advanced-operator-conso-2026-05-23-ebf24aa` | `ebf24aa` | feat: implement advanced operator console improvements: interactive SVG hovers, real-time Supabase sync logs tab, and write-back configuration override panel (1f +374/-92) | 2026-05-23 |
@@ -2299,6 +2300,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: Merge remote-tracking branch 'origin/main'
 - **Date**: 2026-05-23
 - **Changed**: 3 file(s), +17/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #223 — `rollback/merge-remote-tracking-branch-origin-ma-2026-05-23-3a70a2f`
+
+- **Branch**: `rollback/merge-remote-tracking-branch-origin-ma-2026-05-23-3a70a2f`
+- **Commit**: `3a70a2f68e7941461f0c04716399506d972f7a40`
+- **Subject**: Merge remote-tracking branch 'origin/main'
+- **Date**: 2026-05-23
+- **Changed**: 3 file(s), +14/-1 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
