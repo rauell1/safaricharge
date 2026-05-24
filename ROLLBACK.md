@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 239 | `rollback/feat-allow-administrative-access-to-mo-2026-05-24-6e5431f` | `6e5431f` | feat: allow administrative access to monitoring dashboard and add Main Site & Monitoring Dashboard buttons to admin console (2f +13/-5) | 2026-05-24 |
 | 238 | `rollback/feat-simplify-login-page-to-remove-app-2026-05-24-586078b` | `586078b` | feat: simplify login page to remove Apple/Google OAuth, integrate forgot password recovery flow, and add self-healing admin password sync (2f +145/-98) | 2026-05-24 |
 | 237 | `rollback/chore-remove-temporary-database-cleari-2026-05-24-e716900` | `e716900` | chore: remove temporary database clearing endpoint for security (1f +0/-50) | 2026-05-24 |
 | 236 | `rollback/feat-resolve-edge-middleware-randomuui-2026-05-24-bdbbc47` | `bdbbc47` | feat: resolve edge middleware randomUUID crash, add admin landing redirection link, implement site config loading and simulation run saving (5f +292/-9) | 2026-05-24 |
@@ -2475,6 +2476,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat: simplify login page to remove Apple/Google OAuth, integrate forgot password recovery flow, and add self-healing admin password sync
 - **Date**: 2026-05-24
 - **Changed**: 2 file(s), +145/-98 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #239 — `rollback/feat-allow-administrative-access-to-mo-2026-05-24-6e5431f`
+
+- **Branch**: `rollback/feat-allow-administrative-access-to-mo-2026-05-24-6e5431f`
+- **Commit**: `6e5431f20c29e86e5cf774cd1ce39bfe7c5e351a`
+- **Subject**: feat: allow administrative access to monitoring dashboard and add Main Site & Monitoring Dashboard buttons to admin console
+- **Date**: 2026-05-24
+- **Changed**: 2 file(s), +13/-5 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
