@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 245 | `rollback/merge-pull-request-260-from-rauell1-co-2026-05-24-1b896f5` | `1b896f5` | Merge pull request #260 from rauell1/copilot/update-logo-usage-to-brandlogo (5f +3/-4) | 2026-05-24 |
 | 244 | `rollback/feat-implement-secure-client-side-sign-2026-05-24-3434083` | `3434083` | feat: implement secure client-side sign-out in both standard and admin sidebars (2f +56/-2) | 2026-05-24 |
 | 243 | `rollback/feat-completely-remove-unauthenticated-2026-05-24-5b27e5b` | `5b27e5b` | feat: completely remove unauthenticated demo access and enforce login (3f +16/-36) | 2026-05-24 |
 | 242 | `rollback/feat-secure-multi-admin-sidebar-consol-2026-05-24-a3218a3` | `a3218a3` | feat: secure multi-admin sidebar console toggle and seeder (5f +103/-36) | 2026-05-24 |
@@ -2541,6 +2542,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat: implement secure client-side sign-out in both standard and admin sidebars
 - **Date**: 2026-05-24
 - **Changed**: 2 file(s), +56/-2 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #245 — `rollback/merge-pull-request-260-from-rauell1-co-2026-05-24-1b896f5`
+
+- **Branch**: `rollback/merge-pull-request-260-from-rauell1-co-2026-05-24-1b896f5`
+- **Commit**: `1b896f55a334da8f3c7737bb16d531b5cee61f9e`
+- **Subject**: Merge pull request #260 from rauell1/copilot/update-logo-usage-to-brandlogo
+- **Date**: 2026-05-24
+- **Changed**: 5 file(s), +3/-4 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
