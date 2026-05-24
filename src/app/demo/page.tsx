@@ -4,6 +4,8 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
+import { BrandLogo } from '@/components/brand-logo';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import type { DashboardSection } from '@/components/layout/DashboardSidebar';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
@@ -533,7 +535,7 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
 
   if (hasSetupLocation === null) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-[var(--bg-secondary)] text-[var(--text-primary)]">
+      <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-primary)', zIndex: 999 }}>
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#22c55e] border-t-transparent" />
           <p className="text-sm font-medium text-[var(--text-secondary)]">Checking microgrid site profile...</p>
@@ -544,77 +546,101 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
 
   if (hasSetupLocation === false) {
     return (
-      <div className="flex min-h-screen w-screen items-center justify-center bg-[var(--bg-secondary)] text-[var(--text-primary)] p-4 md:p-8">
-        <div className="relative w-full max-w-xl bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl shadow-2xl p-6 md:p-8 overflow-hidden backdrop-blur-xl bg-opacity-70">
-          <div className="absolute top-0 right-0 w-[250px] h-[250px] bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-[150px] h-[150px] bg-blue-500/5 rounded-full blur-[60px] pointer-events-none" />
-          
-          <div className="relative z-10 space-y-6">
-            <div className="flex flex-col items-center text-center space-y-3">
-              <div className="p-3 bg-emerald-500/10 rounded-full text-[#22c55e]">
-                <MapPin className="h-7 w-7 animate-bounce" />
-              </div>
-              <h2 className="text-xl md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-                Initialize Microgrid Location
-              </h2>
-              <p className="text-xs md:text-sm text-[var(--text-secondary)] max-w-sm">
-                Every SafariCharge microgrid requires precise coordinates to model temperature degradation, solar irradiance curves, and local utility tariff configurations.
-              </p>
-            </div>
+      <div style={{ position: 'fixed', inset: 0, color: 'var(--text-primary)', fontFamily: "'Inter', system-ui, sans-serif", display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-primary)', zIndex: 999 }}>
+        {/* Subtle grid backdrop */}
+        <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(var(--site-grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--site-grid-line) 1px, transparent 1px)', backgroundSize: '64px 64px', pointerEvents: 'none' }} />
+        
+        {/* Top glow */}
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 55% 45% at 50% 0%, var(--site-top-glow) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
-            <DemoLocationOnboardingWizard 
-              onComplete={async (loc, siteConfig) => {
-                try {
-                  const { setUserPreference } = await import('@/lib/supabase-db');
-                  await setUserPreference('sc_site_config', siteConfig);
-                  
-                  // Update local activeLocation
-                  setActiveLocation(loc);
-                  
-                  // Sync energySystemStore
-                  const store = useEnergySystemStore.getState();
-                  const nextFullSystemConfig = {
-                    ...store.fullSystemConfig,
-                    solar: {
-                      ...store.fullSystemConfig.solar,
-                      totalCapacityKw: siteConfig.pvCapacity,
-                    },
-                    battery: {
-                      ...store.fullSystemConfig.battery,
-                      capacityKwh: siteConfig.batteryStorage,
-                    },
-                    inverter: {
-                      ...store.fullSystemConfig.inverter,
-                      capacityKw: siteConfig.peakLoad,
-                    },
-                  };
-                  store.updateFullSystemConfig(nextFullSystemConfig);
-                  store.updateSystemConfig({
-                    solarCapacityKW: siteConfig.pvCapacity,
-                    inverterKW: siteConfig.peakLoad,
-                    batteryCapacityKWh: siteConfig.batteryStorage,
-                  });
-                  store.updateNode('solar', { capacityKW: siteConfig.pvCapacity });
-                  store.updateNode('battery', { capacityKWh: siteConfig.batteryStorage });
-                  
-                  toast({
-                    title: 'Simulation Initialized',
-                    description: `Microgrid initialized at ${loc.displayName} with ${siteConfig.pvCapacity} kWp PV capacity.`,
-                  });
-                  
-                  setHasSetupLocation(true);
-                } catch (err) {
-                  console.error('[Onboarding] Failed to initialize location details:', err);
-                  toast({
-                    title: 'Initialization Failed',
-                    description: 'Could not commit location details to your profile. Please try again.',
-                    variant: 'destructive',
-                  });
-                }
-              }}
-            />
+        {/* Dynamic header */}
+        <header style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'between', padding: '0 24px', height: 60, borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)', backdropFilter: 'blur(10px)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+            <BrandLogo href="/landing" />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <ThemeToggle />
+          </div>
+        </header>
+
+        {/* Main Content Form */}
+        <div style={{ position: 'relative', zIndex: 10, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, overflowY: 'auto' }}>
+          <div className="relative w-full max-w-xl bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl shadow-2xl p-6 md:p-8 overflow-hidden backdrop-blur-xl bg-opacity-70" style={{ boxSizing: 'border-box' }}>
+            <div className="absolute top-0 right-0 w-[250px] h-[250px] bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-[150px] h-[150px] bg-blue-500/5 rounded-full blur-[60px] pointer-events-none" />
+            
+            <div className="relative z-10 space-y-6">
+              <div className="flex flex-col items-center text-center space-y-3">
+                <div className="p-3 bg-emerald-500/10 rounded-full text-[#22c55e]">
+                  <MapPin className="h-7 w-7 animate-bounce" />
+                </div>
+                <h2 className="text-xl md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                  Initialize Microgrid Location
+                </h2>
+                <p className="text-xs md:text-sm text-[var(--text-secondary)] max-w-sm">
+                  Every SafariCharge microgrid requires precise coordinates to model temperature degradation, solar irradiance curves, and local utility tariff configurations.
+                </p>
+              </div>
+
+              <DemoLocationOnboardingWizard 
+                onComplete={async (loc, siteConfig) => {
+                  try {
+                    const { setUserPreference } = await import('@/lib/supabase-db');
+                    await setUserPreference('sc_site_config', siteConfig);
+                    
+                    // Update local activeLocation
+                    setActiveLocation(loc);
+                    
+                    // Sync energySystemStore
+                    const store = useEnergySystemStore.getState();
+                    const nextFullSystemConfig = {
+                      ...store.fullSystemConfig,
+                      solar: {
+                        ...store.fullSystemConfig.solar,
+                        totalCapacityKw: siteConfig.pvCapacity,
+                      },
+                      battery: {
+                        ...store.fullSystemConfig.battery,
+                        capacityKwh: siteConfig.batteryStorage,
+                      },
+                      inverter: {
+                        ...store.fullSystemConfig.inverter,
+                        capacityKw: siteConfig.peakLoad,
+                      },
+                    };
+                    store.updateFullSystemConfig(nextFullSystemConfig);
+                    store.updateSystemConfig({
+                      solarCapacityKW: siteConfig.pvCapacity,
+                      inverterKW: siteConfig.peakLoad,
+                      batteryCapacityKWh: siteConfig.batteryStorage,
+                    });
+                    store.updateNode('solar', { capacityKW: siteConfig.pvCapacity });
+                    store.updateNode('battery', { capacityKWh: siteConfig.batteryStorage });
+                    
+                    toast({
+                      title: 'Simulation Initialized',
+                      description: `Microgrid initialized at ${loc.displayName} with ${siteConfig.pvCapacity} kWp PV capacity.`,
+                    });
+                    
+                    setHasSetupLocation(true);
+                  } catch (err) {
+                    console.error('[Onboarding] Failed to initialize location details:', err);
+                    toast({
+                      title: 'Initialization Failed',
+                      description: 'Could not commit location details to your profile. Please try again.',
+                      variant: 'destructive',
+                    });
+                  }
+                }}
+              />
+            </div>
           </div>
         </div>
+
+        {/* Footer */}
+        <footer style={{ zIndex: 10, textAlign: 'center', padding: 14, borderTop: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: 12, background: 'var(--bg-secondary)' }}>
+          © {new Date().getFullYear()} SafariCharge · Secure access for clean energy professionals
+        </footer>
       </div>
     );
   }
