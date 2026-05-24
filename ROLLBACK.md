@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 244 | `rollback/feat-implement-secure-client-side-sign-2026-05-24-3434083` | `3434083` | feat: implement secure client-side sign-out in both standard and admin sidebars (2f +56/-2) | 2026-05-24 |
 | 243 | `rollback/feat-completely-remove-unauthenticated-2026-05-24-5b27e5b` | `5b27e5b` | feat: completely remove unauthenticated demo access and enforce login (3f +16/-36) | 2026-05-24 |
 | 242 | `rollback/feat-secure-multi-admin-sidebar-consol-2026-05-24-a3218a3` | `a3218a3` | feat: secure multi-admin sidebar console toggle and seeder (5f +103/-36) | 2026-05-24 |
 | 241 | `rollback/fix-resolve-login-redirect-freeze-usin-2026-05-24-d915e3b` | `d915e3b` | fix: resolve login redirect freeze using window.location.assign (1f +2/-2) | 2026-05-24 |
@@ -2530,6 +2531,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat: completely remove unauthenticated demo access and enforce login
 - **Date**: 2026-05-24
 - **Changed**: 3 file(s), +16/-36 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #244 — `rollback/feat-implement-secure-client-side-sign-2026-05-24-3434083`
+
+- **Branch**: `rollback/feat-implement-secure-client-side-sign-2026-05-24-3434083`
+- **Commit**: `34340832b03ce23565be7cd7d272d35394e65bee`
+- **Subject**: feat: implement secure client-side sign-out in both standard and admin sidebars
+- **Date**: 2026-05-24
+- **Changed**: 2 file(s), +56/-2 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
