@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 249 | `rollback/feat-split-brand-logo-letters-into-hig-2026-05-24-3ab285e` | `3ab285e` | feat: split brand logo letters into highly responsive vector HTML and introduce inline dashboard site-setup location onboarding (3f +381/-37) | 2026-05-24 |
 | 248 | `rollback/feat-replace-brand-logo-and-favicon-wi-2026-05-24-ebac310` | `ebac310` | feat: replace brand logo and favicon with new infinity loop assets (8f +6/-6) | 2026-05-24 |
 | 247 | `rollback/feat-replace-logo-with-simplified-flat-2026-05-24-7fa8a0c` | `7fa8a0c` | feat: replace logo with simplified flat transparent SVG giraffe mark (1f +34/-51) | 2026-05-24 |
 | 246 | `rollback/feat-add-configuration-and-version-fil-2026-05-24-6af4785` | `6af4785` | feat: add configuration and version files for Supabase integration (10f +15/-0) | 2026-05-24 |
@@ -2585,6 +2586,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat: replace brand logo and favicon with new infinity loop assets
 - **Date**: 2026-05-24
 - **Changed**: 8 file(s), +6/-6 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #249 — `rollback/feat-split-brand-logo-letters-into-hig-2026-05-24-3ab285e`
+
+- **Branch**: `rollback/feat-split-brand-logo-letters-into-hig-2026-05-24-3ab285e`
+- **Commit**: `3ab285e8ac4ccbee825288e69ef378945c8c7318`
+- **Subject**: feat: split brand logo letters into highly responsive vector HTML and introduce inline dashboard site-setup location onboarding
+- **Date**: 2026-05-24
+- **Changed**: 3 file(s), +381/-37 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
