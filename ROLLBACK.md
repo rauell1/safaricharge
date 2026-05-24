@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 254 | `rollback/fix-eliminate-blocking-null-state-that-2026-05-24-b49e610` | `b49e610` | fix: eliminate blocking null state that made dashboard buttons unclickable (1f +6/-13) | 2026-05-24 |
 | 253 | `rollback/fix-restore-semantic-max-w-widths-brok-2026-05-24-2b14c2f` | `2b14c2f` | fix: restore semantic max-w-* widths broken by Tailwind v4 + custom spacing (4f +58/-14) | 2026-05-24 |
 | 252 | `rollback/fix-restore-horizontal-layout-by-follo-2026-05-24-171861d` | `171861d` | fix: restore horizontal layout by following standard shadcn sidebar pattern (1f +40/-50) | 2026-05-24 |
 | 251 | `rollback/merge-pull-request-261-from-rauell1-co-2026-05-24-bf02016` | `bf02016` | Merge pull request #261 from rauell1/copilot/fix-wrapper-issue (4f +57/-3) | 2026-05-24 |
@@ -2640,6 +2641,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix: restore semantic max-w-* widths broken by Tailwind v4 + custom spacing
 - **Date**: 2026-05-24
 - **Changed**: 4 file(s), +58/-14 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #254 — `rollback/fix-eliminate-blocking-null-state-that-2026-05-24-b49e610`
+
+- **Branch**: `rollback/fix-eliminate-blocking-null-state-that-2026-05-24-b49e610`
+- **Commit**: `b49e61018574189b07746b9189e1df33819db480`
+- **Subject**: fix: eliminate blocking null state that made dashboard buttons unclickable
+- **Date**: 2026-05-24
+- **Changed**: 1 file(s), +6/-13 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
