@@ -249,16 +249,27 @@ export default function LandingPage() {
               }}
             >
               <Activity className="w-3.5 h-3.5" />
-              Dashboard
+              Demo
             </Link>
             <Link
-              href="/demo"
+              href="/login"
+              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors"
+              style={{
+                color: 'var(--site-nav-link)',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--battery)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-nav-link)'; }}
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/signup"
               className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-1.5 rounded-lg transition-colors"
               style={{ background: 'var(--battery)', color: '#fff' }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--battery-bright)'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--battery)'; }}
             >
-              Open app <ArrowRight className="w-3.5 h-3.5" />
+              Get Started <ArrowRight className="w-3.5 h-3.5" />
             </Link>
             {/* Mobile hamburger */}
             <button
@@ -293,14 +304,30 @@ export default function LandingPage() {
                 {item.label}
               </a>
             ))}
-            <div className="mt-2 pt-3" style={{ borderTop: '1px solid var(--site-page-border)' }}>
+            <div className="mt-2 pt-3 flex flex-col gap-2" style={{ borderTop: '1px solid var(--site-page-border)' }}>
               <Link
                 href="/demo"
+                className="flex items-center justify-center gap-1.5 text-sm font-medium px-4 py-2 rounded-xl transition-colors"
+                style={{ color: 'var(--site-nav-link)', border: '1px solid var(--site-page-border)' }}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Activity className="w-3.5 h-3.5" /> Try Demo
+              </Link>
+              <Link
+                href="/login"
+                className="flex items-center justify-center gap-1.5 text-sm font-medium px-4 py-2 rounded-xl transition-colors"
+                style={{ color: 'var(--site-nav-link)', border: '1px solid var(--site-page-border)' }}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/signup"
                 className="flex items-center justify-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl text-white transition-colors"
                 style={{ background: 'var(--battery)' }}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Open app <ArrowRight className="w-3.5 h-3.5" />
+                Get Started <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </div>
@@ -395,8 +422,8 @@ export default function LandingPage() {
 
           <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 mb-14">
             <Link
-              href="/demo"
-              aria-label="Open demo dashboard"
+              href="/dashboard"
+              aria-label="Access the application"
               className="group inline-flex items-center gap-2 font-semibold text-sm px-7 py-3.5 rounded-xl text-white transition-all"
               style={{
                 background: 'var(--battery)',
@@ -411,10 +438,11 @@ export default function LandingPage() {
                 (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 0 40px rgba(16,185,129,0.3)';
               }}
             >
-              Open dashboard <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+              Go to App <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
-            <a
-              href="#features"
+            <Link
+              href="/demo"
+              aria-label="Open demo dashboard"
               className="group inline-flex items-center gap-2 text-sm px-6 py-3.5 rounded-xl transition-colors"
               style={{
                 color: 'var(--site-page-muted)',
@@ -431,7 +459,22 @@ export default function LandingPage() {
                 (e.currentTarget as HTMLAnchorElement).style.background = 'transparent';
               }}
             >
-              See features <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+              Try Interactive Demo
+            </Link>
+            <a
+              href="#features"
+              className="group inline-flex items-center gap-2 text-sm px-5 py-3.5 transition-colors"
+              style={{
+                color: 'var(--site-page-muted)',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-page-fg)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-page-muted)';
+              }}
+            >
+              Learn more <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
             </a>
           </div>
 
@@ -696,7 +739,7 @@ export default function LandingPage() {
               (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 0 40px rgba(16,185,129,0.28)';
             }}
           >
-            Open dashboard <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+            Try Demo Dashboard <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
       </section>
@@ -872,7 +915,7 @@ export default function LandingPage() {
             maximise solar yield.
           </p>
           <Link
-            href="/demo"
+            href="/dashboard"
             className="group inline-flex items-center gap-2 font-semibold px-9 py-4 rounded-xl text-white transition-all"
             style={{
               background: 'var(--battery)',
@@ -888,7 +931,7 @@ export default function LandingPage() {
               (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 0 48px rgba(16,185,129,0.3)';
             }}
           >
-            Open dashboard <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+            Get Started Now <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
       </section>
