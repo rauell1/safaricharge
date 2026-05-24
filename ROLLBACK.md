@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 229 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-24-d7497cc` | `d7497cc` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-05-24 |
 | 228 | `rollback/feat-simplify-registration-by-removing-2026-05-24-257e25b` | `257e25b` | feat: simplify registration by removing site details and enable auto-seeding of admin email (5f +121/-75) | 2026-05-24 |
 | 227 | `rollback/feat-enforce-email-confirmation-checks-2026-05-24-f2ed12c` | `f2ed12c` | feat: enforce email confirmation checks for routing and authentication (4f +11/-3) | 2026-05-24 |
 | 226 | `rollback/fix-add-vercel-environment-naming-fall-2026-05-24-bd70b8e` | `bd70b8e` | fix: add Vercel environment naming fallbacks for Supabase client (6f +13/-13) | 2026-05-24 |
@@ -2365,6 +2366,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat: simplify registration by removing site details and enable auto-seeding of admin email
 - **Date**: 2026-05-24
 - **Changed**: 5 file(s), +121/-75 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #229 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-24-d7497cc`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-24-d7497cc`
+- **Commit**: `d7497ccd01823e27d706ba2262e1eb196939e7a9`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-05-24
+- **Changed**: 1 file(s), +1/-1 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
