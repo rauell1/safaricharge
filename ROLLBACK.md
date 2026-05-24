@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 233 | `rollback/feat-remove-login-system-redirect-unau-2026-05-24-4fee87f` | `4fee87f` | feat: remove login system; redirect unauthenticated users to /landing (18f +14/-997) | 2026-05-24 |
 | 232 | `rollback/merge-pull-request-259-from-rauell1-co-2026-05-24-8e2dade` | `8e2dade` | Merge pull request #259 from rauell1/copilot/fix-middleware-proxy-issue (2f +64/-97) | 2026-05-24 |
 | 231 | `rollback/feat-security-audit-log-org-scoping-au-2026-05-24-2137ca1` | `2137ca1` | feat(security): audit log, org scoping, auth middleware, and RBAC (5f +569/-2) | 2026-05-24 |
 | 230 | `rollback/fix-concurrency-atomic-simulation-save-2026-05-24-b42c555` | `b42c555` | fix(concurrency): atomic simulation saves, scenario rollback, and cache race (4f +436/-221) | 2026-05-24 |
@@ -2409,6 +2410,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: Merge pull request #259 from rauell1/copilot/fix-middleware-proxy-issue
 - **Date**: 2026-05-24
 - **Changed**: 2 file(s), +64/-97 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #233 — `rollback/feat-remove-login-system-redirect-unau-2026-05-24-4fee87f`
+
+- **Branch**: `rollback/feat-remove-login-system-redirect-unau-2026-05-24-4fee87f`
+- **Commit**: `4fee87f7c0ae4b132c8f1a1344723c11cfcdaf5d`
+- **Subject**: feat: remove login system; redirect unauthenticated users to /landing
+- **Date**: 2026-05-24
+- **Changed**: 18 file(s), +14/-997 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
