@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 251 | `rollback/merge-pull-request-261-from-rauell1-co-2026-05-24-bf02016` | `bf02016` | Merge pull request #261 from rauell1/copilot/fix-wrapper-issue (4f +57/-3) | 2026-05-24 |
 | 250 | `rollback/fix-resolve-horizontal-layout-squeezin-2026-05-24-9fb713a` | `9fb713a` | fix: resolve horizontal layout squeezing on onboarding wizard using fullscreen fixed centering layout (1f +94/-68) | 2026-05-24 |
 | 249 | `rollback/feat-split-brand-logo-letters-into-hig-2026-05-24-3ab285e` | `3ab285e` | feat: split brand logo letters into highly responsive vector HTML and introduce inline dashboard site-setup location onboarding (3f +381/-37) | 2026-05-24 |
 | 248 | `rollback/feat-replace-brand-logo-and-favicon-wi-2026-05-24-ebac310` | `ebac310` | feat: replace brand logo and favicon with new infinity loop assets (8f +6/-6) | 2026-05-24 |
@@ -2607,6 +2608,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix: resolve horizontal layout squeezing on onboarding wizard using fullscreen fixed centering layout
 - **Date**: 2026-05-24
 - **Changed**: 1 file(s), +94/-68 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #251 — `rollback/merge-pull-request-261-from-rauell1-co-2026-05-24-bf02016`
+
+- **Branch**: `rollback/merge-pull-request-261-from-rauell1-co-2026-05-24-bf02016`
+- **Commit**: `bf02016b46ea8fdfc86fc82e4255d9cc7f9c0441`
+- **Subject**: Merge pull request #261 from rauell1/copilot/fix-wrapper-issue
+- **Date**: 2026-05-24
+- **Changed**: 4 file(s), +57/-3 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
