@@ -225,9 +225,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  if (pathname.startsWith('/dashboard') && isAdmin) {
-    return NextResponse.redirect(new URL('/admin', request.url))
-  }
+
 
   // Touch the TTL cookie so active users never get logged out mid-session.
   supabaseResponse.cookies.set(SESSION_TOUCH_COOKIE, String(now), {
