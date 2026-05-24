@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 237 | `rollback/chore-remove-temporary-database-cleari-2026-05-24-e716900` | `e716900` | chore: remove temporary database clearing endpoint for security (1f +0/-50) | 2026-05-24 |
 | 236 | `rollback/feat-resolve-edge-middleware-randomuui-2026-05-24-bdbbc47` | `bdbbc47` | feat: resolve edge middleware randomUUID crash, add admin landing redirection link, implement site config loading and simulation run saving (5f +292/-9) | 2026-05-24 |
 | 235 | `rollback/feat-implement-login-sign-up-and-app-l-2026-05-24-6d61176` | `6d61176` | feat: implement login, sign-up, and app links on the landing page (1f +57/-14) | 2026-05-24 |
 | 234 | `rollback/feat-restore-login-and-signup-portals-2026-05-24-03e6495` | `03e6495` | feat: restore login and signup portals with admin auto-redirection (5f +738/-4) | 2026-05-24 |
@@ -2453,6 +2454,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat: resolve edge middleware randomUUID crash, add admin landing redirection link, implement site config loading and simulation run saving
 - **Date**: 2026-05-24
 - **Changed**: 5 file(s), +292/-9 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #237 — `rollback/chore-remove-temporary-database-cleari-2026-05-24-e716900`
+
+- **Branch**: `rollback/chore-remove-temporary-database-cleari-2026-05-24-e716900`
+- **Commit**: `e7169000a8b4aeb826009537d3b567b6bd6f563c`
+- **Subject**: chore: remove temporary database clearing endpoint for security
+- **Date**: 2026-05-24
+- **Changed**: 1 file(s), +0/-50 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
