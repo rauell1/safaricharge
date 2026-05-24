@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 230 | `rollback/fix-concurrency-atomic-simulation-save-2026-05-24-b42c555` | `b42c555` | fix(concurrency): atomic simulation saves, scenario rollback, and cache race (4f +436/-221) | 2026-05-24 |
 | 229 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-24-d7497cc` | `d7497cc` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-05-24 |
 | 228 | `rollback/feat-simplify-registration-by-removing-2026-05-24-257e25b` | `257e25b` | feat: simplify registration by removing site details and enable auto-seeding of admin email (5f +121/-75) | 2026-05-24 |
 | 227 | `rollback/feat-enforce-email-confirmation-checks-2026-05-24-f2ed12c` | `f2ed12c` | feat: enforce email confirmation checks for routing and authentication (4f +11/-3) | 2026-05-24 |
@@ -2376,6 +2377,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-05-24
 - **Changed**: 1 file(s), +1/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #230 — `rollback/fix-concurrency-atomic-simulation-save-2026-05-24-b42c555`
+
+- **Branch**: `rollback/fix-concurrency-atomic-simulation-save-2026-05-24-b42c555`
+- **Commit**: `b42c5552555407af0cb8ba280f0fc196dcc2121f`
+- **Subject**: fix(concurrency): atomic simulation saves, scenario rollback, and cache race
+- **Date**: 2026-05-24
+- **Changed**: 4 file(s), +436/-221 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
