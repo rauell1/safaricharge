@@ -4,6 +4,7 @@ import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
 
 import { cn } from "@/lib/utils"
+import { useModalRoot } from "@/hooks/useModalRoot"
 
 function Drawer({
   ...props
@@ -18,9 +19,18 @@ function DrawerTrigger({
 }
 
 function DrawerPortal({
+  container: containerProp,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Portal>) {
-  return <DrawerPrimitive.Portal data-slot="drawer-portal" {...props} />
+  const modalRoot = useModalRoot()
+  const container = containerProp ?? modalRoot ?? undefined
+  return (
+    <DrawerPrimitive.Portal
+      data-slot="drawer-portal"
+      container={container}
+      {...props}
+    />
+  )
 }
 
 function DrawerClose({
