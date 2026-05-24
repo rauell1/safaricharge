@@ -117,6 +117,245 @@ const KEROSENE_DISPLACEMENT_L_PER_KWH = 0.8;
 const KENYA_DIESEL_BACKUP_CO2_KG_PER_KWH = 0.4;
 // ─────────────────────────────────────────────────────────────────────────────
 
+function DemoLocationOnboardingWizard({
+  onComplete,
+}: {
+  onComplete: (loc: LocationOption, siteConfig: {
+    siteName: string;
+    siteType: string;
+    gridConnection: string;
+    location: { city: string; lat: number; lon: number };
+    pvCapacity: number;
+    batteryStorage: number;
+    peakLoad: number;
+    dailyEnergy: number;
+    evChargers: number;
+  }) => void;
+}) {
+  const [siteName, setSiteName] = useState('SafariCharge Solar Microgrid');
+  const [gridConnection, setGridConnection] = useState<'On-Grid' | 'Off-Grid' | 'Hybrid'>('Hybrid');
+  const [selectedLoc, setSelectedLoc] = useState<LocationOption>(
+    AFRICA_LOCATIONS.find(l => l.name === 'Nairobi') ?? AFRICA_LOCATIONS[0]
+  );
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Custom hardware overrides
+  const [pvCapacity, setPvCapacity] = useState(15);
+  const [batteryStorage, setBatteryStorage] = useState(24);
+  const [peakLoad, setPeakLoad] = useState(10);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const filteredLocations = useMemo(() => {
+    if (!searchQuery) {
+      // Return top Kenyan presets by default to keep it focused
+      return AFRICA_LOCATIONS.filter(l => 
+        ['nairobi', 'mombasa', 'kisumu', 'nakuru', 'eldoret', 'turkana (lodwar)'].includes(l.name.toLowerCase())
+      );
+    }
+    const q = searchQuery.toLowerCase();
+    return AFRICA_LOCATIONS.filter(l => 
+      l.displayName.toLowerCase().includes(q) || 
+      l.countyNote.toLowerCase().includes(q)
+    ).slice(0, 6);
+  }, [searchQuery]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onComplete(selectedLoc, {
+      siteName,
+      siteType: 'Commercial',
+      gridConnection,
+      location: {
+        city: selectedLoc.name,
+        lat: selectedLoc.latitude,
+        lon: selectedLoc.longitude,
+      },
+      pvCapacity,
+      batteryStorage,
+      peakLoad,
+      dailyEnergy: Math.round(peakLoad * 4.5),
+      evChargers: 2,
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="space-y-4">
+        {/* Site Name & Grid Connection */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold tracking-wider text-[var(--text-secondary)] uppercase">
+              Microgrid Name
+            </label>
+            <input
+              type="text"
+              required
+              value={siteName}
+              onChange={(e) => setSiteName(e.target.value)}
+              className="w-full bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl px-4 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#22c55e] transition-colors"
+              placeholder="e.g. Nairobi Residential Microgrid"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold tracking-wider text-[var(--text-secondary)] uppercase">
+              Operating Mode
+            </label>
+            <div className="flex bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl p-1 gap-1">
+              {(['On-Grid', 'Off-Grid', 'Hybrid'] as const).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setGridConnection(mode)}
+                  className={`flex-1 text-[11px] font-bold py-1.5 rounded-lg transition-all ${
+                    gridConnection === mode
+                      ? 'bg-[#22c55e] text-white shadow-md'
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  {mode}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Location Picker */}
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-bold tracking-wider text-[var(--text-secondary)] uppercase block">
+            Target Location (NASA Irradiance Area)
+          </label>
+          <div className="relative">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-secondary)]" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl pl-10 pr-4 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[#22c55e] transition-colors"
+              placeholder="Search major African cities (e.g. Mombasa, Cairo, Dakar)..."
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto pr-1">
+            {filteredLocations.map((loc) => {
+              const isSelected = selectedLoc.name === loc.name && selectedLoc.county === loc.county;
+              return (
+                <button
+                  key={loc.displayName}
+                  type="button"
+                  onClick={() => setSelectedLoc(loc)}
+                  className={`flex flex-col text-left p-3 rounded-xl border transition-all ${
+                    isSelected
+                      ? 'bg-emerald-500/10 border-[#22c55e] text-white shadow-sm'
+                      : 'bg-[var(--bg-secondary)]/30 border-[var(--border)] hover:border-slate-500 text-[var(--text-secondary)]'
+                  }`}
+                >
+                  <span className="text-xs font-bold text-[var(--text-primary)]">{loc.displayName}</span>
+                  <span className="text-[10px] opacity-75 mt-0.5">{loc.countyNote.split(' — ')[0]}</span>
+                  <span className="text-[10px] font-bold text-[#22c55e] mt-1.5 flex items-center gap-1">
+                    <Sun className="h-3 w-3 inline" /> {loc.annualAvgSunHours.toFixed(2)} hr/day sun
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Selected Location Summary Panel */}
+        <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-3 flex items-start gap-3">
+          <Info className="h-4 w-4 text-[#22c55e] shrink-0 mt-0.5 animate-pulse" />
+          <div className="text-xs space-y-1 text-[var(--text-secondary)]">
+            <p>
+              Selected Location: <strong className="text-[var(--text-primary)]">{selectedLoc.displayName}</strong> 
+              {` (Coordinates: ${selectedLoc.latitude.toFixed(2)}°N, ${selectedLoc.longitude.toFixed(2)}°E)`}
+            </p>
+            <p className="opacity-80 leading-relaxed text-[11px]">
+              {selectedLoc.countyNote}
+            </p>
+          </div>
+        </div>
+
+        {/* Hardware Preset Customization */}
+        <div className="border border-[var(--border)] rounded-xl p-3 bg-[var(--bg-secondary)]/20">
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="flex items-center justify-between w-full text-xs font-bold text-[var(--text-primary)]"
+          >
+            <span className="flex items-center gap-1.5">
+              <SlidersHorizontal className="h-3.5 w-3.5 text-[#22c55e]" />
+              Advanced Microgrid Sizing Configuration
+            </span>
+            <span className="text-[10px] text-[#22c55e] hover:underline">
+              {showAdvanced ? 'Hide Capacity Config' : 'Show Capacity Config'}
+            </span>
+          </button>
+          
+          {showAdvanced && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3 pt-3 border-t border-[var(--border)]">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase">
+                  PV Solar (kWp)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="500"
+                  value={pvCapacity}
+                  onChange={(e) => setPvCapacity(Number(e.target.value))}
+                  className="w-full bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[#22c55e]"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase">
+                  Battery Storage (kWh)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="1000"
+                  value={batteryStorage}
+                  onChange={(e) => setBatteryStorage(Number(e.target.value))}
+                  className="w-full bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[#22c55e]"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-[var(--text-secondary)] uppercase">
+                  Peak Load (kW)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="200"
+                  value={peakLoad}
+                  onChange={(e) => setPeakLoad(Number(e.target.value))}
+                  className="w-full bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[#22c55e]"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-bold py-3 rounded-xl text-sm transition-all shadow-lg hover:shadow-emerald-500/10 flex items-center justify-center gap-2 group"
+      >
+        <span>Initialize Simulation & Launch Dashboard</span>
+        <CheckCircle2 className="h-4 w-4 transition-transform group-hover:scale-110" />
+      </button>
+    </form>
+  );
+}
+
 export default function ModularDashboardDemo({
   initialSection = 'dashboard',
 }: { initialSection?: DashboardSection } = {}) {
@@ -139,6 +378,7 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
     projectYears: 20,
   });
 
+  const [hasSetupLocation, setHasSetupLocation] = useState<boolean | null>(null);
   const [activeLocation, setActiveLocation] = useState<LocationOption>(DEFAULT_LOCATION);
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [locationSearch, setLocationSearch] = useState('');
@@ -229,9 +469,13 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
             title: 'Site details loaded',
             description: `Configuration loaded for "${saved.siteName}" (${saved.pvCapacity} kWp PV / ${saved.batteryStorage} kWh Storage).`,
           });
+          setHasSetupLocation(true);
+        } else {
+          setHasSetupLocation(false);
         }
       } catch (err) {
         console.error('[DemoPage] Failed to load site configuration preference:', err);
+        setHasSetupLocation(false);
       }
     })();
   }, [toast]);
@@ -286,6 +530,94 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
     });
     })();
   }, [toast]);
+
+  if (hasSetupLocation === null) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-[var(--bg-secondary)] text-[var(--text-primary)]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#22c55e] border-t-transparent" />
+          <p className="text-sm font-medium text-[var(--text-secondary)]">Checking microgrid site profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (hasSetupLocation === false) {
+    return (
+      <div className="flex min-h-screen w-screen items-center justify-center bg-[var(--bg-secondary)] text-[var(--text-primary)] p-4 md:p-8">
+        <div className="relative w-full max-w-xl bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl shadow-2xl p-6 md:p-8 overflow-hidden backdrop-blur-xl bg-opacity-70">
+          <div className="absolute top-0 right-0 w-[250px] h-[250px] bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-[150px] h-[150px] bg-blue-500/5 rounded-full blur-[60px] pointer-events-none" />
+          
+          <div className="relative z-10 space-y-6">
+            <div className="flex flex-col items-center text-center space-y-3">
+              <div className="p-3 bg-emerald-500/10 rounded-full text-[#22c55e]">
+                <MapPin className="h-7 w-7 animate-bounce" />
+              </div>
+              <h2 className="text-xl md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                Initialize Microgrid Location
+              </h2>
+              <p className="text-xs md:text-sm text-[var(--text-secondary)] max-w-sm">
+                Every SafariCharge microgrid requires precise coordinates to model temperature degradation, solar irradiance curves, and local utility tariff configurations.
+              </p>
+            </div>
+
+            <DemoLocationOnboardingWizard 
+              onComplete={async (loc, siteConfig) => {
+                try {
+                  const { setUserPreference } = await import('@/lib/supabase-db');
+                  await setUserPreference('sc_site_config', siteConfig);
+                  
+                  // Update local activeLocation
+                  setActiveLocation(loc);
+                  
+                  // Sync energySystemStore
+                  const store = useEnergySystemStore.getState();
+                  const nextFullSystemConfig = {
+                    ...store.fullSystemConfig,
+                    solar: {
+                      ...store.fullSystemConfig.solar,
+                      totalCapacityKw: siteConfig.pvCapacity,
+                    },
+                    battery: {
+                      ...store.fullSystemConfig.battery,
+                      capacityKwh: siteConfig.batteryStorage,
+                    },
+                    inverter: {
+                      ...store.fullSystemConfig.inverter,
+                      capacityKw: siteConfig.peakLoad,
+                    },
+                  };
+                  store.updateFullSystemConfig(nextFullSystemConfig);
+                  store.updateSystemConfig({
+                    solarCapacityKW: siteConfig.pvCapacity,
+                    inverterKW: siteConfig.peakLoad,
+                    batteryCapacityKWh: siteConfig.batteryStorage,
+                  });
+                  store.updateNode('solar', { capacityKW: siteConfig.pvCapacity });
+                  store.updateNode('battery', { capacityKWh: siteConfig.batteryStorage });
+                  
+                  toast({
+                    title: 'Simulation Initialized',
+                    description: `Microgrid initialized at ${loc.displayName} with ${siteConfig.pvCapacity} kWp PV capacity.`,
+                  });
+                  
+                  setHasSetupLocation(true);
+                } catch (err) {
+                  console.error('[Onboarding] Failed to initialize location details:', err);
+                  toast({
+                    title: 'Initialization Failed',
+                    description: 'Could not commit location details to your profile. Please try again.',
+                    variant: 'destructive',
+                  });
+                }
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

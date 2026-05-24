@@ -327,7 +327,7 @@ export function DashboardSidebar({
       {/* Logo */}
       <SidebarHeader className="px-4 py-5 border-b border-[var(--border)] bg-[var(--bg-card)]">
         <div className="flex items-center justify-center">
-          <BrandLogo showLabel={false} href="/landing" />
+          <BrandLogo showLabel={true} href="/landing" />
         </div>
       </SidebarHeader>
 

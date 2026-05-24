@@ -10,27 +10,39 @@ interface BrandLogoProps {
 
 export function BrandLogo({
   href = '/landing',
-  showLabel = false,
+  showLabel = true,
   size = 'md',
   className = '',
 }: BrandLogoProps) {
-  const wrapperClassName = size === 'sm' ? 'h-8 w-[118px]' : 'h-10 w-[140px]';
+  const iconSize = size === 'sm' ? 24 : 32;
+  const textSizeClass = size === 'sm' ? 'text-base' : 'text-xl';
+  const gapClass = size === 'sm' ? 'gap-1.5' : 'gap-2';
 
   return (
-    <Link href={href} className={`inline-flex items-center gap-2.5 ${className}`}>
-      <span className={`relative shrink-0 ${wrapperClassName}`}>
+    <Link 
+      href={href} 
+      className={`inline-flex items-center select-none group focus:outline-none ${gapClass} ${className}`}
+    >
+      <span className="relative shrink-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
         <Image
-          src="/logo.png"
-          alt="SafariCharge logo"
-          fill
+          src="/favicon.png"
+          alt="SafariCharge Icon"
+          width={iconSize}
+          height={iconSize}
           priority
-          sizes={size === 'sm' ? '118px' : '140px'}
           className="object-contain"
         />
       </span>
       {showLabel ? (
-        <span className="font-semibold text-sm tracking-tight text-[var(--text-primary)]">SafariCharge</span>
+        <span className={`${textSizeClass} font-bold tracking-tight flex items-center leading-none select-none font-inter`}>
+          <span className="text-[var(--text-primary)] opacity-85 transition-opacity duration-200 group-hover:opacity-100">
+            Safari
+          </span>
+          <span className="text-[#22c55e] opacity-100 font-extrabold ml-[1px]">
+            Charge
+          </span>
+        </span>
       ) : null}
     </Link>
   );
-}
+}
