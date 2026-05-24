@@ -1,5 +1,4 @@
 import { createServerClient } from '@supabase/ssr'
-import { randomUUID } from 'crypto'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
@@ -52,7 +51,7 @@ export async function proxy(request: NextRequest) {
   const isAuthRoute = pathname.startsWith('/auth/')
 
   if (isApiRoute || isAuthRoute) {
-    const requestId = randomUUID()
+    const requestId = crypto.randomUUID()
     const requestHeaders = new Headers(request.headers)
     requestHeaders.set('x-request-id', requestId)
 

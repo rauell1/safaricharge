@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import {
   Users, FolderOpen, Activity, MessageSquare, RefreshCw,
   TrendingUp, Zap, Database, Shield, Clock, ChevronRight,
@@ -113,6 +114,12 @@ export default function AdminDashboard() {
                 <Clock size={12} /> Updated {timeAgo(lastRefresh.toISOString())}
               </span>
             )}
+            <Link
+              href="/landing"
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)', color: '#9ca3af', fontSize: 13, fontWeight: 500, cursor: 'pointer', textDecoration: 'none' }}
+            >
+              Back to Main Site
+            </Link>
             <button
               onClick={fetchStats}
               disabled={loading}

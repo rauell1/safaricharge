@@ -159,6 +159,83 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
     }
   }, [activeSection, router]);
 
+  // Hydrate site config preference if saved
+  useEffect(() => {
+    (async () => {
+      try {
+        const { getUserPreference } = await import('@/lib/supabase-db');
+        const saved = await getUserPreference<{
+          siteName: string;
+          siteType: string;
+          gridConnection: string;
+          location: { city: string; lat: number; lon: number } | null;
+          pvCapacity: number;
+          batteryStorage: number;
+          peakLoad: number;
+          dailyEnergy: number;
+          evChargers: number;
+        }>('sc_site_config');
+
+        if (saved) {
+          // If we found a site config, update location
+          if (saved.location) {
+            const matchedLocation = AFRICA_LOCATIONS.find(
+              (l) => l.name.toLowerCase() === saved.location?.city.toLowerCase()
+            );
+            if (matchedLocation) {
+              setActiveLocation(matchedLocation);
+            } else {
+              setActiveLocation({
+                name: saved.location.city,
+                displayName: `${saved.location.city}, Kenya`,
+                county: 'Kenya',
+                latitude: saved.location.lat,
+                longitude: saved.location.lon,
+                annualAvgSunHours: 5.4,
+                isKosapTarget: false,
+                electrificationRatePct: null,
+                countyNote: 'Custom registered site location.',
+              });
+            }
+          }
+
+          // Update store configuration
+          const store = useEnergySystemStore.getState();
+          const nextFullSystemConfig = {
+            ...store.fullSystemConfig,
+            solar: {
+              ...store.fullSystemConfig.solar,
+              totalCapacityKw: saved.pvCapacity || 10,
+            },
+            battery: {
+              ...store.fullSystemConfig.battery,
+              capacityKwh: saved.batteryStorage || 15,
+            },
+            inverter: {
+              ...store.fullSystemConfig.inverter,
+              capacityKw: saved.peakLoad || 10,
+            },
+          };
+          store.updateFullSystemConfig(nextFullSystemConfig);
+          store.updateSystemConfig({
+            solarCapacityKW: saved.pvCapacity || 10,
+            inverterKW: saved.peakLoad || 10,
+            batteryCapacityKWh: saved.batteryStorage || 15,
+          });
+          store.updateNode('solar', { capacityKW: saved.pvCapacity || 10 });
+          store.updateNode('battery', { capacityKWh: saved.batteryStorage || 15 });
+          
+          toast({
+            title: 'Site details loaded',
+            description: `Configuration loaded for "${saved.siteName}" (${saved.pvCapacity} kWp PV / ${saved.batteryStorage} kWh Storage).`,
+          });
+        }
+      } catch (err) {
+        console.error('[DemoPage] Failed to load site configuration preference:', err);
+      }
+    })();
+  }, [toast]);
+
   useEffect(() => {
     (async () => {
       const localRaw = localStorage.getItem(SIZING_SIMULATOR_STORAGE_KEY);
@@ -929,17 +1006,94 @@ function DemoDashboardView({
 
 function DemoSimulationView({ onNavigateSection }: { onNavigateSection: (section: DashboardSection) => void }) {
   useDemoEnergySystem(true);
+  
+  const [savingRun, setSavingRun] = useState(false);
+  const { toast } = useToast();
+  
+  const store = useEnergySystemStore();
+  const minuteData = store.minuteData;
+  const systemConfig = store.systemConfig;
+
+  const handleSaveRun = async () => {
+    if (minuteData.length === 0) {
+      toast({ title: 'No Data', description: 'Run the simulation first before saving.', variant: 'destructive' });
+      return;
+    }
+    setSavingRun(true);
+    try {
+      const { saveSimulationRun } = await import('@/lib/supabase-db');
+      
+      // Calculate summary metrics
+      const totalSolarKwh = minuteData.reduce((sum, d) => sum + (d.solarKW || 0) / 60, 0);
+      const totalLoadKwh = minuteData.reduce((sum, d) => sum + (d.homeLoadKW || 0) / 60, 0);
+      const totalSavingsKes = minuteData.reduce((sum, d) => sum + (d.savingsKES || 0), 0);
+      
+      const runName = `Sim - ${new Date().toLocaleString()}`;
+      
+      await saveSimulationRun({
+        name: runName,
+        solarCapacityKw: systemConfig.solarCapacityKW,
+        batteryCapacityKwh: systemConfig.batteryCapacityKWh,
+        inverterKw: systemConfig.inverterKW,
+        systemMode: systemConfig.systemMode,
+        summaryJson: {
+          totalSolarKwh,
+          totalLoadKwh,
+          totalSavingsKes,
+          durationMinutes: minuteData.length,
+        },
+        minuteData: minuteData.map(pt => ({
+          ts: pt.timestamp,
+          solarKw: pt.solarKW,
+          homeLoadKw: pt.homeLoadKW,
+          ev1LoadKw: pt.ev1LoadKW ?? 0,
+          ev2LoadKw: pt.ev2LoadKW ?? 0,
+          batteryLevelPct: pt.batteryLevelPct,
+          gridImportKw: pt.gridImportKW,
+          gridExportKw: pt.gridExportKW,
+          savingsKes: pt.savingsKES,
+          tariffRate: pt.tariffRate ?? 22,
+          isPeakTime: pt.isPeakTime ?? false,
+        })),
+      });
+
+      toast({
+        title: 'Simulation saved',
+        description: `Your simulation run "${runName}" has been successfully logged for future reference.`,
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Failed to save',
+        description: err.message || 'Error occurred while saving simulation run.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingRun(false);
+    }
+  };
+
   return (
     <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-[var(--grid-soft)] border border-[var(--grid)]/20 flex items-center justify-center shrink-0">
-            <FlaskConical size={20} className="text-[var(--grid)]" />
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-[var(--grid-soft)] border border-[var(--grid)]/20 flex items-center justify-center shrink-0">
+              <FlaskConical size={20} className="text-[var(--grid)]" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-[var(--text-primary)]">Simulation</h2>
+              <p className="text-sm text-[var(--text-tertiary)]">Physics engine, scenario controls and system visualisation</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-2xl font-bold text-[var(--text-primary)]">Simulation</h2>
-            <p className="text-sm text-[var(--text-tertiary)]">Physics engine, scenario controls and system visualisation</p>
-          </div>
+          <button
+            type="button"
+            onClick={handleSaveRun}
+            disabled={savingRun || minuteData.length === 0}
+            className="inline-flex items-center gap-2 rounded-xl bg-[var(--battery)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--battery-bright)] shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            style={{ cursor: savingRun || minuteData.length === 0 ? 'not-allowed' : 'pointer' }}
+          >
+            {savingRun ? 'Saving Run...' : 'Save Simulation Run'}
+          </button>
         </div>
         <Accordion type="single" collapsible defaultValue="simulation-core" className="rounded-xl border border-[var(--border)] px-4">
           <AccordionItem value="simulation-core">
