@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 246 | `rollback/feat-add-configuration-and-version-fil-2026-05-24-6af4785` | `6af4785` | feat: add configuration and version files for Supabase integration (10f +15/-0) | 2026-05-24 |
 | 245 | `rollback/merge-pull-request-260-from-rauell1-co-2026-05-24-1b896f5` | `1b896f5` | Merge pull request #260 from rauell1/copilot/update-logo-usage-to-brandlogo (5f +3/-4) | 2026-05-24 |
 | 244 | `rollback/feat-implement-secure-client-side-sign-2026-05-24-3434083` | `3434083` | feat: implement secure client-side sign-out in both standard and admin sidebars (2f +56/-2) | 2026-05-24 |
 | 243 | `rollback/feat-completely-remove-unauthenticated-2026-05-24-5b27e5b` | `5b27e5b` | feat: completely remove unauthenticated demo access and enforce login (3f +16/-36) | 2026-05-24 |
@@ -2552,6 +2553,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: Merge pull request #260 from rauell1/copilot/update-logo-usage-to-brandlogo
 - **Date**: 2026-05-24
 - **Changed**: 5 file(s), +3/-4 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #246 — `rollback/feat-add-configuration-and-version-fil-2026-05-24-6af4785`
+
+- **Branch**: `rollback/feat-add-configuration-and-version-fil-2026-05-24-6af4785`
+- **Commit**: `6af47853a54d187a0b7d9b02ced614b8335838a2`
+- **Subject**: feat: add configuration and version files for Supabase integration
+- **Date**: 2026-05-24
+- **Changed**: 10 file(s), +15/-0 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
