@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 240 | `rollback/chore-remove-github-links-from-landing-2026-05-24-b24b26a` | `b24b26a` | chore: remove github links from landing page header and footer (1f +0/-12) | 2026-05-24 |
 | 239 | `rollback/feat-allow-administrative-access-to-mo-2026-05-24-6e5431f` | `6e5431f` | feat: allow administrative access to monitoring dashboard and add Main Site & Monitoring Dashboard buttons to admin console (2f +13/-5) | 2026-05-24 |
 | 238 | `rollback/feat-simplify-login-page-to-remove-app-2026-05-24-586078b` | `586078b` | feat: simplify login page to remove Apple/Google OAuth, integrate forgot password recovery flow, and add self-healing admin password sync (2f +145/-98) | 2026-05-24 |
 | 237 | `rollback/chore-remove-temporary-database-cleari-2026-05-24-e716900` | `e716900` | chore: remove temporary database clearing endpoint for security (1f +0/-50) | 2026-05-24 |
@@ -2486,6 +2487,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat: allow administrative access to monitoring dashboard and add Main Site & Monitoring Dashboard buttons to admin console
 - **Date**: 2026-05-24
 - **Changed**: 2 file(s), +13/-5 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #240 — `rollback/chore-remove-github-links-from-landing-2026-05-24-b24b26a`
+
+- **Branch**: `rollback/chore-remove-github-links-from-landing-2026-05-24-b24b26a`
+- **Commit**: `b24b26a8a7c8bb37bec21ee6a6ccf90d7d8b7673`
+- **Subject**: chore: remove github links from landing page header and footer
+- **Date**: 2026-05-24
+- **Changed**: 1 file(s), +0/-12 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
