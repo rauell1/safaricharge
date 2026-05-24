@@ -15,11 +15,13 @@ import {
   Sun,
   Moon,
   Download,
+  LogOut,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
+import { createClient } from '@/lib/supabase';
 import {
   Sidebar,
   SidebarContent,
@@ -173,6 +175,23 @@ export function DashboardSidebar({
     };
     fetchProfile();
   }, []);
+
+  const handleSignOut = async () => {
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      
+      // Force clear all authentication and session tracking cookies
+      document.cookie = 'sc_last_seen=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'sc_auth_checked_at=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'sc_admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      
+      // Perform full page redirection back to login gateway
+      window.location.assign('/login');
+    } catch (err) {
+      console.error('Failed to sign out:', err);
+    }
+  };
 
   const resolvedActive: DashboardSection = useMemo(() => {
     if (activeSection && activeSection !== 'dashboard') return activeSection;
@@ -386,9 +405,17 @@ export function DashboardSidebar({
         </SidebarGroup>
       </SidebarContent>
 
-      {/* Footer: theme toggle + status */}
+      {/* Footer: theme toggle + status + sign out */}
       <SidebarFooter className="px-4 py-4 border-t border-[var(--border)] bg-[var(--bg-card)] space-y-3">
         <ThemeToggle />
+        <button
+          type="button"
+          onClick={handleSignOut}
+          className="flex w-full items-center gap-2.5 rounded-lg border border-[var(--border)] bg-transparent px-3 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-card-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border-hover)] transition-all duration-150 cursor-pointer"
+        >
+          <LogOut className="h-4 w-4 text-[var(--text-tertiary)]" />
+          Sign Out
+        </button>
         <div className="flex items-center gap-2.5">
           <span className="h-2 w-2 rounded-full shrink-0 status-online bg-[var(--battery)]" />
           <span className="text-xs text-[var(--text-tertiary)]">System Online</span>

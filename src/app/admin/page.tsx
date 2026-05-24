@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import {
   Users, FolderOpen, Activity, MessageSquare, RefreshCw,
-  TrendingUp, Zap, Database, Shield, Clock, ChevronRight,
+  TrendingUp, Zap, Database, Shield, Clock, ChevronRight, LogOut,
 } from 'lucide-react'
+import { createClient } from '@/lib/supabase'
 
 interface AdminStats {
   users: number
@@ -64,6 +65,23 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
+
+  const handleSignOut = async () => {
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      
+      // Force clear all authentication and session tracking cookies
+      document.cookie = 'sc_last_seen=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'sc_auth_checked_at=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie = 'sc_admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      
+      // Perform full page redirection back to login gateway
+      window.location.assign('/login');
+    } catch (err) {
+      console.error('Failed to sign out:', err);
+    }
+  };
 
   const fetchStats = useCallback(async () => {
     setLoading(true)
@@ -137,6 +155,15 @@ export default function AdminDashboard() {
             >
               <RefreshCw size={13} style={loading ? { animation: 'spin 1s linear infinite' } : undefined} />
               Refresh
+            </button>
+            <button
+              onClick={handleSignOut}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.06)', color: '#f87171', fontSize: 13, fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.12)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.35)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.06)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.2)'; }}
+            >
+              <LogOut size={13} />
+              Sign Out
             </button>
           </div>
         </header>
