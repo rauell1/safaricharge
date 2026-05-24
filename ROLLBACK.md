@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 242 | `rollback/feat-secure-multi-admin-sidebar-consol-2026-05-24-a3218a3` | `a3218a3` | feat: secure multi-admin sidebar console toggle and seeder (5f +103/-36) | 2026-05-24 |
 | 241 | `rollback/fix-resolve-login-redirect-freeze-usin-2026-05-24-d915e3b` | `d915e3b` | fix: resolve login redirect freeze using window.location.assign (1f +2/-2) | 2026-05-24 |
 | 240 | `rollback/chore-remove-github-links-from-landing-2026-05-24-b24b26a` | `b24b26a` | chore: remove github links from landing page header and footer (1f +0/-12) | 2026-05-24 |
 | 239 | `rollback/feat-allow-administrative-access-to-mo-2026-05-24-6e5431f` | `6e5431f` | feat: allow administrative access to monitoring dashboard and add Main Site & Monitoring Dashboard buttons to admin console (2f +13/-5) | 2026-05-24 |
@@ -2508,6 +2509,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix: resolve login redirect freeze using window.location.assign
 - **Date**: 2026-05-24
 - **Changed**: 1 file(s), +2/-2 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #242 — `rollback/feat-secure-multi-admin-sidebar-consol-2026-05-24-a3218a3`
+
+- **Branch**: `rollback/feat-secure-multi-admin-sidebar-consol-2026-05-24-a3218a3`
+- **Commit**: `a3218a3dd9fba6d01aa3d51d1da7612039e1f85e`
+- **Subject**: feat: secure multi-admin sidebar console toggle and seeder
+- **Date**: 2026-05-24
+- **Changed**: 5 file(s), +103/-36 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
