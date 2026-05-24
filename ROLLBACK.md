@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 253 | `rollback/fix-restore-semantic-max-w-widths-brok-2026-05-24-2b14c2f` | `2b14c2f` | fix: restore semantic max-w-* widths broken by Tailwind v4 + custom spacing (4f +58/-14) | 2026-05-24 |
 | 252 | `rollback/fix-restore-horizontal-layout-by-follo-2026-05-24-171861d` | `171861d` | fix: restore horizontal layout by following standard shadcn sidebar pattern (1f +40/-50) | 2026-05-24 |
 | 251 | `rollback/merge-pull-request-261-from-rauell1-co-2026-05-24-bf02016` | `bf02016` | Merge pull request #261 from rauell1/copilot/fix-wrapper-issue (4f +57/-3) | 2026-05-24 |
 | 250 | `rollback/fix-resolve-horizontal-layout-squeezin-2026-05-24-9fb713a` | `9fb713a` | fix: resolve horizontal layout squeezing on onboarding wizard using fullscreen fixed centering layout (1f +94/-68) | 2026-05-24 |
@@ -2629,6 +2630,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix: restore horizontal layout by following standard shadcn sidebar pattern
 - **Date**: 2026-05-24
 - **Changed**: 1 file(s), +40/-50 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #253 — `rollback/fix-restore-semantic-max-w-widths-brok-2026-05-24-2b14c2f`
+
+- **Branch**: `rollback/fix-restore-semantic-max-w-widths-brok-2026-05-24-2b14c2f`
+- **Commit**: `2b14c2faa5bbd1967b7cecbc9fc078df4192670c`
+- **Subject**: fix: restore semantic max-w-* widths broken by Tailwind v4 + custom spacing
+- **Date**: 2026-05-24
+- **Changed**: 4 file(s), +58/-14 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
