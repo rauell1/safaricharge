@@ -20,7 +20,7 @@ export function BrandLogo({
     <Link href={href} className={`inline-flex items-center gap-2.5 ${className}`}>
       <span className={`relative shrink-0 ${wrapperClassName}`}>
         <Image
-          src="/logo.png"
+          src="/logo.svg"
           alt="SafariCharge logo"
           fill
           priority
