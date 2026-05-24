@@ -20,12 +20,12 @@ export const metadata: Metadata = {
     "Advanced solar energy simulation, battery management and financial analysis for Nairobi, Kenya.",
   icons: {
     icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon.png", type: "image/png" },
     ],
     apple: [
-      { url: "/apple-touch-icon.svg", type: "image/svg+xml", sizes: "180x180" },
+      { url: "/favicon.png", type: "image/png" },
     ],
-    shortcut: "/favicon.svg",
+    shortcut: "/favicon.png",
   },
   manifest: undefined,
 };
@@ -43,7 +43,7 @@ export default function RootLayout({
     // The overflow guard now lives on .page-shell in globals.css instead.
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="icon" type="image/png" href="/favicon.png" />
         <meta name="theme-color" content="#01696f" />
         <meta name="msapplication-TileColor" content="#01696f" />
       </head>

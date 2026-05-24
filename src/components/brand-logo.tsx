@@ -10,7 +10,7 @@ interface BrandLogoProps {
 
 export function BrandLogo({
   href = '/landing',
-  showLabel = true,
+  showLabel = false,
   size = 'md',
   className = '',
 }: BrandLogoProps) {
@@ -20,7 +20,7 @@ export function BrandLogo({
     <Link href={href} className={`inline-flex items-center gap-2.5 ${className}`}>
       <span className={`relative shrink-0 ${wrapperClassName}`}>
         <Image
-          src="/logo.svg"
+          src="/logo.png"
           alt="SafariCharge logo"
           fill
           priority
