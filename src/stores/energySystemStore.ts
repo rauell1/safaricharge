@@ -164,6 +164,9 @@ export interface SavedScenario {
   id: string;
   name: string;
   createdAt: string;
+  /** DB row version for optimistic-locking conflict detection. Undefined on
+   *  brand-new (not-yet-persisted) scenarios; populated after the first save. */
+  version?: number;
   system: SystemConfigSnapshot;
   finance: FinancialSnapshot;
   performance: PerformanceSnapshot;
@@ -252,6 +255,11 @@ interface EnergySystemState {
 
   // Scenarios
   scenarios: SavedScenario[];
+  /** true while any scenario write (save/delete/rename) is in-flight */
+  isSyncingScenarios: boolean;
+  /** Last sync error message, or null when clean. Clear with clearScenarioSyncError(). */
+  scenarioSyncError: string | null;
+  clearScenarioSyncError: () => void;
   /** Load scenarios from Supabase and replace local state. No-ops if not logged in. */
   loadScenarios: () => Promise<void>;
   saveScenario: (
@@ -382,6 +390,10 @@ export const useEnergySystemStore = create<EnergySystemState>()(
       fullSystemConfig: DEFAULT_SYSTEM_CONFIG,
       solarData: DEMO_SOLAR_DATA,
       scenarios: [],
+      isSyncingScenarios: false,
+      scenarioSyncError: null,
+
+      clearScenarioSyncError: () => set({ scenarioSyncError: null }),
 
       loadScenarios: async () => {
         try {
@@ -527,110 +539,123 @@ export const useEnergySystemStore = create<EnergySystemState>()(
           fullSystemConfig: DEFAULT_SYSTEM_CONFIG,
         }),
 
-      saveScenario: (name, finance, location) =>
-        set((state) => {
-          const data = state.minuteData;
-          const totalSolarKWh = data.reduce(
-            (s, d) => s + d.solarEnergyKWh,
-            0
-          );
-          const totalGridImportKWh = data.reduce(
-            (s, d) => s + d.gridImportKWh,
-            0
-          );
-          const totalGridExportKWh = data.reduce(
-            (s, d) => s + d.gridExportKWh,
-            0
-          );
-          const totalConsumptionKWh = data.reduce(
-            (s, d) => s + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh,
-            0
-          );
-          const totalSavingsKES = data.reduce(
-            (s, d) => s + d.savingsKES,
-            0
-          );
-          const avgBatterySOC =
-            data.length > 0
-              ? data.reduce((s, d) => s + d.batteryLevelPct, 0) /
-                data.length
-              : 0;
-          const selfSufficiencyPct =
-            totalConsumptionKWh > 0
-              ? Math.min(
-                  100,
-                  ((totalConsumptionKWh - totalGridImportKWh) /
-                    totalConsumptionKWh) *
-                    100
-                )
-              : 0;
+      saveScenario: (name, finance, location) => {
+        const state = get();
+        const data = state.minuteData;
 
-          const scenario: SavedScenario = {
-            id: crypto.randomUUID(),
-            name,
-            createdAt: new Date().toISOString(),
-            system: { ...state.systemConfig },
-            finance,
-            performance: {
-              selfSufficiencyPct,
-              totalGridImportKWh,
-              totalGridExportKWh,
-              avgBatterySOC,
-              totalSolarKWh,
-              totalSavingsKES,
-            },
-            location,
-            engineering: (() => {
-              const durationHours = Math.max(data.length / 60, 1);
-              const currentMonth = new Date(state.currentDate).getMonth();
-              const monthlyPSH =
-                state.solarData.monthlyAvgKwhPerKwp[currentMonth];
-              const irradianceKWhPerM2 = monthlyPSH * (durationHours / 24);
-              const result = computeEngineeringKpis({
-                totalSolarKWh,
-                dcCapacityKWp: state.systemConfig.solarCapacityKW,
-                durationHours,
-                totalBatDischargeKWh:
-                  state.accumulators.batDischargeKwh,
-                batteryCapacityKWh: state.systemConfig.batteryCapacityKWh,
-                planeIrradianceKWhPerM2:
-                  irradianceKWhPerM2 > 0
-                    ? irradianceKWhPerM2
-                    : undefined,
-              });
-              return {
-                specificYieldKWhPerKWp:
-                  result.specificYieldKWhPerKWp,
-                performanceRatioPct: result.performanceRatioPct,
-                capacityFactorPct: result.capacityFactorPct,
-                batteryCycles: result.batteryCycles,
-              };
-            })(),
-          };
+        const totalSolarKWh = data.reduce((s, d) => s + d.solarEnergyKWh, 0);
+        const totalGridImportKWh = data.reduce((s, d) => s + d.gridImportKWh, 0);
+        const totalGridExportKWh = data.reduce((s, d) => s + d.gridExportKWh, 0);
+        const totalConsumptionKWh = data.reduce(
+          (s, d) => s + d.homeLoadKWh + d.ev1LoadKWh + d.ev2LoadKWh,
+          0
+        );
+        const totalSavingsKES = data.reduce((s, d) => s + d.savingsKES, 0);
+        const avgBatterySOC =
+          data.length > 0
+            ? data.reduce((s, d) => s + d.batteryLevelPct, 0) / data.length
+            : 0;
+        const selfSufficiencyPct =
+          totalConsumptionKWh > 0
+            ? Math.min(
+                100,
+                ((totalConsumptionKWh - totalGridImportKWh) / totalConsumptionKWh) * 100
+              )
+            : 0;
 
-          const updated = [...state.scenarios, scenario];
-          // Keep max MAX_SCENARIOS — drop oldest if exceeded
-          const next =
-            updated.length > MAX_SCENARIOS
-              ? updated.slice(updated.length - MAX_SCENARIOS)
-              : updated;
+        const durationHours = Math.max(data.length / 60, 1);
+        const currentMonth = new Date(state.currentDate).getMonth();
+        const irradianceKWhPerM2 =
+          state.solarData.monthlyAvgKwhPerKwp[currentMonth] * (durationHours / 24);
+        const engResult = computeEngineeringKpis({
+          totalSolarKWh,
+          dcCapacityKWp: state.systemConfig.solarCapacityKW,
+          durationHours,
+          totalBatDischargeKWh: state.accumulators.batDischargeKwh,
+          batteryCapacityKWh: state.systemConfig.batteryCapacityKWh,
+          planeIrradianceKWhPerM2: irradianceKWhPerM2 > 0 ? irradianceKWhPerM2 : undefined,
+        });
 
-          // Fire-and-forget sync to Supabase; local state always updates first.
-          upsertScenario(scenario).catch((err) =>
-            console.error('[energySystemStore] upsertScenario error:', err)
-          );
+        const scenario: SavedScenario = {
+          id: crypto.randomUUID(),
+          name,
+          createdAt: new Date().toISOString(),
+          system: { ...state.systemConfig },
+          finance,
+          performance: {
+            selfSufficiencyPct,
+            totalGridImportKWh,
+            totalGridExportKWh,
+            avgBatterySOC,
+            totalSolarKWh,
+            totalSavingsKES,
+          },
+          location,
+          engineering: {
+            specificYieldKWhPerKWp: engResult.specificYieldKWhPerKWp,
+            performanceRatioPct: engResult.performanceRatioPct,
+            capacityFactorPct: engResult.capacityFactorPct,
+            batteryCycles: engResult.batteryCycles,
+          },
+        };
 
-          return { scenarios: next };
-        }),
+        const updated = [...state.scenarios, scenario];
+        const next =
+          updated.length > MAX_SCENARIOS
+            ? updated.slice(updated.length - MAX_SCENARIOS)
+            : updated;
+
+        // Optimistic update — mark as syncing
+        set({ scenarios: next, isSyncingScenarios: true, scenarioSyncError: null });
+
+        upsertScenario(scenario)
+          .then(({ newVersion }) => {
+            // Stamp the DB-assigned version on the local copy
+            set((s) => ({
+              isSyncingScenarios: false,
+              scenarios: s.scenarios.map((x) =>
+                x.id === scenario.id ? { ...x, version: newVersion } : x
+              ),
+            }));
+          })
+          .catch((err: unknown) => {
+            const msg =
+              err instanceof Error ? err.message : 'Failed to save scenario.';
+            // Rollback: remove the optimistically-added scenario
+            set((s) => ({
+              isSyncingScenarios: false,
+              scenarioSyncError: msg,
+              scenarios: s.scenarios.filter((x) => x.id !== scenario.id),
+            }));
+          });
+      },
 
       deleteScenario: (id) => {
-        set((state) => ({
-          scenarios: state.scenarios.filter((s) => s.id !== id),
+        const scenarioToRestore = get().scenarios.find((s) => s.id === id);
+
+        // Optimistic update
+        set((s) => ({
+          scenarios: s.scenarios.filter((x) => x.id !== id),
+          isSyncingScenarios: true,
+          scenarioSyncError: null,
         }));
-        // Fire-and-forget delete from Supabase
-        deleteScenarioById(id).catch((err) =>
-          console.error('[energySystemStore] deleteScenarioById error:', err)
-        );
+
+        deleteScenarioById(id)
+          .then(() => set({ isSyncingScenarios: false }))
+          .catch((err: unknown) => {
+            const msg =
+              err instanceof Error ? err.message : 'Failed to delete scenario.';
+            // Rollback: restore the deleted scenario in its original position
+            set((s) => ({
+              isSyncingScenarios: false,
+              scenarioSyncError: msg,
+              scenarios: scenarioToRestore
+                ? [...s.scenarios, scenarioToRestore].sort((a, b) =>
+                    a.createdAt.localeCompare(b.createdAt)
+                  )
+                : s.scenarios,
+            }));
+          });
       },
 
       loadScenario: (id) =>
@@ -641,15 +666,29 @@ export const useEnergySystemStore = create<EnergySystemState>()(
         }),
 
       renameScenario: (id, newName) => {
-        set((state) => ({
-          scenarios: state.scenarios.map((s) =>
-            s.id === id ? { ...s, name: newName } : s
-          ),
+        const oldName = get().scenarios.find((s) => s.id === id)?.name ?? newName;
+
+        // Optimistic update
+        set((s) => ({
+          scenarios: s.scenarios.map((x) => (x.id === id ? { ...x, name: newName } : x)),
+          isSyncingScenarios: true,
+          scenarioSyncError: null,
         }));
-        // Fire-and-forget rename in Supabase
-        renameScenarioInDb(id, newName).catch((err) =>
-          console.error('[energySystemStore] renameScenario error:', err)
-        );
+
+        renameScenarioInDb(id, newName)
+          .then(() => set({ isSyncingScenarios: false }))
+          .catch((err: unknown) => {
+            const msg =
+              err instanceof Error ? err.message : 'Failed to rename scenario.';
+            // Rollback: revert to old name
+            set((s) => ({
+              isSyncingScenarios: false,
+              scenarioSyncError: msg,
+              scenarios: s.scenarios.map((x) =>
+                x.id === id ? { ...x, name: oldName } : x
+              ),
+            }));
+          });
       },
 
       importScenarios: (json: string): ImportScenariosResult => {

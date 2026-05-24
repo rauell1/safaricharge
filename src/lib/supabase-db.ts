@@ -32,6 +32,7 @@ interface SavedScenarioRow {
   engineering: EngineeringSnapshot | null;
   created_at: string;
   updated_at: string;
+  version: number;
 }
 
 // ── Mapping helpers ───────────────────────────────────────────────────────────
@@ -41,6 +42,7 @@ function rowToScenario(row: SavedScenarioRow): SavedScenario {
     id: row.id,
     name: row.name,
     createdAt: row.created_at,
+    version: row.version,
     system: row.config,
     finance: row.finance,
     performance: row.performance,
@@ -52,7 +54,7 @@ function rowToScenario(row: SavedScenarioRow): SavedScenario {
 function scenarioToRow(
   scenario: SavedScenario,
   userId: string
-): Omit<SavedScenarioRow, 'created_at' | 'updated_at'> {
+): Omit<SavedScenarioRow, 'created_at' | 'updated_at' | 'version'> {
   return {
     id: scenario.id,
     user_id: userId,
@@ -100,70 +102,82 @@ export async function fetchScenarios(): Promise<SavedScenario[]> {
 }
 
 /**
- * Insert or update a scenario row (matched on `id`).
+ * Insert or update a scenario row using an atomic versioned RPC.
+ *
+ * Pass scenario.version (from a previous DB read) so the server can detect
+ * concurrent edits from other tabs/devices.  New scenarios have no version
+ * yet — omit it (undefined) and the RPC skips the conflict check.
+ *
+ * Returns the version number the DB assigned to the saved row.
+ * Throws on any DB/network error or version conflict.
  */
-export async function upsertScenario(scenario: SavedScenario): Promise<void> {
-  try {
-    const supabase = createClient();
+export async function upsertScenario(
+  scenario: SavedScenario
+): Promise<{ newVersion: number }> {
+  const supabase = createClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    if (!user) return;
+  if (!user) throw new Error('Not authenticated');
 
-    const row = scenarioToRow(scenario, user.id);
+  const row = scenarioToRow(scenario, user.id);
 
-    const { error } = await supabase
-      .from('saved_scenarios')
-      .upsert(row, { onConflict: 'id' });
+  const { data, error } = await supabase.rpc('upsert_scenario_versioned', {
+    p_id: row.id,
+    p_name: row.name,
+    p_config: row.config,
+    p_finance: row.finance,
+    p_performance: row.performance,
+    p_location: row.location,
+    p_engineering: row.engineering ?? null,
+    p_expected_version: scenario.version ?? 0,
+  });
 
-    if (error) {
-      console.error('[supabase-db] upsertScenario error:', error.message);
-    }
-  } catch (err) {
-    console.error('[supabase-db] upsertScenario unexpected error:', err);
+  if (error) throw new Error(error.message);
+
+  const result = (
+    data as Array<{ success: boolean; new_version: number; conflict: boolean }>
+  )[0];
+
+  if (result.conflict) {
+    throw new Error(
+      'VERSION_CONFLICT: another session updated this scenario. Reload to see the latest version.'
+    );
   }
+
+  return { newVersion: result.new_version };
 }
 
 /**
  * Delete a scenario row by its id.
+ * Throws on any DB/network error so callers can roll back optimistic UI updates.
  */
 export async function deleteScenarioById(id: string): Promise<void> {
-  try {
-    const supabase = createClient();
+  const supabase = createClient();
 
-    const { error } = await supabase
-      .from('saved_scenarios')
-      .delete()
-      .eq('id', id);
+  const { error } = await supabase
+    .from('saved_scenarios')
+    .delete()
+    .eq('id', id);
 
-    if (error) {
-      console.error('[supabase-db] deleteScenarioById error:', error.message);
-    }
-  } catch (err) {
-    console.error('[supabase-db] deleteScenarioById unexpected error:', err);
-  }
+  if (error) throw new Error(error.message);
 }
 
 /**
  * Rename a scenario row (update `name` and touch `updated_at`).
+ * Throws on any DB/network error so callers can roll back optimistic UI updates.
  */
 export async function renameScenario(id: string, name: string): Promise<void> {
-  try {
-    const supabase = createClient();
+  const supabase = createClient();
 
-    const { error } = await supabase
-      .from('saved_scenarios')
-      .update({ name, updated_at: new Date().toISOString() })
-      .eq('id', id);
+  const { error } = await supabase
+    .from('saved_scenarios')
+    .update({ name, updated_at: new Date().toISOString() })
+    .eq('id', id);
 
-    if (error) {
-      console.error('[supabase-db] renameScenario error:', error.message);
-    }
-  } catch (err) {
-    console.error('[supabase-db] renameScenario unexpected error:', err);
-  }
+  if (error) throw new Error(error.message);
 }
 
 // ── Simulation runs ───────────────────────────────────────────────────────────
@@ -196,13 +210,12 @@ export interface SaveSimulationRunInput {
   minuteData: SimulationMinutePoint[];
 }
 
-const CHUNK_SIZE = 500;
-
 /**
- * Persist a simulation run and its minute-by-minute data to Supabase.
+ * Persist a simulation run and its minute-by-minute data to Supabase atomically.
  *
- * 1. Inserts a header row into `simulation_runs`.
- * 2. Batch-inserts `minuteData` into `simulation_data` in chunks of 500.
+ * Uses the save_simulation_run_atomic RPC, which inserts the header row and
+ * all minute data in a single transaction.  If any insert fails the entire
+ * save is rolled back — no orphaned headers or partial data sets.
  *
  * Returns the new run's UUID.
  */
@@ -217,64 +230,40 @@ export async function saveSimulationRun(
 
   if (!user) throw new Error('User not authenticated');
 
-  // 1. Insert the run header
-  const { data: runRow, error: runError } = await supabase
-    .from('simulation_runs')
-    .insert({
-      user_id: user.id,
-      scenario_id: run.scenarioId ?? null,
-      name: run.name,
-      solar_capacity_kw: run.solarCapacityKw,
-      battery_capacity_kwh: run.batteryCapacityKwh,
-      inverter_kw: run.inverterKw,
-      system_mode: run.systemMode,
-      location_name: run.locationName ?? null,
-      latitude: run.latitude ?? null,
-      longitude: run.longitude ?? null,
-      summary_json: run.summaryJson,
-      total_minutes: run.minuteData.length,
-    })
-    .select('id')
-    .single();
+  const minuteData = run.minuteData.map((pt) => ({
+    ts: pt.ts,
+    solar_kw: pt.solarKw,
+    home_load_kw: pt.homeLoadKw,
+    ev1_load_kw: pt.ev1LoadKw,
+    ev2_load_kw: pt.ev2LoadKw,
+    battery_level_pct: pt.batteryLevelPct,
+    grid_import_kw: pt.gridImportKw,
+    grid_export_kw: pt.gridExportKw,
+    savings_kes: pt.savingsKes,
+    tariff_rate: pt.tariffRate,
+    is_peak_time: pt.isPeakTime,
+  }));
+  // total_minutes is populated automatically by the refresh_run_total_minutes trigger
 
-  if (runError || !runRow) {
-    throw new Error(
-      `[supabase-db] saveSimulationRun insert error: ${runError?.message}`
-    );
+  const { data, error } = await supabase.rpc('save_simulation_run_atomic', {
+    p_scenario_id: run.scenarioId ?? null,
+    p_name: run.name,
+    p_solar_capacity_kw: run.solarCapacityKw,
+    p_battery_capacity_kwh: run.batteryCapacityKwh,
+    p_inverter_kw: run.inverterKw,
+    p_system_mode: run.systemMode,
+    p_location_name: run.locationName ?? null,
+    p_latitude: run.latitude ?? null,
+    p_longitude: run.longitude ?? null,
+    p_summary_json: run.summaryJson,
+    p_minute_data: minuteData,
+  });
+
+  if (error) {
+    throw new Error(`[supabase-db] saveSimulationRun error: ${error.message}`);
   }
 
-  const runId: string = runRow.id;
-
-  // 2. Batch-insert minute data in chunks
-  for (let i = 0; i < run.minuteData.length; i += CHUNK_SIZE) {
-    const chunk = run.minuteData.slice(i, i + CHUNK_SIZE).map((pt) => ({
-      run_id: runId,
-      ts: pt.ts,
-      solar_kw: pt.solarKw,
-      home_load_kw: pt.homeLoadKw,
-      ev1_load_kw: pt.ev1LoadKw,
-      ev2_load_kw: pt.ev2LoadKw,
-      battery_level_pct: pt.batteryLevelPct,
-      grid_import_kw: pt.gridImportKw,
-      grid_export_kw: pt.gridExportKw,
-      savings_kes: pt.savingsKes,
-      tariff_rate: pt.tariffRate,
-      is_peak_time: pt.isPeakTime,
-    }));
-
-    const { error: chunkError } = await supabase
-      .from('simulation_data')
-      .insert(chunk);
-
-    if (chunkError) {
-      console.error(
-        `[supabase-db] saveSimulationRun chunk ${i / CHUNK_SIZE} error:`,
-        chunkError.message
-      );
-    }
-  }
-
-  return runId;
+  return data as string;
 }
 
 // ── AI response cache (server-only, service role) ─────────────────────────────

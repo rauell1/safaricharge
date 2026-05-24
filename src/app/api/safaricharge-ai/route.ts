@@ -238,28 +238,29 @@ async function getCachedResponse(key: string): Promise<string | null> {
 }
 
 /**
- * Store response in Supabase cache (fire-and-forget).
+ * Store response in Supabase cache.
+ * Awaited before the caller returns so two concurrent requests for the same
+ * query can't both call the AI (the second will get a cache hit on retry).
  * Never throws — cache failures must not break the main response flow.
  */
-function setCachedResponse(key: string, response: string): void {
+async function setCachedResponse(key: string, response: string): Promise<void> {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return;
-  const expiresAt = new Date(Date.now() + AI_CACHE_TTL_MS).toISOString();
-  Promise.resolve(
-    getCacheClient()
+  try {
+    const expiresAt = new Date(Date.now() + AI_CACHE_TTL_MS).toISOString();
+    const { error } = await getCacheClient()
       .from('ai_response_cache')
       .upsert(
         { cache_key: key, response, expires_at: expiresAt } as never,
         { onConflict: 'cache_key' }
-      )
-  ).then(({ error }: { error: { message: string } | null }) => {
+      );
     if (error) {
       logger.warn('[AI] Cache write error', { message: error.message });
     }
-  }).catch((err: unknown) => {
+  } catch (err) {
     logger.warn('[AI] Cache write exception', {
       message: err instanceof Error ? err.message : String(err),
     });
-  });
+  }
 }
 
 /**
@@ -752,7 +753,7 @@ export async function POST(request: NextRequest) {
     // Try Gemini first, then fallback to Z.AI
     const geminiResult = await callAI('gemini', payload, promptMessages);
     if (geminiResult.text) {
-      setCachedResponse(cacheKey, geminiResult.text);
+      await setCachedResponse(cacheKey, geminiResult.text);
       return jsonResponse({ response: geminiResult.text }, { status: 200, headers });
     }
 
@@ -760,7 +761,7 @@ export async function POST(request: NextRequest) {
 
     const zaiResult = await callAI('zai', payload, promptMessages);
     if (zaiResult.text) {
-      setCachedResponse(cacheKey, zaiResult.text);
+      await setCachedResponse(cacheKey, zaiResult.text);
       return jsonResponse({ response: zaiResult.text }, { status: 200, headers });
     }
 
