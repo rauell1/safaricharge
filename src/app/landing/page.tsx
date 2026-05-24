@@ -68,7 +68,7 @@ const plans = [
     price: 'Free',
     description: 'Self-hosted. Full simulation and optimisation engine.',
     cta: 'Open dashboard',
-    href: '/demo',
+    href: '/dashboard',
     highlight: false,
     features: [
       'Pyomo MILP dispatcher',
@@ -84,7 +84,7 @@ const plans = [
     period: '/mo',
     description: 'Multi-site, forecasting, and priority support.',
     cta: 'Start free trial',
-    href: '/demo',
+    href: '/dashboard',
     highlight: true,
     features: [
       'Everything in Open Core',
@@ -240,7 +240,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Link
-              href="/demo"
+              href="/dashboard"
               className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors"
               style={{
                 color: 'var(--site-nav-link)',
@@ -248,7 +248,7 @@ export default function LandingPage() {
               }}
             >
               <Activity className="w-3.5 h-3.5" />
-              Demo
+              Dashboard
             </Link>
             <Link
               href="/login"
@@ -305,12 +305,12 @@ export default function LandingPage() {
             ))}
             <div className="mt-2 pt-3 flex flex-col gap-2" style={{ borderTop: '1px solid var(--site-page-border)' }}>
               <Link
-                href="/demo"
+                href="/dashboard"
                 className="flex items-center justify-center gap-1.5 text-sm font-medium px-4 py-2 rounded-xl transition-colors"
                 style={{ color: 'var(--site-nav-link)', border: '1px solid var(--site-page-border)' }}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <Activity className="w-3.5 h-3.5" /> Try Demo
+                <Activity className="w-3.5 h-3.5" /> Dashboard
               </Link>
               <Link
                 href="/login"
@@ -439,27 +439,7 @@ export default function LandingPage() {
             >
               Go to App <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
-            <Link
-              href="/demo"
-              aria-label="Open demo dashboard"
-              className="group inline-flex items-center gap-2 text-sm px-6 py-3.5 rounded-xl transition-colors"
-              style={{
-                color: 'var(--site-page-muted)',
-                border: '1px solid var(--site-page-border)',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-page-fg)';
-                (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--site-page-soft)';
-                (e.currentTarget as HTMLAnchorElement).style.background = 'var(--site-page-surface)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-page-muted)';
-                (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--site-page-border)';
-                (e.currentTarget as HTMLAnchorElement).style.background = 'transparent';
-              }}
-            >
-              Try Interactive Demo
-            </Link>
+
             <a
               href="#features"
               className="group inline-flex items-center gap-2 text-sm px-5 py-3.5 transition-colors"
@@ -712,17 +692,17 @@ export default function LandingPage() {
               letterSpacing: '-0.04em',
             }}
           >
-            Your dashboard is ready
+            Start managing your microgrid today
           </h2>
           <p
             className="mb-10 mx-auto"
             style={{ color: 'var(--site-page-muted)', maxWidth: '46ch', lineHeight: 1.75 }}
           >
-            No sign-in required. Explore real-time solar analytics, BESS dispatch, and
-            KPLC cost modelling right now.
+            Create a profile to login and access your live solar analytics, smart BESS dispatch, and
+            KPLC cost modelling.
           </p>
           <Link
-            href="/demo"
+            href="/dashboard"
             className="group inline-flex items-center gap-2 font-semibold text-sm px-8 py-4 rounded-xl text-white transition-all"
             style={{
               background: 'var(--battery)',
@@ -738,7 +718,7 @@ export default function LandingPage() {
               (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 0 40px rgba(16,185,129,0.28)';
             }}
           >
-            Try Demo Dashboard <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+            Go to Dashboard <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
       </section>
@@ -958,7 +938,7 @@ export default function LandingPage() {
           <div>
             <p className="font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Links</p>
             <div className="space-y-2">
-              <Link href="/demo" className="block transition-colors" style={{ color: 'var(--site-page-muted)' }}
+              <Link href="/dashboard" className="block transition-colors" style={{ color: 'var(--site-page-muted)' }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)'; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-page-muted)'; }}
               >Dashboard</Link>

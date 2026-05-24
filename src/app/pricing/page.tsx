@@ -23,7 +23,7 @@ const plans = [
       'Community support',
     ],
     cta: 'Open dashboard',
-    href: '/demo',
+    href: '/dashboard',
     highlight: false,
   },
   {
@@ -33,7 +33,7 @@ const plans = [
     period: '/mo',
     description: 'Multi-site, forecasting, and priority support.',
     cta: 'Upgrade to Pro',
-    href: '/demo',
+    href: '/dashboard',
     highlight: true,
     features: [
       'Everything in Open Core',

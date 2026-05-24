@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 // Exact public paths or path prefixes that do NOT require authentication.
-const PUBLIC_EXACT: Set<string> = new Set(['/', '/landing', '/demo', '/pricing'])
+const PUBLIC_EXACT: Set<string> = new Set(['/', '/landing', '/pricing'])
 const PUBLIC_PREFIXES: string[] = ['/auth/']
 const API_PUBLIC_PREFIXES: string[] = [
   '/api/health',
