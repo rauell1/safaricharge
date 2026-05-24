@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 248 | `rollback/feat-replace-brand-logo-and-favicon-wi-2026-05-24-ebac310` | `ebac310` | feat: replace brand logo and favicon with new infinity loop assets (8f +6/-6) | 2026-05-24 |
 | 247 | `rollback/feat-replace-logo-with-simplified-flat-2026-05-24-7fa8a0c` | `7fa8a0c` | feat: replace logo with simplified flat transparent SVG giraffe mark (1f +34/-51) | 2026-05-24 |
 | 246 | `rollback/feat-add-configuration-and-version-fil-2026-05-24-6af4785` | `6af4785` | feat: add configuration and version files for Supabase integration (10f +15/-0) | 2026-05-24 |
 | 245 | `rollback/merge-pull-request-260-from-rauell1-co-2026-05-24-1b896f5` | `1b896f5` | Merge pull request #260 from rauell1/copilot/update-logo-usage-to-brandlogo (5f +3/-4) | 2026-05-24 |
@@ -2574,6 +2575,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat: replace logo with simplified flat transparent SVG giraffe mark
 - **Date**: 2026-05-24
 - **Changed**: 1 file(s), +34/-51 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #248 — `rollback/feat-replace-brand-logo-and-favicon-wi-2026-05-24-ebac310`
+
+- **Branch**: `rollback/feat-replace-brand-logo-and-favicon-wi-2026-05-24-ebac310`
+- **Commit**: `ebac31035561acd0213b862d31ab5de6bf49f7e9`
+- **Subject**: feat: replace brand logo and favicon with new infinity loop assets
+- **Date**: 2026-05-24
+- **Changed**: 8 file(s), +6/-6 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
