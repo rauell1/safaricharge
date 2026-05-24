@@ -1,11 +1,21 @@
 import { createServerClient } from '@supabase/ssr'
+import { randomUUID } from 'crypto'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { validateAdminToken } from '@/app/api/admin/auth/route'
 
 // Exact public paths or path prefixes that do NOT require authentication.
 const PUBLIC_EXACT: Set<string> = new Set(['/', '/login', '/landing', '/demo', '/pricing', '/reset-password', '/admin-login'])
-const PUBLIC_PREFIXES: string[] = ['/auth/', '/api/', '/forgot-password', '/signup']
+const PUBLIC_PREFIXES: string[] = ['/auth/', '/forgot-password', '/signup']
+const API_PUBLIC_PREFIXES: string[] = [
+  '/api/health',
+  '/api/admin/',
+  '/api/component-library',
+  '/api/battery-modules',
+  '/api/irradiance-presets',
+  '/api/locations',
+  '/api/signup',
+]
 
 const SESSION_TTL_MS = 60 * 60 * 1000
 const SESSION_TOUCH_COOKIE = 'sc_last_seen'
@@ -33,9 +43,62 @@ function isPublic(pathname: string): boolean {
   return PUBLIC_PREFIXES.some(p => pathname.startsWith(p))
 }
 
+function isPublicApi(pathname: string): boolean {
+  return API_PUBLIC_PREFIXES.some(p => pathname.startsWith(p))
+}
+
 export async function proxy(request: NextRequest) {
   const middlewareStart = Date.now()
   const { pathname } = request.nextUrl
+  const isApiRoute = pathname.startsWith('/api/')
+  const isAuthRoute = pathname.startsWith('/auth/')
+
+  if (isApiRoute || isAuthRoute) {
+    const requestId = randomUUID()
+    const requestHeaders = new Headers(request.headers)
+    requestHeaders.set('x-request-id', requestId)
+
+    if (isAuthRoute || isPublicApi(pathname)) {
+      const response = NextResponse.next({ request: { headers: requestHeaders } })
+      response.headers.set('x-request-id', requestId)
+      return response
+    }
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json(
+        { error: 'Server misconfiguration.' },
+        { status: 500, headers: { 'x-request-id': requestId } }
+      )
+    }
+
+    const response = NextResponse.next({ request: { headers: requestHeaders } })
+    const supabase = createServerClient(supabaseUrl, supabaseKey, {
+      cookies: {
+        getAll: () => request.cookies.getAll(),
+        setAll: (cookiesToSet) => {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
+        },
+      },
+    })
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser()
+    if (error || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required.' },
+        { status: 401, headers: { 'x-request-id': requestId } }
+      )
+    }
+
+    response.headers.set('x-user-id', user.id)
+    response.headers.set('x-request-id', requestId)
+    return response
+  }
 
   if (isPublic(pathname)) return NextResponse.next()
 
