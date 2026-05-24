@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 235 | `rollback/feat-implement-login-sign-up-and-app-l-2026-05-24-6d61176` | `6d61176` | feat: implement login, sign-up, and app links on the landing page (1f +57/-14) | 2026-05-24 |
 | 234 | `rollback/feat-restore-login-and-signup-portals-2026-05-24-03e6495` | `03e6495` | feat: restore login and signup portals with admin auto-redirection (5f +738/-4) | 2026-05-24 |
 | 233 | `rollback/feat-remove-login-system-redirect-unau-2026-05-24-4fee87f` | `4fee87f` | feat: remove login system; redirect unauthenticated users to /landing (18f +14/-997) | 2026-05-24 |
 | 232 | `rollback/merge-pull-request-259-from-rauell1-co-2026-05-24-8e2dade` | `8e2dade` | Merge pull request #259 from rauell1/copilot/fix-middleware-proxy-issue (2f +64/-97) | 2026-05-24 |
@@ -2431,6 +2432,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat: restore login and signup portals with admin auto-redirection
 - **Date**: 2026-05-24
 - **Changed**: 5 file(s), +738/-4 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #235 — `rollback/feat-implement-login-sign-up-and-app-l-2026-05-24-6d61176`
+
+- **Branch**: `rollback/feat-implement-login-sign-up-and-app-l-2026-05-24-6d61176`
+- **Commit**: `6d61176ed9edddad2b169c89931444c83719eba6`
+- **Subject**: feat: implement login, sign-up, and app links on the landing page
+- **Date**: 2026-05-24
+- **Changed**: 1 file(s), +57/-14 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
