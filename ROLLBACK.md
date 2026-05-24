@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 247 | `rollback/feat-replace-logo-with-simplified-flat-2026-05-24-7fa8a0c` | `7fa8a0c` | feat: replace logo with simplified flat transparent SVG giraffe mark (1f +34/-51) | 2026-05-24 |
 | 246 | `rollback/feat-add-configuration-and-version-fil-2026-05-24-6af4785` | `6af4785` | feat: add configuration and version files for Supabase integration (10f +15/-0) | 2026-05-24 |
 | 245 | `rollback/merge-pull-request-260-from-rauell1-co-2026-05-24-1b896f5` | `1b896f5` | Merge pull request #260 from rauell1/copilot/update-logo-usage-to-brandlogo (5f +3/-4) | 2026-05-24 |
 | 244 | `rollback/feat-implement-secure-client-side-sign-2026-05-24-3434083` | `3434083` | feat: implement secure client-side sign-out in both standard and admin sidebars (2f +56/-2) | 2026-05-24 |
@@ -2563,6 +2564,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat: add configuration and version files for Supabase integration
 - **Date**: 2026-05-24
 - **Changed**: 10 file(s), +15/-0 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #247 — `rollback/feat-replace-logo-with-simplified-flat-2026-05-24-7fa8a0c`
+
+- **Branch**: `rollback/feat-replace-logo-with-simplified-flat-2026-05-24-7fa8a0c`
+- **Commit**: `7fa8a0c0b08f9e1de78837e30c87ee634ad1a982`
+- **Subject**: feat: replace logo with simplified flat transparent SVG giraffe mark
+- **Date**: 2026-05-24
+- **Changed**: 1 file(s), +34/-51 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
