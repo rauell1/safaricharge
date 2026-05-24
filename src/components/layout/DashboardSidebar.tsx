@@ -17,8 +17,8 @@ import {
   Download,
   LogOut,
 } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
+import { BrandLogo } from '@/components/brand-logo';
 import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { createClient } from '@/lib/supabase';
@@ -327,7 +327,7 @@ export function DashboardSidebar({
       {/* Logo */}
       <SidebarHeader className="px-4 py-5 border-b border-[var(--border)] bg-[var(--bg-card)]">
         <div className="flex items-center justify-center">
-          <Image src="/logo.png" alt="SafariCharge" width={140} height={80} className="object-contain" />
+          <BrandLogo showLabel={false} href="/landing" />
         </div>
       </SidebarHeader>
 
