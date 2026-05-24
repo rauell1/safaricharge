@@ -51,8 +51,8 @@ function LoginForm() {
       return
     }
 
-    // Direct redirection — let middleware dynamically route based on role
-    router.push(nextPath)
+    // Direct redirection via full reload to force session cookie sync with Next.js edge middleware
+    window.location.assign(nextPath)
   }
 
   const handleForgotPassword = async (e: React.FormEvent) => {
