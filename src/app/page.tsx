@@ -37,8 +37,8 @@ async function ensureAdminUserExists() {
       return
     }
 
-    const adminExists = users.some(u => u.email?.toLowerCase() === adminEmail.toLowerCase())
-    if (!adminExists) {
+    const adminUser = users.find(u => u.email?.toLowerCase() === adminEmail.toLowerCase())
+    if (!adminUser) {
       console.log('[RootPage] Auto-creating admin user in Supabase Auth:', adminEmail)
       const { error: createError } = await adminClient.auth.admin.createUser({
         email: adminEmail,
@@ -49,6 +49,16 @@ async function ensureAdminUserExists() {
         console.error('[RootPage] Failed to auto-create admin user:', createError.message)
       } else {
         console.log('[RootPage] Successfully auto-created admin user!')
+      }
+    } else {
+      console.log('[RootPage] Admin user exists. Force-syncing admin password to match ADMIN_PASSWORD...')
+      const { error: updateError } = await adminClient.auth.admin.updateUserById(adminUser.id, {
+        password: adminPassword,
+      })
+      if (updateError) {
+        console.error('[RootPage] Failed to sync admin password:', updateError.message)
+      } else {
+        console.log('[RootPage] Successfully synced admin password!')
       }
     }
   } catch (err) {
