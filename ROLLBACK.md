@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 232 | `rollback/merge-pull-request-259-from-rauell1-co-2026-05-24-8e2dade` | `8e2dade` | Merge pull request #259 from rauell1/copilot/fix-middleware-proxy-issue (2f +64/-97) | 2026-05-24 |
 | 231 | `rollback/feat-security-audit-log-org-scoping-au-2026-05-24-2137ca1` | `2137ca1` | feat(security): audit log, org scoping, auth middleware, and RBAC (5f +569/-2) | 2026-05-24 |
 | 230 | `rollback/fix-concurrency-atomic-simulation-save-2026-05-24-b42c555` | `b42c555` | fix(concurrency): atomic simulation saves, scenario rollback, and cache race (4f +436/-221) | 2026-05-24 |
 | 229 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-24-d7497cc` | `d7497cc` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-05-24 |
@@ -2398,6 +2399,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat(security): audit log, org scoping, auth middleware, and RBAC
 - **Date**: 2026-05-24
 - **Changed**: 5 file(s), +569/-2 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #232 — `rollback/merge-pull-request-259-from-rauell1-co-2026-05-24-8e2dade`
+
+- **Branch**: `rollback/merge-pull-request-259-from-rauell1-co-2026-05-24-8e2dade`
+- **Commit**: `8e2dade4fcbca74ac1a605b2ee0a1b85e3ebac24`
+- **Subject**: Merge pull request #259 from rauell1/copilot/fix-middleware-proxy-issue
+- **Date**: 2026-05-24
+- **Changed**: 2 file(s), +64/-97 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
