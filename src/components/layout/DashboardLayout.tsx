@@ -93,62 +93,52 @@ function DashboardLayoutInner({
   return (
     <SidebarProvider defaultOpen={true}>
       {/*
-        AI panel lives OUTSIDE the page router subtree so it
-        persist across all page navigations without remounting.
+        ── Standard shadcn sidebar layout ──────────────────────────────────────
+        SidebarProvider is a flex row. Its ONLY in-flow flex children should be:
+          1. DashboardSidebar  → renders <Sidebar> (sidebar-gap spacer + fixed overlay)
+          2. SidebarInset      → flex-1, fills remaining horizontal space
 
-        NOTE: Do NOT wrap in any element with transform / overflow:hidden /
-        will-change / filter — those create a CSS containing block and
-        break fixed-position portals. The AI panel itself renders into
-        #modal-root via its own DialogPortal so it is already safe.
+        Previously, SafariChargeAIAssistant and MobileBottomNav were direct
+        flex siblings of the layout div, stealing horizontal space and squishing
+        the content into a narrow vertical strip.
+
+        Fix: DashboardSidebar and SidebarInset are now the direct children of
+        SidebarProvider. The AI assistant and mobile nav live inside SidebarInset
+        — they're fixed/portal-rendered so they don't affect flow layout.
       */}
-      <SafariChargeAIAssistant
-        isOpen={aiOpen}
-        onClose={closeAI}
-        data={aiData as any}
-        timeOfDay={latestPoint ? latestPoint.hour + latestPoint.minute / 60 : new Date().getHours() + new Date().getMinutes() / 60}
-        weather="clear"
-        currentDate={currentDate ?? new Date()}
-        isAutoMode={isAutoMode}
-        minuteData={minuteData}
-        systemConfig={systemConfig as unknown as import('@/types/dashboard').AssistantProps['systemConfig']}
-      />
-      <MobileBottomNav
+      <DashboardSidebar
         activeSection={activeSection}
         onSectionChange={onSectionChange}
+        contextualMetrics={contextualMetrics}
       />
 
-      {/*
-        Layout shell — flex row, full viewport.
+      <SidebarInset className="flex flex-col min-h-screen min-w-0 bg-[var(--bg-primary)] text-[var(--text-primary)]">
+        {/*
+          AI panel renders via DialogPortal into #modal-root (fixed, outside
+          this subtree) — zero effect on flow layout.
+          MobileBottomNav is position:fixed — also zero effect on flow.
+        */}
+        <SafariChargeAIAssistant
+          isOpen={aiOpen}
+          onClose={closeAI}
+          data={aiData as any}
+          timeOfDay={latestPoint ? latestPoint.hour + latestPoint.minute / 60 : new Date().getHours() + new Date().getMinutes() / 60}
+          weather="clear"
+          currentDate={currentDate ?? new Date()}
+          isAutoMode={isAutoMode}
+          minuteData={minuteData}
+          systemConfig={systemConfig as unknown as import('@/types/dashboard').AssistantProps['systemConfig']}
+        />
+        <MobileBottomNav
+          activeSection={activeSection}
+          onSectionChange={onSectionChange}
+        />
 
-        RULES:
-        ✅  min-w-0 to prevent flex children from overflowing
-        ✅  .page-shell (globals.css) is the only overflow-x guard, applied
-            to the content area — NOT to layout wrappers
-        ❌  NO overflow-x:hidden here
-        ❌  NO transform-based animations on SidebarInset
-        ❌  NO isolation:isolate (removed — unnecessary stacking context)
-      */}
-      <div className="flex min-h-screen w-full bg-[var(--bg-primary)] text-[var(--text-primary)]">
-        {/* Sidebar — desktop only */}
-        <div className="hidden md:flex">
-          <DashboardSidebar
-            activeSection={activeSection}
-            onSectionChange={onSectionChange}
-            contextualMetrics={contextualMetrics}
-          />
+        {/* Content area — pb-16 reserves space for mobile bottom nav */}
+        <div className="flex-1 min-w-0 pb-16 md:pb-0">
+          {children}
         </div>
-
-        {/* Main content column */}
-        <SidebarInset className="flex-1 min-w-0 flex flex-col">
-          <div className="relative min-h-screen w-full min-w-0 pb-16 md:pb-0">
-            <div className="page-shell h-full">
-              <div className="flex flex-col h-full">
-                {children}
-              </div>
-            </div>
-          </div>
-        </SidebarInset>
-      </div>
+      </SidebarInset>
     </SidebarProvider>
   );
 }
