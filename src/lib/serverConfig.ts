@@ -28,8 +28,8 @@ export const API_ALLOWED_ORIGINS = parseList(process.env.API_ALLOWED_ORIGINS, [
 /** Shared bearer token for server-to-server API calls. */
 export const API_SERVICE_TOKEN = process.env.API_SERVICE_TOKEN ?? '';
 
-/** Enable role checks via the `x-sc-role` header when true. */
-export const ENABLE_RBAC = (process.env.ENABLE_RBAC ?? 'false').toLowerCase() === 'true';
+/** Enable role checks via the `x-sc-role` header when true. Defaults on. */
+export const ENABLE_RBAC = (process.env.ENABLE_RBAC ?? 'true').toLowerCase() === 'true';
 
 /** Optional shared secret for HMAC verification of incoming POST bodies. */
 export const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET ?? '';
