@@ -2,10 +2,25 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { validateAdminToken } from '@/app/api/admin/auth/route'
+import { ENABLE_RBAC, ROLE_HEADER } from '@/lib/serverConfig'
 
 // Exact public paths or path prefixes that do NOT require authentication.
 const PUBLIC_EXACT: Set<string> = new Set(['/', '/login', '/landing', '/demo', '/pricing', '/reset-password', '/admin-login'])
-const PUBLIC_PREFIXES: string[] = ['/auth/', '/api/', '/forgot-password', '/signup']
+const PUBLIC_PREFIXES: string[] = ['/auth/', '/forgot-password', '/signup']
+const API_PUBLIC_PREFIXES: string[] = [
+  '/api/health',
+  '/api/admin/',
+  '/api/component-library',
+  '/api/battery-modules',
+  '/api/irradiance-presets',
+  '/api/locations',
+  '/api/signup',
+]
+const API_ROLE_RULES: ReadonlyArray<{ prefix: string; allowedRoles: ReadonlySet<string> }> = [
+  { prefix: '/api/dvshave-harness', allowedRoles: new Set(['analyst', 'admin']) },
+  { prefix: '/api/export-report', allowedRoles: new Set(['analyst', 'admin']) },
+  { prefix: '/api/safaricharge-ai', allowedRoles: new Set(['operator', 'analyst', 'admin', 'viewer']) },
+]
 
 const SESSION_TTL_MS = 60 * 60 * 1000
 const SESSION_TOUCH_COOKIE = 'sc_last_seen'
@@ -33,9 +48,87 @@ function isPublic(pathname: string): boolean {
   return PUBLIC_PREFIXES.some(p => pathname.startsWith(p))
 }
 
+function isPublicApi(pathname: string): boolean {
+  return API_PUBLIC_PREFIXES.some(p => pathname.startsWith(p))
+}
+
+function enforceApiRbac(pathname: string, request: NextRequest, requestId: string): NextResponse | null {
+  if (!ENABLE_RBAC) return null
+  const rule = API_ROLE_RULES.find(({ prefix }) => pathname.startsWith(prefix))
+  if (!rule) return null
+
+  const roleHeader = request.headers.get(ROLE_HEADER)
+  if (!roleHeader) {
+    return NextResponse.json(
+      { error: 'Missing role header.' },
+      { status: 403, headers: { 'x-request-id': requestId } }
+    )
+  }
+
+  const role = roleHeader.toLowerCase()
+  if (!rule.allowedRoles.has(role)) {
+    return NextResponse.json(
+      { error: 'Insufficient role for this action.' },
+      { status: 403, headers: { 'x-request-id': requestId } }
+    )
+  }
+
+  return null
+}
+
 export async function proxy(request: NextRequest) {
   const middlewareStart = Date.now()
   const { pathname } = request.nextUrl
+
+  if (pathname.startsWith('/api/') || pathname.startsWith('/auth/')) {
+    const requestId = crypto.randomUUID()
+    const requestHeaders = new Headers(request.headers)
+    requestHeaders.set('x-request-id', requestId)
+
+    if (pathname.startsWith('/auth/') || isPublicApi(pathname)) {
+      const response = NextResponse.next({ request: { headers: requestHeaders } })
+      response.headers.set('x-request-id', requestId)
+      return response
+    }
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json(
+        { error: 'Server misconfiguration.' },
+        { status: 500, headers: { 'x-request-id': requestId } }
+      )
+    }
+
+    const response = NextResponse.next({ request: { headers: requestHeaders } })
+    const supabase = createServerClient(supabaseUrl, supabaseKey, {
+      cookies: {
+        getAll: () => request.cookies.getAll(),
+        setAll: (cookiesToSet) => {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
+        },
+      },
+    })
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser()
+    if (error || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required.' },
+        { status: 401, headers: { 'x-request-id': requestId } }
+      )
+    }
+
+    const rbacError = enforceApiRbac(pathname, request, requestId)
+    if (rbacError) return rbacError
+
+    response.headers.set('x-user-id', user.id)
+    response.headers.set('x-request-id', requestId)
+    return response
+  }
 
   if (isPublic(pathname)) return NextResponse.next()
 
