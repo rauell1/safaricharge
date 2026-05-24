@@ -47,7 +47,8 @@ export type DashboardSection =
   | 'ai-assistant'
   | 'energy-intelligence'
   | 'financial-model'
-  | 'export';
+  | 'export'
+  | 'admin';
 
 export interface SidebarContextMetric {
   label: string;
@@ -154,10 +155,29 @@ export function DashboardSidebar({
 }: DashboardSidebarProps) {
   const pathname = usePathname();
   const { isOpen: aiPanelOpen, toggleAI } = useAIAssistant();
+  const [isAdminUser, setIsAdminUser] = useState(false);
+
+  React.useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch('/api/profile');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && typeof data.isAdmin === 'boolean') {
+            setIsAdminUser(data.isAdmin);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch profile in sidebar:', err);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const resolvedActive: DashboardSection = useMemo(() => {
     if (activeSection && activeSection !== 'dashboard') return activeSection;
     if (!pathname) return 'dashboard';
+    if (pathname.startsWith('/admin'))                                              return 'admin';
     if (pathname.startsWith('/export'))                                             return 'export';
     if (pathname.startsWith('/energy-intelligence'))                                return 'energy-intelligence';
     if (pathname.startsWith('/live-results'))                                       return 'financial';
@@ -197,15 +217,20 @@ export function DashboardSidebar({
     { id: 'financial',       label: 'Live Results', icon: DollarSign, href: '/live-results' },
     { id: 'financial-model', label: 'Planner',      icon: TrendingUp, href: '/financial' },
   ];
-
-  const toolsNavItems: Array<{
-    id: DashboardSection;
-    label: string;
-    icon: React.ElementType;
-    href?: string;
-  }> = [
-    { id: 'export', label: 'Export', icon: Download, href: '/export' },
-  ];
+  const toolsNavItems = useMemo(() => {
+    const items: Array<{
+      id: DashboardSection;
+      label: string;
+      icon: React.ElementType;
+      href?: string;
+    }> = [
+      { id: 'export', label: 'Export', icon: Download, href: '/export' },
+    ];
+    if (isAdminUser) {
+      items.push({ id: 'admin', label: 'Admin Console', icon: ShieldCheck, href: '/admin' });
+    }
+    return items;
+  }, [isAdminUser, isAdminUser]); // using double dependency to avoid eslint issues or just standard [isAdminUser]
 
   const renderNavItem = (
     item: { id: DashboardSection; label: string; icon: React.ElementType; href?: string; isAiToggle?: boolean },

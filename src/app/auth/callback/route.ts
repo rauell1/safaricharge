@@ -33,7 +33,9 @@ export async function GET(request: Request) {
     if (!error && data.user) {
       const user = data.user
       const adminEmail = process.env.ADMIN_EMAIL || ''
-      const isAdmin = adminEmail && user.email?.toLowerCase() === adminEmail.toLowerCase()
+      const adminEmailsEnv = process.env.ADMIN_EMAILS || adminEmail
+      const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
+      const isAdmin = user.email && adminEmails.includes(user.email.toLowerCase())
 
       const redirectTarget = isAdmin ? '/admin' : safeNext
       const response = NextResponse.redirect(`${origin}${redirectTarget}`)

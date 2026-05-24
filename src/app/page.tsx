@@ -19,10 +19,12 @@ function createAdminToken(secret: string): string {
 async function ensureAdminUserExists() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
   const secretKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY
-  const adminEmail = process.env.ADMIN_EMAIL
+  const adminEmail = process.env.ADMIN_EMAIL || ''
+  const adminEmailsEnv = process.env.ADMIN_EMAILS || adminEmail
+  const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
   const adminPassword = process.env.ADMIN_PASSWORD
 
-  if (!url || !secretKey || !adminEmail || !adminPassword) {
+  if (!url || !secretKey || adminEmails.length === 0 || !adminPassword) {
     return
   }
 
@@ -37,28 +39,30 @@ async function ensureAdminUserExists() {
       return
     }
 
-    const adminUser = users.find(u => u.email?.toLowerCase() === adminEmail.toLowerCase())
-    if (!adminUser) {
-      console.log('[RootPage] Auto-creating admin user in Supabase Auth:', adminEmail)
-      const { error: createError } = await adminClient.auth.admin.createUser({
-        email: adminEmail,
-        password: adminPassword,
-        email_confirm: true, // Mark as confirmed instantly
-      })
-      if (createError) {
-        console.error('[RootPage] Failed to auto-create admin user:', createError.message)
+    for (const email of adminEmails) {
+      const adminUser = users.find(u => u.email?.toLowerCase() === email)
+      if (!adminUser) {
+        console.log('[RootPage] Auto-creating admin user in Supabase Auth:', email)
+        const { error: createError } = await adminClient.auth.admin.createUser({
+          email: email,
+          password: adminPassword,
+          email_confirm: true, // Mark as confirmed instantly
+        })
+        if (createError) {
+          console.error(`[RootPage] Failed to auto-create admin user (${email}):`, createError.message)
+        } else {
+          console.log(`[RootPage] Successfully auto-created admin user (${email})!`)
+        }
       } else {
-        console.log('[RootPage] Successfully auto-created admin user!')
-      }
-    } else {
-      console.log('[RootPage] Admin user exists. Force-syncing admin password to match ADMIN_PASSWORD...')
-      const { error: updateError } = await adminClient.auth.admin.updateUserById(adminUser.id, {
-        password: adminPassword,
-      })
-      if (updateError) {
-        console.error('[RootPage] Failed to sync admin password:', updateError.message)
-      } else {
-        console.log('[RootPage] Successfully synced admin password!')
+        console.log(`[RootPage] Admin user ${email} exists. Force-syncing admin password to match ADMIN_PASSWORD...`)
+        const { error: updateError } = await adminClient.auth.admin.updateUserById(adminUser.id, {
+          password: adminPassword,
+        })
+        if (updateError) {
+          console.error(`[RootPage] Failed to sync admin password (${email}):`, updateError.message)
+        } else {
+          console.log(`[RootPage] Successfully synced admin password for ${email}!`)
+        }
       }
     }
   } catch (err) {
@@ -82,7 +86,11 @@ export default async function RootPage() {
   // Authenticated users
   if (user && user.email_confirmed_at) {
     const adminEmail = process.env.ADMIN_EMAIL || '';
-    if (adminEmail && user.email?.toLowerCase() === adminEmail.toLowerCase()) {
+    const adminEmailsEnv = process.env.ADMIN_EMAILS || adminEmail;
+    const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+    const isAdmin = user.email && adminEmails.includes(user.email.toLowerCase());
+
+    if (isAdmin) {
       // User is the admin! Write the admin session cookie.
       const secret = process.env.ADMIN_SESSION_SECRET;
       if (secret) {

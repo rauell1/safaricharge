@@ -213,7 +213,9 @@ export async function proxy(request: NextRequest) {
 
   // Enforce role-based dashboard access
   const adminEmail = process.env.ADMIN_EMAIL || ''
-  const isAdmin = adminEmail && currentUser.email?.toLowerCase() === adminEmail.toLowerCase()
+  const adminEmailsEnv = process.env.ADMIN_EMAILS || adminEmail
+  const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
+  const isAdmin = currentUser.email && adminEmails.includes(currentUser.email.toLowerCase())
 
   if (pathname === '/login' || pathname === '/signup') {
     return NextResponse.redirect(new URL(isAdmin ? '/admin' : '/dashboard', request.url))

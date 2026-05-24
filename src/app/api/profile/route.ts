@@ -67,3 +67,33 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+/**
+ * GET /api/profile
+ * Retrieves the authenticated user's profile and returns whether they are an admin.
+ */
+export async function GET() {
+  const supabase = await createServerSupabaseClient()
+  if (!supabase) {
+    return NextResponse.json(
+      { error: 'Server misconfiguration: missing Supabase credentials.' },
+      { status: 500 }
+    )
+  }
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorised.' }, { status: 401 })
+  }
+
+  const adminEmail = process.env.ADMIN_EMAIL || ''
+  const adminEmailsEnv = process.env.ADMIN_EMAILS || adminEmail
+  const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
+  const isAdmin = user.email && adminEmails.includes(user.email.toLowerCase())
+
+  return NextResponse.json({
+    id: user.id,
+    email: user.email,
+    isAdmin: !!isAdmin,
+  })
+}
