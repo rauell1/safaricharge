@@ -2,11 +2,10 @@ import { createServerClient } from '@supabase/ssr'
 import { randomUUID } from 'crypto'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { validateAdminToken } from '@/app/api/admin/auth/route'
 
 // Exact public paths or path prefixes that do NOT require authentication.
-const PUBLIC_EXACT: Set<string> = new Set(['/', '/login', '/landing', '/demo', '/pricing', '/reset-password', '/admin-login'])
-const PUBLIC_PREFIXES: string[] = ['/auth/', '/forgot-password', '/signup']
+const PUBLIC_EXACT: Set<string> = new Set(['/', '/landing', '/demo', '/pricing'])
+const PUBLIC_PREFIXES: string[] = ['/auth/']
 const API_PUBLIC_PREFIXES: string[] = [
   '/api/health',
   '/api/admin/',
@@ -14,7 +13,6 @@ const API_PUBLIC_PREFIXES: string[] = [
   '/api/battery-modules',
   '/api/irradiance-presets',
   '/api/locations',
-  '/api/signup',
 ]
 
 const SESSION_TTL_MS = 60 * 60 * 1000
@@ -102,19 +100,6 @@ export async function proxy(request: NextRequest) {
 
   if (isPublic(pathname)) return NextResponse.next()
 
-  // Secure admin backend dashboard
-  if (pathname.startsWith('/admin')) {
-    const secret = process.env.ADMIN_SESSION_SECRET
-    const token = request.cookies.get('sc_admin_token')?.value ?? ''
-
-    if (!secret || !validateAdminToken(token, secret)) {
-      const loginUrl = new URL('/admin-login', request.url)
-      return NextResponse.redirect(loginUrl)
-    }
-
-    return NextResponse.next()
-  }
-
   // ── Session TTL check (cookie-only, zero network cost) ──────────────────
   // Do this BEFORE the Supabase getUser() call. If the session has expired
   // we can redirect immediately without making any network request at all.
@@ -131,10 +116,7 @@ export async function proxy(request: NextRequest) {
     // naturally, and calling signOut() from middleware adds a second network
     // round-trip on every expired-session redirect. The client will sign out
     // when it next calls getUser() and receives an invalid session.
-    const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('next', pathname)
-    loginUrl.searchParams.set('reason', 'session_expired')
-    const response = NextResponse.redirect(loginUrl)
+    const response = NextResponse.redirect(new URL('/landing', request.url))
     response.cookies.delete(SESSION_TOUCH_COOKIE)
     const totalMs = Date.now() - middlewareStart
     if (AUTH_TIMING_DEBUG) {
@@ -176,12 +158,7 @@ export async function proxy(request: NextRequest) {
   const getSessionMs = Date.now() - getSessionStart
 
   if (sessionError || !session?.user || !session.user.email_confirmed_at) {
-    const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('next', pathname)
-    if (session?.user && !session.user.email_confirmed_at) {
-      loginUrl.searchParams.set('error', 'email_not_confirmed')
-    }
-    const response = NextResponse.redirect(loginUrl)
+    const response = NextResponse.redirect(new URL('/landing', request.url))
     const totalMs = Date.now() - middlewareStart
     if (AUTH_TIMING_DEBUG) {
       console.info(`[auth-timing][middleware] unauthenticated get_session=${getSessionMs}ms total=${totalMs}ms path=${pathname}`)
@@ -206,12 +183,7 @@ export async function proxy(request: NextRequest) {
     getUserMs = Date.now() - getUserStart
 
     if (error || !user || !user.email_confirmed_at) {
-      const loginUrl = new URL('/login', request.url)
-      loginUrl.searchParams.set('next', pathname)
-      if (user && !user.email_confirmed_at) {
-        loginUrl.searchParams.set('error', 'email_not_confirmed')
-      }
-      const response = NextResponse.redirect(loginUrl)
+      const response = NextResponse.redirect(new URL('/landing', request.url))
       const totalMs = Date.now() - middlewareStart
       if (AUTH_TIMING_DEBUG) {
         console.info(`[auth-timing][middleware] invalid_user get_session=${getSessionMs}ms get_user=${getUserMs}ms total=${totalMs}ms path=${pathname}`)

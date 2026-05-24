@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import {
-  Users, FolderOpen, Activity, MessageSquare, LogOut, RefreshCw,
+  Users, FolderOpen, Activity, MessageSquare, RefreshCw,
   TrendingUp, Zap, Database, Shield, Clock, ChevronRight,
 } from 'lucide-react'
 
@@ -60,19 +59,16 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function AdminDashboard() {
-  const router = useRouter()
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
-  const [loggingOut, setLoggingOut] = useState(false)
 
   const fetchStats = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
       const res = await fetch('/api/admin/stats')
-      if (res.status === 401) { router.replace('/admin-login'); return }
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       setStats(await res.json())
       setLastRefresh(new Date())
@@ -81,15 +77,9 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false)
     }
-  }, [router])
+  }, [])
 
   useEffect(() => { fetchStats() }, [fetchStats])
-
-  const handleLogout = async () => {
-    setLoggingOut(true)
-    await fetch('/api/admin/logout', { method: 'POST' })
-    router.replace('/admin-login')
-  }
 
   return (
     <>
@@ -130,14 +120,6 @@ export default function AdminDashboard() {
             >
               <RefreshCw size={13} style={loading ? { animation: 'spin 1s linear infinite' } : undefined} />
               Refresh
-            </button>
-            <button
-              onClick={handleLogout}
-              disabled={loggingOut}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.06)', color: '#f87171', fontSize: 13, fontWeight: 500, cursor: loggingOut ? 'default' : 'pointer' }}
-            >
-              <LogOut size={13} />
-              Sign Out
             </button>
           </div>
         </header>

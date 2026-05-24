@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { validateAdminToken } from '@/app/api/admin/auth/route';
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -9,15 +8,7 @@ function getAdminClient() {
   return createClient(url, key, { auth: { persistSession: false } });
 }
 
-export async function GET(request: NextRequest) {
-  const secret = process.env.ADMIN_SESSION_SECRET;
-  if (!secret) return NextResponse.json({ error: 'Not configured' }, { status: 503 });
-
-  const token = request.cookies.get('sc_admin_token')?.value ?? '';
-  if (!validateAdminToken(token, secret)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+export async function GET() {
   try {
     const db = getAdminClient();
 

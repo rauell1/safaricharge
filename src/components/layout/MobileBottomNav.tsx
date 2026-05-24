@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   FlaskConical,
@@ -12,10 +12,8 @@ import {
   Zap,
   TrendingUp,
   MoreHorizontal,
-  LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { createClient } from '@/lib/supabase';
 import type { DashboardSection } from './DashboardSidebar';
 
 type MobileNavItemId = DashboardSection | 'finance-parent' | 'more-parent';
@@ -63,15 +61,8 @@ export function MobileBottomNav({
   onSectionChange,
 }: MobileBottomNavProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const [isFinanceMenuOpen, setIsFinanceMenuOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
-
-  const handleLogout = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/login')
-  };
 
   useEffect(() => {
     setIsFinanceMenuOpen(false);
@@ -205,15 +196,6 @@ export function MobileBottomNav({
                         </Link>
                       );
                     })}
-                    <div className="my-1 border-t border-[var(--border)]" />
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-[var(--alert)] transition-colors hover:bg-[var(--bg-card-muted)]"
-                    >
-                      <LogOut className="h-3.5 w-3.5" />
-                      Sign out
-                    </button>
                   </div>
                 )}
               </>

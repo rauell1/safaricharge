@@ -33,7 +33,7 @@ const plans = [
     period: '/mo',
     description: 'Multi-site, forecasting, and priority support.',
     cta: 'Upgrade to Pro',
-    href: '/login',
+    href: '/demo',
     highlight: true,
     features: [
       'Everything in Open Core',

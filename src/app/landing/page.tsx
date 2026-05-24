@@ -84,7 +84,7 @@ const plans = [
     period: '/mo',
     description: 'Multi-site, forecasting, and priority support.',
     cta: 'Start free trial',
-    href: '/login',
+    href: '/demo',
     highlight: true,
     features: [
       'Everything in Open Core',
