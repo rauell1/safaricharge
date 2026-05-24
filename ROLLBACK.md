@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 252 | `rollback/fix-restore-horizontal-layout-by-follo-2026-05-24-171861d` | `171861d` | fix: restore horizontal layout by following standard shadcn sidebar pattern (1f +40/-50) | 2026-05-24 |
 | 251 | `rollback/merge-pull-request-261-from-rauell1-co-2026-05-24-bf02016` | `bf02016` | Merge pull request #261 from rauell1/copilot/fix-wrapper-issue (4f +57/-3) | 2026-05-24 |
 | 250 | `rollback/fix-resolve-horizontal-layout-squeezin-2026-05-24-9fb713a` | `9fb713a` | fix: resolve horizontal layout squeezing on onboarding wizard using fullscreen fixed centering layout (1f +94/-68) | 2026-05-24 |
 | 249 | `rollback/feat-split-brand-logo-letters-into-hig-2026-05-24-3ab285e` | `3ab285e` | feat: split brand logo letters into highly responsive vector HTML and introduce inline dashboard site-setup location onboarding (3f +381/-37) | 2026-05-24 |
@@ -2618,6 +2619,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: Merge pull request #261 from rauell1/copilot/fix-wrapper-issue
 - **Date**: 2026-05-24
 - **Changed**: 4 file(s), +57/-3 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #252 — `rollback/fix-restore-horizontal-layout-by-follo-2026-05-24-171861d`
+
+- **Branch**: `rollback/fix-restore-horizontal-layout-by-follo-2026-05-24-171861d`
+- **Commit**: `171861de73938d65d99b5a119c7150620a882db3`
+- **Subject**: fix: restore horizontal layout by following standard shadcn sidebar pattern
+- **Date**: 2026-05-24
+- **Changed**: 1 file(s), +40/-50 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
