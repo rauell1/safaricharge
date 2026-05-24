@@ -158,7 +158,10 @@ export async function proxy(request: NextRequest) {
   const getSessionMs = Date.now() - getSessionStart
 
   if (sessionError || !session?.user || !session.user.email_confirmed_at) {
-    const response = NextResponse.redirect(new URL('/landing', request.url))
+    if (pathname === '/login' || pathname === '/signup') {
+      return NextResponse.next()
+    }
+    const response = NextResponse.redirect(new URL('/login', request.url))
     const totalMs = Date.now() - middlewareStart
     if (AUTH_TIMING_DEBUG) {
       console.info(`[auth-timing][middleware] unauthenticated get_session=${getSessionMs}ms total=${totalMs}ms path=${pathname}`)
@@ -176,6 +179,7 @@ export async function proxy(request: NextRequest) {
     now - lastValidatedAt > AUTH_VALIDATION_WINDOW_MS
 
   let getUserMs = 0
+  let currentUser = session.user
   if (needsServerValidation) {
     // getUser() performs remote JWT validation with Supabase.
     const getUserStart = Date.now()
@@ -183,7 +187,10 @@ export async function proxy(request: NextRequest) {
     getUserMs = Date.now() - getUserStart
 
     if (error || !user || !user.email_confirmed_at) {
-      const response = NextResponse.redirect(new URL('/landing', request.url))
+      if (pathname === '/login' || pathname === '/signup') {
+        return NextResponse.next()
+      }
+      const response = NextResponse.redirect(new URL('/login', request.url))
       const totalMs = Date.now() - middlewareStart
       if (AUTH_TIMING_DEBUG) {
         console.info(`[auth-timing][middleware] invalid_user get_session=${getSessionMs}ms get_user=${getUserMs}ms total=${totalMs}ms path=${pathname}`)
@@ -195,7 +202,7 @@ export async function proxy(request: NextRequest) {
         total: totalMs,
       })
     }
-
+    currentUser = user
     supabaseResponse.cookies.set(AUTH_VALIDATED_AT_COOKIE, String(now), {
       httpOnly: true,
       sameSite: 'lax',
@@ -203,6 +210,24 @@ export async function proxy(request: NextRequest) {
       path: '/',
       maxAge: Math.max(30, Math.floor(AUTH_VALIDATION_WINDOW_MS / 1000)),
     })
+  }
+
+  // Enforce role-based dashboard access
+  const adminEmail = process.env.ADMIN_EMAIL || ''
+  const isAdmin = adminEmail && currentUser.email?.toLowerCase() === adminEmail.toLowerCase()
+
+  if (pathname === '/login' || pathname === '/signup') {
+    return NextResponse.redirect(new URL(isAdmin ? '/admin' : '/dashboard', request.url))
+  }
+
+  if (pathname.startsWith('/admin')) {
+    if (!isAdmin) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+  }
+
+  if (pathname.startsWith('/dashboard') && isAdmin) {
+    return NextResponse.redirect(new URL('/admin', request.url))
   }
 
   // Touch the TTL cookie so active users never get logged out mid-session.
