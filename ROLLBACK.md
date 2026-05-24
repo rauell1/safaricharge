@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 234 | `rollback/feat-restore-login-and-signup-portals-2026-05-24-03e6495` | `03e6495` | feat: restore login and signup portals with admin auto-redirection (5f +738/-4) | 2026-05-24 |
 | 233 | `rollback/feat-remove-login-system-redirect-unau-2026-05-24-4fee87f` | `4fee87f` | feat: remove login system; redirect unauthenticated users to /landing (18f +14/-997) | 2026-05-24 |
 | 232 | `rollback/merge-pull-request-259-from-rauell1-co-2026-05-24-8e2dade` | `8e2dade` | Merge pull request #259 from rauell1/copilot/fix-middleware-proxy-issue (2f +64/-97) | 2026-05-24 |
 | 231 | `rollback/feat-security-audit-log-org-scoping-au-2026-05-24-2137ca1` | `2137ca1` | feat(security): audit log, org scoping, auth middleware, and RBAC (5f +569/-2) | 2026-05-24 |
@@ -2420,6 +2421,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat: remove login system; redirect unauthenticated users to /landing
 - **Date**: 2026-05-24
 - **Changed**: 18 file(s), +14/-997 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #234 — `rollback/feat-restore-login-and-signup-portals-2026-05-24-03e6495`
+
+- **Branch**: `rollback/feat-restore-login-and-signup-portals-2026-05-24-03e6495`
+- **Commit**: `03e6495b5ce8cbd0c5190038bea95bca2c55be0f`
+- **Subject**: feat: restore login and signup portals with admin auto-redirection
+- **Date**: 2026-05-24
+- **Changed**: 5 file(s), +738/-4 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
