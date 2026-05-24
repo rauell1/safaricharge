@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 243 | `rollback/feat-completely-remove-unauthenticated-2026-05-24-5b27e5b` | `5b27e5b` | feat: completely remove unauthenticated demo access and enforce login (3f +16/-36) | 2026-05-24 |
 | 242 | `rollback/feat-secure-multi-admin-sidebar-consol-2026-05-24-a3218a3` | `a3218a3` | feat: secure multi-admin sidebar console toggle and seeder (5f +103/-36) | 2026-05-24 |
 | 241 | `rollback/fix-resolve-login-redirect-freeze-usin-2026-05-24-d915e3b` | `d915e3b` | fix: resolve login redirect freeze using window.location.assign (1f +2/-2) | 2026-05-24 |
 | 240 | `rollback/chore-remove-github-links-from-landing-2026-05-24-b24b26a` | `b24b26a` | chore: remove github links from landing page header and footer (1f +0/-12) | 2026-05-24 |
@@ -2519,6 +2520,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat: secure multi-admin sidebar console toggle and seeder
 - **Date**: 2026-05-24
 - **Changed**: 5 file(s), +103/-36 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #243 — `rollback/feat-completely-remove-unauthenticated-2026-05-24-5b27e5b`
+
+- **Branch**: `rollback/feat-completely-remove-unauthenticated-2026-05-24-5b27e5b`
+- **Commit**: `5b27e5b2b5a8fc72c8a109961d60831b87c895fa`
+- **Subject**: feat: completely remove unauthenticated demo access and enforce login
+- **Date**: 2026-05-24
+- **Changed**: 3 file(s), +16/-36 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
