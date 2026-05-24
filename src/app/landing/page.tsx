@@ -150,7 +150,6 @@ const NAV_LINKS = [
   { label: 'Features', href: '#features' },
   { label: 'Performance', href: '#stats' },
   { label: 'Pricing', href: '#pricing' },
-  { label: 'GitHub', href: 'https://github.com/rauell1/safaricharge', external: true },
 ] as const;
 
 export default function LandingPage() {
@@ -971,17 +970,6 @@ export default function LandingPage() {
                 onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)'; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-page-muted)'; }}
               >Pricing</a>
-              <a
-                href="https://github.com/rauell1/safaricharge"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 transition-colors"
-                style={{ color: 'var(--site-page-muted)' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-page-muted)'; }}
-              >
-                GitHub <ArrowUpRight className="w-3.5 h-3.5" />
-              </a>
             </div>
           </div>
 
