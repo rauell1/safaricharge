@@ -380,7 +380,11 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
     projectYears: 20,
   });
 
-  const [hasSetupLocation, setHasSetupLocation] = useState<boolean | null>(null);
+  // Start as false (show wizard immediately) — the async preference check running
+  // below will set this to true if a saved config exists, transitioning the user
+  // straight to the dashboard. Avoids a position:fixed blocking overlay while
+  // getUserPreference resolves (which can hang if Supabase auth is slow).
+  const [hasSetupLocation, setHasSetupLocation] = useState<boolean>(false);
   const [activeLocation, setActiveLocation] = useState<LocationOption>(DEFAULT_LOCATION);
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [locationSearch, setLocationSearch] = useState('');
@@ -533,18 +537,7 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
     })();
   }, [toast]);
 
-  if (hasSetupLocation === null) {
-    return (
-      <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-primary)', zIndex: 999 }}>
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#22c55e] border-t-transparent" />
-          <p className="text-sm font-medium text-[var(--text-secondary)]">Checking microgrid site profile...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (hasSetupLocation === false) {
+  if (!hasSetupLocation) {
     return (
       <div style={{ position: 'fixed', inset: 0, color: 'var(--text-primary)', fontFamily: "'Inter', system-ui, sans-serif", display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-primary)', zIndex: 999 }}>
         {/* Subtle grid backdrop */}
