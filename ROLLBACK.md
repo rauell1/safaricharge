@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 236 | `rollback/feat-resolve-edge-middleware-randomuui-2026-05-24-bdbbc47` | `bdbbc47` | feat: resolve edge middleware randomUUID crash, add admin landing redirection link, implement site config loading and simulation run saving (5f +292/-9) | 2026-05-24 |
 | 235 | `rollback/feat-implement-login-sign-up-and-app-l-2026-05-24-6d61176` | `6d61176` | feat: implement login, sign-up, and app links on the landing page (1f +57/-14) | 2026-05-24 |
 | 234 | `rollback/feat-restore-login-and-signup-portals-2026-05-24-03e6495` | `03e6495` | feat: restore login and signup portals with admin auto-redirection (5f +738/-4) | 2026-05-24 |
 | 233 | `rollback/feat-remove-login-system-redirect-unau-2026-05-24-4fee87f` | `4fee87f` | feat: remove login system; redirect unauthenticated users to /landing (18f +14/-997) | 2026-05-24 |
@@ -2442,6 +2443,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat: implement login, sign-up, and app links on the landing page
 - **Date**: 2026-05-24
 - **Changed**: 1 file(s), +57/-14 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #236 — `rollback/feat-resolve-edge-middleware-randomuui-2026-05-24-bdbbc47`
+
+- **Branch**: `rollback/feat-resolve-edge-middleware-randomuui-2026-05-24-bdbbc47`
+- **Commit**: `bdbbc4791c0e3ead0336250e54e1728e0c1834a9`
+- **Subject**: feat: resolve edge middleware randomUUID crash, add admin landing redirection link, implement site config loading and simulation run saving
+- **Date**: 2026-05-24
+- **Changed**: 5 file(s), +292/-9 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
