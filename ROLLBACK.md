@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 231 | `rollback/feat-security-audit-log-org-scoping-au-2026-05-24-2137ca1` | `2137ca1` | feat(security): audit log, org scoping, auth middleware, and RBAC (5f +569/-2) | 2026-05-24 |
 | 230 | `rollback/fix-concurrency-atomic-simulation-save-2026-05-24-b42c555` | `b42c555` | fix(concurrency): atomic simulation saves, scenario rollback, and cache race (4f +436/-221) | 2026-05-24 |
 | 229 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-24-d7497cc` | `d7497cc` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-05-24 |
 | 228 | `rollback/feat-simplify-registration-by-removing-2026-05-24-257e25b` | `257e25b` | feat: simplify registration by removing site details and enable auto-seeding of admin email (5f +121/-75) | 2026-05-24 |
@@ -2387,6 +2388,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix(concurrency): atomic simulation saves, scenario rollback, and cache race
 - **Date**: 2026-05-24
 - **Changed**: 4 file(s), +436/-221 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #231 — `rollback/feat-security-audit-log-org-scoping-au-2026-05-24-2137ca1`
+
+- **Branch**: `rollback/feat-security-audit-log-org-scoping-au-2026-05-24-2137ca1`
+- **Commit**: `2137ca1ccb298c53f066d5db3ec61997718756e9`
+- **Subject**: feat(security): audit log, org scoping, auth middleware, and RBAC
+- **Date**: 2026-05-24
+- **Changed**: 5 file(s), +569/-2 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
