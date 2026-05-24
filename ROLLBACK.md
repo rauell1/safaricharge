@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 250 | `rollback/fix-resolve-horizontal-layout-squeezin-2026-05-24-9fb713a` | `9fb713a` | fix: resolve horizontal layout squeezing on onboarding wizard using fullscreen fixed centering layout (1f +94/-68) | 2026-05-24 |
 | 249 | `rollback/feat-split-brand-logo-letters-into-hig-2026-05-24-3ab285e` | `3ab285e` | feat: split brand logo letters into highly responsive vector HTML and introduce inline dashboard site-setup location onboarding (3f +381/-37) | 2026-05-24 |
 | 248 | `rollback/feat-replace-brand-logo-and-favicon-wi-2026-05-24-ebac310` | `ebac310` | feat: replace brand logo and favicon with new infinity loop assets (8f +6/-6) | 2026-05-24 |
 | 247 | `rollback/feat-replace-logo-with-simplified-flat-2026-05-24-7fa8a0c` | `7fa8a0c` | feat: replace logo with simplified flat transparent SVG giraffe mark (1f +34/-51) | 2026-05-24 |
@@ -2596,6 +2597,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat: split brand logo letters into highly responsive vector HTML and introduce inline dashboard site-setup location onboarding
 - **Date**: 2026-05-24
 - **Changed**: 3 file(s), +381/-37 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #250 — `rollback/fix-resolve-horizontal-layout-squeezin-2026-05-24-9fb713a`
+
+- **Branch**: `rollback/fix-resolve-horizontal-layout-squeezin-2026-05-24-9fb713a`
+- **Commit**: `9fb713a0f699d8863ec71d11f2a6f90493833e5e`
+- **Subject**: fix: resolve horizontal layout squeezing on onboarding wizard using fullscreen fixed centering layout
+- **Date**: 2026-05-24
+- **Changed**: 1 file(s), +94/-68 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
