@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 241 | `rollback/fix-resolve-login-redirect-freeze-usin-2026-05-24-d915e3b` | `d915e3b` | fix: resolve login redirect freeze using window.location.assign (1f +2/-2) | 2026-05-24 |
 | 240 | `rollback/chore-remove-github-links-from-landing-2026-05-24-b24b26a` | `b24b26a` | chore: remove github links from landing page header and footer (1f +0/-12) | 2026-05-24 |
 | 239 | `rollback/feat-allow-administrative-access-to-mo-2026-05-24-6e5431f` | `6e5431f` | feat: allow administrative access to monitoring dashboard and add Main Site & Monitoring Dashboard buttons to admin console (2f +13/-5) | 2026-05-24 |
 | 238 | `rollback/feat-simplify-login-page-to-remove-app-2026-05-24-586078b` | `586078b` | feat: simplify login page to remove Apple/Google OAuth, integrate forgot password recovery flow, and add self-healing admin password sync (2f +145/-98) | 2026-05-24 |
@@ -2497,6 +2498,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: chore: remove github links from landing page header and footer
 - **Date**: 2026-05-24
 - **Changed**: 1 file(s), +0/-12 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #241 — `rollback/fix-resolve-login-redirect-freeze-usin-2026-05-24-d915e3b`
+
+- **Branch**: `rollback/fix-resolve-login-redirect-freeze-usin-2026-05-24-d915e3b`
+- **Commit**: `d915e3b1b030dd51da6fce376caa73993891c0d7`
+- **Subject**: fix: resolve login redirect freeze using window.location.assign
+- **Date**: 2026-05-24
+- **Changed**: 1 file(s), +2/-2 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
