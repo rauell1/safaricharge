@@ -186,8 +186,8 @@ export function DashboardSidebar({
       document.cookie = 'sc_auth_checked_at=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       document.cookie = 'sc_admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       
-      // Perform full page redirection back to login gateway
-      window.location.assign('/login');
+      // Perform full page redirection back to landing page
+      window.location.assign('/landing');
     } catch (err) {
       console.error('Failed to sign out:', err);
     }

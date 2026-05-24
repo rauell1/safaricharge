@@ -565,7 +565,7 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
 
         {/* Main Content Form */}
         <div style={{ position: 'relative', zIndex: 10, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, overflowY: 'auto' }}>
-          <div className="relative w-full max-w-xl bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl shadow-2xl p-6 md:p-8 overflow-hidden backdrop-blur-xl bg-opacity-70" style={{ boxSizing: 'border-box' }}>
+          <div className="relative w-full max-w-[36rem] bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl shadow-2xl p-6 md:p-8 overflow-hidden backdrop-blur-xl bg-opacity-70" style={{ boxSizing: 'border-box' }}>
             <div className="absolute top-0 right-0 w-[250px] h-[250px] bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-[150px] h-[150px] bg-blue-500/5 rounded-full blur-[60px] pointer-events-none" />
             
@@ -577,7 +577,7 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
                 <h2 className="text-xl md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
                   Initialize Microgrid Location
                 </h2>
-                <p className="text-xs md:text-sm text-[var(--text-secondary)] max-w-sm">
+                <p className="text-xs md:text-sm text-[var(--text-secondary)] max-w-[24rem]">
                   Every SafariCharge microgrid requires precise coordinates to model temperature degradation, solar irradiance curves, and local utility tariff configurations.
                 </p>
               </div>

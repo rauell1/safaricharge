@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 // Exact public paths or path prefixes that do NOT require authentication.
-const PUBLIC_EXACT: Set<string> = new Set(['/', '/landing', '/pricing'])
+const PUBLIC_EXACT: Set<string> = new Set(['/', '/landing', '/demo', '/pricing'])
 const PUBLIC_PREFIXES: string[] = ['/auth/']
 const API_PUBLIC_PREFIXES: string[] = [
   '/api/health',
@@ -157,10 +157,7 @@ export async function proxy(request: NextRequest) {
   const getSessionMs = Date.now() - getSessionStart
 
   if (sessionError || !session?.user || !session.user.email_confirmed_at) {
-    if (pathname === '/login' || pathname === '/signup') {
-      return NextResponse.next()
-    }
-    const response = NextResponse.redirect(new URL('/login', request.url))
+    const response = NextResponse.redirect(new URL('/landing', request.url))
     const totalMs = Date.now() - middlewareStart
     if (AUTH_TIMING_DEBUG) {
       console.info(`[auth-timing][middleware] unauthenticated get_session=${getSessionMs}ms total=${totalMs}ms path=${pathname}`)
@@ -186,10 +183,7 @@ export async function proxy(request: NextRequest) {
     getUserMs = Date.now() - getUserStart
 
     if (error || !user || !user.email_confirmed_at) {
-      if (pathname === '/login' || pathname === '/signup') {
-        return NextResponse.next()
-      }
-      const response = NextResponse.redirect(new URL('/login', request.url))
+      const response = NextResponse.redirect(new URL('/landing', request.url))
       const totalMs = Date.now() - middlewareStart
       if (AUTH_TIMING_DEBUG) {
         console.info(`[auth-timing][middleware] invalid_user get_session=${getSessionMs}ms get_user=${getUserMs}ms total=${totalMs}ms path=${pathname}`)
@@ -217,7 +211,7 @@ export async function proxy(request: NextRequest) {
   const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
   const isAdmin = currentUser.email && adminEmails.includes(currentUser.email.toLowerCase())
 
-  if (pathname === '/login' || pathname === '/signup') {
+  if (pathname === '/landing') {
     return NextResponse.redirect(new URL(isAdmin ? '/admin' : '/dashboard', request.url))
   }
 

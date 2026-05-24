@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @config "../../tailwind.config.ts";
 
+
 /* ═══════════════════════════════════════════════════════════════
    SAFARICHARGE DESIGN TOKENS
    Strategy:
@@ -695,4 +696,53 @@ header {
   background: color-mix(in srgb, var(--bg-primary) 96%, transparent);
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(12px);
+}
+
+/*
+  ── Tailwind v4 max-width compatibility fix ──────────────────────────────
+  The custom spacing scale (tailwind.config.ts) defines sm/md/lg/xl/2xl as
+  tiny spacing values (0.5rem–3rem). In v4, max-w-* derives from --spacing-*,
+  so max-w-xl resolves to 32px instead of the expected ~576px container width.
+
+  @utility cannot override generated utilities (they appear later in the same
+  @layer utilities block). This @layer utilities block appended here comes AFTER
+  the auto-generated spacing utilities in source order, so within the same layer
+  it wins via the "later source position wins" rule — no !important needed.
+  Responsive variants are covered explicitly below.
+*/
+@layer utilities {
+  .max-w-sm  { max-width: 24rem; }
+  .max-w-md  { max-width: 28rem; }
+  .max-w-lg  { max-width: 32rem; }
+  .max-w-xl  { max-width: 36rem; }
+  .max-w-2xl { max-width: 42rem; }
+}
+
+/* Responsive variants — same fix for sm:, md:, lg: prefixes */
+@media (min-width: 640px) {
+  @layer utilities {
+    .sm\:max-w-sm  { max-width: 24rem; }
+    .sm\:max-w-md  { max-width: 28rem; }
+    .sm\:max-w-lg  { max-width: 32rem; }
+    .sm\:max-w-xl  { max-width: 36rem; }
+    .sm\:max-w-2xl { max-width: 42rem; }
+  }
+}
+@media (min-width: 768px) {
+  @layer utilities {
+    .md\:max-w-sm  { max-width: 24rem; }
+    .md\:max-w-md  { max-width: 28rem; }
+    .md\:max-w-lg  { max-width: 32rem; }
+    .md\:max-w-xl  { max-width: 36rem; }
+    .md\:max-w-2xl { max-width: 42rem; }
+  }
+}
+@media (min-width: 1024px) {
+  @layer utilities {
+    .lg\:max-w-sm  { max-width: 24rem; }
+    .lg\:max-w-md  { max-width: 28rem; }
+    .lg\:max-w-lg  { max-width: 32rem; }
+    .lg\:max-w-xl  { max-width: 36rem; }
+    .lg\:max-w-2xl { max-width: 42rem; }
+  }
 }
