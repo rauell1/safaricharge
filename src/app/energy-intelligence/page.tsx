@@ -440,7 +440,7 @@ const DEFAULT_PV_KW = 15;
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function EnergyIntelligencePage() {
+export function EnergyIntelligenceView() {
   const [pvKw, setPvKw] = useState(DEFAULT_PV_KW);
   const [inverter, setInverter] = useState<InverterParams>(DEFAULT_INVERTER);
   const [battery, setBattery] = useState<BatteryParams>(DEFAULT_BATTERY);
@@ -590,7 +590,7 @@ export default function EnergyIntelligencePage() {
   const CABLE_MM2_OPTIONS = [4, 6, 10, 16, 25, 35];
 
   return (
-    <DashboardLayout activeSection="energy-intelligence">
+    <div className="flex-1 min-w-0">
       {/* ─── Hero ────────────────────────────────────────────────────── */}
       <div className="px-4 sm:px-6 pt-6">
         <div className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] shadow-card">
@@ -905,6 +905,14 @@ export default function EnergyIntelligencePage() {
           <KpiCard label="Grid Export" value={gridExportKwh.toFixed(1)} unit="kWh" color="var(--solar)" />
         </div>
       </div>
+    </div>
+  );
+}
+
+export default function EnergyIntelligencePage() {
+  return (
+    <DashboardLayout activeSection="energy-intelligence">
+      <EnergyIntelligenceView />
     </DashboardLayout>
   );
 }

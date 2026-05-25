@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import Link from 'next/link';
 import {
   Trash2, Upload, ArrowLeft, BookMarked, TrendingUp, TrendingDown,
   FileDown, Copy, BarChart2, FileUp, Copy as CopyIcon, X, Info,
@@ -13,7 +12,6 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid,
   RadarChart, Radar as RechartsRadar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
 } from 'recharts';
-import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -38,10 +36,8 @@ import {
 } from '@/components/ui/dialog';
 import { useEnergySystemStore, type SavedScenario, type FinancialSnapshot, type LocationCoordinatesSnapshot } from '@/stores/energySystemStore';
 import { useToast } from '@/hooks/use-toast';
-import { Toaster } from '@/components/ui/toaster';
-import { clearExternalUploadActive, markExternalUploadActive } from '@/lib/external-upload-guard';
 import { buildFinancialSnapshot } from '@/lib/financial-dashboard';
-import { useMinuteData } from '@/hooks/useEnergySystem';
+import { clearExternalUploadActive, markExternalUploadActive } from '@/lib/external-upload-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -298,30 +294,24 @@ function DetailDrawer({ scenario, baseline, onClose, onLoad, onDuplicate, onDele
         {/* Actions */}
         <div className="px-6 pb-5 flex flex-wrap gap-2">
           <Button
-            size="sm"
             onClick={() => { onLoad(scenario.id, scenario.name); onClose(); }}
-            className="bg-[var(--battery)] text-white hover:bg-[var(--battery-bright)]"
+            className="bg-[var(--battery)] text-white hover:bg-[var(--battery-bright)] rounded-xl"
           >
-            <Upload className="h-3.5 w-3.5 mr-1.5" />
-            Load to Dashboard
+            <Upload className="h-4 w-4 mr-1.5" />Load to Dashboard
           </Button>
           <Button
-            size="sm"
             variant="outline"
             onClick={() => onDuplicate(scenario.id)}
-            className="border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className="border-[var(--border)] text-[var(--text-secondary)] rounded-xl"
           >
-            <CopyIcon className="h-3.5 w-3.5 mr-1.5" />
-            Duplicate
+            <Copy className="h-4 w-4 mr-1.5" />Duplicate
           </Button>
           <Button
-            size="sm"
             variant="ghost"
             onClick={() => { onDelete(scenario.id, scenario.name); onClose(); }}
-            className="text-red-400 hover:text-red-300 hover:bg-red-400/10 ml-auto"
+            className="text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-xl"
           >
-            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-            Delete
+            <Trash2 className="h-4 w-4 mr-1.5" />Delete
           </Button>
         </div>
       </div>
@@ -329,7 +319,7 @@ function DetailDrawer({ scenario, baseline, onClose, onLoad, onDuplicate, onDele
   );
 }
 
-// ── Import dialog ────────────────────────────────────────────────────────────
+// ── Import Dialog ────────────────────────────────────────────────────────────
 
 interface ImportDialogProps {
   open: boolean;
@@ -341,96 +331,87 @@ function ImportDialog({ open, onOpenChange, onImport }: ImportDialogProps) {
   const [text, setText] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    markExternalUploadActive(true);
     const reader = new FileReader();
-    reader.onload = (ev) => {
-      const result = ev.target?.result;
-      if (typeof result === 'string') setText(result);
-      clearExternalUploadActive();
-    };
-    reader.onerror = () => {
-      clearExternalUploadActive();
+    reader.onload = (evt) => {
+      const res = evt.target?.result;
+      if (typeof res === 'string') {
+        setText(res);
+      }
     };
     reader.readAsText(file);
-    e.target.value = '';
   };
 
-  const handleSubmit = () => {
+  const handleUploadClick = () => {
     markExternalUploadActive(true);
-    onImport(text.trim());
-    clearExternalUploadActive();
-    setText('');
+    fileRef.current?.click();
   };
 
-  const handleClose = () => {
-    clearExternalUploadActive();
-    setText('');
-    onOpenChange(false);
-  };
+  useEffect(() => {
+    if (!open) {
+      setText('');
+      clearExternalUploadActive();
+    }
+  }, [open]);
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="bg-[var(--bg-card)] border-[var(--border)] text-[var(--text-primary)] max-w-lg">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="bg-[var(--bg-card)] border-[var(--border)] max-w-lg rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileUp className="h-4 w-4 text-[var(--solar)]" />
+          <DialogTitle className="text-[var(--text-primary)] flex items-center gap-2">
+            <FileUp className="h-5 w-5 text-[var(--battery)]" />
             Import Scenarios
           </DialogTitle>
-          <DialogDescription className="text-[var(--text-secondary)]">
-            Paste the JSON copied from "Copy JSON", or upload a <code className="text-[var(--solar)] text-xs">.json</code> file exported from another SafariCharge session. Duplicate scenarios (same id) will be skipped.
+          <DialogDescription className="text-[var(--text-tertiary)]">
+            Paste a scenario JSON or upload a saved `.json` file from a previous session.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="mt-1">
-          <input
-            ref={fileRef}
-            type="file"
-            accept="application/json,.json"
-            title="Upload scenario JSON file"
-            aria-label="Upload scenario JSON file"
-            className="hidden"
-            onChange={handleFile}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => fileRef.current?.click()}
-            className="border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] w-full"
-          >
-            <FileUp className="h-3.5 w-3.5 mr-1.5" />
-            Upload .json file
-          </Button>
-        </div>
-
-        <div className="relative">
-          <div className="absolute inset-x-0 -top-px flex items-center">
-            <div className="flex-1 border-t border-[var(--border)]" />
-            <span className="px-2 text-xs text-[var(--text-tertiary)] bg-[var(--bg-card)]">or paste JSON</span>
-            <div className="flex-1 border-t border-[var(--border)]" />
-          </div>
+        <div className="space-y-4 py-2">
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder={'[\n  { "id": "...", "name": "10kW Scenario", ... }\n]'}
-            rows={7}
-            className="mt-5 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2 font-mono text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-[var(--solar)] resize-y"
-            spellCheck={false}
+            placeholder='Paste your JSON content here (e.g. {"id": "...", "name": "..."})'
+            className="w-full h-40 bg-[var(--bg-card-muted)] border border-[var(--border)] text-[var(--text-primary)] text-xs rounded-xl p-3 focus:outline-none focus:ring-1 focus:ring-[var(--solar)] font-mono resize-none"
           />
+
+          <div className="flex items-center justify-between gap-4">
+            <input
+              type="file"
+              ref={fileRef}
+              accept=".json"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleUploadClick}
+              className="border-[var(--border)] text-[var(--text-secondary)] rounded-xl"
+            >
+              <Upload className="h-4 w-4 mr-1.5" />
+              Upload .json File
+            </Button>
+            <span className="text-[10px] text-[var(--text-tertiary)] max-w-[200px] truncate">
+              {fileRef.current?.files?.[0]?.name || ''}
+            </span>
+          </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="ghost" onClick={handleClose}>
+        <DialogFooter className="gap-2">
+          <Button
+            variant="ghost"
+            onClick={() => onOpenChange(false)}
+            className="text-[var(--text-secondary)] rounded-xl"
+          >
             Cancel
           </Button>
           <Button
-            onClick={handleSubmit}
-            disabled={text.trim().length === 0}
-            className="bg-[var(--battery)] text-white hover:bg-[var(--battery-bright)] disabled:opacity-50"
+            onClick={() => onImport(text)}
+            disabled={!text.trim()}
+            className="bg-[var(--battery)] text-white hover:bg-[var(--battery-bright)] rounded-xl"
           >
             Import
           </Button>
@@ -440,162 +421,41 @@ function ImportDialog({ open, onOpenChange, onImport }: ImportDialogProps) {
   );
 }
 
-// ── Save Scenario inline card ────────────────────────────────────────────────
+// ── Normalized radar data helper ──────────────────────────────────────────────
 
-const NAIROBI_SOLAR_DATA = {
-  latitude: -1.2921,
-  longitude: 36.8219,
-  location: 'Nairobi',
-  monthlyAverage: [5.5, 5.8, 5.6, 5.4, 5.2, 5.1, 5.0, 5.3, 5.7, 5.8, 5.4, 5.3],
-  annualAverage: 5.4,
-  monthlyTemperature: [22, 23, 24, 23, 22, 21, 20, 21, 22, 23, 22, 22],
-  peakSunHours: [5.5, 5.8, 5.6, 5.4, 5.2, 5.1, 5.0, 5.3, 5.7, 5.8, 5.4, 5.3],
-};
-
-function SaveScenarioCard() {
-  const [name, setName] = useState('');
-  const [saved, setSaved] = useState(false);
-  const saveScenario = useEnergySystemStore((s) => s.saveScenario);
-  const systemConfig = useEnergySystemStore((s) => s.systemConfig);
-  const activeLocation = useEnergySystemStore((s) => s.activeLocation);
-  const storeSolarData = useEnergySystemStore((s) => s.solarData);
-  const minuteData = useMinuteData('today');
-  const { toast } = useToast();
-
-  const handleSave = () => {
-    const finalName = name.trim() || `Scenario ${new Date().toLocaleString()}`;
-
-    const currentSolarData = {
-      latitude: storeSolarData.latitude,
-      longitude: storeSolarData.longitude,
-      location: activeLocation.name,
-      monthlyAverage: storeSolarData.monthlyAvgKwhPerKwp,
-      annualAverage: storeSolarData.annualAvgKwhPerKwp,
-      monthlyTemperature: storeSolarData.monthlyAvgTemp,
-      peakSunHours: storeSolarData.monthlyAvgKwhPerKwp,
-    };
-
-    let financeSnap: FinancialSnapshot;
-    try {
-      const snap = buildFinancialSnapshot({
-        minuteData: minuteData as Parameters<typeof buildFinancialSnapshot>[0]['minuteData'],
-        solarData: currentSolarData,
-        inputs: { chargingTariffKes: 25, discountRatePct: 10, stationCount: 3, targetUtilizationPct: 45, projectYears: 20 },
-        evCapacityKw: 22,
-      });
-      financeSnap = {
-        capexTotal: snap.capex.total,
-        npvKes: snap.npvKes,
-        irrPct: snap.irrPct,
-        lcoeKesPerKwh: snap.lcoeKesPerKwh,
-        paybackYears: snap.paybackYears,
-      };
-    } catch {
-      financeSnap = { capexTotal: 0, npvKes: 0, irrPct: 0, lcoeKesPerKwh: 0, paybackYears: 0 };
-    }
-
-    saveScenario(finalName, financeSnap, { name: activeLocation.name, latitude: activeLocation.latitude, longitude: activeLocation.longitude });
-    setName('');
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2200);
-    toast({ title: 'Scenario saved', description: `"${finalName}" has been added below.` });
-  };
-
-  const hasData = minuteData.length > 0;
-
-  return (
-    <Card className="bg-[var(--bg-card)] border-[var(--border)] shadow-card">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide flex items-center gap-2">
-          <BookmarkPlus className="h-4 w-4 text-[var(--solar)]" />
-          Save Current Scenario
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
-          <div className="flex-1 space-y-1.5 min-w-0">
-            <Label
-              htmlFor="inline-scenario-name"
-              className="text-xs text-[var(--text-secondary)]"
-            >
-              Scenario name
-              {!hasData && (
-                <span className="ml-2 text-[var(--text-tertiary)] font-normal">
-                  (run the dashboard first to capture live data)
-                </span>
-              )}
-            </Label>
-            <Input
-              id="inline-scenario-name"
-              placeholder={`e.g. ${systemConfig.solarCapacityKW.toFixed(0)} kW PV · ${systemConfig.batteryCapacityKWh.toFixed(0)} kWh Battery`}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-              className="bg-[var(--bg-card-muted)] border-[var(--border)] text-[var(--text-primary)] focus-visible:ring-[var(--solar)] h-9"
-            />
-          </div>
-          <Button
-            onClick={handleSave}
-            disabled={saved}
-            className="h-9 shrink-0 transition-all duration-200"
-            style={{
-              background: saved ? 'var(--battery)' : 'var(--solar)',
-              color: '#fff',
-              opacity: saved ? 0.85 : 1,
-            }}
-          >
-            {saved ? (
-              <><Check className="h-3.5 w-3.5 mr-1.5" />Saved!</>
-            ) : (
-              <><BookmarkPlus className="h-3.5 w-3.5 mr-1.5" />Save Scenario</>
-            )}
-          </Button>
-        </div>
-        <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">
-          Captures the current system configuration (PV {systemConfig.solarCapacityKW.toFixed(1)} kW · Battery {systemConfig.batteryCapacityKWh.toFixed(1)} kWh · Inverter {systemConfig.inverterKW.toFixed(1)} kW) and KPI snapshot for comparison.
-        </p>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ── Radar normalisation ───────────────────────────────────────────────────────
-
-function normaliseRadarData(
-  scenarios: SavedScenario[],
-  labelMap: Map<string, string>,
-): Array<Record<string, string | number>> {
+function normaliseRadarData(scenarios: SavedScenario[], labelMap: Map<string, string>) {
   if (scenarios.length === 0) return [];
-
-  const axes: Array<{ key: string; label: string; get: (s: SavedScenario) => number }> = [
-    { key: 'selfSuff',  label: 'Self-Suff %',   get: s => s.performance.selfSufficiencyPct },
-    { key: 'savings',   label: 'Savings',        get: s => s.performance.totalSavingsKES },
-    { key: 'npv',       label: 'NPV',            get: s => s.finance.npvKes },
-    { key: 'irr',       label: 'IRR %',          get: s => s.finance.irrPct },
-    { key: 'payback',   label: 'Payback (inv)',  get: s => s.finance.paybackYears ? 1 / s.finance.paybackYears : 0 },
-    { key: 'solar',     label: 'Solar kWh',      get: s => s.performance.totalSolarKWh },
-    { key: 'avgSOC',    label: 'Avg SOC',        get: s => s.performance.avgBatterySOC },
+  const axes = [
+    { key: 'pv', label: 'PV (kW)', get: (s: SavedScenario) => s.system.solarCapacityKW },
+    { key: 'battery', label: 'Battery (kWh)', get: (s: SavedScenario) => s.system.batteryCapacityKWh },
+    { key: 'savings', label: 'Savings', get: (s: SavedScenario) => s.performance.totalSavingsKES },
+    { key: 'npv', label: 'NPV', get: (s: SavedScenario) => s.finance.npvKes },
+    { key: 'payback', label: 'Payback (yr)', get: (s: SavedScenario) => s.finance.paybackYears },
   ];
-
   const mins = axes.map(a => Math.min(...scenarios.map(a.get)));
   const maxs = axes.map(a => Math.max(...scenarios.map(a.get)));
-
-  return axes.map((a, i) => {
+  return axes.map((a, idx) => {
     const row: Record<string, string | number> = { label: a.label };
+    const min = mins[idx] ?? 0;
+    const max = maxs[idx] ?? 1;
+    const range = max - min || 1;
     scenarios.forEach(s => {
-      const range = maxs[i] - mins[i];
+      const label = labelMap.get(s.id)!;
       const raw = a.get(s);
-      const norm = range === 0 ? 80 : Math.round(((raw - mins[i]) / range) * 80 + 10);
-      row[labelMap.get(s.id) ?? s.name] = norm;
+      const scaled = a.key === 'payback' ? (max - raw) / range : (raw - min) / range;
+      row[label] = Number((scaled * 100).toFixed(1));
     });
     return row;
   });
 }
 
-// ── Main page ───────────────────────────────────────────────────────────────
+// ── Main nested view component ───────────────────────────────────────────────
 
-export default function ScenariosPage() {
-  const router = useRouter();
+interface ScenariosTabViewProps {
+  onNavigateSection?: (section: any) => void;
+}
+
+export function ScenariosTabView({ onNavigateSection }: ScenariosTabViewProps) {
   const scenarios = useEnergySystemStore((s) => s.scenarios);
   const deleteScenario = useEnergySystemStore((s) => s.deleteScenario);
   const loadScenario = useEnergySystemStore((s) => s.loadScenario);
@@ -604,7 +464,11 @@ export default function ScenariosPage() {
   const importScenarios = useEnergySystemStore((s) => s.importScenarios);
   const { toast } = useToast();
 
-  const loadSimulationRunStore = useEnergySystemStore((s) => s.loadSimulationRun);
+  const [baselineId, setBaselineId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [importOpen, setImportOpen] = useState(false);
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [chartTab, setChartTab] = useState<'bar' | 'radar'>('bar');
 
   const [runs, setRuns] = useState<SimulationRun[]>([]);
   const [loadingRuns, setLoadingRuns] = useState(true);
@@ -626,6 +490,8 @@ export default function ScenariosPage() {
     loadRuns();
   }, [loadRuns]);
 
+  const loadSimulationRunStore = useEnergySystemStore((s) => s.loadSimulationRun);
+
   const handleLoadRun = async (run: SimulationRun) => {
     setLoadingRunId(run.id);
     try {
@@ -635,7 +501,7 @@ export default function ScenariosPage() {
         title: 'Simulation run loaded',
         description: `"${run.name}" simulation state and time-series data restored.`,
       });
-      router.push('/dashboard');
+      onNavigateSection?.('dashboard');
     } catch (err: any) {
       toast({
         title: 'Failed to load run',
@@ -664,12 +530,6 @@ export default function ScenariosPage() {
     }
   };
 
-  const [baselineId, setBaselineId] = useState<string | null>(null);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [importOpen, setImportOpen] = useState(false);
-  const [detailId, setDetailId] = useState<string | null>(null);
-  const [chartTab, setChartTab] = useState<'bar' | 'radar'>('bar');
-
   const baseline: SavedScenario | undefined = scenarios.find(s => s.id === baselineId);
   const detailScenario: SavedScenario | null = scenarios.find(s => s.id === detailId) ?? null;
 
@@ -683,7 +543,7 @@ export default function ScenariosPage() {
   const handleLoad = (id: string, name: string) => {
     loadScenario(id);
     toast({ title: 'Scenario loaded', description: `"${name}" configuration restored to dashboard.` });
-    router.push('/dashboard');
+    onNavigateSection?.('dashboard');
   };
 
   const handleDuplicate = useCallback((id: string) => {
@@ -704,117 +564,90 @@ export default function ScenariosPage() {
     });
   }, []);
 
-  // ── Export helpers ──────────────────────────────────────────────────
-
   const handleExportCsv = () => {
     const headers = [
       'Name', 'Saved', 'PV kW', 'Battery kWh', 'Solar kWh',
-      'Self-suff %', 'Avg SOC %', 'Savings KES', 'NPV KES', 'IRR %', 'Payback yr',
+      'Self-suff', 'SOC', 'Savings', 'NPV', 'IRR', 'Payback'
     ];
     const rows = scenarios.map(s => [
-      s.name,
-      new Date(s.createdAt).toISOString(),
-      s.system.solarCapacityKW,
-      s.system.batteryCapacityKWh,
-      s.performance.totalSolarKWh.toFixed(2),
-      s.performance.selfSufficiencyPct.toFixed(2),
-      s.performance.avgBatterySOC.toFixed(2),
-      s.performance.totalSavingsKES.toFixed(0),
-      s.finance.npvKes.toFixed(0),
-      s.finance.irrPct.toFixed(2),
-      s.finance.paybackYears.toFixed(2),
+      s.name, s.createdAt, s.system.solarCapacityKW, s.system.batteryCapacityKWh,
+      s.performance.totalSolarKWh, s.performance.selfSufficiencyPct, s.performance.avgBatterySOC,
+      s.performance.totalSavingsKES, s.finance.npvKes, s.finance.irrPct, s.finance.paybackYears
     ]);
-    const csv = [headers, ...rows]
-      .map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
-      .join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `safaricharge-scenarios-${formatDateFilename(new Date())}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const csvContent = 'data:text/csv;charset=utf-8,'
+      + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `scenarios_${formatDateFilename(new Date())}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
     toast({ title: 'CSV exported', description: `${scenarios.length} scenarios downloaded.` });
   };
 
-  const handleCopyJson = async () => {
-    try {
-      await navigator.clipboard.writeText(JSON.stringify(scenarios, null, 2));
-      toast({ title: 'Copied to clipboard', description: 'Scenarios JSON copied.' });
-    } catch {
-      toast({ title: 'Copy failed', description: 'Could not access clipboard.', variant: 'destructive' });
-    }
-  };
-
   const handleExportPdf = () => {
-    const targetScenarios = selectedIds.length >= 2
+    const targetScenarios = selectedIds.length >= 1
       ? scenarios.filter(s => selectedIds.includes(s.id))
       : scenarios;
-
     if (targetScenarios.length === 0) {
-      toast({ title: 'Nothing to export', description: 'Save at least one scenario first.' });
+      toast({ title: 'Export failed', description: 'No scenarios available to export.', variant: 'destructive' });
       return;
     }
-
-    const now = new Date().toLocaleDateString('en-KE', { year: 'numeric', month: 'long', day: 'numeric' });
-
-    const tableHeaders = ['Metric', ...targetScenarios.map(s => s.name)];
-    const tableRows: Array<[string, ...string[]]> = [
-      ['PV Capacity (kW)',   ...targetScenarios.map(s => fmt(s.system.solarCapacityKW))],
-      ['Battery (kWh)',      ...targetScenarios.map(s => fmt(s.system.batteryCapacityKWh))],
-      ['Inverter (kW)',      ...targetScenarios.map(s => fmt(s.system.inverterKW))],
-      ['Total Solar (kWh)', ...targetScenarios.map(s => fmt(s.performance.totalSolarKWh))],
-      ['Self-Sufficiency',  ...targetScenarios.map(s => `${fmt(s.performance.selfSufficiencyPct)}%`)],
-      ['Avg Battery SOC',   ...targetScenarios.map(s => `${fmt(s.performance.avgBatterySOC)}%`)],
-      ['Grid Import (kWh)', ...targetScenarios.map(s => fmt(s.performance.totalGridImportKWh))],
-      ['Grid Export (kWh)', ...targetScenarios.map(s => fmt(s.performance.totalGridExportKWh))],
-      ['Total Savings',     ...targetScenarios.map(s => fmtKES(s.performance.totalSavingsKES))],
-      ['NPV',               ...targetScenarios.map(s => fmtKES(s.finance.npvKes))],
-      ['IRR',               ...targetScenarios.map(s => `${fmt(s.finance.irrPct)}%`)],
-      ['Payback (yr)',      ...targetScenarios.map(s => fmt(s.finance.paybackYears))],
-      ['LCOE (KES/kWh)',    ...targetScenarios.map(s => fmt(s.finance.lcoeKesPerKwh))],
-      ...(targetScenarios.some(s => s.engineering) ? [
-        ['Specific Yield (kWh/kWp)', ...targetScenarios.map(s => s.engineering ? fmt(s.engineering.specificYieldKWhPerKWp) : '—')] as [string, ...string[]],
-        ['Performance Ratio',        ...targetScenarios.map(s => s.engineering ? `${fmt(s.engineering.performanceRatioPct)}%` : '—')] as [string, ...string[]],
-        ['Capacity Factor',          ...targetScenarios.map(s => s.engineering ? `${fmt(s.engineering.capacityFactorPct)}%` : '—')] as [string, ...string[]],
-        ['Battery Cycles',           ...targetScenarios.map(s => s.engineering ? fmt(s.engineering.batteryCycles, 2) : '—')] as [string, ...string[]],
-      ] : []),
-    ];
-
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>SafariCharge — Scenario Comparison</title>
-<style>
-  body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a1a; margin: 0; padding: 32px; font-size: 12px; }
-  h1 { font-size: 20px; font-weight: 700; color: #01696f; margin-bottom: 4px; }
-  .subtitle { color: #555; font-size: 11px; margin-bottom: 24px; }
-  table { width: 100%; border-collapse: collapse; }
-  th { background: #01696f; color: #fff; text-align: left; padding: 8px 12px; font-weight: 600; font-size: 11px; }
-  td { padding: 7px 12px; border-bottom: 1px solid #e5e5e5; }
-  tr:nth-child(even) td { background: #f7fafa; }
-  td:first-child { font-weight: 500; color: #444; }
-  .footer { margin-top: 24px; font-size: 10px; color: #999; }
-  @media print { body { padding: 0; } }
-</style>
-</head>
-<body>
-<h1>SafariCharge · Scenario Comparison</h1>
-<p class="subtitle">Generated ${now} · ${targetScenarios.length} scenario${targetScenarios.length !== 1 ? 's' : ''}</p>
-<table>
-<thead><tr>${tableHeaders.map(h => `<th>${h}</th>`).join('')}</tr></thead>
-<tbody>
-${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('\n')}
-</tbody>
-</table>
-<p class="footer">SafariCharge Energy Management · safaricharge.co.ke · Nairobi, Kenya</p>
-</body>
-</html>`;
-
     const win = window.open('', '_blank');
     if (win) {
-      win.document.write(html);
+      const now = formatDate(new Date().toISOString());
+      const tableHeaders = ['Metric', ...targetScenarios.map(s => s.name)];
+      const matrix = [
+        ['PV Capacity (kW)',   ...targetScenarios.map(s => fmt(s.system.solarCapacityKW))],
+        ['Battery (kWh)',      ...targetScenarios.map(s => fmt(s.system.batteryCapacityKWh))],
+        ['Inverter (kW)',      ...targetScenarios.map(s => fmt(s.system.inverterKW))],
+        ['Total Solar (kWh)', ...targetScenarios.map(s => fmt(s.performance.totalSolarKWh))],
+        ['Self-Sufficiency',  ...targetScenarios.map(s => `${fmt(s.performance.selfSufficiencyPct)}%`)],
+        ['Avg Battery SOC',   ...targetScenarios.map(s => `${fmt(s.performance.avgBatterySOC)}%`)],
+        ['Grid Import (kWh)', ...targetScenarios.map(s => fmt(s.performance.totalGridImportKWh))],
+        ['Grid Export (kWh)', ...targetScenarios.map(s => fmt(s.performance.totalGridExportKWh))],
+        ['Total Savings',     ...targetScenarios.map(s => fmtKES(s.performance.totalSavingsKES))],
+        ['NPV',               ...targetScenarios.map(s => fmtKES(s.finance.npvKes))],
+        ['IRR',               ...targetScenarios.map(s => `${fmt(s.finance.irrPct)}%`)],
+        ['Payback (yr)',      ...targetScenarios.map(s => fmt(s.finance.paybackYears))],
+        ['LCOE (KES/kWh)',    ...targetScenarios.map(s => fmt(s.finance.lcoeKesPerKwh))],
+        ...(targetScenarios.some(s => s.engineering) ? [
+          ['Specific Yield (kWh/kWp)', ...targetScenarios.map(s => s.engineering ? fmt(s.engineering.specificYieldKWhPerKWp) : '-')] as [string, ...string[]],
+          ['Performance Ratio',        ...targetScenarios.map(s => s.engineering ? `${fmt(s.engineering.performanceRatioPct)}%` : '-')] as [string, ...string[]],
+          ['Capacity Factor',          ...targetScenarios.map(s => s.engineering ? `${fmt(s.engineering.capacityFactorPct)}%` : '-')] as [string, ...string[]],
+          ['Battery Cycles',           ...targetScenarios.map(s => s.engineering ? fmt(s.engineering.batteryCycles, 2) : '-')] as [string, ...string[]],
+        ] : []),
+      ];
+      const tableRows = matrix.map(r => `<tr>${r.map((c, i) => i === 0 ? `<td style="font-weight:600;background:#fafafa">${c}</td>` : `<td>${c}</td>`).join('')}</tr>`).join('');
+      win.document.write(`
+        <html>
+          <head>
+            <title>SafariCharge - Scenario Matrix</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #333; padding: 40px; }
+              h1 { font-size: 24px; margin-bottom: 5px; color: #10b981; }
+              p.subtitle { font-size: 13px; color: #666; margin-top: 0; margin-bottom: 30px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; }
+              th, td { border: 1px solid #e5e7eb; padding: 10px 12px; text-align: left; }
+              th { background: #f3f4f6; font-weight: 600; }
+              tr:hover { background: #f9fafb; }
+            </style>
+          </head>
+          <body>
+            <h1>SafariCharge Scenario Matrix</h1>
+            <p class="subtitle">Generated ${now} · ${targetScenarios.length} scenario${targetScenarios.length !== 1 ? 's' : ''}</p>
+            <table>
+              <thead>
+                <tr>${tableHeaders.map(h => `<th>${h}</th>`).join('')}</tr>
+              </thead>
+              <tbody>
+                ${tableRows}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `);
       win.document.close();
       win.focus();
       setTimeout(() => win.print(), 400);
@@ -822,8 +655,6 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
       toast({ title: 'Popup blocked', description: 'Please allow popups for this site to export PDF.', variant: 'destructive' });
     }
   };
-
-  // ── Import handler ──────────────────────────────────────────────────
 
   const handleImport = useCallback((json: string) => {
     const result = importScenarios(json);
@@ -841,8 +672,6 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
     });
   }, [importScenarios, toast]);
 
-  // ── Chart data ──────────────────────────────────────────────────
-
   const selectedScenarios = scenarios.filter(s => selectedIds.includes(s.id));
 
   const labelMap = new Map<string, string>();
@@ -858,15 +687,13 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
     { kpi: 'Self-suff (%)', ...Object.fromEntries(selectedScenarios.map(s => [labelMap.get(s.id)!, Number(s.performance.selfSufficiencyPct.toFixed(1))])) },
     { kpi: 'Savings (KES)', ...Object.fromEntries(selectedScenarios.map(s => [labelMap.get(s.id)!, Number(s.performance.totalSavingsKES.toFixed(0))])) },
     { kpi: 'NPV (KES)',     ...Object.fromEntries(selectedScenarios.map(s => [labelMap.get(s.id)!, Number(s.finance.npvKes.toFixed(0))])) },
-    { kpi: 'Payback (yr)', ...Object.fromEntries(selectedScenarios.map(s => [labelMap.get(s.id)!, Number(s.finance.paybackYears.toFixed(2))])) },
+    { kpi: 'Payback (yr)',  ...Object.fromEntries(selectedScenarios.map(s => [labelMap.get(s.id)!, Number(s.finance.paybackYears.toFixed(2))])) },
   ];
 
   const radarData = normaliseRadarData(selectedScenarios, labelMap);
 
   return (
-    <DashboardLayout activeSection="scenarios">
-      <Toaster />
-
+    <div className="flex-1 min-w-0">
       {/* Import dialog */}
       <ImportDialog open={importOpen} onOpenChange={setImportOpen} onImport={handleImport} />
 
@@ -888,23 +715,22 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
           {/* Header */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <Link href="/demo">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 rounded-xl border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                  aria-label="Back to dashboard"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-              </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onNavigateSection?.('dashboard')}
+                className="h-9 w-9 rounded-xl border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                aria-label="Back to dashboard"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
               <div>
                 <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
                   <BookMarked className="h-6 w-6 text-[var(--solar)]" />
-                  Saved Scenarios
+                  Saved Scenarios &amp; Run History
                 </h1>
                 <p className="text-sm text-[var(--text-tertiary)]">
-                  Compare named system configurations and KPI snapshots side-by-side.
+                  Compare named system configurations and reload historical simulation data points.
                 </p>
               </div>
             </div>
@@ -921,8 +747,8 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
                 onClick={() => setImportOpen(true)}
                 className="border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               >
-                <FileUp className="h-3.5 w-3.5 mr-1.5" />
-                Import JSON
+                <FileUp className="h-4 w-4 mr-1.5" />
+                Import Scenarios
               </Button>
 
               {scenarios.length > 0 && (
@@ -933,7 +759,7 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
                     onClick={handleExportCsv}
                     className="border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                   >
-                    <FileDown className="h-3.5 w-3.5 mr-1.5" />
+                    <FileDown className="h-4 w-4 mr-1.5" />
                     Export CSV
                   </Button>
                   <Button
@@ -941,27 +767,14 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
                     variant="outline"
                     onClick={handleExportPdf}
                     className="border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                    title={selectedIds.length >= 2 ? 'Export selected scenarios' : 'Export all scenarios'}
                   >
-                    <FileDown className="h-3.5 w-3.5 mr-1.5" />
-                    {selectedIds.length >= 2 ? 'Print Selected' : 'Print / PDF'}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleCopyJson}
-                    className="border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                  >
-                    <Copy className="h-3.5 w-3.5 mr-1.5" />
-                    Copy JSON
+                    <Copy className="h-4 w-4 mr-1.5" />
+                    Print Matrix
                   </Button>
                 </>
               )}
             </div>
           </div>
-
-          {/* ── Save Current Scenario ── */}
-          <SaveScenarioCard />
 
           {/* Empty state */}
           {scenarios.length === 0 && (
@@ -971,7 +784,7 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
                 <div>
                   <p className="text-[var(--text-primary)] font-semibold text-lg">No scenarios saved yet</p>
                   <p className="text-[var(--text-secondary)] text-sm mt-1">
-                    Use the <span className="font-medium text-[var(--solar)]">Save Current Scenario</span> card above, or{' '}
+                    Run the simulation and click <span className="font-medium text-[var(--solar)]">Save Scenario</span> on the main dashboard, or{' '}
                     <button
                       onClick={() => setImportOpen(true)}
                       className="font-medium text-[var(--battery)] underline underline-offset-2 hover:opacity-80 transition-opacity"
@@ -981,11 +794,9 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
                     from a previous session.
                   </p>
                 </div>
-                <Link href="/demo">
-                  <Button className="mt-2 bg-[var(--battery)] text-white hover:bg-[var(--battery-bright)]">
-                    Go to Dashboard
-                  </Button>
-                </Link>
+                <Button onClick={() => onNavigateSection?.('dashboard')} className="mt-2 bg-[var(--battery)] text-white hover:bg-[var(--battery-bright)]">
+                  Go to Dashboard
+                </Button>
               </CardContent>
             </Card>
           )}
@@ -1419,6 +1230,6 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
 
         </div>
       </main>
-    </DashboardLayout>
+    </div>
   );
 }

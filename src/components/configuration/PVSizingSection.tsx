@@ -20,6 +20,8 @@
 import { useMemo, useState } from 'react';
 import { setUserPreference } from '@/lib/supabase-db';
 import { useRouter } from 'next/navigation';
+import { useEnergySystemStore } from '@/stores/energySystemStore';
+import { useToast } from '@/hooks/use-toast';
 import presetsData from '../../../forecasting/kenya-irradiance-presets.json';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -64,6 +66,9 @@ interface LocationOverride {
 
 export function PVSizingSection({ locationOverride }: { locationOverride?: LocationOverride }) {
   const router = useRouter();
+  const { toast } = useToast();
+  const updateSystemConfig = useEnergySystemStore((s) => s.updateSystemConfig);
+
   const [dailyLoadKwh, setDailyLoadKwh] = useState(10);
   const [county, setCounty] = useState(typedPresets.presets[0]?.county ?? 'Nairobi');
   const [systemType, setSystemType] = useState<SystemType>('on-grid');
@@ -95,6 +100,15 @@ export function PVSizingSection({ locationOverride }: { locationOverride?: Locat
   );
 
   const handleLoadIntoSimulator = () => {
+    // Update local state directly in 0ms!
+    const optimalInverterKW = Math.max(10, Math.round((result.requiredPvCapacityKw / 1.2) * 10) / 10);
+    updateSystemConfig({
+      solarCapacityKW: Number(result.requiredPvCapacityKw.toFixed(1)),
+      batteryCapacityKWh: result.requiredBatteryCapacityKwh ? Number(result.requiredBatteryCapacityKwh.toFixed(1)) : 0,
+      inverterKW: optimalInverterKW,
+      systemMode: systemType === 'on-grid' ? 'on-grid' : systemType === 'off-grid' ? 'off-grid' : 'hybrid',
+    });
+
     const payload: SimulatorSizingPayload = {
       county: locationOverride ? locationOverride.name : selectedPreset.county,
       // systemType is passed through so the simulation can pre-set its System Mode
@@ -108,7 +122,11 @@ export function PVSizingSection({ locationOverride }: { locationOverride?: Locat
     };
     localStorage.setItem(SIZING_SIMULATOR_STORAGE_KEY, JSON.stringify(payload));
     void setUserPreference(SIZING_SIMULATOR_STORAGE_KEY, payload);
-    router.push('/simulation');
+
+    toast({
+      title: 'Sizing applied',
+      description: `Sized system (${result.requiredPvCapacityKw.toFixed(1)} kW PV, ${result.requiredBatteryCapacityKwh ? result.requiredBatteryCapacityKwh.toFixed(1) + ' kWh Battery' : 'No Battery'}) applied to active simulator.`,
+    });
   };
 
   const field = 'space-y-1.5';

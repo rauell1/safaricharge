@@ -193,75 +193,39 @@ export function DashboardSidebar({
     }
   };
 
-  const resolvedActive: DashboardSection = useMemo(() => {
-    if (activeSection && activeSection !== 'dashboard') return activeSection;
-    if (!pathname) return 'dashboard';
-    if (pathname.startsWith('/admin'))                                              return 'admin';
-    if (pathname.startsWith('/export'))                                             return 'export';
-    if (pathname.startsWith('/energy-intelligence'))                                return 'energy-intelligence';
-    if (pathname.startsWith('/live-results'))                                       return 'financial';
-    if (pathname.startsWith('/financial'))                                          return 'financial-model';
-    if (pathname.startsWith('/scenarios'))                                          return 'scenarios';
-    if (pathname.startsWith('/demo/simulation') || pathname.includes('simulation')) return 'simulation';
-    if (pathname.includes('configuration'))                                         return 'configuration';
-    if (pathname.includes('financial'))                                             return 'financial';
-    if (pathname.includes('recommendation'))                                        return 'recommendation';
-    if (pathname.includes('ai-assistant'))                                          return 'ai-assistant';
-    return activeSection ?? 'dashboard';
-  }, [activeSection, pathname]);
+  const resolvedActive = activeSection;
 
   const primaryNavItems: Array<{
     id: DashboardSection;
     label: string;
     icon: React.ElementType;
-    href?: string;
-    isAiToggle?: boolean;
   }> = [
-    { id: 'dashboard',           label: 'Dashboard',           icon: LayoutDashboard,   href: '/dashboard' },
-    { id: 'simulation',          label: 'Simulation',          icon: FlaskConical,      href: '/simulation' },
-    { id: 'configuration',       label: 'System Config',       icon: SlidersHorizontal, href: '/configuration' },
-    { id: 'energy-intelligence', label: 'Energy Intelligence', icon: Zap,               href: '/energy-intelligence' },
-    { id: 'scenarios',           label: 'Scenarios',           icon: BookMarked,        href: '/scenarios' },
-    { id: 'recommendation',      label: 'Recommendations',     icon: Lightbulb,         href: '/recommendation' },
-    // AI Assistant: toggles the slide-out panel — no page navigation
-    { id: 'ai-assistant',        label: 'AI Assistant',        icon: Bot,               isAiToggle: true },
+    { id: 'dashboard',           label: 'Operations',           icon: LayoutDashboard },
+    { id: 'configuration',       label: 'System Sizing & Design', icon: SlidersHorizontal },
+    { id: 'scenarios',           label: 'Scenarios & History',  icon: BookMarked },
+    { id: 'financial',           label: 'Financial Modeling',   icon: DollarSign },
+    { id: 'energy-intelligence', label: 'Intelligence & AI',    icon: Zap },
   ];
 
-  const financeNavItems: Array<{
-    id: DashboardSection;
-    label: string;
-    icon: React.ElementType;
-    href?: string;
-  }> = [
-    { id: 'financial',       label: 'Live Results', icon: DollarSign, href: '/live-results' },
-    { id: 'financial-model', label: 'Planner',      icon: TrendingUp, href: '/financial' },
-  ];
   const toolsNavItems = useMemo(() => {
     const items: Array<{
       id: DashboardSection;
       label: string;
       icon: React.ElementType;
-      href?: string;
     }> = [
-      { id: 'export', label: 'Export', icon: Download, href: '/export' },
+      { id: 'export', label: 'Export', icon: Download },
     ];
     if (isAdminUser) {
-      items.push({ id: 'admin', label: 'Admin Console', icon: ShieldCheck, href: '/admin' });
+      items.push({ id: 'admin', label: 'Admin Console', icon: ShieldCheck });
     }
     return items;
-  }, [isAdminUser, isAdminUser]); // using double dependency to avoid eslint issues or just standard [isAdminUser]
+  }, [isAdminUser]);
 
   const renderNavItem = (
-    item: { id: DashboardSection; label: string; icon: React.ElementType; href?: string; isAiToggle?: boolean },
+    item: { id: DashboardSection; label: string; icon: React.ElementType },
     extraClass = ''
   ) => {
-    const isAiToggleItem = item.isAiToggle === true;
-
-    // AI item is "active" when the panel is open; all others use path matching
-    const isActive = isAiToggleItem
-      ? aiPanelOpen
-      : resolvedActive === item.id ||
-        (!!item.href && !!pathname?.startsWith(item.href));
+    const isActive = resolvedActive === item.id;
 
     const inner = (
       <span className="flex items-center gap-3 w-full">
@@ -289,35 +253,17 @@ export function DashboardSidebar({
 
     return (
       <SidebarMenuItem key={item.id}>
-        {isAiToggleItem ? (
-          // Render as a button that toggles the AI panel
-          <SidebarMenuButton
-            isActive={isActive}
-            onClick={toggleAI}
-            aria-label={aiPanelOpen ? 'Close AI Assistant panel' : 'Open AI Assistant panel'}
-            aria-pressed={aiPanelOpen}
-            className={cn(
-              'group relative rounded-lg px-3 py-2 transition-colors duration-100 w-full',
-              isActive ? 'bg-[var(--bg-card)] shadow-sm' : 'hover:bg-[var(--bg-card-muted)]',
-              extraClass
-            )}
-          >
-            {inner}
-          </SidebarMenuButton>
-        ) : (
-          <SidebarMenuButton
-            asChild={!!item.href}
-            isActive={isActive}
-            onClick={() => !item.href && onSectionChange?.(item.id)}
-            className={cn(
-              'group relative rounded-lg px-3 py-2 transition-colors duration-100',
-              isActive ? 'bg-[var(--bg-card)] shadow-sm' : 'hover:bg-[var(--bg-card-muted)]',
-              extraClass
-            )}
-          >
-            {item.href ? <Link href={item.href} className="w-full">{inner}</Link> : inner}
-          </SidebarMenuButton>
-        )}
+        <SidebarMenuButton
+          isActive={isActive}
+          onClick={() => onSectionChange?.(item.id)}
+          className={cn(
+            'group relative rounded-lg px-3 py-2 transition-all duration-150 w-full',
+            isActive ? 'bg-[var(--bg-card)] shadow-sm' : 'hover:bg-[var(--bg-card-muted)]',
+            extraClass
+          )}
+        >
+          {inner}
+        </SidebarMenuButton>
       </SidebarMenuItem>
     );
   };
@@ -340,15 +286,6 @@ export function DashboardSidebar({
           <SidebarGroupContent>
             <SidebarMenu className="space-y-0.5">
               {primaryNavItems.map((item) => renderNavItem(item))}
-
-              {/* Finance sub-label */}
-              <SidebarMenuItem className="mt-2">
-                <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
-                  Finance
-                </div>
-              </SidebarMenuItem>
-
-              {financeNavItems.map((item) => renderNavItem(item, 'pl-6'))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

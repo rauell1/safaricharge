@@ -31,7 +31,7 @@ import {
   useTimeRange,
 } from '@/hooks/useEnergySystem';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart3, PieChart, TrendingUp, Leaf, Car, Trees, LayoutDashboard, FlaskConical, SlidersHorizontal, DollarSign, Lightbulb, Bot } from 'lucide-react';
+import { BarChart3, PieChart, TrendingUp, Leaf, Car, Trees, LayoutDashboard, FlaskConical, SlidersHorizontal, DollarSign, Lightbulb, Bot, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { EnergyReportModal } from '@/components/energy/EnergyReportModal';
 import type { SolarIrradianceData } from '@/lib/nasa-power-api';
@@ -60,6 +60,116 @@ import { RecommendationComponents } from '@/components/energy/RecommendationComp
 import { SimulationNodes } from '@/components/simulation/SimulationNodes';
 import { ValidationPanel } from '@/components/simulation/ValidationPanel';
 import { SafariChargeAIAssistant } from '@/components/ai/AIAssistant';
+import { ScenariosTabView } from '@/components/scenarios/ScenariosTabView';
+import { EnergyIntelligenceView } from '@/app/energy-intelligence/page';
+
+// Onboarding Overlay Tour Guide
+function OnboardingTour({
+  activeSection,
+  onNavigateSection,
+  onClose,
+}: {
+  activeSection: DashboardSection;
+  onNavigateSection: (section: DashboardSection) => void;
+  onClose: () => void;
+}) {
+  const [step, setStep] = useState(0);
+
+  const steps = [
+    {
+      title: 'Welcome to SafariCharge!',
+      description: 'Your location is initialized! Let’s walk through optimizing your clean energy microgrid in 4 quick steps.',
+      targetSection: 'dashboard' as DashboardSection,
+      actionLabel: 'Get Started',
+    },
+    {
+      title: 'Step 1: System Sizing & Design',
+      description: 'Click on "System Sizing & Design" tab in the navigation to run the advanced physical sizing calculator or tune PV panels & Battery capacity.',
+      targetSection: 'configuration' as DashboardSection,
+      actionLabel: 'Go to Sizing',
+    },
+    {
+      title: 'Step 2: Operations & Simulation',
+      description: 'On the main Dashboard (Operations), you can view active grid frequency, real-time power flows, and run simulation loops.',
+      targetSection: 'dashboard' as DashboardSection,
+      actionLabel: 'Go to Operations',
+    },
+    {
+      title: 'Step 3: Financial Modeling',
+      description: 'Explore Capex/Opex forecasts, live savings, dynamic LCOE, NPV, and IRR planning in the Financial Modeling tab.',
+      targetSection: 'financial' as DashboardSection,
+      actionLabel: 'Go to Finance',
+    },
+    {
+      title: 'Step 4: AI & Irradiance Intelligence',
+      description: 'Need assistance? Switch to the "Intelligence & AI" tab to analyze county-wide NASA irradiance curves or consult the AI Copilot!',
+      targetSection: 'energy-intelligence' as DashboardSection,
+      actionLabel: 'Finish Tour',
+    },
+  ];
+
+  const currentStep = steps[step];
+
+  const handleNext = () => {
+    if (step < steps.length - 1) {
+      const nextStep = steps[step + 1];
+      onNavigateSection(nextStep.targetSection);
+      setStep(step + 1);
+    } else {
+      localStorage.setItem('sc_tour_completed', 'true');
+      onClose();
+    }
+  };
+
+  return (
+    <div className="fixed bottom-6 right-6 z-[999] max-w-sm bg-[var(--bg-card)] border-2 border-[var(--battery)]/40 rounded-2xl p-5 shadow-2xl backdrop-blur-xl bg-opacity-95 animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div className="absolute top-0 right-0 w-[100px] h-[100px] bg-[var(--battery)]/5 rounded-full blur-[30px] pointer-events-none" />
+      <div className="space-y-3 relative z-10">
+        <div className="flex justify-between items-center">
+          <Badge className="bg-[var(--battery-soft)] text-[var(--battery)] border-[var(--battery)]/20 px-2 py-0.5 text-[10px]">
+            Step {step} of {steps.length - 1}
+          </Badge>
+          <button
+            onClick={() => {
+              localStorage.setItem('sc_tour_completed', 'true');
+              onClose();
+            }}
+            className="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+          >
+            Skip
+          </button>
+        </div>
+        
+        <h4 className="text-sm font-extrabold text-[var(--text-primary)] flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-[var(--battery)] animate-ping" />
+          {currentStep.title}
+        </h4>
+        <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+          {currentStep.description}
+        </p>
+
+        <div className="flex items-center justify-between pt-2 border-t border-[var(--border)]">
+          <div className="flex gap-1">
+            {steps.map((_, i) => (
+              <span
+                key={i}
+                className={`h-1.5 rounded-full transition-all ${
+                  i === step ? 'w-3.5 bg-[var(--battery)]' : 'w-1.5 bg-[var(--border-strong)]'
+                }`}
+              />
+            ))}
+          </div>
+          <button
+            onClick={handleNext}
+            className="bg-[var(--battery)] text-white hover:bg-[var(--battery-bright)] font-bold text-xs px-3.5 py-1.5 rounded-xl shadow-md transition-all flex items-center gap-1"
+          >
+            {currentStep.actionLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Force dynamic rendering - no static generation
@@ -444,11 +554,16 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
     useEnergySystemStore((s) => s.fullSystemConfig.loads),
   ]);
 
+  const [showTour, setShowTour] = useState(false);
+
   useEffect(() => {
-    if (activeSection === 'scenarios') {
-      router.push('/scenarios');
+    if (hasSetupLocation) {
+      const tourCompleted = localStorage.getItem('sc_tour_completed');
+      if (!tourCompleted) {
+        setShowTour(true);
+      }
     }
-  }, [activeSection, router]);
+  }, [hasSetupLocation]);
 
   // Fallback timeout to prevent getting stuck in loading state
   useEffect(() => {
@@ -746,6 +861,13 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
           onLocationPickerOpen={() => setLocationPickerOpen(true)}
         />
       </DashboardLayout>
+      {showTour && (
+        <OnboardingTour
+          activeSection={activeSection}
+          onNavigateSection={setActiveSection}
+          onClose={() => setShowTour(false)}
+        />
+      )}
       {locationPickerOpen && typeof document !== 'undefined' && createPortal(
         <div
           style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, boxSizing: 'border-box' }}
@@ -900,17 +1022,63 @@ function DemoSectionRenderer({
     case 'ai-assistant':
       return <DemoAIAssistantView onNavigateSection={onNavigateSection} />;
     case 'scenarios':
-      return (
-        <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
-          <div className="max-w-7xl mx-auto">
-            <p className="text-sm text-[var(--text-tertiary)]">Opening Scenarios...</p>
-          </div>
-        </main>
-      );
+      return <ScenariosTabView onNavigateSection={onNavigateSection} />;
+    case 'energy-intelligence':
+      return <DemoEnergyIntelligenceView onNavigateSection={onNavigateSection} />;
     case 'dashboard':
     default:
       return <DemoDashboardView financialInputs={financialInputs} onFinancialInputsChange={onFinancialInputsChange} onNavigateSection={onNavigateSection} activeLocation={activeLocation} onLocationPickerOpen={onLocationPickerOpen} />;
   }
+}
+
+function DemoEnergyIntelligenceView({ onNavigateSection }: { onNavigateSection: (section: DashboardSection) => void }) {
+  const [subTab, setSubTab] = useState<'telemetry' | 'copilot'>('telemetry');
+  return (
+    <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="pb-4 flex justify-between items-center gap-4 flex-wrap border-b border-[var(--border)]">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-[var(--ev-soft)] border border-[var(--ev)]/20 flex items-center justify-center shrink-0">
+              <Zap size={20} className="text-[var(--ev)]" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-[var(--text-primary)]">Intelligence &amp; AI</h2>
+              <p className="text-sm text-[var(--text-tertiary)]">Explore physics storage simulations or chat with your AI copilot</p>
+            </div>
+          </div>
+          <div className="flex bg-[var(--bg-card-muted)] border border-[var(--border)] rounded-xl p-1 gap-1">
+            <button
+              type="button"
+              onClick={() => setSubTab('telemetry')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                subTab === 'telemetry'
+                  ? 'bg-[var(--battery)] text-white shadow-md'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              Storage Simulation
+            </button>
+            <button
+              type="button"
+              onClick={() => setSubTab('copilot')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                subTab === 'copilot'
+                  ? 'bg-[var(--battery)] text-white shadow-md'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              AI Copilot
+            </button>
+          </div>
+        </div>
+        {subTab === 'telemetry' ? (
+          <EnergyIntelligenceView />
+        ) : (
+          <DemoAIAssistantView onNavigateSection={onNavigateSection} />
+        )}
+      </div>
+    </main>
+  );
 }
 
 type DemoDashboardViewProps = {
@@ -1631,6 +1799,7 @@ function DemoSimulationView({
 }
 
 function DemoConfigurationView({ activeLocation, onLocationPickerOpen }: { activeLocation: LocationOption; onLocationPickerOpen: () => void }) {
+  const [mode, setMode] = useState<'sliders' | 'calculator'>('sliders');
   return (
     <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
@@ -1640,22 +1809,51 @@ function DemoConfigurationView({ activeLocation, onLocationPickerOpen }: { activ
               <SlidersHorizontal size={20} className="text-[var(--solar)]" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-[var(--text-primary)]">System Configuration</h2>
-              <p className="text-sm text-[var(--text-tertiary)]">Configure solar panels, battery, EV chargers and load profiles</p>
+              <h2 className="text-2xl font-bold text-[var(--text-primary)]">System Sizing &amp; Design</h2>
+              <p className="text-sm text-[var(--text-tertiary)]">Tune component parameters manually or run the physical sizing calculations</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onLocationPickerOpen}
-            className="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--bg-card-hover)] px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:border-[var(--battery)] hover:text-[var(--battery)] transition-colors"
-          >
-            <MapPin size={14} className="shrink-0" />
-            <span className="max-w-[200px] truncate">{activeLocation.displayName}</span>
-            <span className="text-[10px] text-[var(--text-tertiary)]">{activeLocation.county}</span>
-          </button>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex bg-[var(--bg-card-muted)] border border-[var(--border)] rounded-xl p-1 gap-1">
+              <button
+                type="button"
+                onClick={() => setMode('sliders')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  mode === 'sliders'
+                    ? 'bg-[var(--battery)] text-white shadow-md'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                Manual sliders
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('calculator')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  mode === 'calculator'
+                    ? 'bg-[var(--battery)] text-white shadow-md'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                Advanced Sizing Calculator
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={onLocationPickerOpen}
+              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-strong)] bg-[var(--bg-card-hover)] px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:border-[var(--battery)] hover:text-[var(--battery)] transition-colors"
+            >
+              <MapPin size={14} className="shrink-0" />
+              <span className="max-w-[120px] truncate">{activeLocation.displayName}</span>
+              <span className="text-[10px] text-[var(--text-tertiary)]">{activeLocation.county}</span>
+            </button>
+          </div>
         </div>
-        <PVSizingSection locationOverride={activeLocation} />
-        <LoadConfigComponents />
+        {mode === 'calculator' ? (
+          <PVSizingSection locationOverride={activeLocation} />
+        ) : (
+          <LoadConfigComponents />
+        )}
       </div>
     </main>
   );
@@ -1697,6 +1895,66 @@ function DemoFinancialView({
           actualYieldKwh={snapshot.energy.avgDailySolarKWh}
           tariffRate={financialInputs.chargingTariffKes}
         />
+        
+        {minuteData.length > 0 && (
+          <Card className="dashboard-card mt-6">
+            <CardHeader>
+              <CardTitle className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-[var(--battery)]" />
+                Advanced Capital Planning
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs text-[var(--text-secondary)] font-medium">
+                      <span>Project Lifetime</span>
+                      <span className="font-bold text-[var(--text-primary)]">{financialInputs.projectYears} years</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={5}
+                      max={30}
+                      step={1}
+                      value={financialInputs.projectYears}
+                      onChange={(e) => onFinancialInputsChange(prev => ({ ...prev, projectYears: Number(e.target.value) }))}
+                      className="w-full h-1.5 accent-[var(--battery)] cursor-pointer"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs text-[var(--text-secondary)] font-medium">
+                      <span>Discount Rate</span>
+                      <span className="font-bold text-[var(--text-primary)]">{financialInputs.discountRatePct}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={5}
+                      max={30}
+                      step={1}
+                      value={financialInputs.discountRatePct}
+                      onChange={(e) => onFinancialInputsChange(prev => ({ ...prev, discountRatePct: Number(e.target.value) }))}
+                      className="w-full h-1.5 accent-[var(--battery)] cursor-pointer"
+                    />
+                  </div>
+                </div>
+                <div className="bg-[var(--bg-card-muted)] border border-[var(--border)] rounded-2xl p-4 flex flex-col justify-center gap-2">
+                  <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Project Valuation Summary</h4>
+                  <div className="grid grid-cols-2 gap-4 mt-1">
+                    <div>
+                      <span className="text-[10px] text-[var(--text-tertiary)] uppercase block">Net Present Value</span>
+                      <span className="text-lg font-bold text-[var(--text-primary)]">KES {Math.round(snapshot.npvKes).toLocaleString()}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-[var(--text-tertiary)] uppercase block">Internal Rate of Return</span>
+                      <span className="text-lg font-bold text-[var(--text-primary)]">{snapshot.irrPct.toFixed(1)}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </main>
   );
