@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 258 | `rollback/fix-persist-microgrid-site-profile-onb-2026-05-25-c0658a2` | `c0658a2` | fix: persist microgrid site profile onboarding state in global store to prevent page resets on sidebar navigation (2f +18/-7) | 2026-05-25 |
 | 257 | `rollback/fix-remove-all-pricing-sections-pages-2026-05-25-cbddaa3` | `cbddaa3` | fix: remove all pricing sections, pages, and subscription plan tiers, making the entire site 100% free (4f +16/-503) | 2026-05-25 |
 | 256 | `rollback/fix-integrate-location-based-project-s-2026-05-25-ea4e4d7` | `ea4e4d7` | fix: integrate location-based project saving, dynamic solar calculations, and loading on scenarios dashboard (4f +153/-12) | 2026-05-25 |
 | 255 | `rollback/fix-restore-login-signup-bypass-in-mid-2026-05-25-4c2cb8f` | `4c2cb8f` | fix: restore login/signup bypass in middleware and optimize onboarding wizard loading (2f +30/-7) | 2026-05-25 |
@@ -2684,6 +2685,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix: remove all pricing sections, pages, and subscription plan tiers, making the entire site 100% free
 - **Date**: 2026-05-25
 - **Changed**: 4 file(s), +16/-503 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #258 — `rollback/fix-persist-microgrid-site-profile-onb-2026-05-25-c0658a2`
+
+- **Branch**: `rollback/fix-persist-microgrid-site-profile-onb-2026-05-25-c0658a2`
+- **Commit**: `c0658a2563ff7ed132bb7c68900fc1bc2086c7b1`
+- **Subject**: fix: persist microgrid site profile onboarding state in global store to prevent page resets on sidebar navigation
+- **Date**: 2026-05-25
+- **Changed**: 2 file(s), +18/-7 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
