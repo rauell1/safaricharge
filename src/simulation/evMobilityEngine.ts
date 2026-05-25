@@ -20,10 +20,16 @@ export interface EVFleetResult {
   sessionCount: number;
   demandResponseShedKw: number;
   smartChargingDeferralKw: number;
+  queueLength: number;
+  balkedSessions: number;
 }
 
+// Module-level persistent state for client-side continuous simulation
 let demandResponseActive = false;
 let observedPeakTariff = 40;
+
+let chargerQueue: number[] = [];
+let balkedSessionsCount = 0;
 
 const TARGET_SOC_RESIDENTIAL = 0.9;
 const TARGET_SOC_DEPOT = 0.92;
@@ -32,6 +38,7 @@ const V2G_DISCHARGE_WINDOW_HOURS = 1;
 const SOC_DEFERRAL_BUFFER = 0.1;
 const MAX_DEFERRAL_HOURS_UNTIL_SOLAR = 2;
 const CHEAP_TARIFF_CHARGING_MULTIPLIER = 1.15;
+const QUEUE_MAX_LIMIT = 3;
 
 const normalizeHour = (t: number): number => ((t % 24) + 24) % 24;
 
@@ -81,6 +88,13 @@ const smartCanDefer = (
   );
 };
 
+// Computes the CC-CV charging power multiplier based on battery SOC
+export const getCcCvChargeFactor = (soc: number): number => {
+  if (soc < 0.8) return 1.0;
+  // Exponential decay from 100% to 5% power between 80% and 100% SOC
+  return Math.max(0.05, Math.exp(-5.0 * (soc - 0.8)));
+};
+
 const loadForVehicle = (
   soc: number,
   targetSoc: number,
@@ -90,7 +104,9 @@ const loadForVehicle = (
 ): number => {
   if (soc >= targetSoc || dtHours <= 0) return 0;
   const neededKwh = (targetSoc - soc) * batteryKwh;
-  return Math.max(0, Math.min(chargerKw, neededKwh / dtHours));
+  // Apply CC-CV power constraints
+  const rawPower = Math.max(0, Math.min(chargerKw, neededKwh / dtHours));
+  return rawPower * getCcCvChargeFactor(soc);
 };
 
 export function defaultEVFleetConfig(): EVFleetConfig {
@@ -117,6 +133,9 @@ export function initEVFleetSocs(config: EVFleetConfig): number[] {
       socs.push(clamp(gaussianRandom(0.35, 0.15), 0.1, 0.9));
     }
   }
+  // Clear persistent queue state on re-initialization
+  chargerQueue = [];
+  balkedSessionsCount = 0;
   return socs;
 }
 
@@ -146,7 +165,7 @@ export function simulateEVFleet(
 
   const batterySoc = batterySocPct ?? 100;
   const batteryReserve = batteryReservePct ?? 20;
-  const maxBatteryChargeRate = MAX_BATTERY_CHARGE_RATE_KW; // 30.0
+  const maxBatteryChargeRate = MAX_BATTERY_CHARGE_RATE_KW;
   const batteryHasHeadroom = batterySoc < 99.9;
   const batteryBelowReserve = batterySoc < (batteryReserve + 5);
 
@@ -159,34 +178,54 @@ export function simulateEVFleet(
   let smartChargingDeferralKw = 0;
 
   if (config.useCase === 'public-station') {
+    // Stochastic arrivals
     const inPeakArrivalWindow = isWithinWindow(hour, 7, 9) || isWithinWindow(hour, 17, 20);
-    const lambdaPerHour = inPeakArrivalWindow ? 4 : 1.5;
+    const lambdaPerHour = inPeakArrivalWindow ? 4.0 : 1.5;
     const arrivals = samplePoisson(lambdaPerHour * safeDt);
 
-    const connected = vehicleSocs.filter((soc) => soc < TARGET_SOC_PUBLIC).length;
-    const idleSlots = Math.max(0, vehicleCount - connected);
-    const newSessions = Math.min(arrivals, idleSlots);
+    // Feed arrivals into the queue or slots
+    for (let a = 0; a < arrivals; a++) {
+      const arrivalSoc = clamp(gaussianRandom(0.3, 0.12), 0.05, 0.75);
+      
+      // Look for an idle slot (represented by an EV that is fully charged / at TARGET_SOC)
+      let slotFound = false;
+      for (let i = 0; i < vehicleSocs.length; i++) {
+        if (vehicleSocs[i] >= TARGET_SOC_PUBLIC) {
+          vehicleSocs[i] = arrivalSoc;
+          slotFound = true;
+          break;
+        }
+      }
 
-    let assigned = 0;
-    for (let i = 0; i < vehicleSocs.length && assigned < newSessions; i += 1) {
-      if (vehicleSocs[i] >= TARGET_SOC_PUBLIC) {
-        vehicleSocs[i] = clamp(sampleLogNormal(0.45, 0.18), 0.05, 0.85);
-        assigned += 1;
+      if (!slotFound) {
+        if (chargerQueue.length < QUEUE_MAX_LIMIT) {
+          chargerQueue.push(arrivalSoc);
+        } else {
+          balkedSessionsCount += 1;
+        }
       }
     }
 
+    // Step the simulation for active slots
     for (let i = 0; i < vehicleSocs.length; i += 1) {
       const soc = vehicleSocs[i];
-      if (soc >= TARGET_SOC_PUBLIC) continue;
-      const durationMinutes = Math.max(10, gaussianRandom(45, 20));
-      const fractionOfStep = Math.min(1, (safeDt * 60) / durationMinutes);
-      const powerKw = chargerKw * fractionOfStep;
+      if (soc >= TARGET_SOC_PUBLIC) {
+        // If a slot is idle and there is a vehicle in queue, pop it in!
+        if (chargerQueue.length > 0) {
+          const queuedSoc = chargerQueue.shift()!;
+          vehicleSocs[i] = queuedSoc;
+        }
+        continue;
+      }
+
+      const powerKw = loadForVehicle(soc, TARGET_SOC_PUBLIC, batteryKwh, chargerKw, safeDt);
+      if (powerKw <= 0) continue;
+
       const deliveredKwh = powerKw * safeDt;
-      vehicleSocs[i] = clamp(soc + deliveredKwh / batteryKwh, 0, 1);
+      vehicleSocs[i] = clamp(soc + deliveredKwh / batteryKwh, 0, TARGET_SOC_PUBLIC);
       totalLoadKw += powerKw;
       sessionCount += 1;
     }
-    sessionCount = Math.min(sessionCount, vehicleCount);
   } else {
     const chargingWindow = config.useCase === 'residential'
       ? isWithinWindow(hour, 22, 7)
@@ -227,12 +266,15 @@ export function simulateEVFleet(
         : 1;
       const effectiveLoad = Math.min(baseChargerKw, baseLoad * aggressiveMultiplier);
       const deliveredKwh = effectiveLoad * safeDt;
-      vehicleSocs[i] = clamp(soc + deliveredKwh / batteryKwh, 0, 1);
+      vehicleSocs[i] = clamp(soc + deliveredKwh / batteryKwh, 0, targetSoc);
       totalLoadKw += effectiveLoad;
       sessionCount += 1;
     }
   }
 
+  // ------------------------------------------------------------------
+  // V2G Export calculation
+  // ------------------------------------------------------------------
   let v2gExportKw = 0;
   const isUnderFrequencyV2g = gridFrequencyHz < 49.8;
   if (config.v2gEnabled && (isPeakTime || isUnderFrequencyV2g) && safeDt > 0) {
@@ -266,5 +308,7 @@ export function simulateEVFleet(
     sessionCount: Math.min(sessionCount, vehicleCount),
     demandResponseShedKw,
     smartChargingDeferralKw,
+    queueLength: chargerQueue.length,
+    balkedSessions: balkedSessionsCount,
   };
 }

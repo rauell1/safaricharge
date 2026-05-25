@@ -418,6 +418,9 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
         gridImportKWh: adjustedGridImportKw * timeStep,
         gridExportKWh: adjustedGridExportKw * timeStep,
         gridFrequencyHz: result.frequencyHz,
+        marginalLcos: (result as any).marginalLcos,
+        evQueueLength: (result as any).evQueueLength,
+        evBalkedSessions: (result as any).evBalkedSessions,
       };
 
       // -----------------------------------------------------------------------

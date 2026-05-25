@@ -71,4 +71,7 @@ export type SimulationMinuteRecord = {
   evV2gKw?: number;
   evSmartDeferralKw?: number;
   lcoeRolling?: number;
+  marginalLcos?: number;
+  evQueueLength?: number;
+  evBalkedSessions?: number;
 };

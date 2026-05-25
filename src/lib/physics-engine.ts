@@ -158,6 +158,9 @@ export interface PhysicsTickResult {
   frequencyHz?: number;
   soilingFactor?: number;
   systemAgeYears?: number;
+  marginalLcos?: number;
+  evQueueLength?: number;
+  evBalkedSessions?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -428,6 +431,8 @@ export function calculateInstantPhysics(
 
   let totalEvLoadKw = 0;
   let totalV2gExportKw = 0;
+  let evQueueLength = 0;
+  let evBalkedSessions = 0;
   const evStates: Record<string, { soc: number; isHome: boolean; isCharging: boolean }> = {};
 
   for (const load of config.loads) {
@@ -478,6 +483,8 @@ export function calculateInstantPhysics(
 
     const evLoadKw = evResult.totalLoadKw;
     const v2gKw = evResult.v2gExportKw;
+    evQueueLength = evResult.queueLength;
+    evBalkedSessions = evResult.balkedSessions;
 
     loadBreakdown[ev.id] = evLoadKw;
     totalEvLoadKw += evLoadKw;
@@ -523,6 +530,8 @@ export function calculateInstantPhysics(
     dischargePowerKw: 0,
     thermalDeratingFactor: 1.0,
     chargeAcceptancePct: state.chargeAcceptancePct ?? 100,
+    turningPoints: (state as any).batteryTurningPoints,
+    marginalLcos: (state as any).batteryMarginalLcos ?? 9.2,
   };
 
   const nextBatteryState = stepBattery(
@@ -541,6 +550,8 @@ export function calculateInstantPhysics(
   state.batteryHealthPct = nextBatteryState.healthPct;
   state.batteryTempC = nextBatteryState.temperatureC;
   state.chargeAcceptancePct = nextBatteryState.chargeAcceptancePct;
+  (state as any).batteryTurningPoints = nextBatteryState.turningPoints;
+  (state as any).batteryMarginalLcos = nextBatteryState.marginalLcos;
 
   const batteryPowerKw = nextBatteryState.chargePowerKw > 0
     ? nextBatteryState.chargePowerKw
@@ -616,6 +627,9 @@ export function calculateInstantPhysics(
     frequencyHz: gridResult.frequencyHz,
     soilingFactor: state.soilingFactor,
     systemAgeYears: panelAgeYears,
+    marginalLcos: nextBatteryState.marginalLcos,
+    evQueueLength,
+    evBalkedSessions,
   };
 }
 

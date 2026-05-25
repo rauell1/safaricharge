@@ -4,7 +4,6 @@ import {
   BATTERY_PEUKERT_K,
   BATTERY_PEUKERT_ETA0,
   BATTERY_CALENDAR_FADE_PER_DAY,
-  BATTERY_CYCLE_FADE_COEFFICIENT,
 } from '@/lib/config';
 
 export interface BatteryState {
@@ -17,6 +16,8 @@ export interface BatteryState {
   dischargePowerKw: number;
   thermalDeratingFactor: number;
   chargeAcceptancePct: number;
+  turningPoints?: number[]; // Rolling turning point buffer for rainflow-counting
+  marginalLcos: number;      // Dynamic marginal Levelized Cost of Storage (KES/kWh)
 }
 
 export type BatteryStrategy = 'self-consumption' | 'peak-shaving' | 'backup-resilience';
@@ -25,12 +26,14 @@ const INITIAL_SOC_PERCENT = 30;
 const BACKUP_RESERVE_PERCENT = 30;
 
 const MIN_EFFICIENCY = 0.75;
-const MAX_FADE_FRACTION = 0.2;
+const MAX_FADE_FRACTION = 0.25; // Retain up to 75% capacity end-of-life limit
 
 const HIGH_TEMP_DERATE_THRESHOLD_C = 35;
 const LOW_TEMP_DERATE_THRESHOLD_C = 10;
 const HIGH_TEMP_DERATE_PER_DEG = 0.005;
 const LOW_TEMP_DERATE_PER_DEG = 0.008;
+
+const BATTERY_REPLACEMENT_COST_KES_PER_KWH = 25000;
 
 const clamp = (value: number, min: number, max: number): number =>
   Math.max(min, Math.min(max, value));
@@ -48,8 +51,7 @@ const getThermalDeratingFactor = (temperatureC: number): number => {
 };
 
 /**
- * IEC 61960-3 Peukert exponent alpha = 1.1, empirically fitted to LFP cells.
- * Computes the charge/discharge round-trip efficiency adjusted for C-rate load.
+ * Peukert adjusted round-trip efficiency.
  */
 export const getPeukertAdjustedEfficiency = (cRate: number): number => {
   const clampedCRate = clamp(cRate, 0, 3);
@@ -61,19 +63,6 @@ const getPeukertAdjustedEfficiencyInternal = (powerKw: number, ratedPowerKw: num
   const safeRated = Math.max(0.1, ratedPowerKw);
   const cRate = clamp(powerKw / safeRated, 0, 3);
   return getPeukertAdjustedEfficiency(cRate);
-};
-
-const getFadeFromCyclesAndAge = (cycles: number, ageDays: number): number => {
-  const cycleTerm = BATTERY_CYCLE_FADE_COEFFICIENT * Math.sqrt(Math.max(0, cycles));
-  const ageTerm = BATTERY_CALENDAR_FADE_PER_DAY * Math.max(0, ageDays);
-  return Math.min(MAX_FADE_FRACTION, cycleTerm + ageTerm);
-};
-
-const inferAgeDaysFromHealth = (healthPct: number, cycles: number): number => {
-  const fade = clamp(1 - healthPct / 100, 0, MAX_FADE_FRACTION);
-  const cycleTerm = BATTERY_CYCLE_FADE_COEFFICIENT * Math.sqrt(Math.max(0, cycles));
-  if (fade <= cycleTerm) return 0;
-  return (fade - cycleTerm) / BATTERY_CALENDAR_FADE_PER_DAY;
 };
 
 const getReservePercent = (strategy: BatteryStrategy, config: DerivedSystemConfig): number => {
@@ -92,6 +81,8 @@ export function initBatteryState(config: DerivedSystemConfig): BatteryState {
     dischargePowerKw: 0,
     thermalDeratingFactor: 1,
     chargeAcceptancePct: 100,
+    turningPoints: [INITIAL_SOC_PERCENT],
+    marginalLcos: 9.2, // standard nominal storage LCOS
   };
 }
 
@@ -123,7 +114,6 @@ export function stepBattery(
   const reserveEnergyKwh = currentUsableCapacityKwh * (getReservePercent(strategy, config) / 100);
   
   // Real batteries switch from constant-current (CC) to constant-voltage (CV) at ~80% SoC.
-  // The acceptance current drops roughly as 1.0 - (SoC - 0.80) / 0.20, reaching 0 at 100%.
   const chargeAcceptanceFactor = prev.socPct < 80
     ? 1.0
     : Math.max(0, 1.0 - (prev.socPct - 80) / 20);
@@ -163,25 +153,88 @@ export function stepBattery(
   const chargeEfficiency = getPeukertAdjustedEfficiencyInternal(Math.max(chargePowerKw, 0.001), ratedPowerKw);
   const dischargeEfficiency = getPeukertAdjustedEfficiencyInternal(Math.max(dischargePowerKw, 0.001), ratedPowerKw);
   const chargedEnergyKwh = chargePowerKw * stepHours * chargeEfficiency;
-  const dischargedEnergyKwh = dischargePowerKw * stepHours / dischargeEfficiency;
+  const dischargedEnergyKwh = (dischargePowerKw * stepHours) / dischargeEfficiency;
 
   storedEnergyKwh = clamp(storedEnergyKwh + chargedEnergyKwh - dischargedEnergyKwh, 0, currentUsableCapacityKwh);
+  const updatedUsableCapacityKwh = nominalCapacityKwh * (prev.healthPct / 100) * thermalDeratingFactor;
+  const socPct = updatedUsableCapacityKwh > 0 ? (storedEnergyKwh / updatedUsableCapacityKwh) * 100 : 0;
+  const clampedSoc = clamp(socPct, 0, 100);
 
+  // ------------------------------------------------------------------
+  // ASTM E1049-85 Compliant Continuous Rainflow Cycle fatigue analysis
+  // ------------------------------------------------------------------
+  const pts = prev.turningPoints ? [...prev.turningPoints] : [prev.socPct];
+  if (pts.length < 2) {
+    if (Math.abs(clampedSoc - pts[0]) > 0.01) {
+      pts.push(clampedSoc);
+    }
+  } else {
+    const s0 = pts[pts.length - 2];
+    const s1 = pts[pts.length - 1];
+    const prevDir = s1 - s0;
+    const curDir = clampedSoc - s1;
+    if (prevDir * curDir < -1e-4) {
+      // Reversal detected! s1 is a true turning point.
+      pts.push(clampedSoc);
+    } else {
+      // Continue in same direction, stretch last point to current soc
+      pts[pts.length - 1] = clampedSoc;
+    }
+  }
+
+  let cycleDegradationAccumulator = 0;
+  let i = 0;
+  while (pts.length >= 3 && i < pts.length - 2) {
+    const s0 = pts[i];
+    const s1 = pts[i + 1];
+    const s2 = pts[i + 2];
+    const r0 = Math.abs(s1 - s0);
+    const r1 = Math.abs(s2 - s1);
+    
+    if (r0 <= r1) {
+      // Cycle identified of range r0 (Depth of Discharge = r0 / 100)
+      const dod = r0 / 100;
+      if (dod > 0.01) {
+        // Jinko/LFP power-law cycle life curve: N_cycles = 4200 * DoD^(-1.66)
+        const cycleLife = 4200 * Math.pow(dod, -1.66);
+        const degradation = 1.0 / cycleLife;
+        cycleDegradationAccumulator += degradation;
+      }
+      // Remove s0 and s1 turning points from rolling buffer
+      pts.splice(i, 2);
+      // Restart cycle check
+      i = 0;
+    } else {
+      i++;
+    }
+  }
+
+  // Calculate calendar fade (fraction per step)
+  const calendarFade = BATTERY_CALENDAR_FADE_PER_DAY * (stepHours / 24);
+  const totalFadeFraction = cycleDegradationAccumulator + calendarFade;
+
+  // Update battery health percentage with an 80% minimum floor (MAX_FADE_FRACTION = 0.20)
+  const currentFade = 1.0 - prev.healthPct / 100;
+  const nextFade = clamp(currentFade + totalFadeFraction, 0, 0.20);
+  const healthPct = (1.0 - nextFade) * 100;
+
+  // Throughput and simple cycle count increment (legacy sync)
   const throughputKwh = chargedEnergyKwh + dischargedEnergyKwh;
   const cycleIncrement = throughputKwh / (2 * nominalCapacityKwh);
   const cycleCount = Math.max(0, prev.cycleCount + cycleIncrement);
 
-  const previousAgeDays = inferAgeDaysFromHealth(prev.healthPct, prev.cycleCount);
-  const ageDays = previousAgeDays + stepHours / 24;
-  const fade = getFadeFromCyclesAndAge(cycleCount, ageDays);
-  const healthPct = (1 - fade) * 100;
-
-  const updatedUsableCapacityKwh = nominalCapacityKwh * (healthPct / 100) * thermalDeratingFactor;
-  storedEnergyKwh = Math.min(storedEnergyKwh, updatedUsableCapacityKwh);
-  const socPct = updatedUsableCapacityKwh > 0 ? (storedEnergyKwh / updatedUsableCapacityKwh) * 100 : 0;
+  // Compute live marginal Levelized Cost of Storage (LCOS)
+  let marginalLcos = prev.marginalLcos;
+  if (dischargedEnergyKwh > 0.001) {
+    const replacementCostKes = nominalCapacityKwh * BATTERY_REPLACEMENT_COST_KES_PER_KWH;
+    const degradationCostKes = cycleDegradationAccumulator * replacementCostKes;
+    marginalLcos = degradationCostKes / dischargedEnergyKwh;
+  }
+  // Clamp to realistic bounds (e.g. 5 to 50 KES/kWh)
+  marginalLcos = clamp(marginalLcos, 5.0, 50.0);
 
   return {
-    socPct: clamp(socPct, 0, 100),
+    socPct: clampedSoc,
     capacityKwh: updatedUsableCapacityKwh,
     cycleCount,
     healthPct,
@@ -190,5 +243,7 @@ export function stepBattery(
     dischargePowerKw,
     thermalDeratingFactor,
     chargeAcceptancePct,
+    turningPoints: pts,
+    marginalLcos,
   };
 }

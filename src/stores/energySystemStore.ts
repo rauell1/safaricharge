@@ -118,6 +118,12 @@ export interface MinuteDataPoint {
   gridFrequencyHz?: number;
   gridLineLossKw?: number;
   cumulativeSavingsKes?: number;
+  batteryHealthPct?: number;
+  batteryCycles?: number;
+  batteryTempC?: number;
+  marginalLcos?: number;
+  evQueueLength?: number;
+  evBalkedSessions?: number;
 }
 
 // Running totals and accumulators
@@ -251,6 +257,7 @@ interface EnergySystemState {
       peakRate: number;
       offPeakRate: number;
     };
+    loadProfile?: 'residential' | 'commercial' | 'industrial' | 'fleet-depot';
   };
 
   // Full physics-engine configuration (drives the simulation tick loop)
@@ -418,6 +425,7 @@ export const useEnergySystemStore = create<EnergySystemState>()(
           peakRate: 24.31,
           offPeakRate: 14.93,
         },
+        loadProfile: 'residential',
       },
       fullSystemConfig: DEFAULT_SYSTEM_CONFIG,
       activeLocation: DEFAULT_LOCATION,

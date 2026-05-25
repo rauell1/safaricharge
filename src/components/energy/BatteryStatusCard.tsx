@@ -18,6 +18,9 @@ interface BatteryStatusCardProps {
   showSoCBands?: boolean;
   minSoCBand?: number;
   maxSoCBand?: number;
+  healthPct?: number;
+  cycleCount?: number;
+  marginalLcos?: number;
 }
 
 export function BatteryStatusCard({
@@ -33,6 +36,9 @@ export function BatteryStatusCard({
   showSoCBands = false,
   minSoCBand = 20,
   maxSoCBand = 90,
+  healthPct = 100,
+  cycleCount = 0,
+  marginalLcos = 9.2,
 }: BatteryStatusCardProps) {
   const getColor = (level: number) => {
     if (level >= 60) return { bar: 'var(--battery)', text: 'var(--battery)' };
@@ -64,19 +70,13 @@ export function BatteryStatusCard({
             <Skeleton className="h-7 w-20 rounded-full" />
           </div>
           <Skeleton className="h-3 w-full rounded-full mb-4" />
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <div className="rounded-lg p-2 text-center border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
-              <Skeleton className="h-4 w-12 mx-auto mb-1" />
-              <Skeleton className="h-3 w-8 mx-auto" />
-            </div>
-            <div className="rounded-lg p-2 text-center border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
-              <Skeleton className="h-4 w-12 mx-auto mb-1" />
-              <Skeleton className="h-3 w-8 mx-auto" />
-            </div>
-            <div className="rounded-lg p-2 text-center border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
-              <Skeleton className="h-4 w-12 mx-auto mb-1" />
-              <Skeleton className="h-3 w-8 mx-auto" />
-            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="rounded-lg p-2 text-center border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
+                <Skeleton className="h-4 w-12 mx-auto mb-1" />
+                <Skeleton className="h-3 w-8 mx-auto" />
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -133,18 +133,34 @@ export function BatteryStatusCard({
             </div>
           )}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           <div className="rounded-lg p-2 text-center border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
-            <div className="text-sm font-semibold text-[var(--text-primary)]">{batteryPower.toFixed(1)} kW</div>
-            <div className="text-sm text-[var(--text-tertiary)] mt-0.5">Power</div>
+            <div className="text-xs sm:text-sm font-semibold text-[var(--text-primary)]">{batteryPower.toFixed(1)} kW</div>
+            <div className="text-[10px] text-[var(--text-tertiary)] mt-0.5">Power</div>
           </div>
           <div className="rounded-lg p-2 text-center border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
-            <div className="text-sm font-semibold text-[var(--text-primary)]">{voltage} V</div>
-            <div className="text-sm text-[var(--text-tertiary)] mt-0.5">Voltage</div>
+            <div className="text-xs sm:text-sm font-semibold text-[var(--text-primary)]">{voltage} V</div>
+            <div className="text-[10px] text-[var(--text-tertiary)] mt-0.5">Voltage</div>
           </div>
           <div className="rounded-lg p-2 text-center border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
-            <div className="text-sm font-semibold text-[var(--text-primary)]">{temperature}°C</div>
-            <div className="text-sm text-[var(--text-tertiary)] mt-0.5">Temp</div>
+            <div className="text-xs sm:text-sm font-semibold text-[var(--text-primary)]">{temperature.toFixed(0)}°C</div>
+            <div className="text-[10px] text-[var(--text-tertiary)] mt-0.5">Temp</div>
+          </div>
+          <div className="rounded-lg p-2 text-center border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
+            <div className="text-xs sm:text-sm font-semibold text-[var(--text-primary)]">{healthPct.toFixed(1)}%</div>
+            <div className="text-[10px] text-[var(--text-tertiary)] mt-0.5">SOH</div>
+          </div>
+          <div className="rounded-lg p-2 text-center border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
+            <div className="text-xs sm:text-sm font-semibold text-[var(--text-primary)]">{cycleCount.toFixed(2)}</div>
+            <div className="text-[10px] text-[var(--text-tertiary)] mt-0.5">Cycles</div>
+          </div>
+          <div
+            className="rounded-lg p-2 text-center border border-[var(--battery)]/20"
+            style={{ backgroundColor: 'var(--battery-soft)' }}
+            title="Marginal Levelized Cost of Storage based on ASTM Rainflow DoD fatigue"
+          >
+            <div className="text-xs sm:text-sm font-bold text-[var(--battery)]">KES {marginalLcos.toFixed(2)}</div>
+            <div className="text-[10px] text-[var(--battery)] font-semibold mt-0.5">LCOS/kWh</div>
           </div>
         </div>
       </CardContent>

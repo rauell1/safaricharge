@@ -255,6 +255,7 @@ interface MobileDiagramProps {
   handleNodeClick: (n: NodeType) => void;
   isSelected: (n: NodeType) => boolean;
   hasEvLoads?: boolean;
+  evSubLabel?: string;
 }
 
 function MobileDiagram({
@@ -262,6 +263,7 @@ function MobileDiagram({
   residentialKw, commercialKw, industrialKw, evKw,
   siteLoad, batteryLevel, flowDirection,
   handleNodeClick, isSelected, hasEvLoads = false,
+  evSubLabel = 'Charging',
 }: MobileDiagramProps) {
   const battActive = flowDirection.solarToBattery || flowDirection.batteryToHome;
   const gridActive = flowDirection.solarToGrid    || flowDirection.gridToHome;
@@ -467,7 +469,7 @@ function MobileDiagram({
         <div style={nodeStyle(C.ev.x, C.ev.y)}>
           <EnergyNode
             icon={Car} label="EVs" valueLine={`${evKw.toFixed(2)} kW`}
-            subLabel="Charging" accent="var(--battery)" tint="var(--battery-soft)"
+            subLabel={evSubLabel} accent="var(--battery)" tint="var(--battery-soft)"
             nodeType="ev1" onClick={handleNodeClick} isSelected={isSelected('ev1') || isSelected('ev2')}
             compact
           />
@@ -490,6 +492,13 @@ export function PowerFlowVisualization({
   const router = useRouter();
 
   const fullSystemConfig = useEnergySystemStore((s) => s.fullSystemConfig);
+  const lastPoint = useEnergySystemStore((s) => s.minuteData[s.minuteData.length - 1]);
+  const queueLength = lastPoint?.evQueueLength ?? 0;
+  const balkedCount = lastPoint?.evBalkedSessions ?? 0;
+  const evSubLabel = queueLength > 0
+    ? `Q: ${queueLength} (balk: ${balkedCount})`
+    : 'Charging';
+
   const hasEvLoads = React.useMemo(() => {
     return fullSystemConfig?.loads?.some((l) => l.type === 'ev' && l.enabled) ?? false;
   }, [fullSystemConfig?.loads]);
@@ -597,6 +606,7 @@ export function PowerFlowVisualization({
             handleNodeClick={handleNodeClick}
             isSelected={isSelected}
             hasEvLoads={hasEvLoads}
+            evSubLabel={evSubLabel}
           />
         </div>
 
@@ -645,7 +655,7 @@ export function PowerFlowVisualization({
                   <EnergyNode icon={Building2} label="Commercial" valueLine={`${commercialKw.toFixed(2)} kW`} subLabel="Business" accent="var(--grid)" tint="var(--grid-soft)" nodeType="home" onClick={handleNodeClick} isSelected={false} />
                   <EnergyNode icon={Factory} label="Industrial" valueLine={`${industrialKw.toFixed(2)} kW`} subLabel="Facility" accent="var(--alert)" tint="rgba(239,68,68,0.12)" nodeType="home" onClick={handleNodeClick} isSelected={false} />
                   {hasEvLoads && (
-                    <EnergyNode icon={Car} label="EVs" valueLine={`${evKw.toFixed(2)} kW`} subLabel="Charging" accent="var(--battery)" tint="var(--battery-soft)" nodeType="ev1" onClick={handleNodeClick} isSelected={isSelected('ev1') || isSelected('ev2')} />
+                    <EnergyNode icon={Car} label="EVs" valueLine={`${evKw.toFixed(2)} kW`} subLabel={evSubLabel} accent="var(--battery)" tint="var(--battery-soft)" nodeType="ev1" onClick={handleNodeClick} isSelected={isSelected('ev1') || isSelected('ev2')} />
                   )}
                 </div>
               </div>

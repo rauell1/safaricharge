@@ -26,13 +26,6 @@ const clamp = (value: number, min: number, max: number): number =>
 
 /**
  * NOCT-corrected panel cell temperature.
- *
- * IEC 61215 / IEC 61853-1 formula:
- *   T_cell = T_ambient + ((NOCT - 20) / 800) × G_poa
- *
- * Wind-speed correction (NOCT measured at 1 m/s):
- *   ΔT_wind = -0.5 × (windSpeed_m_s - 1) clamped to [-6, 0] °C
- *   (Skoplaki & Palyvos, 2009 — linear empirical fit)
  */
 export const getPanelTempEffect = (
   irradianceKwM2: number,
@@ -42,7 +35,6 @@ export const getPanelTempEffect = (
   windSpeed_m_s: number = 1.0
 ): number => {
   const irradianceWm2 = Math.max(0, irradianceKwM2 * 1000);
-  // NOCT cell temperature + wind correction
   const windDeltaT = Math.max(-6, Math.min(0, -0.5 * (windSpeed_m_s - 1)));
   const panelTemp = ambientTempC + ((noctC - 20) / 800) * irradianceWm2 + windDeltaT;
   const tempDeltaFromSTC = panelTemp - 25;
@@ -51,23 +43,32 @@ export const getPanelTempEffect = (
 
 /**
  * Gaussian bell shape scaled to the TMY monthly GHI peak.
- * Only used when neither NASA POWER data nor a pre-built profile is available.
  */
 function nairobiTmyFallback(
   timeOfDay: number,
   peakSolarHour: number,
-  month: number // 1-indexed
+  month: number
 ): number {
   const nairobiPreset = getCountyPreset('Nairobi');
   const monthlyPsh = nairobiPreset?.monthlyPsh ?? [
     5.6, 5.8, 5.4, 5.1, 5.0, 4.8, 4.9, 5.2, 5.6, 5.7, 5.5, 5.4
   ];
   const monthlyPeak = monthlyPsh[Math.max(0, Math.min(11, month - 1))];
-  // Gaussian width ≈ 2.8 h (σ²≈8) — calibrated to Nairobi flat-terrain sunrise/set
   const raw = Math.exp(-Math.pow(timeOfDay - peakSolarHour, 2) / 8.0);
-  // Normalise so that the integral over daylight ≈ monthlyPeak (daily kWh/m²)
-  // Peak of bell ≈ 1.0, integral over ~12 h ≈ √(8π) ≈ 5.01 h → divide by 5.01 × peak
   return Math.max(0, (raw / 5.01) * monthlyPeak);
+}
+
+// Calculate obstacle horizon shading height based on sun azimuth angle
+export function getHorizonShadingHeight(azimuthDeg: number): number {
+  // Tall Eucalyptus trees to the East (morning shade)
+  if (azimuthDeg >= 80 && azimuthDeg <= 110) {
+    return 15; // 15 degrees height threshold
+  }
+  // Commercial building / hills to the West (evening shade)
+  if (azimuthDeg >= 250 && azimuthDeg <= 280) {
+    return 20; // 20 degrees height threshold
+  }
+  return 0; // Clear horizon
 }
 
 export const simulateSolar = (
@@ -140,12 +141,42 @@ export const simulateSolar = (
       ambientTemp,
       PANEL_NOCT_CELSIUS,
       PANEL_TEMP_COEFFICIENT_PER_DEG_C,
-      windSpeed_m_s ?? 2.0 // Nairobi mean surface wind ~2 m/s (NASA POWER)
+      windSpeed_m_s ?? 2.0
     );
 
     const performanceRatio = clamp(sysConfig.performanceRatio ?? 0.8, 0.65, 0.95);
+    
+    // ------------------------------------------------------------------
+    // Astronomical Celestial Path Sun Angle & Horizon Shading Calculations
+    // ------------------------------------------------------------------
+    const dYear = 30 * (month - 1) + 15;
+    const declination = 23.45 * (Math.PI / 180) * Math.sin((2 * Math.PI * (284 + dYear)) / 365);
+    const hourAngle = 15 * (timeOfDay - 12) * (Math.PI / 180);
+    const lat = sData?.latitude ?? (sc as { latitude?: number }).latitude ?? -1.286;
+    const latRad = lat * (Math.PI / 180);
+
+    const sinEl = Math.sin(latRad) * Math.sin(declination) + Math.cos(latRad) * Math.cos(declination) * Math.cos(hourAngle);
+    const elRad = Math.asin(clamp(sinEl, -1, 1));
+    const elDeg = elRad * (180 / Math.PI);
+
+    let azDeg = 180; // default south
+    if (elRad > 0.001) {
+      const cosAz = (Math.sin(declination) * Math.cos(latRad) - Math.cos(declination) * Math.sin(latRad) * Math.cos(hourAngle)) / Math.cos(elRad);
+      const rawAzDeg = Math.acos(clamp(cosAz, -1, 1)) * (180 / Math.PI);
+      azDeg = hourAngle > 0 ? 360 - rawAzDeg : rawAzDeg;
+    }
+
+    let dynamicShadingFactor = 1.0;
+    if (elDeg > 0) {
+      const obstacleHeight = getHorizonShadingHeight(azDeg);
+      if (elDeg < obstacleHeight) {
+        dynamicShadingFactor = 0.10; // Shaded: 90% direct beam irradiance drop
+      }
+    }
+
     const shadingLossPct = clamp(sysConfig.shadingLossPct ?? 0, 0, 50);
-    const shadingFactor = 1 - shadingLossPct / 100;
+    const staticShadingFactor = 1 - shadingLossPct / 100;
+    const resolvedShadingFactor = staticShadingFactor * dynamicShadingFactor;
 
     const resolvedSoilingFactor = dayOfSim > 0
       ? Math.max(0.85, 1.0 - SOILING_LOSS_PER_DAY * dayOfSim)
@@ -161,7 +192,7 @@ export const simulateSolar = (
       resolvedSoilingFactor *
       tempEffect *
       performanceRatio *
-      shadingFactor *
+      resolvedShadingFactor *
       degradationFactor;
     solar = Math.max(0, solar);
   }

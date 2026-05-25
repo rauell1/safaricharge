@@ -41,6 +41,7 @@ import {
   type KenyaIrradiancePreset,
   type SimulatorSizingPayload,
   type SystemType,
+  type LoadProfileType,
 } from '@/lib/pv-sizing';
 
 type KenyaIrradiancePresetsFile = {
@@ -76,6 +77,7 @@ export function PVSizingSection({ locationOverride }: { locationOverride?: Locat
   const [batteryChemistry, setBatteryChemistry] = useState<BatteryChemistry>('lifepo4');
   const [autonomyDays, setAutonomyDays] = useState(2);
   const [panelWattage, setPanelWattage] = useState(625);
+  const [loadProfile, setLoadProfile] = useState<LoadProfileType>('residential');
 
   const selectedPreset = useMemo(
     () => typedPresets.presets.find((p) => p.county === county) ?? typedPresets.presets[0],
@@ -95,8 +97,9 @@ export function PVSizingSection({ locationOverride }: { locationOverride?: Locat
         batteryChemistry,
         autonomyDays,
         panelWattage,
+        loadProfile,
       }),
-    [dailyLoadKwh, effectiveSunHours, performanceRatio, systemType, batteryChemistry, autonomyDays, panelWattage]
+    [dailyLoadKwh, effectiveSunHours, performanceRatio, systemType, batteryChemistry, autonomyDays, panelWattage, loadProfile]
   );
 
   const handleLoadIntoSimulator = () => {
@@ -107,6 +110,7 @@ export function PVSizingSection({ locationOverride }: { locationOverride?: Locat
       batteryCapacityKWh: result.requiredBatteryCapacityKwh ? Number(result.requiredBatteryCapacityKwh.toFixed(1)) : 0,
       inverterKW: optimalInverterKW,
       systemMode: systemType === 'on-grid' ? 'on-grid' : systemType === 'off-grid' ? 'off-grid' : 'hybrid',
+      loadProfile,
     });
 
     const payload: SimulatorSizingPayload = {
@@ -119,6 +123,7 @@ export function PVSizingSection({ locationOverride }: { locationOverride?: Locat
       batteryCapacityKwh: result.requiredBatteryCapacityKwh,
       performanceRatio,
       dailyLoadKwh,
+      loadProfile,
     };
     localStorage.setItem(SIZING_SIMULATOR_STORAGE_KEY, JSON.stringify(payload));
     void setUserPreference(SIZING_SIMULATOR_STORAGE_KEY, payload);
@@ -187,6 +192,24 @@ export function PVSizingSection({ locationOverride }: { locationOverride?: Locat
               </SelectContent>
             </Select>
           )}
+        </div>
+
+        <div className={field}>
+          <Label className={labelCls}>Load Profile Type</Label>
+          <Select value={loadProfile} onValueChange={(v) => setLoadProfile(v as LoadProfileType)}>
+            <SelectTrigger style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="residential">Residential (Double Peak)</SelectItem>
+              <SelectItem value="commercial">Commercial (Office Hours)</SelectItem>
+              <SelectItem value="industrial">Industrial (Continuous Flat)</SelectItem>
+              <SelectItem value="fleet-depot">EV Fleet Depot (Overnight)</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className={hintCls}>
+            Specifies the 24-hour demand shape to calculate peak load coincidence.
+          </p>
         </div>
 
         {/*
@@ -339,6 +362,13 @@ export function PVSizingSection({ locationOverride }: { locationOverride?: Locat
           {Number.isFinite(result.simplePaybackYears)
             ? `${result.simplePaybackYears.toFixed(1)} years`
             : 'Not applicable'}
+        </p>
+        <p>
+          <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Load Coincidence Factor:</span>{' '}
+          <span className="text-[var(--battery)] font-bold">{(result.coincidenceFactor * 100).toFixed(1)}%</span>
+          <span className="text-xs text-[var(--text-tertiary)] ml-2">
+            ({result.directUseKwh.toFixed(1)} kWh/day direct use · {result.gridImportKwh.toFixed(1)} kWh deficit · {result.gridExportKwh.toFixed(1)} kWh surplus)
+          </span>
         </p>
         <p>
           <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Solar profile:</span>{' '}

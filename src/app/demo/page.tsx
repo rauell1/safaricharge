@@ -1576,7 +1576,18 @@ function DemoDashboardView({
               </div>
               <div className="flex flex-col gap-6">
                 <WeatherCard locationName={activeLocation.displayName} temperature={ambientTemp} irradiance={Math.round((latestPoint?.solarKW ?? 0) * 80)} />
-                <BatteryStatusCard batteryLevel={batteryLevel} batteryPower={batteryPower} isCharging={batteryPower >= 0} temperature={batteryTemp} showDeratingBadge deratingPct={deratingPct} showSoCBands />
+                <BatteryStatusCard
+                  batteryLevel={batteryLevel}
+                  batteryPower={batteryPower}
+                  isCharging={batteryPower >= 0}
+                  temperature={batteryTemp}
+                  showDeratingBadge
+                  deratingPct={deratingPct}
+                  showSoCBands
+                  healthPct={latestPoint?.batteryHealthPct ?? 100}
+                  cycleCount={latestPoint?.batteryCycles ?? 0}
+                  marginalLcos={latestPoint?.marginalLcos ?? 9.2}
+                />
               </div>
             </div>
 
