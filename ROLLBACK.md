@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 262 | `rollback/feat-implement-scientific-sizing-coinc-2026-05-25-bd01064` | `bd01064` | feat: implement scientific sizing coincidence, poisson ev queueing, rainflow lcos fatigue, and astronomical horizon shading (phase 2) (12f +438/-89) | 2026-05-25 |
 | 261 | `rollback/refactor-simplify-dashboard-app-shell-2026-05-25-65fd596` | `65fd596` | refactor: simplify dashboard app shell and navigation sidebar to 5 tabs, combine sizing and financial panels, delete redundant sub-routes, and integrate onboarding tour (13f +533/-1512) | 2026-05-25 |
 | 260 | `rollback/feat-enhance-powerbi-data-collection-i-2026-05-25-abde1f9` | `abde1f9` | feat: enhance PowerBI data collection & implement PVsyst-style geographical run history restoration (7f +623/-39) | 2026-05-25 |
 | 259 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-25-21f2e50` | `21f2e50` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-05-25 |
@@ -2728,6 +2729,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: refactor: simplify dashboard app shell and navigation sidebar to 5 tabs, combine sizing and financial panels, delete redundant sub-routes, and integrate onboarding tour
 - **Date**: 2026-05-25
 - **Changed**: 13 file(s), +533/-1512 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #262 — `rollback/feat-implement-scientific-sizing-coinc-2026-05-25-bd01064`
+
+- **Branch**: `rollback/feat-implement-scientific-sizing-coinc-2026-05-25-bd01064`
+- **Commit**: `bd0106436243da748f2f7ebaa7037e4ae90d2ef9`
+- **Subject**: feat: implement scientific sizing coincidence, poisson ev queueing, rainflow lcos fatigue, and astronomical horizon shading (phase 2)
+- **Date**: 2026-05-25
+- **Changed**: 12 file(s), +438/-89 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
