@@ -57,61 +57,11 @@ const features = [
 
 const stats = [
   { value: '40%', label: 'Peak demand reduction', sub: 'vs. unoptimised baseline', sparkline: '2,16 16,10 30,12 44,8 58,6' },
-  { value: 'KES 0', label: 'Licence fee', sub: 'Open-core model', sparkline: '2,14 16,14 30,11 44,9 58,7' },
+  { value: '100%', label: 'Free to use', sub: 'Open-core simulation model', sparkline: '2,14 16,14 30,11 44,9 58,7' },
   { value: '5 min', label: 'Re-optimisation cycle', sub: 'Rolling horizon dispatch', sparkline: '2,15 16,12 30,9 44,7 58,5' },
   { value: '99.2%', label: 'Energy balance accuracy', sub: 'Validated on live sites', sparkline: '2,18 16,14 30,11 44,9 58,8' },
 ];
 
-const plans = [
-  {
-    name: 'Open Core',
-    price: 'Free',
-    description: 'Self-hosted. Full simulation and optimisation engine.',
-    cta: 'Open dashboard',
-    href: '/dashboard',
-    highlight: false,
-    features: [
-      'Pyomo MILP dispatcher',
-      'Real-time solar dashboard',
-      'KPLC tariff engine',
-      '1 site',
-      'Community support',
-    ],
-  },
-  {
-    name: 'Pro',
-    price: 'KES 12,000',
-    period: '/mo',
-    description: 'Multi-site, forecasting, and priority support.',
-    cta: 'Start free trial',
-    href: '/dashboard',
-    highlight: true,
-    features: [
-      'Everything in Open Core',
-      'Up to 10 sites',
-      'Solar irradiance forecasting',
-      'EV smart-charging block',
-      'Priority email support',
-      'Export KPIs to CSV / PDF',
-    ],
-  },
-  {
-    name: 'Enterprise',
-    price: 'Custom',
-    description: 'On-prem or private cloud, SLA, and custom integrations.',
-    cta: 'Contact us',
-    href: 'mailto:hello@safaricharge.ke',
-    highlight: false,
-    features: [
-      'Everything in Pro',
-      'Unlimited sites',
-      'Genset & thermal-load blocks',
-      'MPC rolling-horizon control',
-      'Dedicated Slack channel',
-      'Custom SLA',
-    ],
-  },
-];
 
 const heroKpis = [
   { label: 'Solar Output', value: '47.3 kW', icon: Sun },
@@ -149,7 +99,6 @@ const testimonials = [
 const NAV_LINKS = [
   { label: 'Features', href: '#features' },
   { label: 'Performance', href: '#stats' },
-  { label: 'Pricing', href: '#pricing' },
 ] as const;
 
 export default function LandingPage() {
@@ -723,122 +672,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Pricing ── */}
-      <section
-        id="pricing"
-        className="py-32 px-6 sm:px-10"
-        style={{ borderTop: '1px solid var(--site-page-border)' }}
-      >
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-20">
-            <div
-              className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full mb-5"
-              style={{
-                background: 'var(--battery-soft)',
-                border: '1px solid rgba(16,185,129,0.18)',
-                color: 'var(--battery)',
-              }}
-            >
-              Pricing
-            </div>
-            <h2
-              className="font-bold tracking-tight mb-4"
-              style={{
-                fontSize: 'clamp(1.8rem, 4vw, 2.8rem)',
-                color: 'var(--site-page-fg)',
-                letterSpacing: '-0.04em',
-              }}
-            >
-              Simple, transparent pricing
-            </h2>
-            <p style={{ color: 'var(--site-page-muted)' }}>Open-core. Start free, scale when ready.</p>
-          </div>
-
-          <div className="grid sm:grid-cols-3 gap-4 items-start">
-            {plans.map((plan) => (
-              <div
-                key={plan.name}
-                className={`group rounded-2xl p-7 relative ${plan.highlight ? 'pro-glow' : ''}`}
-                style={{
-                  background: plan.highlight ? 'var(--battery-soft)' : 'var(--site-page-surface)',
-                  border: plan.highlight
-                    ? '1px solid rgba(16,185,129,0.3)'
-                    : '1px solid var(--site-page-border)',
-                  boxShadow: plan.highlight ? '0 0 60px rgba(16,185,129,0.1)' : 'none',
-                }}
-              >
-                {plan.highlight && (
-                  <span
-                    className="inline-flex text-xs font-semibold px-2.5 py-0.5 rounded-full mb-4"
-                    style={{
-                      background: 'var(--battery-soft)',
-                      color: 'var(--battery)',
-                      border: '1px solid rgba(16,185,129,0.2)',
-                    }}
-                  >
-                    Most popular
-                  </span>
-                )}
-                <h3 className="font-semibold text-lg mb-1" style={{ color: 'var(--text-primary)' }}>{plan.name}</h3>
-                <div className="flex items-baseline gap-1 mb-2">
-                  <span
-                    className="text-3xl font-bold"
-                    style={{ color: 'var(--site-page-fg)', letterSpacing: '-0.04em' }}
-                  >
-                    {plan.price}
-                  </span>
-                  {plan.period && (
-                    <span className="text-sm" style={{ color: 'var(--site-page-muted)' }}>{plan.period}</span>
-                  )}
-                </div>
-                <p className="text-sm mb-7" style={{ color: 'var(--site-page-muted)' }}>{plan.description}</p>
-                <ul className="space-y-2.5 mb-9">
-                  {plan.features.map((feat) => (
-                    <li
-                      key={feat}
-                      className="flex items-start gap-2.5 text-sm"
-                      style={{ color: 'var(--text-secondary)' }}
-                    >
-                      <Check className="w-4 h-4 shrink-0 mt-0.5" style={{ color: 'var(--battery)' }} />
-                      {feat}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href={plan.href}
-                  className={`block w-full text-center text-sm font-semibold py-2.5 rounded-xl transition-colors`}
-                  style={{
-                    background: plan.highlight ? 'var(--battery)' : 'transparent',
-                    color: plan.highlight ? '#fff' : 'var(--site-page-muted)',
-                    border: plan.highlight ? 'none' : '1px solid var(--site-page-border)',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (plan.highlight) {
-                      (e.currentTarget as HTMLAnchorElement).style.background = 'var(--battery-bright)';
-                    } else {
-                      (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-page-fg)';
-                      (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--site-page-soft)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (plan.highlight) {
-                      (e.currentTarget as HTMLAnchorElement).style.background = 'var(--battery)';
-                    } else {
-                      (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-page-muted)';
-                      (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--site-page-border)';
-                    }
-                  }}
-                >
-                  {plan.cta}
-                </Link>
-              </div>
-            ))}
-          </div>
-          <p className="mt-6 text-sm" style={{ color: 'var(--site-page-muted)' }}>
-            All plans include the Pyomo MILP engine and KPLC tariff calculator
-          </p>
-        </div>
-      </section>
 
       {/* ── Social proof ── */}
       <section
@@ -946,10 +779,7 @@ export default function LandingPage() {
                 onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)'; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-page-muted)'; }}
               >Features</a>
-              <a href="#pricing" className="block transition-colors" style={{ color: 'var(--site-page-muted)' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-page-muted)'; }}
-              >Pricing</a>
+
             </div>
           </div>
 

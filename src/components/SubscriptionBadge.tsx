@@ -48,50 +48,22 @@ export function SubscriptionBadge() {
   }, [])
 
   const { label, style } = useMemo(() => {
-    if (plan === 'enterprise') {
-      return {
-        label: 'Enterprise',
-        style: {
-          background: 'rgba(245,158,11,0.12)',
-          border: '1px solid rgba(245,158,11,0.3)',
-          color: '#f59e0b',
-        },
-      }
-    }
-
-    if (plan === 'pro') {
-      return {
-        label: 'Pro',
-        style: {
-          background: 'rgba(16,185,129,0.12)',
-          border: '1px solid rgba(16,185,129,0.3)',
-          color: '#10b981',
-        },
-      }
-    }
-
     return {
-      label: 'Free Plan',
+      label: 'Community Edition',
       style: {
-        background: 'rgba(148,163,184,0.12)',
-        border: '1px solid rgba(148,163,184,0.32)',
-        color: '#cbd5e1',
+        background: 'rgba(16,185,129,0.12)',
+        border: '1px solid rgba(16,185,129,0.3)',
+        color: '#10b981',
       },
     }
-  }, [plan])
+  }, [])
 
   return (
-    <button
-      type="button"
-      className="h-9 rounded-full px-3 text-xs font-semibold"
+    <div
+      className="h-9 rounded-full px-3 text-xs font-semibold flex items-center justify-center select-none"
       style={style}
-      onClick={() => {
-        if (plan === 'free') {
-          router.push('/pricing')
-        }
-      }}
     >
       {label}
-    </button>
+    </div>
   )
 }

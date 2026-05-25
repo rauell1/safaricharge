@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 // Exact public paths or path prefixes that do NOT require authentication.
-const PUBLIC_EXACT: Set<string> = new Set(['/', '/landing', '/demo', '/pricing'])
+const PUBLIC_EXACT: Set<string> = new Set(['/', '/landing', '/demo'])
 const PUBLIC_PREFIXES: string[] = ['/auth/']
 const API_PUBLIC_PREFIXES: string[] = [
   '/api/health',
@@ -45,8 +45,12 @@ function isPublicApi(pathname: string): boolean {
 }
 
 export async function proxy(request: NextRequest) {
-  const middlewareStart = Date.now()
   const { pathname } = request.nextUrl
+  if (pathname === '/pricing') {
+    return NextResponse.redirect(new URL('/landing', request.url))
+  }
+
+  const middlewareStart = Date.now()
   const isApiRoute = pathname.startsWith('/api/')
   const isAuthRoute = pathname.startsWith('/auth/')
 
