@@ -45,12 +45,13 @@ export function useDemoEnergySystem(enabled = true) {
   const systemMode = useEnergySystemStore((s) => s.systemConfig.systemMode);
   const gridOutageEnabled = useEnergySystemStore((s) => s.systemConfig.gridOutageEnabled);
   const generatorThresholdPct = useEnergySystemStore((s) => s.systemConfig.generatorThresholdPct);
+  const solarData = useEnergySystemStore((s) => s.solarData);
   const gridEnabled =
     systemMode === 'off-grid' ? false : systemMode === 'on-grid' ? !gridOutageEnabled : true;
 
   const { tick } = usePhysicsSimulation({
     systemConfig: fullSystemConfig,
-    solarData: DEMO_SOLAR_DATA,
+    solarData,
     priorityMode: 'auto',
     systemMode,
     generatorThresholdPct,

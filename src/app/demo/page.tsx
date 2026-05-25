@@ -383,7 +383,10 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
   // Start as null (loading state) to prevent flashing the wizard to users with a saved location.
   // We use a fallback timeout in useEffect to transition to false if the async check takes too long.
   const [hasSetupLocation, setHasSetupLocation] = useState<boolean | null>(null);
-  const [activeLocation, setActiveLocation] = useState<LocationOption>(DEFAULT_LOCATION);
+  
+  const activeLocation = useEnergySystemStore((s) => s.activeLocation);
+  const setActiveLocation = useEnergySystemStore((s) => s.setActiveLocation);
+  
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [locationSearch, setLocationSearch] = useState('');
 
@@ -395,7 +398,7 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
       title: 'Location updated',
       description: `Solar data will now reflect conditions in ${loc.displayName} (avg ${loc.annualAvgSunHours} sun-hours/day).`,
     });
-  }, [toast]);
+  }, [setActiveLocation, toast]);
 
   useEffect(() => {
     if (activeSection === 'scenarios') {
@@ -490,7 +493,7 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
         setHasSetupLocation(false);
       }
     })();
-  }, [toast]);
+  }, [setActiveLocation, toast]);
 
   useEffect(() => {
     (async () => {
@@ -880,10 +883,22 @@ function DemoDashboardView({
     });
   }, [resetSystem, toast]);
 
+  const storeSolarData = useEnergySystemStore((s) => s.solarData);
+
+  const currentSolarData = useMemo(() => ({
+    latitude: storeSolarData.latitude,
+    longitude: storeSolarData.longitude,
+    location: activeLocation.name,
+    monthlyAverage: storeSolarData.monthlyAvgKwhPerKwp,
+    annualAverage: storeSolarData.annualAvgKwhPerKwp,
+    monthlyTemperature: storeSolarData.monthlyAvgTemp,
+    peakSunHours: storeSolarData.monthlyAvgKwhPerKwp,
+  }), [storeSolarData, activeLocation]);
+
   const handleSaveScenario = useCallback((name: string) => {
     const snap = buildFinancialSnapshot({
       minuteData: minuteData as Parameters<typeof buildFinancialSnapshot>[0]['minuteData'],
-      solarData: NAIROBI_SOLAR_DATA,
+      solarData: currentSolarData,
       inputs: financialInputs,
       evCapacityKw: 22,
     });
@@ -899,7 +914,7 @@ function DemoDashboardView({
       { name: activeLocation.name, latitude: activeLocation.latitude, longitude: activeLocation.longitude }
     );
     toast({ title: 'Scenario saved', description: `"${name}" has been saved. View it on the Scenarios page.` });
-  }, [activeLocation.latitude, activeLocation.longitude, activeLocation.name, financialInputs, minuteData, saveScenario, toast]);
+  }, [activeLocation.latitude, activeLocation.longitude, activeLocation.name, currentSolarData, financialInputs, minuteData, saveScenario, toast]);
 
   const latestPoint = minuteData[minuteData.length - 1];
   const solarPower = latestPoint?.solarKW ?? solarNode.powerKW ?? 0;
@@ -914,10 +929,10 @@ function DemoDashboardView({
 
   const financialSnapshot = useMemo(() => buildFinancialSnapshot({
     minuteData: minuteData as Parameters<typeof buildFinancialSnapshot>[0]['minuteData'],
-    solarData: NAIROBI_SOLAR_DATA,
+    solarData: currentSolarData,
     inputs: financialInputs,
     evCapacityKw: 22,
-  }), [financialInputs, minuteData]);
+  }), [currentSolarData, financialInputs, minuteData]);
 
   const engineeringKpis = useMemo(() => computeProfessionalEngineeringKpis({
     minuteData,

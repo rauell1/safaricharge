@@ -15,6 +15,31 @@ import {
   DEFAULT_BATTERY_DOD_PCT,
   DEFAULT_GENERATOR_THRESHOLD_PCT,
 } from '@/lib/system-mode-metrics';
+import { AFRICA_CITIES } from '@/lib/africa-locations-data';
+
+export interface LocationOption {
+  name: string;
+  displayName: string;
+  county: string;
+  latitude: number;
+  longitude: number;
+  annualAvgSunHours: number;
+  isKosapTarget: boolean;
+  electrificationRatePct: number | null;
+  countyNote: string;
+}
+
+const DEFAULT_LOCATION: LocationOption = {
+  name: 'Nairobi',
+  displayName: 'Nairobi, Kenya',
+  county: 'Kenya',
+  latitude: -1.2921,
+  longitude: 36.8219,
+  annualAvgSunHours: 5.4,
+  isKosapTarget: false,
+  electrificationRatePct: null,
+  countyNote: 'East Africa — elevation 1795 m, avg 22.0°C, annual GHI 1971 kWh/m².',
+};
 
 // Static Nairobi solar data used for engineering KPI calculations
 const DEMO_SOLAR_DATA: SolarData = {
@@ -276,6 +301,10 @@ interface EnergySystemState {
    * Returns an ImportScenariosResult describing what happened.
    */
   importScenarios: (json: string) => ImportScenariosResult;
+  
+  // Location
+  activeLocation: LocationOption;
+  setActiveLocation: (location: LocationOption) => void;
 }
 
 // Initial state
@@ -388,6 +417,7 @@ export const useEnergySystemStore = create<EnergySystemState>()(
         },
       },
       fullSystemConfig: DEFAULT_SYSTEM_CONFIG,
+      activeLocation: DEFAULT_LOCATION,
       solarData: DEMO_SOLAR_DATA,
       scenarios: [],
       isSyncingScenarios: false,
@@ -537,6 +567,8 @@ export const useEnergySystemStore = create<EnergySystemState>()(
           accumulators: initialAccumulators,
           minuteData: [],
           fullSystemConfig: DEFAULT_SYSTEM_CONFIG,
+          activeLocation: DEFAULT_LOCATION,
+          solarData: DEMO_SOLAR_DATA,
         }),
 
       saveScenario: (name, finance, location) => {
@@ -662,8 +694,79 @@ export const useEnergySystemStore = create<EnergySystemState>()(
         set((state) => {
           const scenario = state.scenarios.find((s) => s.id === id);
           if (!scenario) return {};
-          return { systemConfig: { ...scenario.system } };
+
+          const city = AFRICA_CITIES.find(
+            (c) => c.name.toLowerCase() === scenario.location.name.toLowerCase()
+          );
+
+          let activeLocation: LocationOption;
+          if (city) {
+            activeLocation = {
+              name: city.name,
+              displayName: `${city.name}, ${city.country}`,
+              county: city.country,
+              latitude: city.lat,
+              longitude: city.lon,
+              annualAvgSunHours: city.avgDailyPsh,
+              isKosapTarget: false,
+              electrificationRatePct: null,
+              countyNote: `${city.region} — elevation ${city.elevation} m, avg ${city.avgTempC}°C, annual GHI ${city.annualGHI} kWh/m².`,
+            };
+          } else {
+            activeLocation = {
+              name: scenario.location.name,
+              displayName: `${scenario.location.name}, Custom`,
+              county: 'Custom',
+              latitude: scenario.location.latitude,
+              longitude: scenario.location.longitude,
+              annualAvgSunHours: 5.4,
+              isKosapTarget: false,
+              electrificationRatePct: null,
+              countyNote: 'Custom registered site location.',
+            };
+          }
+
+          const avgTempC = city ? city.avgTempC : 22.0;
+          const scale = activeLocation.annualAvgSunHours / 5.4;
+          const monthlyAvgKwhPerKwp = [5.5, 5.8, 5.6, 5.4, 5.2, 5.1, 5.0, 5.3, 5.7, 5.8, 5.4, 5.3].map(v => v * scale);
+          const tempDiff = avgTempC - 22.0;
+          const monthlyAvgTemp = [22, 23, 24, 23, 22, 21, 20, 21, 22, 23, 22, 22].map(v => v + tempDiff);
+
+          return {
+            systemConfig: { ...scenario.system },
+            activeLocation,
+            solarData: {
+              latitude: activeLocation.latitude,
+              longitude: activeLocation.longitude,
+              annualAvgKwhPerKwp: activeLocation.annualAvgSunHours,
+              monthlyAvgKwhPerKwp,
+              monthlyAvgTemp,
+            }
+          };
         }),
+
+      setActiveLocation: (location) => {
+        const matchedCity = AFRICA_CITIES.find(
+          (c) => c.name.toLowerCase() === location.name.toLowerCase()
+        );
+        const avgTempC = matchedCity ? matchedCity.avgTempC : 22.0;
+
+        const scale = location.annualAvgSunHours / 5.4;
+        const monthlyAvgKwhPerKwp = [5.5, 5.8, 5.6, 5.4, 5.2, 5.1, 5.0, 5.3, 5.7, 5.8, 5.4, 5.3].map(v => v * scale);
+        const tempDiff = avgTempC - 22.0;
+        const monthlyAvgTemp = [22, 23, 24, 23, 22, 21, 20, 21, 22, 23, 22, 22].map(v => v + tempDiff);
+
+        set({
+          activeLocation: location,
+          solarData: {
+            latitude: location.latitude,
+            longitude: location.longitude,
+            annualAvgKwhPerKwp: location.annualAvgSunHours,
+            monthlyAvgKwhPerKwp,
+            monthlyAvgTemp,
+          }
+        });
+      },
 
       renameScenario: (id, newName) => {
         const oldName = get().scenarios.find((s) => s.id === id)?.name ?? newName;

@@ -5,8 +5,9 @@ import Link from 'next/link';
 import {
   Trash2, Upload, ArrowLeft, BookMarked, TrendingUp, TrendingDown,
   FileDown, Copy, BarChart2, FileUp, Copy as CopyIcon, X, Info,
-  BookmarkPlus, Check,
+  BookmarkPlus, Check, MapPin,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid,
   RadarChart, Radar as RechartsRadar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -455,17 +456,29 @@ function SaveScenarioCard() {
   const [saved, setSaved] = useState(false);
   const saveScenario = useEnergySystemStore((s) => s.saveScenario);
   const systemConfig = useEnergySystemStore((s) => s.systemConfig);
+  const activeLocation = useEnergySystemStore((s) => s.activeLocation);
+  const storeSolarData = useEnergySystemStore((s) => s.solarData);
   const minuteData = useMinuteData('today');
   const { toast } = useToast();
 
   const handleSave = () => {
     const finalName = name.trim() || `Scenario ${new Date().toLocaleString()}`;
 
+    const currentSolarData = {
+      latitude: storeSolarData.latitude,
+      longitude: storeSolarData.longitude,
+      location: activeLocation.name,
+      monthlyAverage: storeSolarData.monthlyAvgKwhPerKwp,
+      annualAverage: storeSolarData.annualAvgKwhPerKwp,
+      monthlyTemperature: storeSolarData.monthlyAvgTemp,
+      peakSunHours: storeSolarData.monthlyAvgKwhPerKwp,
+    };
+
     let financeSnap: FinancialSnapshot;
     try {
       const snap = buildFinancialSnapshot({
         minuteData: minuteData as Parameters<typeof buildFinancialSnapshot>[0]['minuteData'],
-        solarData: NAIROBI_SOLAR_DATA,
+        solarData: currentSolarData,
         inputs: { chargingTariffKes: 25, discountRatePct: 10, stationCount: 3, targetUtilizationPct: 45, projectYears: 20 },
         evCapacityKw: 22,
       });
@@ -480,7 +493,7 @@ function SaveScenarioCard() {
       financeSnap = { capexTotal: 0, npvKes: 0, irrPct: 0, lcoeKesPerKwh: 0, paybackYears: 0 };
     }
 
-    saveScenario(finalName, financeSnap, { name: 'Nairobi', latitude: -1.2921, longitude: 36.8219 });
+    saveScenario(finalName, financeSnap, { name: activeLocation.name, latitude: activeLocation.latitude, longitude: activeLocation.longitude });
     setName('');
     setSaved(true);
     setTimeout(() => setSaved(false), 2200);
@@ -581,6 +594,7 @@ function normaliseRadarData(
 // ── Main page ───────────────────────────────────────────────────────────────
 
 export default function ScenariosPage() {
+  const router = useRouter();
   const scenarios = useEnergySystemStore((s) => s.scenarios);
   const deleteScenario = useEnergySystemStore((s) => s.deleteScenario);
   const loadScenario = useEnergySystemStore((s) => s.loadScenario);
@@ -608,6 +622,7 @@ export default function ScenariosPage() {
   const handleLoad = (id: string, name: string) => {
     loadScenario(id);
     toast({ title: 'Scenario loaded', description: `"${name}" configuration restored to dashboard.` });
+    router.push('/dashboard');
   };
 
   const handleDuplicate = useCallback((id: string) => {
@@ -965,6 +980,7 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
                         <span className="sr-only">Select for chart</span>
                       </TableHead>
                       <TableHead className="text-[var(--text-tertiary)] font-semibold">Name</TableHead>
+                      <TableHead className="text-[var(--text-tertiary)] font-semibold">Location</TableHead>
                       <TableHead className="text-[var(--text-tertiary)] font-semibold">Saved</TableHead>
                       <TableHead className="text-[var(--text-tertiary)] font-semibold">PV (kW)</TableHead>
                       <TableHead className="text-[var(--text-tertiary)] font-semibold">Battery (kWh)</TableHead>
@@ -1017,6 +1033,12 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
                                 onRename={renameScenario}
                                 onDetailClick={setDetailId}
                               />
+                            </TableCell>
+                            <TableCell className="text-[var(--text-secondary)] font-medium text-xs">
+                              <div className="flex items-center gap-1.5">
+                                <MapPin className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                                {s.location?.name || 'Nairobi'}
+                              </div>
                             </TableCell>
                             <TableCell className="text-[var(--text-secondary)] text-xs">
                               {formatDate(s.createdAt)}
