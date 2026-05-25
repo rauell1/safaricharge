@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNodeSelection } from '@/hooks/useEnergySystem';
 import type { NodeType } from '@/stores/energySystemStore';
+import { useEnergySystemStore } from '@/stores/energySystemStore';
 import { useRouter } from 'next/navigation';
 
 interface PowerFlowVisualizationProps {
@@ -253,13 +254,14 @@ interface MobileDiagramProps {
   flowDirection: PowerFlowVisualizationProps['flowDirection'];
   handleNodeClick: (n: NodeType) => void;
   isSelected: (n: NodeType) => boolean;
+  hasEvLoads?: boolean;
 }
 
 function MobileDiagram({
   solarPower, batteryPower, gridPower,
   residentialKw, commercialKw, industrialKw, evKw,
   siteLoad, batteryLevel, flowDirection,
-  handleNodeClick, isSelected,
+  handleNodeClick, isSelected, hasEvLoads = false,
 }: MobileDiagramProps) {
   const battActive = flowDirection.solarToBattery || flowDirection.batteryToHome;
   const gridActive = flowDirection.solarToGrid    || flowDirection.gridToHome;
@@ -366,18 +368,22 @@ function MobileDiagram({
           color="var(--alert)" softColor="rgba(239,68,68,0.12)" powerKw={industrialKw}
         />
         {/* loadsHub → EVs (elbow, longer drop) */}
-        <SvgLine
-          x1={C.loadsHub.x} y1={C.loadsHub.y}
-          x2={C.ev.x}       y2={C.loadsHub.y}
-          active={loadActive}
-          color="var(--battery)" softColor="var(--battery-soft)" powerKw={evKw}
-        />
-        <SvgLine
-          x1={C.ev.x} y1={C.loadsHub.y}
-          x2={C.ev.x} y2={C.ev.y - 28}
-          active={loadActive}
-          color="var(--battery)" softColor="var(--battery-soft)" powerKw={evKw}
-        />
+        {hasEvLoads && (
+          <>
+            <SvgLine
+              x1={C.loadsHub.x} y1={C.loadsHub.y}
+              x2={C.ev.x}       y2={C.loadsHub.y}
+              active={loadActive}
+              color="var(--battery)" softColor="var(--battery-soft)" powerKw={evKw}
+            />
+            <SvgLine
+              x1={C.ev.x} y1={C.loadsHub.y}
+              x2={C.ev.x} y2={C.ev.y - 28}
+              active={loadActive}
+              color="var(--battery)" softColor="var(--battery-soft)" powerKw={evKw}
+            />
+          </>
+        )}
 
         {/* loadsHub junction dot */}
         <circle cx={C.loadsHub.x} cy={C.loadsHub.y} r={5} fill="var(--solar)" opacity={loadActive ? 1 : 0.3} />
@@ -457,14 +463,16 @@ function MobileDiagram({
       </div>
 
       {/* EVs */}
-      <div style={nodeStyle(C.ev.x, C.ev.y)}>
-        <EnergyNode
-          icon={Car} label="EVs" valueLine={`${evKw.toFixed(2)} kW`}
-          subLabel="Charging" accent="var(--battery)" tint="var(--battery-soft)"
-          nodeType="ev1" onClick={handleNodeClick} isSelected={isSelected('ev1') || isSelected('ev2')}
-          compact
-        />
-      </div>
+      {hasEvLoads && (
+        <div style={nodeStyle(C.ev.x, C.ev.y)}>
+          <EnergyNode
+            icon={Car} label="EVs" valueLine={`${evKw.toFixed(2)} kW`}
+            subLabel="Charging" accent="var(--battery)" tint="var(--battery-soft)"
+            nodeType="ev1" onClick={handleNodeClick} isSelected={isSelected('ev1') || isSelected('ev2')}
+            compact
+          />
+        </div>
+      )}
 
     </div>
   );
@@ -480,6 +488,11 @@ export function PowerFlowVisualization({
 }: PowerFlowVisualizationProps) {
   const { selectNode, isSelected } = useNodeSelection();
   const router = useRouter();
+
+  const fullSystemConfig = useEnergySystemStore((s) => s.fullSystemConfig);
+  const hasEvLoads = React.useMemo(() => {
+    return fullSystemConfig?.loads?.some((l) => l.type === 'ev' && l.enabled) ?? false;
+  }, [fullSystemConfig?.loads]);
 
   const handleNodeClick = (nodeType: NodeType) => {
     selectNode(nodeType);
@@ -583,6 +596,7 @@ export function PowerFlowVisualization({
             flowDirection={flowDirection}
             handleNodeClick={handleNodeClick}
             isSelected={isSelected}
+            hasEvLoads={hasEvLoads}
           />
         </div>
 
@@ -630,7 +644,9 @@ export function PowerFlowVisualization({
                   <EnergyNode icon={Home} label="Residential" valueLine={`${residentialKw.toFixed(2)} kW`} subLabel="Household" accent="var(--consumption)" tint="var(--consumption-soft)" nodeType="home" onClick={handleNodeClick} isSelected={isSelected('home')} />
                   <EnergyNode icon={Building2} label="Commercial" valueLine={`${commercialKw.toFixed(2)} kW`} subLabel="Business" accent="var(--grid)" tint="var(--grid-soft)" nodeType="home" onClick={handleNodeClick} isSelected={false} />
                   <EnergyNode icon={Factory} label="Industrial" valueLine={`${industrialKw.toFixed(2)} kW`} subLabel="Facility" accent="var(--alert)" tint="rgba(239,68,68,0.12)" nodeType="home" onClick={handleNodeClick} isSelected={false} />
-                  <EnergyNode icon={Car} label="EVs" valueLine={`${evKw.toFixed(2)} kW`} subLabel="Charging" accent="var(--battery)" tint="var(--battery-soft)" nodeType="ev1" onClick={handleNodeClick} isSelected={isSelected('ev1') || isSelected('ev2')} />
+                  {hasEvLoads && (
+                    <EnergyNode icon={Car} label="EVs" valueLine={`${evKw.toFixed(2)} kW`} subLabel="Charging" accent="var(--battery)" tint="var(--battery-soft)" nodeType="ev1" onClick={handleNodeClick} isSelected={isSelected('ev1') || isSelected('ev2')} />
+                  )}
                 </div>
               </div>
               <div className="flex flex-col items-center gap-2">

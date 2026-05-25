@@ -294,6 +294,7 @@ interface EnergySystemState {
   ) => void;
   deleteScenario: (id: string) => void;
   loadScenario: (id: string) => void;
+  loadSimulationRun: (run: any, dataPoints: any[]) => void;
   renameScenario: (id: string, newName: string) => void;
   /**
    * Parse a JSON string (either a single SavedScenario object or an array of
@@ -747,6 +748,89 @@ export const useEnergySystemStore = create<EnergySystemState>()(
               monthlyAvgKwhPerKwp,
               monthlyAvgTemp,
             }
+          };
+        }),
+
+      loadSimulationRun: (run, dataPoints) =>
+        set((state) => {
+          const matchedCity = AFRICA_CITIES.find(
+            (c) => c.name.toLowerCase() === (run.location_name || '').toLowerCase()
+          );
+
+          let activeLocation: LocationOption;
+          if (matchedCity) {
+            activeLocation = {
+              name: matchedCity.name,
+              displayName: `${matchedCity.name}, ${matchedCity.country}`,
+              county: matchedCity.country,
+              latitude: matchedCity.lat,
+              longitude: matchedCity.lon,
+              annualAvgSunHours: matchedCity.avgDailyPsh,
+              isKosapTarget: false,
+              electrificationRatePct: null,
+              countyNote: `${matchedCity.region} — elevation ${matchedCity.elevation} m, avg ${matchedCity.avgTempC}°C, annual GHI ${matchedCity.annualGHI} kWh/m².`,
+            };
+          } else {
+            activeLocation = {
+              name: run.location_name || 'Nairobi',
+              displayName: run.location_name ? `${run.location_name}, Custom` : 'Nairobi, Kenya',
+              county: 'Custom',
+              latitude: Number(run.latitude || -1.2921),
+              longitude: Number(run.longitude || 36.8219),
+              annualAvgSunHours: 5.4,
+              isKosapTarget: false,
+              electrificationRatePct: null,
+              countyNote: 'Custom location from saved run.',
+            };
+          }
+
+          const avgTempC = matchedCity ? matchedCity.avgTempC : 22.0;
+          const scale = activeLocation.annualAvgSunHours / 5.4;
+          const monthlyAvgKwhPerKwp = [5.5, 5.8, 5.6, 5.4, 5.2, 5.1, 5.0, 5.3, 5.7, 5.8, 5.4, 5.3].map(v => v * scale);
+          const tempDiff = avgTempC - 22.0;
+          const monthlyAvgTemp = [22, 23, 24, 23, 22, 21, 20, 21, 22, 23, 22, 22].map(v => v + tempDiff);
+
+          const totalSolar = dataPoints.reduce((sum, d) => sum + (d.solarEnergyKWh || 0), 0);
+          const totalSavings = dataPoints.reduce((sum, d) => sum + (d.savingsKES || 0), 0);
+          const totalImport = dataPoints.reduce((sum, d) => sum + (d.gridImportKWh || 0), 0);
+          const totalCarbon = totalSolar * 0.505;
+
+          const accumulators = {
+            solar: totalSolar,
+            savings: totalSavings,
+            gridImport: totalImport,
+            carbonOffset: totalCarbon,
+            batDischargeKwh: dataPoints.reduce((sum, d) => sum + Math.max(0, -d.batteryPowerKW / 60), 0),
+            feedInEarnings: dataPoints.reduce((sum, d) => sum + (d.gridExportKWh || 0) * (d.tariffRate * 0.5), 0),
+          };
+
+          return {
+            systemConfig: {
+              solarCapacityKW: Number(run.solar_capacity_kw || 10),
+              batteryCapacityKWh: Number(run.battery_capacity_kwh || 50),
+              inverterKW: Number(run.inverter_kw || 10),
+              ev1CapacityKWh: 80,
+              ev2CapacityKWh: 118,
+              systemMode: (run.system_mode || 'hybrid') as any,
+              batteryDodPct: DEFAULT_BATTERY_DOD_PCT,
+              generatorThresholdPct: DEFAULT_GENERATOR_THRESHOLD_PCT,
+              gridOutageEnabled: false,
+              gridTariff: {
+                peakRate: 24.31,
+                offPeakRate: 14.93,
+              },
+            },
+            activeLocation,
+            solarData: {
+              latitude: activeLocation.latitude,
+              longitude: activeLocation.longitude,
+              annualAvgKwhPerKwp: activeLocation.annualAvgSunHours,
+              monthlyAvgKwhPerKwp,
+              monthlyAvgTemp,
+            },
+            minuteData: dataPoints,
+            accumulators,
+            hasSetupLocation: true,
           };
         }),
 

@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Trash2, Upload, ArrowLeft, BookMarked, TrendingUp, TrendingDown,
   FileDown, Copy, BarChart2, FileUp, Copy as CopyIcon, X, Info,
-  BookmarkPlus, Check, MapPin,
+  BookmarkPlus, Check, MapPin, History, Calendar, RotateCcw, Loader2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { fetchSimulationRuns, fetchSimulationDataPoints, deleteSimulationRun, type SimulationRun } from '@/lib/supabase-db';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid,
   RadarChart, Radar as RechartsRadar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -603,6 +604,66 @@ export default function ScenariosPage() {
   const importScenarios = useEnergySystemStore((s) => s.importScenarios);
   const { toast } = useToast();
 
+  const loadSimulationRunStore = useEnergySystemStore((s) => s.loadSimulationRun);
+
+  const [runs, setRuns] = useState<SimulationRun[]>([]);
+  const [loadingRuns, setLoadingRuns] = useState(true);
+  const [loadingRunId, setLoadingRunId] = useState<string | null>(null);
+
+  const loadRuns = useCallback(async () => {
+    setLoadingRuns(true);
+    try {
+      const fetchedRuns = await fetchSimulationRuns();
+      setRuns(fetchedRuns);
+    } catch (err) {
+      console.error('Failed to load past simulation runs:', err);
+    } finally {
+      setLoadingRuns(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadRuns();
+  }, [loadRuns]);
+
+  const handleLoadRun = async (run: SimulationRun) => {
+    setLoadingRunId(run.id);
+    try {
+      const dataPoints = await fetchSimulationDataPoints(run.id);
+      loadSimulationRunStore(run, dataPoints);
+      toast({
+        title: 'Simulation run loaded',
+        description: `"${run.name}" simulation state and time-series data restored.`,
+      });
+      router.push('/dashboard');
+    } catch (err: any) {
+      toast({
+        title: 'Failed to load run',
+        description: err.message || 'Error occurred while loading simulation run data points.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingRunId(null);
+    }
+  };
+
+  const handleDeleteRun = async (id: string, name: string) => {
+    try {
+      await deleteSimulationRun(id);
+      setRuns(prev => prev.filter(r => r.id !== id));
+      toast({
+        title: 'Simulation run deleted',
+        description: `"${name}" was successfully deleted.`,
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Failed to delete run',
+        description: err.message || 'Error occurred while deleting simulation run.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const [baselineId, setBaselineId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [importOpen, setImportOpen] = useState(false);
@@ -1186,6 +1247,175 @@ ${tableRows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>
               </CardContent>
             </Card>
           )}
+
+          {/* ── Past Simulation Runs & Geographical History ── */}
+          <Card className="bg-[var(--bg-card)] border-[var(--border)] shadow-card mt-6">
+            <CardHeader>
+              <CardTitle className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wide flex items-center gap-2">
+                <History className="h-4 w-4 text-[var(--battery)]" />
+                Geographical Simulation Run History (PVsyst)
+              </CardTitle>
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">
+                Browse and reload your past simulation runs by location. Load exact historical minute-level time-series data and design parameters back into your active dashboard.
+              </p>
+            </CardHeader>
+            <CardContent>
+              {loadingRuns ? (
+                <div className="flex items-center justify-center py-12 gap-2 text-[var(--text-secondary)] text-sm">
+                  <Loader2 className="h-4 w-4 animate-spin text-[var(--battery)]" />
+                  Loading historical simulation runs from Supabase...
+                </div>
+              ) : runs.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
+                  <History className="h-8 w-8 text-[var(--text-tertiary)] opacity-30" />
+                  <div>
+                    <p className="text-[var(--text-primary)] font-medium text-sm">No historical simulation runs found</p>
+                    <p className="text-[var(--text-tertiary)] text-xs mt-0.5">Runs you execute and save on the Simulation page will appear here.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Grouped by Location name */}
+                  {(() => {
+                    const runsByLocation: Record<string, SimulationRun[]> = {};
+                    runs.forEach(r => {
+                      const loc = r.location_name || 'Nairobi';
+                      if (!runsByLocation[loc]) runsByLocation[loc] = [];
+                      runsByLocation[loc].push(r);
+                    });
+
+                    return Object.entries(runsByLocation).map(([locName, locRuns]) => {
+                      const firstRun = locRuns[0];
+                      const lat = firstRun.latitude ? Number(firstRun.latitude).toFixed(4) : null;
+                      const lon = firstRun.longitude ? Number(firstRun.longitude).toFixed(4) : null;
+
+                      return (
+                        <div key={locName} className="border border-[var(--border)]/40 rounded-xl overflow-hidden bg-[var(--bg-primary)]/20">
+                          <div className="bg-[var(--bg-card-muted)]/40 px-4 py-3 border-b border-[var(--border)]/40 flex items-center justify-between flex-wrap gap-2">
+                            <div className="flex items-center gap-2">
+                              <div className="h-7 w-7 rounded-lg bg-[var(--solar-soft)] flex items-center justify-center">
+                                <MapPin className="h-4 w-4 text-[var(--solar)]" />
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-semibold text-[var(--text-primary)]">{locName}</h4>
+                                {lat && lon && (
+                                  <p className="text-[10px] text-[var(--text-tertiary)]">
+                                    Coordinates: {lat}°N, {lon}°E
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <Badge variant="outline" className="bg-[var(--bg-primary)] border-[var(--border)] text-[var(--text-secondary)] font-mono text-[10px]">
+                              {locRuns.length} Run{locRuns.length !== 1 ? 's' : ''}
+                            </Badge>
+                          </div>
+                          <div className="divide-y divide-[var(--border)]/30">
+                            {locRuns.map(run => {
+                              const sum = run.summary_json || {};
+                              const isCurrentlyLoading = loadingRunId === run.id;
+                              
+                              return (
+                                <div key={run.id} className="p-4 flex items-center justify-between gap-4 flex-wrap hover:bg-[var(--bg-card-muted)]/20 transition-all">
+                                  <div className="space-y-1.5 min-w-[200px]">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-medium text-[var(--text-primary)]">{run.name}</span>
+                                      <Badge className="bg-[var(--battery-soft)] text-[var(--battery)] border-[var(--battery)]/10 text-[9px] px-1.5 py-0.2">
+                                        {run.system_mode || 'hybrid'}
+                                      </Badge>
+                                    </div>
+                                    <div className="flex items-center gap-4 text-xs text-[var(--text-tertiary)]">
+                                      <div className="flex items-center gap-1">
+                                        <Calendar className="h-3.5 w-3.5" />
+                                        {new Date(run.created_at).toLocaleString()}
+                                      </div>
+                                      <div>
+                                        Solar: <span className="font-semibold text-[var(--text-secondary)]">{run.solar_capacity_kw ?? 0} kW</span>
+                                      </div>
+                                      <div>
+                                        Battery: <span className="font-semibold text-[var(--text-secondary)]">{run.battery_capacity_kwh ?? 0} kWh</span>
+                                      </div>
+                                      <div>
+                                        Inverter: <span className="font-semibold text-[var(--text-secondary)]">{run.inverter_kw ?? 0} kW</span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* KPIs preview */}
+                                  <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-[var(--text-secondary)]">
+                                    {sum.totalSavingsKes !== undefined && (
+                                      <div className="flex flex-col">
+                                        <span className="text-[10px] text-[var(--text-tertiary)]">Savings</span>
+                                        <span className="font-semibold text-emerald-400">KES {Math.round(Number(sum.totalSavingsKes)).toLocaleString()}</span>
+                                      </div>
+                                    )}
+                                    {sum.lcoeKesPerKwh !== undefined && (
+                                      <div className="flex flex-col">
+                                        <span className="text-[10px] text-[var(--text-tertiary)]">LCOE</span>
+                                        <span className="font-semibold text-[var(--solar)]">{Number(sum.lcoeKesPerKwh).toFixed(2)} KES/kWh</span>
+                                      </div>
+                                    )}
+                                    {sum.paybackYears !== undefined && (
+                                      <div className="flex flex-col">
+                                        <span className="text-[10px] text-[var(--text-tertiary)]">Payback</span>
+                                        <span className="font-semibold">{Number(sum.paybackYears).toFixed(2)} yrs</span>
+                                      </div>
+                                    )}
+                                    {sum.selfSufficiencyPct !== undefined && (
+                                      <div className="flex flex-col">
+                                        <span className="text-[10px] text-[var(--text-tertiary)]">Self-Suff.</span>
+                                        <span className="font-semibold text-sky-400">{Number(sum.selfSufficiencyPct).toFixed(1)}%</span>
+                                      </div>
+                                    )}
+                                    {sum.batteryCycles !== undefined && (
+                                      <div className="flex flex-col">
+                                        <span className="text-[10px] text-[var(--text-tertiary)]">Bat. Cycles</span>
+                                        <span className="font-semibold">{Number(sum.batteryCycles).toFixed(2)}/yr</span>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      disabled={loadingRunId !== null}
+                                      onClick={() => handleLoadRun(run)}
+                                      className="border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--battery)] hover:text-white"
+                                    >
+                                      {isCurrentlyLoading ? (
+                                        <>
+                                          <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                                          Loading...
+                                        </>
+                                      ) : (
+                                        <>
+                                          <RotateCcw className="h-3 w-3 mr-1.5" />
+                                          Load Run
+                                        </>
+                                      )}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      disabled={loadingRunId !== null}
+                                      onClick={() => handleDeleteRun(run.id, run.name)}
+                                      className="text-red-400 hover:text-red-300 hover:bg-red-400/10 h-8 w-8 p-0"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
         </div>
       </main>

@@ -467,3 +467,117 @@ export async function appendMessage(
     // Fire-and-forget; never block the UI on a failed DB write
   }
 }
+
+export interface SimulationRun {
+  id: string;
+  user_id: string;
+  scenario_id: string | null;
+  name: string;
+  solar_capacity_kw: number | null;
+  battery_capacity_kwh: number | null;
+  inverter_kw: number | null;
+  system_mode: string | null;
+  location_name: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  total_minutes: number | null;
+  summary_json: Record<string, any> | null;
+  created_at: string;
+}
+
+/**
+ * Fetch all past simulation runs for the authenticated user, ordered by date descending.
+ */
+export async function fetchSimulationRuns(): Promise<SimulationRun[]> {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from('simulation_runs')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('[supabase-db] fetchSimulationRuns error:', error.message);
+      return [];
+    }
+
+    return (data || []) as SimulationRun[];
+  } catch (err) {
+    console.error('[supabase-db] fetchSimulationRuns unexpected error:', err);
+    return [];
+  }
+}
+
+/**
+ * Fetch and map time-series minute data points for a specific simulation run.
+ */
+export async function fetchSimulationDataPoints(runId: string): Promise<any[]> {
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('simulation_data')
+      .select('*')
+      .eq('run_id', runId)
+      .order('ts', { ascending: true });
+
+    if (error) {
+      console.error('[supabase-db] fetchSimulationDataPoints error:', error.message);
+      return [];
+    }
+
+    return (data || []).map((row) => {
+      const d = new Date(row.ts);
+      return {
+        timestamp: row.ts,
+        date: row.ts.slice(0, 10),
+        year: d.getFullYear(),
+        month: d.getMonth() + 1,
+        week: 1,
+        day: d.getDate(),
+        hour: d.getHours(),
+        minute: d.getMinutes(),
+        solarKW: Number(row.solar_kw || 0),
+        homeLoadKW: Number(row.home_load_kw || 0),
+        ev1LoadKW: Number(row.ev1_load_kw || 0),
+        ev2LoadKW: Number(row.ev2_load_kw || 0),
+        batteryPowerKW: 0,
+        batteryLevelPct: Number(row.battery_level_pct || 0),
+        gridImportKW: Number(row.grid_import_kw || 0),
+        gridExportKW: Number(row.grid_export_kw || 0),
+        ev1SocPct: 50,
+        ev2SocPct: 50,
+        tariffRate: Number(row.tariff_rate || 22),
+        isPeakTime: Boolean(row.is_peak_time),
+        savingsKES: Number(row.savings_kes || 0),
+        solarEnergyKWh: Number(row.solar_kw || 0) / 60,
+        homeLoadKWh: Number(row.home_load_kw || 0) / 60,
+        ev1LoadKWh: Number(row.ev1_load_kw || 0) / 60,
+        ev2LoadKWh: Number(row.ev2_load_kw || 0) / 60,
+        gridImportKWh: Number(row.grid_import_kw || 0) / 60,
+        gridExportKWh: Number(row.grid_export_kw || 0) / 60,
+      };
+    });
+  } catch (err) {
+    console.error('[supabase-db] fetchSimulationDataPoints unexpected error:', err);
+    return [];
+  }
+}
+
+/**
+ * Delete a simulation run by its ID.
+ */
+export async function deleteSimulationRun(id: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from('simulation_runs')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw new Error(error.message);
+}
+
+

@@ -6,6 +6,7 @@ import { useEnergyFlows, useEnergyNodes, useNodeSelection } from '@/hooks/useEne
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Battery, ChevronLeft, ChevronRight, Home, Sun, TowerControl, Zap, CarFront } from 'lucide-react';
 import type { NodeType } from '@/stores/energySystemStore';
+import { useEnergySystemStore } from '@/stores/energySystemStore';
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
 import { Slider } from '@/components/ui/slider';
 
@@ -33,10 +34,24 @@ export function SystemVisualization() {
   const [mobileStep, setMobileStep] = useState(0);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
 
+  const fullSystemConfig = useEnergySystemStore((s) => s.fullSystemConfig);
+  const hasEvLoads = useMemo(() => {
+    return fullSystemConfig?.loads?.some((l) => l.type === 'ev' && l.enabled) ?? false;
+  }, [fullSystemConfig?.loads]);
+
+  const activeNodesConfig = useMemo(() => {
+    return nodeConfig.filter((n) => {
+      if (n.key === 'ev1' || n.key === 'ev2') {
+        return hasEvLoads;
+      }
+      return true;
+    });
+  }, [hasEvLoads]);
+
   const activeFlows = flows.filter((f) => f.active);
   const mobileNodes = useMemo(
-    () => nodeConfig.map((node) => ({ ...node, status: nodes[node.key].status, power: nodes[node.key].powerKW, soc: nodes[node.key].soc })),
-    [nodes]
+    () => activeNodesConfig.map((node) => ({ ...node, status: nodes[node.key].status, power: nodes[node.key].powerKW, soc: nodes[node.key].soc })),
+    [nodes, activeNodesConfig]
   );
   const currentMobileNode = mobileNodes[Math.max(0, Math.min(mobileStep, mobileNodes.length - 1))];
 
@@ -205,7 +220,7 @@ export function SystemVisualization() {
 
         {/* ── Desktop grid layout (hidden below md) ───────────────────────── */}
         <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {nodeConfig.map((node) => {
+          {activeNodesConfig.map((node) => {
             const data = nodes[node.key];
             const NodeIcon = node.icon;
             return (

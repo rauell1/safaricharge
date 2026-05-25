@@ -359,8 +359,6 @@ export const DEFAULT_SYSTEM_CONFIG: SystemConfiguration = {
   },
   loads: [
     DEFAULT_HOME_LOAD,
-    DEFAULT_EV_COMMUTER,
-    DEFAULT_EV_FLEET,
   ],
   performanceRatio: 0.8,
   shadingLossPct: 0,

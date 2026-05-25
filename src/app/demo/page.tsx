@@ -37,7 +37,7 @@ import { EnergyReportModal } from '@/components/energy/EnergyReportModal';
 import type { SolarIrradianceData } from '@/lib/nasa-power-api';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
 import { SIZING_SIMULATOR_STORAGE_KEY, parseSimulatorSizingPayload } from '@/lib/pv-sizing';
-import { getUserPreference } from '@/lib/supabase-db';
+import { getUserPreference, setUserPreference } from '@/lib/supabase-db';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { Button } from '@/components/ui/button';
@@ -384,6 +384,9 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
   const setHasSetupLocation = useEnergySystemStore((s) => s.setHasSetupLocation);
   const [isChecking, setIsChecking] = useState(!hasSetupLocation);
   
+  // Continuous simulation background loop running across all dashboard sections
+  useDemoEnergySystem(hasSetupLocation);
+
   const activeLocation = useEnergySystemStore((s) => s.activeLocation);
   const setActiveLocation = useEnergySystemStore((s) => s.setActiveLocation);
   
@@ -399,6 +402,47 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
       description: `Solar data will now reflect conditions in ${loc.displayName} (avg ${loc.annualAvgSunHours} sun-hours/day).`,
     });
   }, [setActiveLocation, toast]);
+
+  // Debounced autosave to Supabase whenever fullSystemConfig or activeLocation changes
+  useEffect(() => {
+    if (!hasSetupLocation) return;
+
+    const saveTimeout = setTimeout(async () => {
+      try {
+        const store = useEnergySystemStore.getState();
+        const currentPref = await getUserPreference<any>('sc_site_config') || {};
+
+        const nextPref = {
+          siteName: currentPref.siteName || "SafariCharge Solar Microgrid",
+          siteType: currentPref.siteType || "Commercial",
+          gridConnection: currentPref.gridConnection || (store.systemConfig.systemMode === 'off-grid' ? 'Off-Grid' : 'Hybrid'),
+          location: {
+            city: store.activeLocation.name,
+            lat: store.activeLocation.latitude,
+            lon: store.activeLocation.longitude,
+          },
+          pvCapacity: store.fullSystemConfig.solar.totalCapacityKw,
+          batteryStorage: store.fullSystemConfig.battery.capacityKwh,
+          peakLoad: store.fullSystemConfig.inverter.capacityKw,
+          dailyEnergy: Math.round(store.fullSystemConfig.inverter.capacityKw * 4.5),
+          evChargers: store.fullSystemConfig.loads.filter(l => l.type === 'ev' && l.enabled).length,
+        };
+
+        await setUserPreference('sc_site_config', nextPref);
+      } catch (err) {
+        console.error('[DemoIntegratedShell] Autosave failed:', err);
+      }
+    }, 1500); // 1.5s debounce to avoid thrashing the DB
+
+    return () => clearTimeout(saveTimeout);
+  }, [
+    hasSetupLocation,
+    useEnergySystemStore((s) => s.fullSystemConfig.solar.totalCapacityKw),
+    useEnergySystemStore((s) => s.fullSystemConfig.battery.capacityKwh),
+    useEnergySystemStore((s) => s.fullSystemConfig.inverter.capacityKw),
+    useEnergySystemStore((s) => s.activeLocation.name),
+    useEnergySystemStore((s) => s.fullSystemConfig.loads),
+  ]);
 
   useEffect(() => {
     if (activeSection === 'scenarios') {
@@ -458,6 +502,11 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
             }
           }
 
+          const calculatedInverterCapacity = Math.max(
+            saved.peakLoad || 10,
+            Math.round(((saved.pvCapacity || 10) / 1.2) * 10) / 10
+          );
+
           // Update store configuration
           const store = useEnergySystemStore.getState();
           const nextFullSystemConfig = {
@@ -472,13 +521,13 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
             },
             inverter: {
               ...store.fullSystemConfig.inverter,
-              capacityKw: saved.peakLoad || 10,
+              capacityKw: calculatedInverterCapacity,
             },
           };
           store.updateFullSystemConfig(nextFullSystemConfig);
           store.updateSystemConfig({
             solarCapacityKW: saved.pvCapacity || 10,
-            inverterKW: saved.peakLoad || 10,
+            inverterKW: calculatedInverterCapacity,
             batteryCapacityKWh: saved.batteryStorage || 15,
           });
           store.updateNode('solar', { capacityKW: saved.pvCapacity || 10 });
@@ -527,7 +576,13 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
       },
       inverter: {
         ...store.fullSystemConfig.inverter,
-        capacityKw: Math.max(1, Number((payload.requiredPvCapacityKw * 0.9).toFixed(2))),
+        capacityKw: Math.max(
+          1,
+          Math.max(
+            store.fullSystemConfig.inverter.capacityKw,
+            Math.round((payload.requiredPvCapacityKw / 1.2) * 10) / 10
+          )
+        ),
       },
       battery: {
         ...store.fullSystemConfig.battery,
@@ -605,7 +660,21 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
                 onComplete={async (loc, siteConfig) => {
                   try {
                     const { setUserPreference } = await import('@/lib/supabase-db');
-                    await setUserPreference('sc_site_config', siteConfig);
+                    
+                    // Proper Inverter Sizing based on peak load and optimal solar ratio
+                    const calculatedInverterCapacity = Math.max(
+                      siteConfig.peakLoad,
+                      Math.round((siteConfig.pvCapacity / 1.2) * 10) / 10
+                    );
+                    
+                    // Update siteConfig copy with dynamic inverter sizing and remove defaults
+                    const updatedSiteConfig = {
+                      ...siteConfig,
+                      peakLoad: calculatedInverterCapacity,
+                      evChargers: 0,
+                    };
+                    
+                    await setUserPreference('sc_site_config', updatedSiteConfig);
                     
                     // Update local activeLocation
                     setActiveLocation(loc);
@@ -624,13 +693,13 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
                       },
                       inverter: {
                         ...store.fullSystemConfig.inverter,
-                        capacityKw: siteConfig.peakLoad,
+                        capacityKw: calculatedInverterCapacity,
                       },
                     };
                     store.updateFullSystemConfig(nextFullSystemConfig);
                     store.updateSystemConfig({
                       solarCapacityKW: siteConfig.pvCapacity,
-                      inverterKW: siteConfig.peakLoad,
+                      inverterKW: calculatedInverterCapacity,
                       batteryCapacityKWh: siteConfig.batteryStorage,
                     });
                     store.updateNode('solar', { capacityKW: siteConfig.pvCapacity });
@@ -821,7 +890,7 @@ function DemoSectionRenderer({
 }: DemoSectionRendererProps) {
   switch (activeSection) {
     case 'simulation':
-      return <DemoSimulationView onNavigateSection={onNavigateSection} />;
+      return <DemoSimulationView onNavigateSection={onNavigateSection} financialInputs={financialInputs} />;
     case 'configuration':
       return <DemoConfigurationView activeLocation={activeLocation} onLocationPickerOpen={onLocationPickerOpen} />;
     case 'financial':
@@ -859,7 +928,6 @@ function DemoDashboardView({
   activeLocation,
   onLocationPickerOpen,
 }: DemoDashboardViewProps) {
-  useDemoEnergySystem(true);
   const { timeRange, setTimeRange } = useTimeRange();
   const { currentDate, isAutoMode } = useSimulationState();
   const solarNode = useEnergyNode('solar');
@@ -1393,7 +1461,13 @@ function DemoDashboardView({
   );
 }
 
-function DemoSimulationView({ onNavigateSection }: { onNavigateSection: (section: DashboardSection) => void }) {
+function DemoSimulationView({
+  onNavigateSection,
+  financialInputs,
+}: {
+  onNavigateSection: (section: DashboardSection) => void;
+  financialInputs: FinancialInputs;
+}) {
   useDemoEnergySystem(true);
   
   const [savingRun, setSavingRun] = useState(false);
@@ -1411,11 +1485,46 @@ function DemoSimulationView({ onNavigateSection }: { onNavigateSection: (section
     setSavingRun(true);
     try {
       const { saveSimulationRun } = await import('@/lib/supabase-db');
+      const { computeProfessionalEngineeringKpis } = await import('@/lib/engineeringKpis');
       
+      const storeSolarData = store.solarData;
+      const activeLocation = store.activeLocation;
+      
+      const currentSolarData = {
+        latitude: storeSolarData.latitude,
+        longitude: storeSolarData.longitude,
+        location: activeLocation.name,
+        monthlyAverage: storeSolarData.monthlyAvgKwhPerKwp,
+        annualAverage: storeSolarData.annualAvgKwhPerKwp,
+        monthlyTemperature: storeSolarData.monthlyAvgTemp,
+        peakSunHours: storeSolarData.monthlyAvgKwhPerKwp,
+      };
+
+      const financialSnapshot = buildFinancialSnapshot({
+        minuteData: minuteData as Parameters<typeof buildFinancialSnapshot>[0]['minuteData'],
+        solarData: currentSolarData,
+        inputs: financialInputs,
+        evCapacityKw: 22,
+      });
+
+      const engineeringKpis = computeProfessionalEngineeringKpis({
+        minuteData,
+        systemCapacityKwp: Math.max(systemConfig.solarCapacityKW, 0),
+        avgDailySunHours: activeLocation.annualAvgSunHours,
+      });
+
       // Calculate summary metrics
       const totalSolarKwh = minuteData.reduce((sum, d) => sum + (d.solarKW || 0) / 60, 0);
       const totalLoadKwh = minuteData.reduce((sum, d) => sum + (d.homeLoadKW || 0) / 60, 0);
       const totalSavingsKes = minuteData.reduce((sum, d) => sum + (d.savingsKES || 0), 0);
+      const totalGridImportKwh = minuteData.reduce((sum, d) => sum + (d.gridImportKW || 0) / 60, 0);
+      const totalGridExportKwh = minuteData.reduce((sum, d) => sum + (d.gridExportKW || 0) / 60, 0);
+      const totalEvKwh = minuteData.reduce((sum, d) => sum + ((d.ev1LoadKW || 0) + (d.ev2LoadKW || 0)) / 60, 0);
+      const totalConsumptionKwh = totalLoadKwh + totalEvKwh;
+
+      const selfSufficiencyPct = totalConsumptionKwh > 0
+        ? Math.min(100, ((totalConsumptionKwh - totalGridImportKwh) / totalConsumptionKwh) * 100)
+        : 0;
       
       const runName = `Sim - ${new Date().toLocaleString()}`;
       
@@ -1425,11 +1534,29 @@ function DemoSimulationView({ onNavigateSection }: { onNavigateSection: (section
         batteryCapacityKwh: systemConfig.batteryCapacityKWh,
         inverterKw: systemConfig.inverterKW,
         systemMode: systemConfig.systemMode,
+        locationName: activeLocation.displayName,
+        latitude: activeLocation.latitude,
+        longitude: activeLocation.longitude,
         summaryJson: {
           totalSolarKwh,
           totalLoadKwh,
           totalSavingsKes,
           durationMinutes: minuteData.length,
+          lcoeKesPerKwh: financialSnapshot.lcoeKesPerKwh,
+          npvKes: financialSnapshot.npvKes,
+          irrPct: financialSnapshot.irrPct,
+          paybackYears: financialSnapshot.paybackYears,
+          capexTotal: financialSnapshot.capex.total,
+          selfSufficiencyPct,
+          totalGridImportKwh,
+          totalGridExportKwh,
+          specificYieldKWhPerKWp: engineeringKpis.specificYield,
+          performanceRatioPct: engineeringKpis.performanceRatio,
+          capacityFactorPct: engineeringKpis.capacityFactor,
+          batteryCycles: engineeringKpis.batteryCyclesPerYear,
+          co2AvoidedKg: engineeringKpis.co2AvoidedKgPerYear,
+          selfConsumptionRate: engineeringKpis.selfConsumptionRate,
+          gridIndependence: engineeringKpis.gridIndependence,
         },
         minuteData: minuteData.map(pt => ({
           ts: pt.timestamp,
