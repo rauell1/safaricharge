@@ -157,6 +157,9 @@ export async function proxy(request: NextRequest) {
   const getSessionMs = Date.now() - getSessionStart
 
   if (sessionError || !session?.user || !session.user.email_confirmed_at) {
+    if (pathname === '/login' || pathname === '/signup') {
+      return NextResponse.next()
+    }
     const response = NextResponse.redirect(new URL('/landing', request.url))
     const totalMs = Date.now() - middlewareStart
     if (AUTH_TIMING_DEBUG) {
@@ -183,6 +186,9 @@ export async function proxy(request: NextRequest) {
     getUserMs = Date.now() - getUserStart
 
     if (error || !user || !user.email_confirmed_at) {
+      if (pathname === '/login' || pathname === '/signup') {
+        return NextResponse.next()
+      }
       const response = NextResponse.redirect(new URL('/landing', request.url))
       const totalMs = Date.now() - middlewareStart
       if (AUTH_TIMING_DEBUG) {
@@ -211,7 +217,7 @@ export async function proxy(request: NextRequest) {
   const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
   const isAdmin = currentUser.email && adminEmails.includes(currentUser.email.toLowerCase())
 
-  if (pathname === '/landing') {
+  if (pathname === '/login' || pathname === '/signup' || pathname === '/landing') {
     return NextResponse.redirect(new URL(isAdmin ? '/admin' : '/dashboard', request.url))
   }
 
