@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 263 | `rollback/fix-auth-whitelist-login-signup-forgot-2026-05-25-4f3e629` | `4f3e629` | fix(auth): whitelist login, signup, forgot-password, reset-password, and api optimize/forecast in middleware (1f +3/-1) | 2026-05-25 |
 | 262 | `rollback/feat-implement-scientific-sizing-coinc-2026-05-25-bd01064` | `bd01064` | feat: implement scientific sizing coincidence, poisson ev queueing, rainflow lcos fatigue, and astronomical horizon shading (phase 2) (12f +438/-89) | 2026-05-25 |
 | 261 | `rollback/refactor-simplify-dashboard-app-shell-2026-05-25-65fd596` | `65fd596` | refactor: simplify dashboard app shell and navigation sidebar to 5 tabs, combine sizing and financial panels, delete redundant sub-routes, and integrate onboarding tour (13f +533/-1512) | 2026-05-25 |
 | 260 | `rollback/feat-enhance-powerbi-data-collection-i-2026-05-25-abde1f9` | `abde1f9` | feat: enhance PowerBI data collection & implement PVsyst-style geographical run history restoration (7f +623/-39) | 2026-05-25 |
@@ -2739,6 +2740,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat: implement scientific sizing coincidence, poisson ev queueing, rainflow lcos fatigue, and astronomical horizon shading (phase 2)
 - **Date**: 2026-05-25
 - **Changed**: 12 file(s), +438/-89 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #263 — `rollback/fix-auth-whitelist-login-signup-forgot-2026-05-25-4f3e629`
+
+- **Branch**: `rollback/fix-auth-whitelist-login-signup-forgot-2026-05-25-4f3e629`
+- **Commit**: `4f3e62976ac60439d29a9fc00651adb0db5ba237`
+- **Subject**: fix(auth): whitelist login, signup, forgot-password, reset-password, and api optimize/forecast in middleware
+- **Date**: 2026-05-25
+- **Changed**: 1 file(s), +3/-1 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
