@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 255 | `rollback/fix-restore-login-signup-bypass-in-mid-2026-05-25-4c2cb8f` | `4c2cb8f` | fix: restore login/signup bypass in middleware and optimize onboarding wizard loading (2f +30/-7) | 2026-05-25 |
 | 254 | `rollback/fix-eliminate-blocking-null-state-that-2026-05-24-b49e610` | `b49e610` | fix: eliminate blocking null state that made dashboard buttons unclickable (1f +6/-13) | 2026-05-24 |
 | 253 | `rollback/fix-restore-semantic-max-w-widths-brok-2026-05-24-2b14c2f` | `2b14c2f` | fix: restore semantic max-w-* widths broken by Tailwind v4 + custom spacing (4f +58/-14) | 2026-05-24 |
 | 252 | `rollback/fix-restore-horizontal-layout-by-follo-2026-05-24-171861d` | `171861d` | fix: restore horizontal layout by following standard shadcn sidebar pattern (1f +40/-50) | 2026-05-24 |
@@ -2651,6 +2652,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix: eliminate blocking null state that made dashboard buttons unclickable
 - **Date**: 2026-05-24
 - **Changed**: 1 file(s), +6/-13 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #255 — `rollback/fix-restore-login-signup-bypass-in-mid-2026-05-25-4c2cb8f`
+
+- **Branch**: `rollback/fix-restore-login-signup-bypass-in-mid-2026-05-25-4c2cb8f`
+- **Commit**: `4c2cb8f4a14e2ad1b652d6cb7f87a446f35332f1`
+- **Subject**: fix: restore login/signup bypass in middleware and optimize onboarding wizard loading
+- **Date**: 2026-05-25
+- **Changed**: 2 file(s), +30/-7 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
