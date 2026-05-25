@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 256 | `rollback/fix-integrate-location-based-project-s-2026-05-25-ea4e4d7` | `ea4e4d7` | fix: integrate location-based project saving, dynamic solar calculations, and loading on scenarios dashboard (4f +153/-12) | 2026-05-25 |
 | 255 | `rollback/fix-restore-login-signup-bypass-in-mid-2026-05-25-4c2cb8f` | `4c2cb8f` | fix: restore login/signup bypass in middleware and optimize onboarding wizard loading (2f +30/-7) | 2026-05-25 |
 | 254 | `rollback/fix-eliminate-blocking-null-state-that-2026-05-24-b49e610` | `b49e610` | fix: eliminate blocking null state that made dashboard buttons unclickable (1f +6/-13) | 2026-05-24 |
 | 253 | `rollback/fix-restore-semantic-max-w-widths-brok-2026-05-24-2b14c2f` | `2b14c2f` | fix: restore semantic max-w-* widths broken by Tailwind v4 + custom spacing (4f +58/-14) | 2026-05-24 |
@@ -2662,6 +2663,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix: restore login/signup bypass in middleware and optimize onboarding wizard loading
 - **Date**: 2026-05-25
 - **Changed**: 2 file(s), +30/-7 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #256 — `rollback/fix-integrate-location-based-project-s-2026-05-25-ea4e4d7`
+
+- **Branch**: `rollback/fix-integrate-location-based-project-s-2026-05-25-ea4e4d7`
+- **Commit**: `ea4e4d7dd816f3d776d69eec5d84a597c4e38629`
+- **Subject**: fix: integrate location-based project saving, dynamic solar calculations, and loading on scenarios dashboard
+- **Date**: 2026-05-25
+- **Changed**: 4 file(s), +153/-12 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
