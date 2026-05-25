@@ -380,9 +380,9 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
     projectYears: 20,
   });
 
-  // Start as null (loading state) to prevent flashing the wizard to users with a saved location.
-  // We use a fallback timeout in useEffect to transition to false if the async check takes too long.
-  const [hasSetupLocation, setHasSetupLocation] = useState<boolean | null>(null);
+  const hasSetupLocation = useEnergySystemStore((s) => s.hasSetupLocation);
+  const setHasSetupLocation = useEnergySystemStore((s) => s.setHasSetupLocation);
+  const [isChecking, setIsChecking] = useState(!hasSetupLocation);
   
   const activeLocation = useEnergySystemStore((s) => s.activeLocation);
   const setActiveLocation = useEnergySystemStore((s) => s.setActiveLocation);
@@ -409,13 +409,17 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
   // Fallback timeout to prevent getting stuck in loading state
   useEffect(() => {
     const timer = setTimeout(() => {
-      setHasSetupLocation((current) => (current === null ? false : current));
+      setIsChecking(false);
     }, 2500);
     return () => clearTimeout(timer);
   }, []);
 
   // Hydrate site config preference if saved
   useEffect(() => {
+    if (hasSetupLocation) {
+      setIsChecking(false);
+      return;
+    }
     (async () => {
       try {
         const { getUserPreference } = await import('@/lib/supabase-db');
@@ -491,9 +495,11 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
       } catch (err) {
         console.error('[DemoPage] Failed to load site configuration preference:', err);
         setHasSetupLocation(false);
+      } finally {
+        setIsChecking(false);
       }
     })();
-  }, [setActiveLocation, toast]);
+  }, [hasSetupLocation, setActiveLocation, setHasSetupLocation, toast]);
 
   useEffect(() => {
     (async () => {
@@ -546,7 +552,7 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
     })();
   }, [toast]);
 
-  if (hasSetupLocation === null) {
+  if (isChecking) {
     return (
       <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-primary)', zIndex: 999 }}>
         <div className="flex flex-col items-center gap-3">
@@ -557,7 +563,7 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
     );
   }
 
-  if (hasSetupLocation === false) {
+  if (!hasSetupLocation) {
     return (
       <div style={{ position: 'fixed', inset: 0, color: 'var(--text-primary)', fontFamily: "'Inter', system-ui, sans-serif", display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-primary)', zIndex: 999 }}>
         {/* Subtle grid backdrop */}

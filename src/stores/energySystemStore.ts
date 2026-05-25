@@ -305,6 +305,8 @@ interface EnergySystemState {
   // Location
   activeLocation: LocationOption;
   setActiveLocation: (location: LocationOption) => void;
+  hasSetupLocation: boolean;
+  setHasSetupLocation: (val: boolean) => void;
 }
 
 // Initial state
@@ -419,6 +421,8 @@ export const useEnergySystemStore = create<EnergySystemState>()(
       fullSystemConfig: DEFAULT_SYSTEM_CONFIG,
       activeLocation: DEFAULT_LOCATION,
       solarData: DEMO_SOLAR_DATA,
+      hasSetupLocation: false,
+      setHasSetupLocation: (val: boolean) => set({ hasSetupLocation: val }),
       scenarios: [],
       isSyncingScenarios: false,
       scenarioSyncError: null,
@@ -569,6 +573,7 @@ export const useEnergySystemStore = create<EnergySystemState>()(
           fullSystemConfig: DEFAULT_SYSTEM_CONFIG,
           activeLocation: DEFAULT_LOCATION,
           solarData: DEMO_SOLAR_DATA,
+          hasSetupLocation: false,
         }),
 
       saveScenario: (name, finance, location) => {
