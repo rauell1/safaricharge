@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 257 | `rollback/fix-remove-all-pricing-sections-pages-2026-05-25-cbddaa3` | `cbddaa3` | fix: remove all pricing sections, pages, and subscription plan tiers, making the entire site 100% free (4f +16/-503) | 2026-05-25 |
 | 256 | `rollback/fix-integrate-location-based-project-s-2026-05-25-ea4e4d7` | `ea4e4d7` | fix: integrate location-based project saving, dynamic solar calculations, and loading on scenarios dashboard (4f +153/-12) | 2026-05-25 |
 | 255 | `rollback/fix-restore-login-signup-bypass-in-mid-2026-05-25-4c2cb8f` | `4c2cb8f` | fix: restore login/signup bypass in middleware and optimize onboarding wizard loading (2f +30/-7) | 2026-05-25 |
 | 254 | `rollback/fix-eliminate-blocking-null-state-that-2026-05-24-b49e610` | `b49e610` | fix: eliminate blocking null state that made dashboard buttons unclickable (1f +6/-13) | 2026-05-24 |
@@ -2673,6 +2674,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix: integrate location-based project saving, dynamic solar calculations, and loading on scenarios dashboard
 - **Date**: 2026-05-25
 - **Changed**: 4 file(s), +153/-12 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #257 — `rollback/fix-remove-all-pricing-sections-pages-2026-05-25-cbddaa3`
+
+- **Branch**: `rollback/fix-remove-all-pricing-sections-pages-2026-05-25-cbddaa3`
+- **Commit**: `cbddaa3f32cf4081b7425503bb89fdf00775c42d`
+- **Subject**: fix: remove all pricing sections, pages, and subscription plan tiers, making the entire site 100% free
+- **Date**: 2026-05-25
+- **Changed**: 4 file(s), +16/-503 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
