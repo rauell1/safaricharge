@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 264 | `rollback/revert-fix-auth-whitelist-login-signup-2026-05-25-7101d2f` | `7101d2f` | Revert "fix(auth): whitelist login, signup, forgot-password, reset-password, and api optimize/forecast in middleware" (1f +1/-3) | 2026-05-25 |
 | 263 | `rollback/fix-auth-whitelist-login-signup-forgot-2026-05-25-4f3e629` | `4f3e629` | fix(auth): whitelist login, signup, forgot-password, reset-password, and api optimize/forecast in middleware (1f +3/-1) | 2026-05-25 |
 | 262 | `rollback/feat-implement-scientific-sizing-coinc-2026-05-25-bd01064` | `bd01064` | feat: implement scientific sizing coincidence, poisson ev queueing, rainflow lcos fatigue, and astronomical horizon shading (phase 2) (12f +438/-89) | 2026-05-25 |
 | 261 | `rollback/refactor-simplify-dashboard-app-shell-2026-05-25-65fd596` | `65fd596` | refactor: simplify dashboard app shell and navigation sidebar to 5 tabs, combine sizing and financial panels, delete redundant sub-routes, and integrate onboarding tour (13f +533/-1512) | 2026-05-25 |
@@ -2750,6 +2751,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix(auth): whitelist login, signup, forgot-password, reset-password, and api optimize/forecast in middleware
 - **Date**: 2026-05-25
 - **Changed**: 1 file(s), +3/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #264 — `rollback/revert-fix-auth-whitelist-login-signup-2026-05-25-7101d2f`
+
+- **Branch**: `rollback/revert-fix-auth-whitelist-login-signup-2026-05-25-7101d2f`
+- **Commit**: `7101d2f77fbfe9dd9fe5a0f695869ff5fbb9e256`
+- **Subject**: Revert "fix(auth): whitelist login, signup, forgot-password, reset-password, and api optimize/forecast in middleware"
+- **Date**: 2026-05-25
+- **Changed**: 1 file(s), +1/-3 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
