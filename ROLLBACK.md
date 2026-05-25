@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 259 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-25-21f2e50` | `21f2e50` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-05-25 |
 | 258 | `rollback/fix-persist-microgrid-site-profile-onb-2026-05-25-c0658a2` | `c0658a2` | fix: persist microgrid site profile onboarding state in global store to prevent page resets on sidebar navigation (2f +18/-7) | 2026-05-25 |
 | 257 | `rollback/fix-remove-all-pricing-sections-pages-2026-05-25-cbddaa3` | `cbddaa3` | fix: remove all pricing sections, pages, and subscription plan tiers, making the entire site 100% free (4f +16/-503) | 2026-05-25 |
 | 256 | `rollback/fix-integrate-location-based-project-s-2026-05-25-ea4e4d7` | `ea4e4d7` | fix: integrate location-based project saving, dynamic solar calculations, and loading on scenarios dashboard (4f +153/-12) | 2026-05-25 |
@@ -2695,6 +2696,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix: persist microgrid site profile onboarding state in global store to prevent page resets on sidebar navigation
 - **Date**: 2026-05-25
 - **Changed**: 2 file(s), +18/-7 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #259 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-25-21f2e50`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-25-21f2e50`
+- **Commit**: `21f2e5080d64d68f6378bc6ff109ba455ec3610d`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-05-25
+- **Changed**: 1 file(s), +1/-1 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
