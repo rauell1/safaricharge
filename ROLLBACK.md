@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 265 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-26-a2bcd0f` | `a2bcd0f` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-05-26 |
 | 264 | `rollback/revert-fix-auth-whitelist-login-signup-2026-05-25-7101d2f` | `7101d2f` | Revert "fix(auth): whitelist login, signup, forgot-password, reset-password, and api optimize/forecast in middleware" (1f +1/-3) | 2026-05-25 |
 | 263 | `rollback/fix-auth-whitelist-login-signup-forgot-2026-05-25-4f3e629` | `4f3e629` | fix(auth): whitelist login, signup, forgot-password, reset-password, and api optimize/forecast in middleware (1f +3/-1) | 2026-05-25 |
 | 262 | `rollback/feat-implement-scientific-sizing-coinc-2026-05-25-bd01064` | `bd01064` | feat: implement scientific sizing coincidence, poisson ev queueing, rainflow lcos fatigue, and astronomical horizon shading (phase 2) (12f +438/-89) | 2026-05-25 |
@@ -2761,6 +2762,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: Revert "fix(auth): whitelist login, signup, forgot-password, reset-password, and api optimize/forecast in middleware"
 - **Date**: 2026-05-25
 - **Changed**: 1 file(s), +1/-3 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #265 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-26-a2bcd0f`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-26-a2bcd0f`
+- **Commit**: `a2bcd0f68496b2c2b28efb2d3c236e06250aa563`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-05-26
+- **Changed**: 1 file(s), +1/-1 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
