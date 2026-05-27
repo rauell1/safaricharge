@@ -201,6 +201,7 @@ export function DashboardSidebar({
     icon: React.ElementType;
   }> = [
     { id: 'dashboard',           label: 'Operations',           icon: LayoutDashboard },
+    { id: 'simulation',          label: 'Physical Simulation',  icon: FlaskConical },
     { id: 'configuration',       label: 'System Sizing & Design', icon: SlidersHorizontal },
     { id: 'scenarios',           label: 'Scenarios & History',  icon: BookMarked },
     { id: 'financial',           label: 'Financial Modeling',   icon: DollarSign },

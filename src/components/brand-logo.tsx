@@ -14,18 +14,18 @@ export function BrandLogo({
   size = 'md',
   className = '',
 }: BrandLogoProps) {
-  const iconSize = size === 'sm' ? 24 : 32;
+  const iconSize = size === 'sm' ? 26 : 36;
   const textSizeClass = size === 'sm' ? 'text-base' : 'text-xl';
-  const gapClass = size === 'sm' ? 'gap-1.5' : 'gap-2';
+  const gapClass = size === 'sm' ? 'gap-2' : 'gap-2.5';
 
   return (
     <Link 
       href={href} 
       className={`inline-flex items-center select-none group focus:outline-none ${gapClass} ${className}`}
     >
-      <span className="relative shrink-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+      <span className="relative shrink-0 flex items-center justify-center transition-all duration-300 group-hover:scale-105 group-hover:drop-shadow-[0_0_8px_rgba(34,197,94,0.4)]">
         <Image
-          src="/favicon.png"
+          src="/favicon.svg"
           alt="SafariCharge Icon"
           width={iconSize}
           height={iconSize}
