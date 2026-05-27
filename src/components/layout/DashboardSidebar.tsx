@@ -256,7 +256,19 @@ export function DashboardSidebar({
       <SidebarMenuItem key={item.id}>
         <SidebarMenuButton
           isActive={isActive}
-          onClick={() => onSectionChange?.(item.id)}
+          onClick={() => {
+            if (item.id === 'admin') {
+              window.location.assign('/admin');
+            } else if (item.id === 'export') {
+              window.location.assign('/export');
+            } else if (onSectionChange) {
+              onSectionChange(item.id);
+            } else {
+              // We are on a separate static page (like /export) and click a stateful dashboard item
+              // Redirect back to the stateful dashboard!
+              window.location.assign('/demo');
+            }
+          }}
           className={cn(
             'group relative rounded-lg px-3 py-2 transition-all duration-150 w-full',
             isActive ? 'bg-[var(--bg-card)] shadow-sm' : 'hover:bg-[var(--bg-card-muted)]',

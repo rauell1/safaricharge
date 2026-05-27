@@ -426,7 +426,7 @@ function ExportCard({ option }: { option: ExportOption }) {
 
 export default function ExportPage() {
   return (
-    <DashboardLayout>
+    <DashboardLayout activeSection="export">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
         {/* Page header */}
