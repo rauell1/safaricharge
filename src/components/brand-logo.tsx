@@ -25,7 +25,7 @@ export function BrandLogo({
     >
       <span className="relative shrink-0 flex items-center justify-center transition-all duration-300 group-hover:scale-105 group-hover:drop-shadow-[0_0_8px_rgba(34,197,94,0.4)]">
         <Image
-          src="/favicon.svg"
+          src="/favicon.svg?v=2"
           alt="SafariCharge Icon"
           width={iconSize}
           height={iconSize}

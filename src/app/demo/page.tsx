@@ -743,7 +743,7 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
         <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 55% 45% at 50% 0%, var(--site-top-glow) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
         {/* Dynamic header */}
-        <header style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'between', padding: '0 24px', height: 60, borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)', backdropFilter: 'blur(10px)' }}>
+        <header style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', height: 60, borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)', backdropFilter: 'blur(10px)' }}>
           <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
             <BrandLogo href="/landing" />
           </div>
