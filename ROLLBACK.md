@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 266 | `rollback/fix-restore-physical-simulation-sideba-2026-05-27-4976141` | `4976141` | fix: restore Physical Simulation sidebar navigation tab & upgrade BrandLogo with vector graphics and dynamic hover effects (2f +5/-4) | 2026-05-27 |
 | 265 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-26-a2bcd0f` | `a2bcd0f` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-05-26 |
 | 264 | `rollback/revert-fix-auth-whitelist-login-signup-2026-05-25-7101d2f` | `7101d2f` | Revert "fix(auth): whitelist login, signup, forgot-password, reset-password, and api optimize/forecast in middleware" (1f +1/-3) | 2026-05-25 |
 | 263 | `rollback/fix-auth-whitelist-login-signup-forgot-2026-05-25-4f3e629` | `4f3e629` | fix(auth): whitelist login, signup, forgot-password, reset-password, and api optimize/forecast in middleware (1f +3/-1) | 2026-05-25 |
@@ -2772,6 +2773,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-05-26
 - **Changed**: 1 file(s), +1/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #266 — `rollback/fix-restore-physical-simulation-sideba-2026-05-27-4976141`
+
+- **Branch**: `rollback/fix-restore-physical-simulation-sideba-2026-05-27-4976141`
+- **Commit**: `49761412ea9897885c65a394955436f1c4743ca9`
+- **Subject**: fix: restore Physical Simulation sidebar navigation tab & upgrade BrandLogo with vector graphics and dynamic hover effects
+- **Date**: 2026-05-27
+- **Changed**: 2 file(s), +5/-4 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
