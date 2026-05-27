@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 269 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-27-4910114` | `4910114` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-05-27 |
 | 268 | `rollback/fix-layout-correct-justifycontent-inli-2026-05-27-04b9930` | `04b9930` | fix(layout): correct justifyContent inline-style value in onboarding header and add cache-busting version query to vector logo (2f +2/-2) | 2026-05-27 |
 | 267 | `rollback/fix-nav-resolve-unresponsive-admin-con-2026-05-27-0258627` | `0258627` | fix(nav): resolve unresponsive admin console button & restore activeSection highlighting on export page (2f +14/-2) | 2026-05-27 |
 | 266 | `rollback/fix-restore-physical-simulation-sideba-2026-05-27-4976141` | `4976141` | fix: restore Physical Simulation sidebar navigation tab & upgrade BrandLogo with vector graphics and dynamic hover effects (2f +5/-4) | 2026-05-27 |
@@ -2805,6 +2806,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix(layout): correct justifyContent inline-style value in onboarding header and add cache-busting version query to vector logo
 - **Date**: 2026-05-27
 - **Changed**: 2 file(s), +2/-2 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #269 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-27-4910114`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-27-4910114`
+- **Commit**: `491011412603d09928ae89df041b123d5a634b8e`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-05-27
+- **Changed**: 1 file(s), +1/-1 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
