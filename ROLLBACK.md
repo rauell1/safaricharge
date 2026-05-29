@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 271 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-29-551edee` | `551edee` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-05-29 |
 | 270 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-28-6377262` | `6377262` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-05-28 |
 | 269 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-27-4910114` | `4910114` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-05-27 |
 | 268 | `rollback/fix-layout-correct-justifycontent-inli-2026-05-27-04b9930` | `04b9930` | fix(layout): correct justifyContent inline-style value in onboarding header and add cache-busting version query to vector logo (2f +2/-2) | 2026-05-27 |
@@ -2826,6 +2827,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Commit**: `63772624ef2eee1feaa6c19f5b0b3634d31d5a35`
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-05-28
+- **Changed**: 1 file(s), +1/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #271 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-29-551edee`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-05-29-551edee`
+- **Commit**: `551edee125a2494debfdbd9d9d62173836471f4a`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-05-29
 - **Changed**: 1 file(s), +1/-1 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
