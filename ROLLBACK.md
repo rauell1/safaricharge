@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 291 | `rollback/fix-seo-allow-crawlers-through-middlew-2026-06-13-5093a6f` | `5093a6f` | fix(seo): allow crawlers through middleware to sitemap, robots, and OG image (1f +12/-2) | 2026-06-13 |
 | 290 | `rollback/chore-seo-add-bing-webmaster-tools-ver-2026-06-13-9abee6e` | `9abee6e` | chore(seo): add Bing Webmaster Tools verification meta tag (1f +3/-0) | 2026-06-13 |
 | 289 | `rollback/chore-seo-add-google-search-console-ve-2026-06-13-003af66` | `003af66` | chore(seo): add Google Search Console verification meta tag (1f +3/-0) | 2026-06-13 |
 | 288 | `rollback/feat-seo-add-sitemap-robots-txt-og-ima-2026-06-13-3c66c4d` | `3c66c4d` | feat(seo): add sitemap, robots.txt, OG image, per-page metadata, and JSON-LD (7f +580/-14) | 2026-06-13 |
@@ -3047,6 +3048,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: chore(seo): add Bing Webmaster Tools verification meta tag
 - **Date**: 2026-06-13
 - **Changed**: 1 file(s), +3/-0 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #291 — `rollback/fix-seo-allow-crawlers-through-middlew-2026-06-13-5093a6f`
+
+- **Branch**: `rollback/fix-seo-allow-crawlers-through-middlew-2026-06-13-5093a6f`
+- **Commit**: `5093a6fdd3fd49b0bcc9e7ff6f301a42caef76b6`
+- **Subject**: fix(seo): allow crawlers through middleware to sitemap, robots, and OG image
+- **Date**: 2026-06-13
+- **Changed**: 1 file(s), +12/-2 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
