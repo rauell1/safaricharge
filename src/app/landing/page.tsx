@@ -13,44 +13,44 @@ import { ThemeToggle } from '@/components/theme-toggle';
 const features = [
   {
     icon: Zap,
-    title: 'Pyomo MILP Optimizer',
+    title: 'Battery Dispatch Optimizer',
     description:
-      'Goes beyond rule-based dispatch. Our MILP engine finds the globally optimal BESS charge/discharge schedule against KPLC peak and off-peak windows.',
+      'Automatically minimize your Kenya Power electricity bill. Our MILP engine calculates the ideal solar battery charge and discharge schedule every 5 minutes — storing solar energy when it\'s cheap and deploying it during KPLC peak tariff windows.',
     accent: 'var(--battery)',
   },
   {
     icon: BarChart3,
     title: 'Real-Time Solar Analytics',
     description:
-      'Live AC output, irradiance correlation, inverter limit tracking, and curtailment detection — all in a single dashboard.',
+      'Monitor your solar panels\' live AC output, track irradiance, catch inverter limits, and detect curtailment — all from a single dashboard built for Kenyan solar installations.',
     accent: 'var(--solar)',
   },
   {
     icon: Battery,
-    title: 'BESS SoC Intelligence',
+    title: 'Smart Battery Management',
     description:
-      'SoC bounds enforcement, binary charge/discharge mutex, and battery health KPIs surfaced without a proprietary BMS integration.',
+      'Keep your battery storage system healthy and cost-effective. Automatic state-of-charge protection, smart charge/discharge logic, and battery health KPIs — no expensive BMS hardware required.',
     accent: 'var(--grid)',
   },
   {
     icon: Globe,
     title: 'KPLC Tariff Engine',
     description:
-      'Full all-in pricing — base rate, fuel surcharge, FERFA, INFA, ERC, WRA, and VAT — for EV, domestic, and small-commercial profiles.',
+      'Model your exact Kenya Power electricity bill — base rate, fuel surcharge, FERFA, INFA, ERC levy, WRA, and VAT — across EV, domestic, and commercial tariff profiles.',
     accent: 'var(--ev)',
   },
   {
     icon: TrendingDown,
-    title: 'Cost & Carbon KPIs',
+    title: 'Savings & Carbon Reports',
     description:
-      'Per-cycle cost savings, grid displacement percentage, CO₂ avoided, and peak demand shaving — exportable to CSV or PDF.',
+      'See monthly KSh savings against your KPLC baseline, grid displacement percentage, CO₂ emissions avoided, and peak demand reduction — exportable to CSV or PDF.',
     accent: 'var(--consumption)',
   },
   {
     icon: Shield,
-    title: 'Block-Structured Extensibility',
+    title: 'Scalable to Any Site',
     description:
-      'Add gensets, EV smart charging, or thermal loads as new optimiser blocks without modifying existing simulation logic.',
+      'Add diesel generators, EV smart charging, or thermal loads as modular blocks. SafariCharge scales from a single rooftop solar installation to a full microgrid without rewriting your model.',
     accent: 'var(--battery)',
   },
 ];
@@ -72,16 +72,16 @@ const heroKpis = [
 
 const steps = [
   {
-    title: 'Connect your inverter',
-    description: 'Point SafariCharge at your SMA, Fronius, or Sungrow Modbus feed',
+    title: 'Define your solar system',
+    description: 'Enter your solar panel capacity, battery storage specs, and location — or connect a live Modbus feed from SMA, Fronius, or Sungrow inverters.',
   },
   {
-    title: 'MILP engine optimises',
-    description: 'Pyomo solves the dispatch schedule every 5 minutes against KPLC TOU windows',
+    title: 'Optimize battery dispatch',
+    description: 'SafariCharge calculates the optimal charge and discharge schedule every 5 minutes, automatically shifting load away from KPLC peak tariff windows to cut your electricity bill.',
   },
   {
-    title: 'Track and export',
-    description: 'Real-time KPIs, cost savings, and CO₂ reports in one dashboard',
+    title: 'Track savings and export',
+    description: 'View real-time solar output, battery state of charge, KPLC cost savings in KSh, and CO₂ avoided — all exportable to CSV or PDF.',
   },
 ];
 
@@ -299,7 +299,7 @@ export default function LandingPage() {
                 className="w-1.5 h-1.5 rounded-full animate-pulse"
                 style={{ background: 'var(--battery)', boxShadow: '0 0 8px var(--battery)' }}
               />
-              Pyomo MILP optimizer · Live
+              Free solar energy simulator · Live
             </span>
           </div>
 
@@ -312,7 +312,7 @@ export default function LandingPage() {
               color: 'var(--site-page-fg)',
             }}
           >
-            Solar intelligence
+            Solar energy management
             <br />
             <span
               style={{
@@ -322,7 +322,7 @@ export default function LandingPage() {
                 WebkitTextFillColor: 'transparent',
               }}
             >
-              built for Kenya
+              for Kenya &amp; Africa
             </span>
           </h1>
 
@@ -335,9 +335,10 @@ export default function LandingPage() {
               lineHeight: 1.75,
             }}
           >
-            SafariCharge turns your PV + BESS site into an optimised asset. Our MILP dispatch
-            engine cuts KPLC peak charges, maximises self-consumption, and gives you real-time
-            visibility into every kilowatt-hour.
+            Reducing your Kenya Power electricity bill takes more than solar panels — it requires
+            smart battery dispatch and accurate tariff modelling. SafariCharge simulates your solar
+            + battery system, optimises charge cycles against KPLC peak rates, and shows exactly
+            how much you save each month.
           </p>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-12">
@@ -411,7 +412,7 @@ export default function LandingPage() {
             className="text-center lg:text-left text-xs"
             style={{ color: 'var(--site-page-soft)' }}
           >
-            Built for Nairobi&rsquo;s C&amp;I solar sites · KPLC TOU-aware · Open source
+            For solar engineers &amp; energy managers in Kenya and Africa · KPLC TOU-aware · Free to use
           </p>
         </div>
       </section>
@@ -493,7 +494,7 @@ export default function LandingPage() {
                 letterSpacing: '-0.04em',
               }}
             >
-              From telemetry to dispatch in minutes
+              From solar panels to savings in minutes
             </h2>
           </div>
 
@@ -561,10 +562,10 @@ export default function LandingPage() {
                 letterSpacing: '-0.04em',
               }}
             >
-              Everything your site needs
+              Solar energy management tools for Kenya
             </h2>
             <p style={{ color: 'var(--site-page-muted)', lineHeight: 1.75, maxWidth: '44ch' }}>
-              From raw inverter telemetry to globally-optimal dispatch schedules — all in one platform.
+              From solar panel monitoring to battery dispatch optimization and KPLC tariff analysis — everything a Kenyan solar installation needs in one free platform.
             </p>
           </div>
 
@@ -641,14 +642,14 @@ export default function LandingPage() {
               letterSpacing: '-0.04em',
             }}
           >
-            Start managing your microgrid today
+            Start reducing your electricity bill today
           </h2>
           <p
             className="mb-10 mx-auto"
             style={{ color: 'var(--site-page-muted)', maxWidth: '46ch', lineHeight: 1.75 }}
           >
-            Create a profile to login and access your live solar analytics, smart BESS dispatch, and
-            KPLC cost modelling.
+            Create a free account to access live solar analytics, automatic battery dispatch, and
+            KPLC electricity cost modelling for your Kenya solar system.
           </p>
           <Link
             href="/dashboard"
@@ -712,7 +713,7 @@ export default function LandingPage() {
               letterSpacing: '-0.04em',
             }}
           >
-            Ready to optimise your site?
+            Ready to cut your electricity bill with solar?
           </h2>
           <p
             className="mb-10 mx-auto"
@@ -723,8 +724,8 @@ export default function LandingPage() {
               fontSize: '1.05rem',
             }}
           >
-            Join energy managers across Kenya already using SafariCharge to cut KPLC bills and
-            maximise solar yield.
+            Join solar engineers and energy managers across Kenya already using SafariCharge to
+            reduce KPLC electricity costs and maximise solar panel output.
           </p>
           <Link
             href="/dashboard"
@@ -764,7 +765,7 @@ export default function LandingPage() {
               </svg>
               <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>SafariCharge</span>
             </div>
-            <p className="mb-2">Solar intelligence built for Kenya</p>
+            <p className="mb-2">Solar energy management for Kenya and Africa</p>
             <p>© {new Date().getFullYear()} SafariCharge</p>
           </div>
 
