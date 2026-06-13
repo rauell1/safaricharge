@@ -11,7 +11,11 @@ import { ThemeToggle } from '@/components/theme-toggle'
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const nextPath = useMemo(() => searchParams.get('next') ?? '/dashboard', [searchParams])
+  // Validate the `next` param to prevent open redirect attacks.
+  const nextPath = useMemo(() => {
+    const n = searchParams.get('next') ?? '/dashboard'
+    return n.startsWith('/') ? n : '/dashboard'
+  }, [searchParams])
   
   const initialError = useMemo(() => {
     const reason = searchParams.get('reason')
@@ -44,11 +48,33 @@ function LoginForm() {
       email: email.trim().toLowerCase(),
       password,
     })
-    
+
     if (signInErr) {
-      setError(signInErr.message || 'Unable to sign in. Check your email and password.')
+      // Use a generic message to avoid leaking whether the email is registered.
+      const msg = signInErr.message || ''
+      if (msg.toLowerCase().includes('not confirmed') || msg.toLowerCase().includes('email')) {
+        setError('Please confirm your email address before signing in. Check your inbox for the confirmation link.')
+      } else {
+        setError('Invalid email or password. Please try again.')
+      }
       setLoading(false)
       return
+    }
+
+    // Check whether this user has completed onboarding. The GET /api/profile
+    // response also sets the sc_onboarded cookie if the profile is complete,
+    // so the middleware will let subsequent requests through without a redirect.
+    try {
+      const profileRes = await fetch('/api/profile')
+      if (profileRes.ok) {
+        const profileData = await profileRes.json()
+        if (profileData.needs_onboarding) {
+          window.location.assign(`/onboarding?next=${encodeURIComponent(nextPath)}`)
+          return
+        }
+      }
+    } catch {
+      // Network error — proceed to dashboard; middleware will enforce onboarding if needed.
     }
 
     // Direct redirection via full reload to force session cookie sync with Next.js edge middleware

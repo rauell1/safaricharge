@@ -61,7 +61,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ ok: true })
+    const response = NextResponse.json({ ok: true })
+    // Mark onboarding complete — middleware reads this cookie to skip the DB check
+    // on every subsequent request.
+    response.cookies.set('sc_onboarded', '1', {
+      httpOnly: true, sameSite: 'lax', secure: true, path: '/',
+      maxAge: 365 * 24 * 60 * 60,
+    })
+    return response
   } catch (err) {
     console.error('[profile/route] unexpected error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -91,9 +98,36 @@ export async function GET() {
   const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
   const isAdmin = user.email && adminEmails.includes(user.email.toLowerCase())
 
-  return NextResponse.json({
+  // Query profiles to determine whether this user has completed onboarding.
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY
+  let needsOnboarding = false
+  if (supabaseUrl && serviceRoleKey) {
+    const adminDb = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
+    const { data: profile } = await adminDb
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single()
+    needsOnboarding = !profile?.full_name
+  }
+
+  const responseBody = NextResponse.json({
     id: user.id,
     email: user.email,
     isAdmin: !!isAdmin,
+    needs_onboarding: needsOnboarding,
   })
+
+  // If onboarding is complete, set the cookie so the middleware doesn't redirect
+  // on subsequent requests. This handles existing users who lack the cookie.
+  if (!needsOnboarding) {
+    responseBody.cookies.set('sc_onboarded', '1', {
+      httpOnly: true, sameSite: 'lax', secure: true, path: '/',
+      maxAge: 365 * 24 * 60 * 60,
+    })
+  }
+  return responseBody
 }

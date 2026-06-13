@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { createHmac } from 'crypto'
+import { createClient } from '@supabase/supabase-js'
 
 const SESSION_MAX_AGE_S = 60 * 60; // 1 hour
 const AUTH_VALIDATED_AT_COOKIE = 'sc_auth_checked_at'
@@ -37,16 +38,47 @@ export async function GET(request: Request) {
       const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
       const isAdmin = user.email && adminEmails.includes(user.email.toLowerCase())
 
-      const redirectTarget = isAdmin ? '/admin' : safeNext
+      // Check whether this user has completed onboarding (has a full_name).
+      // New users get a skeleton profile row from the handle_new_user trigger
+      // but with an empty full_name — they must go through /onboarding first.
+      let profileComplete = isAdmin // admins skip onboarding
+      if (!isAdmin) {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY
+        if (supabaseUrl && serviceRoleKey) {
+          const adminDb = createClient(supabaseUrl, serviceRoleKey, {
+            auth: { autoRefreshToken: false, persistSession: false },
+          })
+          const { data: profile } = await adminDb
+            .from('profiles')
+            .select('full_name')
+            .eq('id', user.id)
+            .single()
+          profileComplete = !!(profile?.full_name)
+        }
+      }
+
+      const redirectTarget = isAdmin
+        ? '/admin'
+        : profileComplete
+          ? safeNext
+          : `/onboarding?next=${encodeURIComponent(safeNext)}`
+
       const response = NextResponse.redirect(`${origin}${redirectTarget}`)
 
       // Touch active session cookies
       response.cookies.set('sc_last_seen', String(Date.now()), {
-        httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: 60 * 60,
+        httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: 8 * 60 * 60,
       })
       response.cookies.set(AUTH_VALIDATED_AT_COOKIE, String(Date.now()), {
         httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: Math.max(30, Math.floor(AUTH_VALIDATION_WINDOW_MS / 1000)),
       })
+      // Mark onboarding complete so middleware doesn't redirect on every request
+      if (profileComplete) {
+        response.cookies.set('sc_onboarded', '1', {
+          httpOnly: true, sameSite: 'lax', secure: true, path: '/', maxAge: 365 * 24 * 60 * 60,
+        })
+      }
 
       // If it is the admin, seed their admin dashboard session cookie instantly
       if (isAdmin) {

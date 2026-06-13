@@ -24,8 +24,12 @@ const API_PUBLIC_PREFIXES: string[] = [
   '/api/locations',
 ]
 
-const SESSION_TTL_MS = 60 * 60 * 1000
+const SESSION_TTL_MS = 60 * 60 * 1000       // 1 hour inactivity → force re-login
+const SESSION_COOKIE_MAX_AGE = 8 * 60 * 60  // Cookie outlives TTL so the value-check fires on return
 const SESSION_TOUCH_COOKIE = 'sc_last_seen'
+const ONBOARDING_COOKIE = 'sc_onboarded'
+// Routes that authenticated users may visit before completing onboarding
+const ONBOARDING_EXEMPT = new Set(['/onboarding', '/site-setup'])
 const AUTH_VALIDATED_AT_COOKIE = 'sc_auth_checked_at'
 const AUTH_VALIDATION_WINDOW_MS = Number(process.env.AUTH_VALIDATION_WINDOW_MS ?? 60_000)
 const AUTH_TIMING_DEBUG = process.env.AUTH_TIMING_DEBUG === '1'
@@ -56,10 +60,6 @@ function isPublicApi(pathname: string): boolean {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
-  if (pathname === '/pricing') {
-    return NextResponse.redirect(new URL('/landing', request.url))
-  }
-
   const middlewareStart = Date.now()
   const isApiRoute = pathname.startsWith('/api/')
   const isAuthRoute = pathname.startsWith('/auth/')
@@ -125,12 +125,14 @@ export async function proxy(request: NextRequest) {
   const ttlCheckMs = Date.now() - ttlCheckStart
 
   if (isExpired) {
-    // No need to call signOut() here — the Supabase session will expire
-    // naturally, and calling signOut() from middleware adds a second network
-    // round-trip on every expired-session redirect. The client will sign out
-    // when it next calls getUser() and receives an invalid session.
-    const response = NextResponse.redirect(new URL('/landing', request.url))
+    const response = NextResponse.redirect(new URL('/landing?reason=session_expired', request.url))
     response.cookies.delete(SESSION_TOUCH_COOKIE)
+    response.cookies.delete(ONBOARDING_COOKIE)
+    // Delete Supabase auth cookies so the Supabase session cannot be reused
+    // after our TTL expires — prevents a bypass via direct URL navigation.
+    request.cookies.getAll()
+      .filter(c => c.name.startsWith('sb-'))
+      .forEach(c => response.cookies.delete(c.name))
     const totalMs = Date.now() - middlewareStart
     if (AUTH_TIMING_DEBUG) {
       console.info(`[auth-timing][middleware] expired_session ttl=${ttlCheckMs}ms total=${totalMs}ms path=${pathname}`)
@@ -235,6 +237,13 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(isAdmin ? '/admin' : '/dashboard', request.url))
   }
 
+  // Enforce onboarding: non-admin users must have a complete profile before
+  // accessing any protected route. The cookie is set by /api/profile (GET + POST).
+  // ONBOARDING_EXEMPT paths are allowed through so users can complete the flow.
+  if (!isAdmin && !request.cookies.get(ONBOARDING_COOKIE)?.value && !ONBOARDING_EXEMPT.has(pathname)) {
+    return NextResponse.redirect(new URL('/onboarding', request.url))
+  }
+
   if (pathname.startsWith('/admin')) {
     if (!isAdmin) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
@@ -244,12 +253,14 @@ export async function proxy(request: NextRequest) {
 
 
   // Touch the TTL cookie so active users never get logged out mid-session.
+  // maxAge is longer than SESSION_TTL_MS so the cookie is still present when
+  // the user returns after inactivity — allowing the value check to fire.
   supabaseResponse.cookies.set(SESSION_TOUCH_COOKIE, String(now), {
     httpOnly: true,
     sameSite: 'lax',
     secure: true,
     path: '/',
-    maxAge: 60 * 60,
+    maxAge: SESSION_COOKIE_MAX_AGE,
   })
 
   const totalMs = Date.now() - middlewareStart

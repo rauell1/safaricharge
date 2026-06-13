@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Building2, Loader2, Phone, UserRound } from 'lucide-react'
@@ -24,8 +24,10 @@ function Field({ id, label, icon, ...props }: any) {
 function OnboardingForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const nextParam = searchParams.get('next') ?? '/dashboard'
-  // Always route new users through site setup before the app.
+  // Validate the next param to prevent open redirect
+  const rawNext = searchParams.get('next') ?? '/dashboard'
+  const nextParam = rawNext.startsWith('/') ? rawNext : '/dashboard'
+  // New users go through site-setup; returning users skip straight to destination
   const next = `/site-setup?next=${encodeURIComponent(nextParam)}`
 
   const [fullName, setFullName] = useState('')
@@ -33,6 +35,24 @@ function OnboardingForm() {
   const [phone, setPhone] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [checking, setChecking] = useState(true)
+
+  useEffect(() => {
+    // If this user already has a complete profile (e.g. existing user caught
+    // by the middleware sc_onboarded check), skip the form and go to their
+    // destination. The GET /api/profile response also sets sc_onboarded so
+    // the middleware won't redirect them again.
+    fetch('/api/profile')
+      .then(r => r.json())
+      .then(data => {
+        if (!data.needs_onboarding) {
+          router.replace(nextParam)
+        } else {
+          setChecking(false)
+        }
+      })
+      .catch(() => setChecking(false))
+  }, [nextParam, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -65,6 +85,10 @@ function OnboardingForm() {
 
     router.replace(next)
     router.refresh()
+  }
+
+  if (checking) {
+    return <div style={{ color: 'var(--text-tertiary)', fontSize: 14, textAlign: 'center', padding: 32 }}>Loading…</div>
   }
 
   return (
