@@ -3,7 +3,17 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 // Exact public paths or path prefixes that do NOT require authentication.
-const PUBLIC_EXACT: Set<string> = new Set(['/', '/landing', '/demo'])
+const PUBLIC_EXACT: Set<string> = new Set([
+  '/',
+  '/landing',
+  '/demo',
+  '/pricing',
+  '/sitemap.xml',
+  '/robots.txt',
+  '/opengraph-image',
+  '/BingSiteAuth.xml',
+  '/googlee69e3a7319b06c7f.html',
+])
 const PUBLIC_PREFIXES: string[] = ['/auth/']
 const API_PUBLIC_PREFIXES: string[] = [
   '/api/health',
@@ -270,6 +280,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|xml|txt|html)$).*)',
   ],
 }
