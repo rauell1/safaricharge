@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 287 | `rollback/chore-add-bing-and-google-site-verific-2026-06-13-5168d4d` | `5168d4d` | chore: add Bing and Google site verification files; fix dashboard blocking overlay (2f +5/-0) | 2026-06-13 |
 | 286 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-06-13-988f09b` | `988f09b` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-06-13 |
 | 285 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-06-12-23bcc0a` | `23bcc0a` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-06-12 |
 | 284 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-06-11-1d37154` | `1d37154` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-06-11 |
@@ -3003,6 +3004,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-06-13
 - **Changed**: 1 file(s), +1/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #287 — `rollback/chore-add-bing-and-google-site-verific-2026-06-13-5168d4d`
+
+- **Branch**: `rollback/chore-add-bing-and-google-site-verific-2026-06-13-5168d4d`
+- **Commit**: `5168d4def88e31998a20a21f1133b069d5ffd91f`
+- **Subject**: chore: add Bing and Google site verification files; fix dashboard blocking overlay
+- **Date**: 2026-06-13
+- **Changed**: 2 file(s), +5/-0 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
