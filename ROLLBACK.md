@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 288 | `rollback/feat-seo-add-sitemap-robots-txt-og-ima-2026-06-13-3c66c4d` | `3c66c4d` | feat(seo): add sitemap, robots.txt, OG image, per-page metadata, and JSON-LD (7f +580/-14) | 2026-06-13 |
 | 287 | `rollback/chore-add-bing-and-google-site-verific-2026-06-13-5168d4d` | `5168d4d` | chore: add Bing and Google site verification files; fix dashboard blocking overlay (2f +5/-0) | 2026-06-13 |
 | 286 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-06-13-988f09b` | `988f09b` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-06-13 |
 | 285 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-06-12-23bcc0a` | `23bcc0a` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-06-12 |
@@ -3014,6 +3015,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: chore: add Bing and Google site verification files; fix dashboard blocking overlay
 - **Date**: 2026-06-13
 - **Changed**: 2 file(s), +5/-0 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #288 — `rollback/feat-seo-add-sitemap-robots-txt-og-ima-2026-06-13-3c66c4d`
+
+- **Branch**: `rollback/feat-seo-add-sitemap-robots-txt-og-ima-2026-06-13-3c66c4d`
+- **Commit**: `3c66c4dbd109a53e639aa29b77b715d98bd84431`
+- **Subject**: feat(seo): add sitemap, robots.txt, OG image, per-page metadata, and JSON-LD
+- **Date**: 2026-06-13
+- **Changed**: 7 file(s), +580/-14 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
