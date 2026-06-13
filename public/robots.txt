@@ -1,14 +1,74 @@
+# SafariCharge — solar.rauell.systems
+# Updated: 2026-06-13
+
+# ── Primary crawlers ────────────────────────────────────────────────────────
 User-agent: Googlebot
-Allow: /
+Allow: /landing
+Allow: /demo
+Allow: /pricing
+Allow: /BingSiteAuth.xml
+Allow: /googlee69e3a7319b06c7f.html
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /api/
+Disallow: /auth/
+Disallow: /login
+Disallow: /signup
+Disallow: /onboarding
+Disallow: /site-setup
+Disallow: /configuration
+Disallow: /export
+Disallow: /ai-assistant
+Disallow: /energy-intelligence
+Disallow: /component-knowledge-base
 
 User-agent: Bingbot
-Allow: /
+Allow: /landing
+Allow: /demo
+Allow: /pricing
+Allow: /BingSiteAuth.xml
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /api/
+Disallow: /auth/
+Disallow: /login
+Disallow: /signup
+Disallow: /onboarding
+Disallow: /site-setup
+Disallow: /configuration
+Disallow: /export
+Disallow: /ai-assistant
+Disallow: /energy-intelligence
+Disallow: /component-knowledge-base
 
+# ── Social crawlers ─────────────────────────────────────────────────────────
 User-agent: Twitterbot
-Allow: /
+Allow: /landing
+Allow: /demo
+Allow: /pricing
 
 User-agent: facebookexternalhit
-Allow: /
+Allow: /landing
+Allow: /demo
+Allow: /pricing
 
+# ── All other bots ──────────────────────────────────────────────────────────
 User-agent: *
-Allow: /
+Allow: /landing
+Allow: /demo
+Allow: /pricing
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /api/
+Disallow: /auth/
+Disallow: /login
+Disallow: /signup
+Disallow: /onboarding
+Disallow: /site-setup
+Disallow: /configuration
+Disallow: /export
+Disallow: /ai-assistant
+Disallow: /energy-intelligence
+Disallow: /component-knowledge-base
+
+Sitemap: https://solar.rauell.systems/sitemap.xml

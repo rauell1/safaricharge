@@ -15,19 +15,78 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "SafariCharge — Solar Energy Dashboard",
+  metadataBase: new URL("https://solar.rauell.systems"),
+  title: {
+    default: "SafariCharge — Solar Energy Management Platform",
+    template: "%s | SafariCharge",
+  },
   description:
-    "Advanced solar energy simulation, battery management and financial analysis for Nairobi, Kenya.",
+    "Solar PV + BESS simulation, MILP dispatch optimization, and KPLC tariff analysis for Kenya and Africa. Model solar systems, forecast financial returns, and reduce grid bills.",
+  keywords: [
+    "solar energy Kenya",
+    "BESS optimization Kenya",
+    "KPLC tariff calculator",
+    "solar simulation Africa",
+    "battery storage microgrid",
+    "off-grid solar Kenya",
+    "EV charging optimization",
+    "solar PV dashboard",
+    "energy management system Africa",
+    "microgrid simulation",
+    "SafariCharge",
+    "MILP solar optimizer",
+    "solar ROI Kenya",
+    "carbon reduction Africa",
+    "Nairobi solar energy",
+    "solar battery sizing tool",
+    "grid-tied solar Kenya",
+    "KPLC peak tariff savings",
+    "solar financial analysis",
+    "Africa renewable energy platform",
+  ],
+  authors: [{ name: "Roy Okola", url: "https://solar.rauell.systems" }],
+  creator: "Roy Okola",
+  publisher: "SafariCharge",
+  robots: {
+    index: false,
+    follow: true,
+    googleBot: { index: false, follow: true },
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_KE",
+    alternateLocale: ["en_US", "en_GB"],
+    url: "https://solar.rauell.systems",
+    siteName: "SafariCharge",
+    title: "SafariCharge — Solar Energy Management Platform",
+    description:
+      "Solar PV + BESS simulation, MILP dispatch optimization, and KPLC tariff analysis for Kenya and Africa.",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "SafariCharge Solar Energy Dashboard — Kenya and Africa",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: "@rauell1",
+    creator: "@rauell1",
+    title: "SafariCharge — Solar Energy Management Platform",
+    description:
+      "Solar PV + BESS simulation, MILP dispatch optimization, and KPLC tariff analysis for Kenya and Africa.",
+    images: ["/opengraph-image"],
+  },
   icons: {
-    icon: [
-      { url: "/favicon.png", type: "image/png" },
-    ],
-    apple: [
-      { url: "/favicon.png", type: "image/png" },
-    ],
+    icon: [{ url: "/favicon.png", type: "image/png" }],
+    apple: [{ url: "/favicon.png", type: "image/png" }],
     shortcut: "/favicon.png",
   },
-  manifest: undefined,
+  alternates: {
+    canonical: "https://solar.rauell.systems/landing",
+  },
 };
 
 export default function RootLayout({
