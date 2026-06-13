@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 292 | `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-06-13-becfdae` | `becfdae` | docs(auto): regenerate README.md [skip ci] (1f +2/-0) | 2026-06-13 |
 | 291 | `rollback/fix-seo-allow-crawlers-through-middlew-2026-06-13-5093a6f` | `5093a6f` | fix(seo): allow crawlers through middleware to sitemap, robots, and OG image (1f +12/-2) | 2026-06-13 |
 | 290 | `rollback/chore-seo-add-bing-webmaster-tools-ver-2026-06-13-9abee6e` | `9abee6e` | chore(seo): add Bing Webmaster Tools verification meta tag (1f +3/-0) | 2026-06-13 |
 | 289 | `rollback/chore-seo-add-google-search-console-ve-2026-06-13-003af66` | `003af66` | chore(seo): add Google Search Console verification meta tag (1f +3/-0) | 2026-06-13 |
@@ -3058,6 +3059,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix(seo): allow crawlers through middleware to sitemap, robots, and OG image
 - **Date**: 2026-06-13
 - **Changed**: 1 file(s), +12/-2 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #292 — `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-06-13-becfdae`
+
+- **Branch**: `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-06-13-becfdae`
+- **Commit**: `becfdaee70ca8d62faeffac096d87c8f7b2d96a3`
+- **Subject**: docs(auto): regenerate README.md [skip ci]
+- **Date**: 2026-06-13
+- **Changed**: 1 file(s), +2/-0 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
