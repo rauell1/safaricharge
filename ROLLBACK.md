@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 290 | `rollback/chore-seo-add-bing-webmaster-tools-ver-2026-06-13-9abee6e` | `9abee6e` | chore(seo): add Bing Webmaster Tools verification meta tag (1f +3/-0) | 2026-06-13 |
 | 289 | `rollback/chore-seo-add-google-search-console-ve-2026-06-13-003af66` | `003af66` | chore(seo): add Google Search Console verification meta tag (1f +3/-0) | 2026-06-13 |
 | 288 | `rollback/feat-seo-add-sitemap-robots-txt-og-ima-2026-06-13-3c66c4d` | `3c66c4d` | feat(seo): add sitemap, robots.txt, OG image, per-page metadata, and JSON-LD (7f +580/-14) | 2026-06-13 |
 | 287 | `rollback/chore-add-bing-and-google-site-verific-2026-06-13-5168d4d` | `5168d4d` | chore: add Bing and Google site verification files; fix dashboard blocking overlay (2f +5/-0) | 2026-06-13 |
@@ -3034,6 +3035,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Branch**: `rollback/chore-seo-add-google-search-console-ve-2026-06-13-003af66`
 - **Commit**: `003af669fc7dc4dbbb2ec7924c7ebc2fa111cfd8`
 - **Subject**: chore(seo): add Google Search Console verification meta tag
+- **Date**: 2026-06-13
+- **Changed**: 1 file(s), +3/-0 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #290 — `rollback/chore-seo-add-bing-webmaster-tools-ver-2026-06-13-9abee6e`
+
+- **Branch**: `rollback/chore-seo-add-bing-webmaster-tools-ver-2026-06-13-9abee6e`
+- **Commit**: `9abee6ec99eb4ee2a7ac9c853999164f4ccd4f54`
+- **Subject**: chore(seo): add Bing Webmaster Tools verification meta tag
 - **Date**: 2026-06-13
 - **Changed**: 1 file(s), +3/-0 lines
 - **Auto-generated**: yes (by update-rollback.yml)
