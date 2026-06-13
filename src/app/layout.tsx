@@ -87,6 +87,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://solar.rauell.systems/landing",
   },
+  verification: {
+    google: "YopMsxRCWbWYZU_ANAhcwd6ggCeArux5CR37WuXqXXA",
+  },
 };
 
 export default function RootLayout({
