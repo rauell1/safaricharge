@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 304 | `rollback/feat-ux-add-simple-advanced-simulation-2026-06-21-c2ddaae` | `c2ddaae` | feat(ux): add Simple/Advanced simulation mode toggle with new dashboard (3f +674/-31) | 2026-06-21 |
 | 303 | `rollback/feat-simulation-add-parametric-dispatc-2026-06-21-0f95241` | `0f95241` | feat(simulation): add Parametric Dispatch Panel to simulation accordion (2f +403/-0) | 2026-06-21 |
 | 302 | `rollback/feat-integrate-parametric-sizing-engin-2026-06-21-2541a3a` | `2541a3a` | feat: integrate Parametric Sizing Engine at /sizing (8f +3066/-1) | 2026-06-21 |
 | 301 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-06-21-28f7060` | `28f7060` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-06-21 |
@@ -3190,6 +3191,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat(simulation): add Parametric Dispatch Panel to simulation accordion
 - **Date**: 2026-06-21
 - **Changed**: 2 file(s), +403/-0 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #304 — `rollback/feat-ux-add-simple-advanced-simulation-2026-06-21-c2ddaae`
+
+- **Branch**: `rollback/feat-ux-add-simple-advanced-simulation-2026-06-21-c2ddaae`
+- **Commit**: `c2ddaae40774f399b673c1ae4c0efd5286543332`
+- **Subject**: feat(ux): add Simple/Advanced simulation mode toggle with new dashboard
+- **Date**: 2026-06-21
+- **Changed**: 3 file(s), +674/-31 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
