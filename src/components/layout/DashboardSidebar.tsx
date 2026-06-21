@@ -16,6 +16,7 @@ import {
   Moon,
   Download,
   LogOut,
+  BarChart3,
 } from 'lucide-react';
 import Link from 'next/link';
 import { BrandLogo } from '@/components/brand-logo';
@@ -50,7 +51,8 @@ export type DashboardSection =
   | 'energy-intelligence'
   | 'financial-model'
   | 'export'
-  | 'admin';
+  | 'admin'
+  | 'sizing';
 
 export interface SidebarContextMetric {
   label: string;
@@ -214,6 +216,7 @@ export function DashboardSidebar({
       label: string;
       icon: React.ElementType;
     }> = [
+      { id: 'sizing', label: 'Sizing Engine', icon: BarChart3 },
       { id: 'export', label: 'Export', icon: Download },
     ];
     if (isAdminUser) {
@@ -261,6 +264,8 @@ export function DashboardSidebar({
               window.location.assign('/admin');
             } else if (item.id === 'export') {
               window.location.assign('/export');
+            } else if (item.id === 'sizing') {
+              window.location.assign('/sizing');
             } else if (onSectionChange) {
               onSectionChange(item.id);
             } else {
