@@ -59,6 +59,7 @@ import { PVSizingSection } from '@/components/configuration/PVSizingSection';
 import { RecommendationComponents } from '@/components/energy/RecommendationComponents';
 import { SimulationNodes } from '@/components/simulation/SimulationNodes';
 import { ValidationPanel } from '@/components/simulation/ValidationPanel';
+import { SizingDispatchPanel } from '@/components/simulation/SizingDispatchPanel';
 import { SafariChargeAIAssistant } from '@/components/ai/AIAssistant';
 import { ScenariosTabView } from '@/components/scenarios/ScenariosTabView';
 import { EnergyIntelligenceView } from '@/app/energy-intelligence/page';
@@ -1801,6 +1802,12 @@ function DemoSimulationView({
             <AccordionTrigger className="text-sm font-medium text-muted-foreground">Validation &amp; Testing Panel</AccordionTrigger>
             <AccordionContent>
               <ValidationPanel />
+            </AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="parametric-analysis">
+            <AccordionTrigger className="text-sm font-medium text-muted-foreground">Parametric Analysis (Sizing Engine)</AccordionTrigger>
+            <AccordionContent>
+              <SizingDispatchPanel />
             </AccordionContent>
           </AccordionItem>
         </Accordion>
