@@ -39,6 +39,7 @@ import { useEnergySystemStore } from '@/stores/energySystemStore';
 import { SIZING_SIMULATOR_STORAGE_KEY, parseSimulatorSizingPayload } from '@/lib/pv-sizing';
 import { getUserPreference, setUserPreference } from '@/lib/supabase-db';
 import { useToast } from '@/hooks/use-toast';
+import { useUserPreference } from '@/hooks/useUserPreference';
 import { Toaster } from '@/components/ui/toaster';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -60,6 +61,7 @@ import { RecommendationComponents } from '@/components/energy/RecommendationComp
 import { SimulationNodes } from '@/components/simulation/SimulationNodes';
 import { ValidationPanel } from '@/components/simulation/ValidationPanel';
 import { SizingDispatchPanel } from '@/components/simulation/SizingDispatchPanel';
+import { SimpleDashboard } from '@/components/simulation/SimpleDashboard';
 import { SafariChargeAIAssistant } from '@/components/ai/AIAssistant';
 import { ScenariosTabView } from '@/components/scenarios/ScenariosTabView';
 import { EnergyIntelligenceView } from '@/app/energy-intelligence/page';
@@ -1649,8 +1651,9 @@ function DemoSimulationView({
   financialInputs: FinancialInputs;
 }) {
   useDemoEnergySystem(true);
-  
+
   const [savingRun, setSavingRun] = useState(false);
+  const [viewMode, setViewMode] = useUserPreference<'simple' | 'advanced'>('sc_sim_view_mode', 'simple');
   const { toast } = useToast();
   
   const store = useEnergySystemStore();
@@ -1771,6 +1774,8 @@ function DemoSimulationView({
   return (
     <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
+
+        {/* Header */}
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-[var(--grid-soft)] border border-[var(--grid)]/20 flex items-center justify-center shrink-0">
@@ -1778,39 +1783,80 @@ function DemoSimulationView({
             </div>
             <div>
               <h2 className="text-2xl font-bold text-[var(--text-primary)]">Simulation</h2>
-              <p className="text-sm text-[var(--text-tertiary)]">Physics engine, scenario controls and system visualisation</p>
+              <p className="text-sm text-[var(--text-tertiary)]">
+                {viewMode === 'simple' ? 'Live energy dashboard · adjust system size and location below' : 'Physics engine, scenario controls and system visualisation'}
+              </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={handleSaveRun}
-            disabled={savingRun || minuteData.length === 0}
-            className="inline-flex items-center gap-2 rounded-xl bg-[var(--battery)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--battery-bright)] shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            style={{ cursor: savingRun || minuteData.length === 0 ? 'not-allowed' : 'pointer' }}
-          >
-            {savingRun ? 'Saving Run...' : 'Save Simulation Run'}
-          </button>
+
+          {/* Simple / Advanced toggle */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex rounded-xl border border-[var(--border)] bg-[var(--bg-card-muted)] p-1 gap-1">
+              <button
+                type="button"
+                onClick={() => setViewMode('simple')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  viewMode === 'simple'
+                    ? 'bg-[var(--battery)] text-white shadow-sm'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                ⚡ Simple
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('advanced')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  viewMode === 'advanced'
+                    ? 'bg-[var(--battery)] text-white shadow-sm'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                🔬 Advanced
+              </button>
+            </div>
+            {viewMode === 'advanced' && (
+              <button
+                type="button"
+                onClick={handleSaveRun}
+                disabled={savingRun || minuteData.length === 0}
+                className="inline-flex items-center gap-2 rounded-xl bg-[var(--battery)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--battery-bright)] shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {savingRun ? 'Saving Run...' : 'Save Simulation Run'}
+              </button>
+            )}
+          </div>
         </div>
-        <Accordion type="single" collapsible defaultValue="simulation-core" className="rounded-xl border border-[var(--border)] px-4">
-          <AccordionItem value="simulation-core">
-            <AccordionTrigger className="text-sm font-medium text-muted-foreground">Simulation Core</AccordionTrigger>
-            <AccordionContent>
-              <SimulationNodes />
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem value="validation-testing">
-            <AccordionTrigger className="text-sm font-medium text-muted-foreground">Validation &amp; Testing Panel</AccordionTrigger>
-            <AccordionContent>
-              <ValidationPanel />
-            </AccordionContent>
-          </AccordionItem>
-          <AccordionItem value="parametric-analysis">
-            <AccordionTrigger className="text-sm font-medium text-muted-foreground">Parametric Analysis (Sizing Engine)</AccordionTrigger>
-            <AccordionContent>
-              <SizingDispatchPanel />
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+
+        {/* Content: Simple mode */}
+        {viewMode === 'simple' && (
+          <SimpleDashboard onSaveRun={handleSaveRun} isSaving={savingRun} />
+        )}
+
+        {/* Content: Advanced mode */}
+        {viewMode === 'advanced' && (
+          <Accordion type="single" collapsible defaultValue="simulation-core" className="rounded-xl border border-[var(--border)] px-4">
+            <AccordionItem value="simulation-core">
+              <AccordionTrigger className="text-sm font-medium text-muted-foreground">Simulation Core</AccordionTrigger>
+              <AccordionContent>
+                <SimulationNodes />
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="validation-testing">
+              <AccordionTrigger className="text-sm font-medium text-muted-foreground">Validation &amp; Testing Panel</AccordionTrigger>
+              <AccordionContent>
+                <ValidationPanel />
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="parametric-analysis">
+              <AccordionTrigger className="text-sm font-medium text-muted-foreground">Parametric Analysis (Sizing Engine)</AccordionTrigger>
+              <AccordionContent>
+                <SizingDispatchPanel />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        )}
+
       </div>
     </main>
   );
