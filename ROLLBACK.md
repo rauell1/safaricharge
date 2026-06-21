@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 302 | `rollback/feat-integrate-parametric-sizing-engin-2026-06-21-2541a3a` | `2541a3a` | feat: integrate Parametric Sizing Engine at /sizing (8f +3066/-1) | 2026-06-21 |
 | 301 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-06-21-28f7060` | `28f7060` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-06-21 |
 | 300 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-06-20-6de2ae7` | `6de2ae7` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-06-20 |
 | 299 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-06-19-deaea27` | `deaea27` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-06-19 |
@@ -3168,6 +3169,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-06-21
 - **Changed**: 1 file(s), +1/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #302 — `rollback/feat-integrate-parametric-sizing-engin-2026-06-21-2541a3a`
+
+- **Branch**: `rollback/feat-integrate-parametric-sizing-engin-2026-06-21-2541a3a`
+- **Commit**: `2541a3ab00ab239333fe4dc7615ae803055aa18a`
+- **Subject**: feat: integrate Parametric Sizing Engine at /sizing
+- **Date**: 2026-06-21
+- **Changed**: 8 file(s), +3066/-1 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
