@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 303 | `rollback/feat-simulation-add-parametric-dispatc-2026-06-21-0f95241` | `0f95241` | feat(simulation): add Parametric Dispatch Panel to simulation accordion (2f +403/-0) | 2026-06-21 |
 | 302 | `rollback/feat-integrate-parametric-sizing-engin-2026-06-21-2541a3a` | `2541a3a` | feat: integrate Parametric Sizing Engine at /sizing (8f +3066/-1) | 2026-06-21 |
 | 301 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-06-21-28f7060` | `28f7060` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-06-21 |
 | 300 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-06-20-6de2ae7` | `6de2ae7` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-06-20 |
@@ -3179,6 +3180,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat: integrate Parametric Sizing Engine at /sizing
 - **Date**: 2026-06-21
 - **Changed**: 8 file(s), +3066/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #303 — `rollback/feat-simulation-add-parametric-dispatc-2026-06-21-0f95241`
+
+- **Branch**: `rollback/feat-simulation-add-parametric-dispatc-2026-06-21-0f95241`
+- **Commit**: `0f952414f12c947ac8e3d9d50e5c083316bb92a3`
+- **Subject**: feat(simulation): add Parametric Dispatch Panel to simulation accordion
+- **Date**: 2026-06-21
+- **Changed**: 2 file(s), +403/-0 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
