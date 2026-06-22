@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 307 | `rollback/fix-sizing-audit-solarcalculator-again-2026-06-22-b879d48` | `b879d48` | fix(sizing): audit solarCalculator against Excel and surface engineering warnings (2f +74/-39) | 2026-06-22 |
 | 306 | `rollback/docs-add-comprehensive-readme-with-arc-2026-06-22-2db868c` | `2db868c` | docs: add comprehensive README with architecture diagrams and update CLAUDE.md (2f +426/-272) | 2026-06-22 |
 | 305 | `rollback/style-brand-use-infinity-cycle-logo-co-2026-06-22-4faab22` | `4faab22` | style(brand): use infinity cycle logo consistently across website (1f +1/-1) | 2026-06-22 |
 | 304 | `rollback/feat-ux-add-simple-advanced-simulation-2026-06-21-c2ddaae` | `c2ddaae` | feat(ux): add Simple/Advanced simulation mode toggle with new dashboard (3f +674/-31) | 2026-06-21 |
@@ -3223,6 +3224,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: docs: add comprehensive README with architecture diagrams and update CLAUDE.md
 - **Date**: 2026-06-22
 - **Changed**: 2 file(s), +426/-272 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #307 — `rollback/fix-sizing-audit-solarcalculator-again-2026-06-22-b879d48`
+
+- **Branch**: `rollback/fix-sizing-audit-solarcalculator-again-2026-06-22-b879d48`
+- **Commit**: `b879d4837ee942d601338e81ea7d23d6defcd659`
+- **Subject**: fix(sizing): audit solarCalculator against Excel and surface engineering warnings
+- **Date**: 2026-06-22
+- **Changed**: 2 file(s), +74/-39 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
