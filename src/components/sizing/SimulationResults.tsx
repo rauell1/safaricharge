@@ -68,7 +68,6 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
     batteryVoltageWarning
   } = results;
 
-  // Render SVG Chart for 24-Hour Power Flow
   const chartHeight = 200;
   const chartWidth = 720;
   const paddingLeft = 40;
@@ -79,66 +78,53 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
   const graphWidth = chartWidth - paddingLeft - paddingRight;
   const graphHeight = chartHeight - paddingTop - paddingBottom;
 
-  // Find max value in hourly load or solar for Y scaling
   const maxPowerVal = Math.max(
     ...hourlyProfile.map(r => Math.max(r.loadKW, r.solarKW, r.gridImportKW, r.dieselGenKW, 5))
   );
 
-  // SVG coordinate helpers
   const getX = (hour: number) => paddingLeft + (hour / 23) * graphWidth;
   const getY = (value: number) => chartHeight - paddingBottom - (value / maxPowerVal) * graphHeight;
   const getSoCY = (socVal: number) => chartHeight - paddingBottom - (socVal / 100) * graphHeight;
 
-  // Generate PV Area path
   let pvPath = `M ${getX(0)} ${getY(0)}`;
   for (let h = 1; h < 24; h++) {
     pvPath += ` L ${getX(h)} ${getY(hourlyProfile[h].solarKW)}`;
   }
   pvPath += ` L ${getX(23)} ${getY(0)} Z`;
 
-  // Generate Load Line path
   let loadPath = `M ${getX(0)} ${getY(hourlyProfile[0].loadKW)}`;
   for (let h = 1; h < 24; h++) {
     loadPath += ` L ${getX(h)} ${getY(hourlyProfile[h].loadKW)}`;
   }
 
-  // Generate Battery SoC Line path
   let socPath = `M ${getX(0)} ${getSoCY(hourlyProfile[0].batterySoCAfter)}`;
   for (let h = 1; h < 24; h++) {
     socPath += ` L ${getX(h)} ${getSoCY(hourlyProfile[h].batterySoCAfter)}`;
   }
 
-  // Handle Mouse Hover on Chart
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
     const svgRect = e.currentTarget.getBoundingClientRect();
     const clientX = e.clientX - svgRect.left;
-
-    // Map clientX to hour (0 - 23)
     const relativeX = clientX - paddingLeft;
     if (relativeX >= 0 && relativeX <= graphWidth) {
       const hour = Math.round((relativeX / graphWidth) * 23);
-      if (hour >= 0 && hour <= 23) {
-        setHoveredHour(hour);
-      }
+      if (hour >= 0 && hour <= 23) setHoveredHour(hour);
     } else {
       setHoveredHour(null);
     }
   };
 
-  // Cash Flow Chart SVG Helpers
   const cfChartWidth = 720;
   const cfChartHeight = 180;
   const maxCFVal = Math.max(...cashFlows.map(cf => Math.abs(cf.cumulativeCashFlow)), totalCapExUSD);
 
   const getCFX = (year: number) => paddingLeft + (year / 25) * (cfChartWidth - paddingLeft - paddingRight);
   const getCFY = (cfVal: number) => {
-    // Center is zero, positive values go up, negative values go down
     const zeroY = cfChartHeight / 2 + 10;
     const scale = (cfChartHeight - 40) / (2 * maxCFVal);
     return zeroY - cfVal * scale;
   };
 
-  // Generate Cumulative Cash Flow Line
   let cfLinePath = `M ${getCFX(0)} ${getCFY(cashFlows[0].cumulativeCashFlow)}`;
   for (let y = 1; y <= 25; y++) {
     cfLinePath += ` L ${getCFX(y)} ${getCFY(cashFlows[y].cumulativeCashFlow)}`;
@@ -150,13 +136,13 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
       {(pvOversizeWarning || batteryVoltageWarning) && (
         <div className="space-y-2">
           {pvOversizeWarning && (
-            <div className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
+            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
               <span>{pvOversizeWarning}</span>
             </div>
           )}
           {batteryVoltageWarning && (
-            <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-400">
+            <div className="flex items-start gap-2 rounded-lg border border-[var(--solar)]/30 bg-[var(--solar-soft)] p-3 text-sm text-[var(--solar)]">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
               <span>{batteryVoltageWarning}</span>
             </div>
@@ -166,116 +152,115 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
 
       {/* 1. Main Bankability Badges */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/5 rounded-full -mr-4 -mt-4" />
-          <span className="text-xs font-semibold text-slate-400">Simple Payback</span>
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5 shadow-sm flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-[var(--battery-soft)] rounded-full -mr-4 -mt-4" />
+          <span className="text-xs font-semibold text-[var(--text-tertiary)]">Simple Payback</span>
           <div className="my-2 flex items-baseline gap-1">
-            <span className="text-3xl font-extrabold text-emerald-400 font-mono">{simplePaybackYears}</span>
-            <span className="text-xs text-slate-400 font-semibold">Years</span>
+            <span className="text-3xl font-extrabold text-[var(--battery)] font-mono">{simplePaybackYears}</span>
+            <span className="text-xs text-[var(--text-tertiary)] font-semibold">Years</span>
           </div>
-          <div className="text-[10px] text-slate-500 flex items-center gap-1">
-            <Clock className="w-3 h-3 text-emerald-400" /> Payback vs 25y system lifespan
+          <div className="text-[10px] text-[var(--text-muted)] flex items-center gap-1">
+            <Clock className="w-3 h-3 text-[var(--battery)]" /> Payback vs 25y system lifespan
           </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 rounded-full -mr-4 -mt-4" />
-          <span className="text-xs font-semibold text-slate-400">Net Present Value (NPV)</span>
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5 shadow-sm flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-[var(--grid-soft)] rounded-full -mr-4 -mt-4" />
+          <span className="text-xs font-semibold text-[var(--text-tertiary)]">Net Present Value (NPV)</span>
           <div className="my-2 flex items-baseline gap-0.5">
-            <span className="text-2xl font-extrabold text-blue-400 font-mono">
+            <span className="text-2xl font-extrabold text-[var(--grid)] font-mono">
               ${npvUSD.toLocaleString()}
             </span>
           </div>
-          <div className="text-[10px] text-slate-500 flex items-center gap-1">
-            <TrendingUp className="w-3 h-3 text-blue-400" /> @ {results.inputs.discountRate}% discount rate
+          <div className="text-[10px] text-[var(--text-muted)] flex items-center gap-1">
+            <TrendingUp className="w-3 h-3 text-[var(--grid)]" /> @ {results.inputs.discountRate}% discount rate
           </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-16 h-16 bg-purple-500/5 rounded-full -mr-4 -mt-4" />
-          <span className="text-xs font-semibold text-slate-400">Internal Rate of Return</span>
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5 shadow-sm flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-purple-50 rounded-full -mr-4 -mt-4" />
+          <span className="text-xs font-semibold text-[var(--text-tertiary)]">Internal Rate of Return</span>
           <div className="my-2 flex items-baseline gap-1">
-            <span className="text-3xl font-extrabold text-purple-400 font-mono">{irrPercent}%</span>
+            <span className="text-3xl font-extrabold text-purple-700 font-mono">{irrPercent}%</span>
           </div>
-          <div className="text-[10px] text-slate-500 flex items-center gap-1">
-            <Award className="w-3 h-3 text-purple-400" /> Highly bankable yield profile
+          <div className="text-[10px] text-[var(--text-muted)] flex items-center gap-1">
+            <Award className="w-3 h-3 text-purple-700" /> Highly bankable yield profile
           </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-16 h-16 bg-teal-500/5 rounded-full -mr-4 -mt-4" />
-          <span className="text-xs font-semibold text-slate-400">Levelized Cost (LCOE)</span>
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-5 shadow-sm flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-teal-50 rounded-full -mr-4 -mt-4" />
+          <span className="text-xs font-semibold text-[var(--text-tertiary)]">Levelized Cost (LCOE)</span>
           <div className="my-2 flex flex-col">
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-extrabold text-teal-400 font-mono">${lcoeUSDPerKWh}</span>
-              <span className="text-[10px] text-slate-400">/ kWh</span>
+              <span className="text-2xl font-extrabold text-teal-700 font-mono">${lcoeUSDPerKWh}</span>
+              <span className="text-[10px] text-[var(--text-tertiary)]">/ kWh</span>
             </div>
-            <span className="text-[9px] text-slate-400 line-through">Grid Baseline: ${lcoeBaselineUSDPerKWh}/kWh</span>
+            <span className="text-[9px] text-[var(--text-tertiary)] line-through">Grid Baseline: ${lcoeBaselineUSDPerKWh}/kWh</span>
           </div>
-          <div className="text-[10px] text-slate-500 flex items-center gap-1">
-            <Zap className="w-3 h-3 text-teal-400" /> Saves {(((lcoeBaselineUSDPerKWh - lcoeUSDPerKWh) / lcoeBaselineUSDPerKWh) * 100).toFixed(0)}% per unit energy
+          <div className="text-[10px] text-[var(--text-muted)] flex items-center gap-1">
+            <Zap className="w-3 h-3 text-teal-700" /> Saves {(((lcoeBaselineUSDPerKWh - lcoeUSDPerKWh) / lcoeBaselineUSDPerKWh) * 100).toFixed(0)}% per unit energy
           </div>
         </div>
       </div>
 
       {/* 2. Technical System Specifications Bar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-4 border-b border-slate-800 pb-3">
-          <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider font-mono">
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-6 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-4 border-b border-[var(--border)] pb-3">
+          <h4 className="text-xs font-bold text-[var(--battery)] uppercase tracking-wider font-mono">
             Optimized System Configuration Summary
           </h4>
-          <span className="text-[10px] bg-slate-950 text-slate-400 px-2 py-0.5 rounded font-mono">
+          <span className="text-[10px] bg-[var(--bg-card-muted)] text-[var(--text-tertiary)] px-2 py-0.5 rounded font-mono">
             Active Tenant: {activeOrgName}
           </span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6 text-center">
-          <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-            <span className="block text-[10px] text-slate-500 uppercase font-mono">PV Array Size</span>
-            <span className="text-base font-extrabold text-slate-200 font-mono">{solarCapacityKWp} kWp</span>
+          <div className="bg-[var(--bg-card-muted)] p-3 rounded-lg border border-[var(--border)]">
+            <span className="block text-[10px] text-[var(--text-muted)] uppercase font-mono">PV Array Size</span>
+            <span className="text-base font-extrabold text-[var(--text-primary)] font-mono">{solarCapacityKWp} kWp</span>
           </div>
-          <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-            <span className="block text-[10px] text-slate-500 uppercase font-mono">Battery Storage</span>
-            <span className="text-base font-extrabold text-slate-200 font-mono">{batteryCapacityKWh} kWh</span>
+          <div className="bg-[var(--bg-card-muted)] p-3 rounded-lg border border-[var(--border)]">
+            <span className="block text-[10px] text-[var(--text-muted)] uppercase font-mono">Battery Storage</span>
+            <span className="text-base font-extrabold text-[var(--text-primary)] font-mono">{batteryCapacityKWh} kWh</span>
           </div>
-          <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-            <span className="block text-[10px] text-slate-500 uppercase font-mono">Inverter Rating</span>
-            <span className="text-base font-extrabold text-slate-200 font-mono">{inverterCapacityKW} kW</span>
+          <div className="bg-[var(--bg-card-muted)] p-3 rounded-lg border border-[var(--border)]">
+            <span className="block text-[10px] text-[var(--text-muted)] uppercase font-mono">Inverter Rating</span>
+            <span className="text-base font-extrabold text-[var(--text-primary)] font-mono">{inverterCapacityKW} kW</span>
           </div>
-          <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-            <span className="block text-[10px] text-slate-500 uppercase font-mono">Roof Space Area</span>
-            <span className="text-base font-extrabold text-slate-200 font-mono">{panelAreaRequiredM2} m²</span>
+          <div className="bg-[var(--bg-card-muted)] p-3 rounded-lg border border-[var(--border)]">
+            <span className="block text-[10px] text-[var(--text-muted)] uppercase font-mono">Roof Space Area</span>
+            <span className="text-base font-extrabold text-[var(--text-primary)] font-mono">{panelAreaRequiredM2} m²</span>
           </div>
-          <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-            <span className="block text-[10px] text-slate-500 uppercase font-mono">PV Self-Consume</span>
-            <span className="text-base font-extrabold text-slate-200 font-mono">{solarSelfConsumptionPercent}%</span>
+          <div className="bg-[var(--bg-card-muted)] p-3 rounded-lg border border-[var(--border)]">
+            <span className="block text-[10px] text-[var(--text-muted)] uppercase font-mono">PV Self-Consume</span>
+            <span className="text-base font-extrabold text-[var(--text-primary)] font-mono">{solarSelfConsumptionPercent}%</span>
           </div>
-          <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-            <span className="block text-[10px] text-slate-500 uppercase font-mono">System Autonomy</span>
-            <span className="text-base font-extrabold text-slate-200 font-mono">{systemAutonomyPercent}%</span>
+          <div className="bg-[var(--bg-card-muted)] p-3 rounded-lg border border-[var(--border)]">
+            <span className="block text-[10px] text-[var(--text-muted)] uppercase font-mono">System Autonomy</span>
+            <span className="text-base font-extrabold text-[var(--text-primary)] font-mono">{systemAutonomyPercent}%</span>
           </div>
         </div>
 
-        {/* Detailed Annual Energy Yield Balance sheet */}
-        <div className="mt-4 pt-4 border-t border-slate-800 grid grid-cols-2 md:grid-cols-5 gap-4 text-xs font-mono text-slate-400">
+        <div className="mt-4 pt-4 border-t border-[var(--border)] grid grid-cols-2 md:grid-cols-5 gap-4 text-xs font-mono text-[var(--text-tertiary)]">
           <div>
-            <span className="text-slate-500 text-[9px] block">ANNUAL ENERGY DEMAND:</span>
-            <span className="text-slate-200 font-bold">{annualLoadKWh.toLocaleString()} kWh</span>
+            <span className="text-[var(--text-muted)] text-[9px] block">ANNUAL ENERGY DEMAND:</span>
+            <span className="text-[var(--text-primary)] font-bold">{annualLoadKWh.toLocaleString()} kWh</span>
           </div>
           <div>
-            <span className="text-slate-500 text-[9px] block">ANNUAL SOLAR GENERATION:</span>
-            <span className="text-slate-200 font-bold text-amber-400">{annualPVGeneratedKWh.toLocaleString()} kWh</span>
+            <span className="text-[var(--text-muted)] text-[9px] block">ANNUAL SOLAR GENERATION:</span>
+            <span className="text-[var(--text-primary)] font-bold text-[var(--solar)]">{annualPVGeneratedKWh.toLocaleString()} kWh</span>
           </div>
           <div>
-            <span className="text-slate-500 text-[9px] block">ANNUAL UTILITY IMPORT:</span>
-            <span className="text-slate-200 font-bold text-red-400">{annualGridImportKWh.toLocaleString()} kWh</span>
+            <span className="text-[var(--text-muted)] text-[9px] block">ANNUAL UTILITY IMPORT:</span>
+            <span className="text-[var(--text-primary)] font-bold text-red-600">{annualGridImportKWh.toLocaleString()} kWh</span>
           </div>
           <div>
-            <span className="text-slate-500 text-[9px] block">ANNUAL NET SOLAR EXPORT:</span>
-            <span className="text-slate-200 font-bold text-blue-400">{annualGridExportKWh.toLocaleString()} kWh</span>
+            <span className="text-[var(--text-muted)] text-[9px] block">ANNUAL NET SOLAR EXPORT:</span>
+            <span className="text-[var(--text-primary)] font-bold text-[var(--grid)]">{annualGridExportKWh.toLocaleString()} kWh</span>
           </div>
           <div className="col-span-2 md:col-span-1">
-            <span className="text-slate-500 text-[9px] block">DIESEL GEN RUN / UNMET:</span>
-            <span className="text-slate-200 font-bold">
+            <span className="text-[var(--text-muted)] text-[9px] block">DIESEL GEN RUN / UNMET:</span>
+            <span className="text-[var(--text-primary)] font-bold">
               {annualDieselGenKWh > 0 ? `${annualDieselGenKWh.toLocaleString()} kWh (${annualDieselFuelLiters}L)` : '0 kWh / '}{annualUnservedLoadKWh > 0 ? ` ${annualUnservedLoadKWh.toLocaleString()} kWh blacked` : '0 blackout'}
             </span>
           </div>
@@ -283,13 +268,13 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
       </div>
 
       {/* Tabs Navigation */}
-      <div className="border-b border-slate-800 flex gap-4">
+      <div className="border-b border-[var(--border)] flex gap-4">
         <button
           onClick={() => setActiveTab('charts')}
           className={`pb-3 text-sm font-semibold border-b-2 transition ${
             activeTab === 'charts'
-              ? 'border-emerald-500 text-emerald-400'
-              : 'border-transparent text-slate-400 hover:text-slate-300'
+              ? 'border-[var(--battery)] text-[var(--battery)]'
+              : 'border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
           }`}
         >
           📈 Performance & Cash Flow Charts
@@ -298,8 +283,8 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
           onClick={() => setActiveTab('capex')}
           className={`pb-3 text-sm font-semibold border-b-2 transition ${
             activeTab === 'capex'
-              ? 'border-emerald-500 text-emerald-400'
-              : 'border-transparent text-slate-400 hover:text-slate-300'
+              ? 'border-[var(--battery)] text-[var(--battery)]'
+              : 'border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
           }`}
         >
           💵 CapEx & OpEx Ledger
@@ -308,8 +293,8 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
           onClick={() => setActiveTab('cashflow')}
           className={`pb-3 text-sm font-semibold border-b-2 transition ${
             activeTab === 'cashflow'
-              ? 'border-emerald-500 text-emerald-400'
-              : 'border-transparent text-slate-400 hover:text-slate-300'
+              ? 'border-[var(--battery)] text-[var(--battery)]'
+              : 'border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
           }`}
         >
           📊 25-Year Lifecycle Cash Flow
@@ -320,16 +305,16 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
       {activeTab === 'charts' && (
         <div className="space-y-6">
           {/* 24h Dispatch Chart */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm">
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-6 shadow-sm">
             <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
               <div>
-                <h3 className="text-sm font-bold text-slate-200">24-Hour Hybrid Energy Balance & Dispatch Simulation</h3>
-                <p className="text-xs text-slate-400">
+                <h3 className="text-sm font-bold text-[var(--text-primary)]">24-Hour Hybrid Energy Balance & Dispatch Simulation</h3>
+                <p className="text-xs text-[var(--text-tertiary)]">
                   Interactive profile mapping power flow. Hover to view detailed hourly metrics.
                 </p>
               </div>
               {/* Legend */}
-              <div className="flex flex-wrap gap-3 text-[10px] font-mono text-slate-400">
+              <div className="flex flex-wrap gap-3 text-[10px] font-mono text-[var(--text-tertiary)]">
                 <span className="flex items-center gap-1">
                   <span className="w-3 h-1.5 bg-amber-400 rounded-sm opacity-50" /> Solar PV Gen (kW)
                 </span>
@@ -337,21 +322,21 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                   <span className="w-3 h-0.5 bg-blue-500" /> Load Demand (kW)
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="w-3 h-0.5 border-t-2 border-dashed border-emerald-400" /> Battery SoC (%)
+                  <span className="w-3 h-0.5 border-t-2 border-dashed border-emerald-500" /> Battery SoC (%)
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="w-3 h-1.5 bg-red-600 rounded-sm" /> Grid Import (kW)
                 </span>
                 {results.inputs.dieselGenCapacityKW > 0 && (
                   <span className="flex items-center gap-1">
-                    <span className="w-3 h-1.5 bg-slate-500 rounded-sm" /> Diesel Gen (kW)
+                    <span className="w-3 h-1.5 bg-gray-400 rounded-sm" /> Diesel Gen (kW)
                   </span>
                 )}
               </div>
             </div>
 
             {/* SVG Interactive Power Balance Chart */}
-            <div className="bg-slate-950 rounded-xl p-2 border border-slate-850 relative overflow-hidden">
+            <div className="bg-[var(--bg-secondary)] rounded-xl p-2 border border-[var(--border)] relative overflow-hidden">
               <svg
                 viewBox={`0 0 ${chartWidth} ${chartHeight}`}
                 className="w-full h-auto select-none"
@@ -373,7 +358,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                     y1={paddingTop + r * graphHeight}
                     x2={chartWidth - paddingRight}
                     y2={paddingTop + r * graphHeight}
-                    className="stroke-slate-900/60"
+                    className="stroke-[var(--border)]"
                     strokeWidth="1"
                   />
                 ))}
@@ -388,25 +373,25 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                       y1={paddingTop}
                       x2={getX(h > 23 ? 23 : h)}
                       y2={chartHeight - paddingBottom}
-                      className="stroke-slate-900/60"
+                      className="stroke-[var(--border)]"
                       strokeWidth="1"
                     />
                   );
                 })}
 
                 {/* Left Y Axis Labels (Power kW) */}
-                <text x={paddingLeft - 8} y={paddingTop + 4} className="fill-slate-500 text-[9px] text-right font-mono" textAnchor="end">
+                <text x={paddingLeft - 8} y={paddingTop + 4} className="fill-[var(--text-muted)] text-[9px] text-right font-mono" textAnchor="end">
                   {maxPowerVal.toFixed(0)}kW
                 </text>
-                <text x={paddingLeft - 8} y={chartHeight - paddingBottom + 4} className="fill-slate-500 text-[9px] text-right font-mono" textAnchor="end">
+                <text x={paddingLeft - 8} y={chartHeight - paddingBottom + 4} className="fill-[var(--text-muted)] text-[9px] text-right font-mono" textAnchor="end">
                   0kW
                 </text>
 
                 {/* Right Y Axis Labels (Battery SoC %) */}
-                <text x={chartWidth - paddingRight + 8} y={paddingTop + 4} className="fill-emerald-500 text-[9px] text-left font-mono" textAnchor="start">
+                <text x={chartWidth - paddingRight + 8} y={paddingTop + 4} className="fill-emerald-600 text-[9px] text-left font-mono" textAnchor="start">
                   100%
                 </text>
-                <text x={chartWidth - paddingRight + 8} y={chartHeight - paddingBottom + 4} className="fill-emerald-500 text-[9px] text-left font-mono" textAnchor="start">
+                <text x={chartWidth - paddingRight + 8} y={chartHeight - paddingBottom + 4} className="fill-emerald-600 text-[9px] text-left font-mono" textAnchor="start">
                   0%
                 </text>
 
@@ -416,33 +401,18 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                 {/* Grid Import / Diesel Gen Bars */}
                 {hourlyProfile.map((row, h) => {
                   const barX = getX(h) - 3;
-                  // Grid Import Bar
                   const gridHeight = (row.gridImportKW / maxPowerVal) * graphHeight;
                   const gridY = chartHeight - paddingBottom - gridHeight;
-
-                  // Diesel Gen Bar (stacked if needed, or overlayed)
                   const dieselHeight = (row.dieselGenKW / maxPowerVal) * graphHeight;
                   const dieselY = gridY - dieselHeight;
 
                   return (
                     <g key={h}>
                       {row.gridImportKW > 0 && (
-                        <rect
-                          x={barX}
-                          y={gridY}
-                          width="6"
-                          height={gridHeight}
-                          className="fill-red-600/80"
-                        />
+                        <rect x={barX} y={gridY} width="6" height={gridHeight} className="fill-red-600/80" />
                       )}
                       {row.dieselGenKW > 0 && (
-                        <rect
-                          x={barX}
-                          y={dieselY}
-                          width="6"
-                          height={dieselHeight}
-                          className="fill-slate-500/90"
-                        />
+                        <rect x={barX} y={dieselY} width="6" height={dieselHeight} className="fill-gray-400/90" />
                       )}
                     </g>
                   );
@@ -454,7 +424,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                 {/* Battery SoC Curve Line (Dashed Green) */}
                 <path
                   d={socPath}
-                  className="stroke-emerald-400 fill-none"
+                  className="stroke-emerald-600 fill-none"
                   strokeWidth="2"
                   strokeDasharray="4 4"
                   strokeLinecap="round"
@@ -468,13 +438,13 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                       y1={paddingTop}
                       x2={getX(hoveredHour)}
                       y2={chartHeight - paddingBottom}
-                      className="stroke-slate-400"
+                      className="stroke-[var(--text-tertiary)]"
                       strokeWidth="1"
                       strokeDasharray="2 2"
                     />
-                    <circle cx={getX(hoveredHour)} cy={getY(hourlyProfile[hoveredHour].loadKW)} r="4" className="fill-blue-500 stroke-slate-950" strokeWidth="1.5" />
-                    <circle cx={getX(hoveredHour)} cy={getY(hourlyProfile[hoveredHour].solarKW)} r="4" className="fill-amber-500 stroke-slate-950" strokeWidth="1.5" />
-                    <circle cx={getX(hoveredHour)} cy={getSoCY(hourlyProfile[hoveredHour].batterySoCAfter)} r="4" className="fill-emerald-400 stroke-slate-950" strokeWidth="1.5" />
+                    <circle cx={getX(hoveredHour)} cy={getY(hourlyProfile[hoveredHour].loadKW)} r="4" className="fill-blue-500 stroke-white" strokeWidth="1.5" />
+                    <circle cx={getX(hoveredHour)} cy={getY(hourlyProfile[hoveredHour].solarKW)} r="4" className="fill-amber-500 stroke-white" strokeWidth="1.5" />
+                    <circle cx={getX(hoveredHour)} cy={getSoCY(hourlyProfile[hoveredHour].batterySoCAfter)} r="4" className="fill-emerald-600 stroke-white" strokeWidth="1.5" />
                   </g>
                 )}
 
@@ -487,7 +457,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                       key={i}
                       x={getX(labelHour)}
                       y={chartHeight - paddingBottom + 14}
-                      className="fill-slate-500 text-[8px] font-mono text-center"
+                      className="fill-[var(--text-muted)] text-[8px] font-mono text-center"
                       textAnchor="middle"
                     >
                       {labelHour}:00
@@ -498,73 +468,73 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
 
               {/* Hover tooltip card overlay */}
               {hoveredHour !== null && (
-                <div className="absolute top-3 left-3 bg-slate-900/95 border border-slate-800 rounded-lg p-3 text-[10px] font-mono text-slate-300 shadow-xl space-y-1 z-30">
-                  <div className="font-bold text-slate-200 border-b border-slate-800 pb-1 mb-1">
+                <div className="absolute top-3 left-3 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg p-3 text-[10px] font-mono text-[var(--text-secondary)] shadow-xl space-y-1 z-30">
+                  <div className="font-bold text-[var(--text-primary)] border-b border-[var(--border)] pb-1 mb-1">
                     Hour {hoveredHour}:00 Energy Balance
                   </div>
                   <div className="flex justify-between gap-6">
-                    <span className="text-blue-400">Load demand:</span>
-                    <span className="font-bold text-slate-100">{hourlyProfile[hoveredHour].loadKW} kW</span>
+                    <span className="text-[var(--grid)]">Load demand:</span>
+                    <span className="font-bold text-[var(--text-primary)]">{hourlyProfile[hoveredHour].loadKW} kW</span>
                   </div>
                   <div className="flex justify-between gap-6">
-                    <span className="text-amber-400">Solar PV gen:</span>
-                    <span className="font-bold text-slate-100">{hourlyProfile[hoveredHour].solarKW} kW</span>
+                    <span className="text-[var(--solar)]">Solar PV gen:</span>
+                    <span className="font-bold text-[var(--text-primary)]">{hourlyProfile[hoveredHour].solarKW} kW</span>
                   </div>
                   <div className="flex justify-between gap-6">
-                    <span className="text-emerald-400">Battery SoC:</span>
-                    <span className="font-bold text-slate-100">{hourlyProfile[hoveredHour].batterySoCAfter}%</span>
+                    <span className="text-[var(--battery)]">Battery SoC:</span>
+                    <span className="font-bold text-[var(--text-primary)]">{hourlyProfile[hoveredHour].batterySoCAfter}%</span>
                   </div>
                   <div className="flex justify-between gap-6">
-                    <span className="text-red-400 font-semibold">Grid Import:</span>
-                    <span className="font-bold text-slate-100">{hourlyProfile[hoveredHour].gridImportKW} kW</span>
+                    <span className="text-red-600 font-semibold">Grid Import:</span>
+                    <span className="font-bold text-[var(--text-primary)]">{hourlyProfile[hoveredHour].gridImportKW} kW</span>
                   </div>
                   {hourlyProfile[hoveredHour].dieselGenKW > 0 && (
                     <div className="flex justify-between gap-6">
-                      <span className="text-slate-400 font-semibold">Diesel Gen:</span>
-                      <span className="font-bold text-slate-100">{hourlyProfile[hoveredHour].dieselGenKW} kW</span>
+                      <span className="text-[var(--text-tertiary)] font-semibold">Diesel Gen:</span>
+                      <span className="font-bold text-[var(--text-primary)]">{hourlyProfile[hoveredHour].dieselGenKW} kW</span>
                     </div>
                   )}
-                  <div className="flex justify-between gap-6 text-[9px] border-t border-slate-850 pt-1 text-slate-500">
+                  <div className="flex justify-between gap-6 text-[9px] border-t border-[var(--border)] pt-1 text-[var(--text-muted)]">
                     <span>Grid Status:</span>
-                    <span className={hourlyProfile[hoveredHour].gridAvailable ? 'text-emerald-500' : 'text-red-400'}>
+                    <span className={hourlyProfile[hoveredHour].gridAvailable ? 'text-[var(--battery)]' : 'text-red-600'}>
                       {hourlyProfile[hoveredHour].gridAvailable ? 'Online' : 'OUTAGE (Blackout)'}
                     </span>
                   </div>
                 </div>
               )}
             </div>
-            <p className="text-[10px] text-slate-500 mt-2 text-center italic">
+            <p className="text-[10px] text-[var(--text-muted)] mt-2 text-center italic">
               * The simulation maps solar irradiation and battery limits against load demand. Batteries charge during solar peaks and discharge during deficits. Grid imports occur if battery is depleted and grid is online.
             </p>
           </div>
 
           {/* Environmental Savings Info */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-6 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-2 flex flex-col justify-between">
               <div>
-                <h3 className="text-sm font-bold text-slate-200 mb-1">Decarbonization & Environmental Compliance</h3>
-                <p className="text-xs text-slate-400 leading-relaxed">
+                <h3 className="text-sm font-bold text-[var(--text-primary)] mb-1">Decarbonization & Environmental Compliance</h3>
+                <p className="text-xs text-[var(--text-tertiary)] leading-relaxed">
                   Avoided carbon emissions qualifies this project for regional corporate sustainability credits. Green electricity reduces dirty grid dependencies.
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-4 mt-4">
-                <div className="bg-slate-950 p-4 rounded-lg border border-slate-850">
-                  <span className="text-[10px] text-slate-500 font-mono uppercase block">Annual CO₂ Saved</span>
-                  <span className="text-xl font-bold text-emerald-400 font-mono">{annualCO2SavedTons} tons/year</span>
+                <div className="bg-[var(--bg-card-muted)] p-4 rounded-lg border border-[var(--border)]">
+                  <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase block">Annual CO₂ Saved</span>
+                  <span className="text-xl font-bold text-[var(--battery)] font-mono">{annualCO2SavedTons} tons/year</span>
                 </div>
-                <div className="bg-slate-950 p-4 rounded-lg border border-slate-850">
-                  <span className="text-[10px] text-slate-500 font-mono uppercase block">Equivalent Trees Planted</span>
-                  <span className="text-xl font-bold text-emerald-400 font-mono">{equivalentTreesPlanted} trees</span>
+                <div className="bg-[var(--bg-card-muted)] p-4 rounded-lg border border-[var(--border)]">
+                  <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase block">Equivalent Trees Planted</span>
+                  <span className="text-xl font-bold text-[var(--battery)] font-mono">{equivalentTreesPlanted} trees</span>
                 </div>
               </div>
             </div>
-            <div className="bg-slate-950 border border-slate-850 rounded-xl p-5 flex flex-col justify-between items-center text-center">
-              <Globe className="w-10 h-10 text-emerald-400 animate-pulse" />
+            <div className="bg-[var(--bg-card-muted)] border border-[var(--border)] rounded-xl p-5 flex flex-col justify-between items-center text-center">
+              <Globe className="w-10 h-10 text-[var(--battery)] animate-pulse" />
               <div>
-                <span className="text-xs font-semibold text-slate-300 block">Carbon Credit Eligible</span>
-                <p className="text-[10px] text-slate-500 mt-1">Estimated annual value of offset: <strong>${(annualCO2SavedTons * 18.5).toFixed(2)} USD</strong> @ $18.50/ton carbon index.</p>
+                <span className="text-xs font-semibold text-[var(--text-secondary)] block">Carbon Credit Eligible</span>
+                <p className="text-[10px] text-[var(--text-muted)] mt-1">Estimated annual value of offset: <strong>${(annualCO2SavedTons * 18.5).toFixed(2)} USD</strong> @ $18.50/ton carbon index.</p>
               </div>
-              <span className="bg-emerald-950 border border-emerald-800 text-emerald-400 text-[9px] font-bold px-3 py-1 rounded-full uppercase">
+              <span className="bg-[var(--battery-soft)] border border-[var(--battery)]/30 text-[var(--battery)] text-[9px] font-bold px-3 py-1 rounded-full uppercase">
                 A-Grade ESG Verified
               </span>
             </div>
@@ -576,45 +546,45 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
       {activeTab === 'capex' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* CapEx Ledger */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="text-sm font-bold text-slate-200">Capital Expenditure (CapEx) Breakdown</h3>
-              <span className="text-xs font-semibold text-slate-400">KSh {results.totalCapExKSh?.toLocaleString() || (totalCapExUSD*127.5).toLocaleString()}</span>
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-6 shadow-sm space-y-4">
+            <div className="flex justify-between items-center border-b border-[var(--border)] pb-3">
+              <h3 className="text-sm font-bold text-[var(--text-primary)]">Capital Expenditure (CapEx) Breakdown</h3>
+              <span className="text-xs font-semibold text-[var(--text-tertiary)]">KSh {results.totalCapExKSh?.toLocaleString() || (totalCapExUSD*127.5).toLocaleString()}</span>
             </div>
             <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
               {results.bomLineItems?.slice(0, 16).map((item, idx) => (
-                <div key={idx} className="bg-slate-950 border border-slate-850 rounded-lg p-3 flex justify-between items-center">
+                <div key={idx} className="bg-[var(--bg-card-muted)] border border-[var(--border)] rounded-lg p-3 flex justify-between items-center">
                   <div>
-                    <span className="text-xs font-bold text-slate-200 block truncate max-w-[220px]">{item.description}</span>
-                    <span className="text-[10px] text-slate-500 font-mono uppercase">{item.section} | Qty: {item.qty}</span>
+                    <span className="text-xs font-bold text-[var(--text-primary)] block truncate max-w-[220px]">{item.description}</span>
+                    <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase">{item.section} | Qty: {item.qty}</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-xs font-bold font-mono text-slate-200">KSh {item.totalKSh.toLocaleString()}</span>
-                    <span className="text-[9px] text-slate-500 block">≈ ${item.totalUSD.toLocaleString()}</span>
+                    <span className="text-xs font-bold font-mono text-[var(--text-primary)]">KSh {item.totalKSh.toLocaleString()}</span>
+                    <span className="text-[9px] text-[var(--text-muted)] block">≈ ${item.totalUSD.toLocaleString()}</span>
                   </div>
                 </div>
               )) || capexItems.map((item, idx) => (
-                <div key={idx} className="bg-slate-950 border border-slate-850 rounded-lg p-3 flex justify-between items-center">
-                  <div><span className="text-xs font-bold text-slate-200 block truncate max-w-[220px]">{item.name}</span></div>
-                  <div className="text-right"><span className="text-xs font-bold font-mono text-slate-200">${item.totalCost.toLocaleString()}</span></div>
+                <div key={idx} className="bg-[var(--bg-card-muted)] border border-[var(--border)] rounded-lg p-3 flex justify-between items-center">
+                  <div><span className="text-xs font-bold text-[var(--text-primary)] block truncate max-w-[220px]">{item.name}</span></div>
+                  <div className="text-right"><span className="text-xs font-bold font-mono text-[var(--text-primary)]">${item.totalCost.toLocaleString()}</span></div>
                 </div>
               ))}
             </div>
 
-            <div className="border-t border-slate-800 pt-4 space-y-2 text-xs font-mono text-slate-400">
+            <div className="border-t border-[var(--border)] pt-4 space-y-2 text-xs font-mono text-[var(--text-tertiary)]">
               <div className="flex justify-between">
                 <span>Subtotal Hardware & Labor:</span>
-                <span className="text-slate-200 font-semibold">KSh {results.subtotalCapExKSh?.toLocaleString() || subtotalCapExUSD.toLocaleString()} | ${(results.subtotalCapExUSD || subtotalCapExUSD).toLocaleString()}</span>
+                <span className="text-[var(--text-primary)] font-semibold">KSh {results.subtotalCapExKSh?.toLocaleString() || subtotalCapExUSD.toLocaleString()} | ${(results.subtotalCapExUSD || subtotalCapExUSD).toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span>Project Contingency ({results.inputs.contingencyPercent}%):</span>
-                <span className="text-slate-200 font-semibold">${(results.contingencyUSD || contingencyUSD).toLocaleString()}</span>
+                <span className="text-[var(--text-primary)] font-semibold">${(results.contingencyUSD || contingencyUSD).toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span>EPC Contractor Margin ({results.inputs.epcMarginPercent}%):</span>
-                <span className="text-slate-200 font-semibold">${(results.epcMarginUSD || epcMarginUSD).toLocaleString()}</span>
+                <span className="text-[var(--text-primary)] font-semibold">${(results.epcMarginUSD || epcMarginUSD).toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-sm text-emerald-400 font-bold border-t border-dashed border-slate-800 pt-2">
+              <div className="flex justify-between text-sm text-[var(--battery)] font-bold border-t border-dashed border-[var(--border)] pt-2">
                 <span>TOTAL INSTALLED CAPEX:</span>
                 <span>KSh {results.totalCapExKSh?.toLocaleString() || totalCapExUSD.toLocaleString()} | ${(results.totalCapExUSD || totalCapExUSD).toLocaleString()}</span>
               </div>
@@ -622,67 +592,65 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
           </div>
 
           {/* OpEx Ledger & Annual Operating Savings */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm space-y-4 flex flex-col justify-between">
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-6 shadow-sm space-y-4 flex flex-col justify-between">
             <div>
-              <div className="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
-                <h3 className="text-sm font-bold text-slate-200">Annual Operational Expenditure (OpEx)</h3>
-                <span className="text-xs font-semibold text-slate-400">Year 1 Comparative Ledger</span>
+              <div className="flex justify-between items-center border-b border-[var(--border)] pb-3 mb-4">
+                <h3 className="text-sm font-bold text-[var(--text-primary)]">Annual Operational Expenditure (OpEx)</h3>
+                <span className="text-xs font-semibold text-[var(--text-tertiary)]">Year 1 Comparative Ledger</span>
               </div>
 
-              {/* Comparative baseline vs solar */}
               <div className="grid grid-cols-2 gap-4 mb-4 text-center">
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-850">
-                  <span className="text-[10px] text-slate-500 font-mono uppercase block">Grid Baseline (No Solar)</span>
-                  <span className="text-base font-extrabold text-red-400 font-mono">${baselineAnnualCostUSD.toLocaleString()}</span>
-                  <span className="text-[9px] text-slate-500 block mt-1">
+                <div className="bg-[var(--bg-card-muted)] p-3 rounded-lg border border-[var(--border)]">
+                  <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase block">Grid Baseline (No Solar)</span>
+                  <span className="text-base font-extrabold text-red-600 font-mono">${baselineAnnualCostUSD.toLocaleString()}</span>
+                  <span className="text-[9px] text-[var(--text-muted)] block mt-1">
                     Grid: ${annualGridBillWithoutSolarUSD.toLocaleString()} | Fuel: ${annualDieselCostWithoutSolarUSD.toLocaleString()}
                   </span>
                 </div>
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-850">
-                  <span className="text-[10px] text-slate-500 font-mono uppercase block">Proposed System OpEx</span>
-                  <span className="text-base font-extrabold text-emerald-400 font-mono">${totalAnnualOpExUSD.toLocaleString()}</span>
-                  <span className="text-[9px] text-slate-500 block mt-1">
+                <div className="bg-[var(--bg-card-muted)] p-3 rounded-lg border border-[var(--border)]">
+                  <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase block">Proposed System OpEx</span>
+                  <span className="text-base font-extrabold text-[var(--battery)] font-mono">${totalAnnualOpExUSD.toLocaleString()}</span>
+                  <span className="text-[9px] text-[var(--text-muted)] block mt-1">
                     Grid: ${annualGridBillWithSolarUSD.toLocaleString()} | Fuel: ${annualDieselCostWithSolarUSD.toLocaleString()}
                   </span>
                 </div>
               </div>
 
-              {/* OpEx Breakdown */}
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono block mb-2">
+              <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider font-mono block mb-2">
                 Itemized Operating Costs:
               </span>
-              <div className="space-y-2.5 text-xs text-slate-300 font-mono">
-                <div className="flex justify-between py-1.5 border-b border-slate-800/40">
-                  <span className="text-slate-400">Net Utility Grid Electricity Bill:</span>
-                  <span className="text-slate-200">${annualGridBillWithSolarUSD.toLocaleString()}</span>
+              <div className="space-y-2.5 text-xs text-[var(--text-secondary)] font-mono">
+                <div className="flex justify-between py-1.5 border-b border-[var(--border)]">
+                  <span className="text-[var(--text-tertiary)]">Net Utility Grid Electricity Bill:</span>
+                  <span className="text-[var(--text-primary)]">${annualGridBillWithSolarUSD.toLocaleString()}</span>
                 </div>
                 {annualDieselCostWithSolarUSD > 0 && (
-                  <div className="flex justify-between py-1.5 border-b border-slate-800/40">
-                    <span className="text-slate-400">Backup Diesel Generator Fuel ({annualDieselFuelLiters} L):</span>
-                    <span className="text-slate-200">${annualDieselCostWithSolarUSD.toLocaleString()}</span>
+                  <div className="flex justify-between py-1.5 border-b border-[var(--border)]">
+                    <span className="text-[var(--text-tertiary)]">Backup Diesel Generator Fuel ({annualDieselFuelLiters} L):</span>
+                    <span className="text-[var(--text-primary)]">${annualDieselCostWithSolarUSD.toLocaleString()}</span>
                   </div>
                 )}
-                <div className="flex justify-between py-1.5 border-b border-slate-800/40">
-                  <span className="text-slate-400">System O&M (Cleaning & Inverter Sinking):</span>
-                  <span className="text-slate-200">${annualMaintenanceUSD.toLocaleString()}</span>
+                <div className="flex justify-between py-1.5 border-b border-[var(--border)]">
+                  <span className="text-[var(--text-tertiary)]">System O&M (Cleaning & Inverter Sinking):</span>
+                  <span className="text-[var(--text-primary)]">${annualMaintenanceUSD.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between py-1.5 border-b border-slate-800/40">
-                  <span className="text-slate-400">Equipment Comprehensive Insurance:</span>
-                  <span className="text-slate-200">${annualInsuranceUSD.toLocaleString()}</span>
+                <div className="flex justify-between py-1.5 border-b border-[var(--border)]">
+                  <span className="text-[var(--text-tertiary)]">Equipment Comprehensive Insurance:</span>
+                  <span className="text-[var(--text-primary)]">${annualInsuranceUSD.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between py-1.5 border-b border-slate-800/40">
-                  <span className="text-slate-400">Battery Replacement Sinking Fund (Year 10-12):</span>
-                  <span className="text-slate-200">${annualBatteryReserveUSD.toLocaleString()}</span>
+                <div className="flex justify-between py-1.5 border-b border-[var(--border)]">
+                  <span className="text-[var(--text-tertiary)]">Battery Replacement Sinking Fund (Year 10-12):</span>
+                  <span className="text-[var(--text-primary)]">${annualBatteryReserveUSD.toLocaleString()}</span>
                 </div>
               </div>
             </div>
 
-            <div className="border-t border-slate-800 pt-4 bg-emerald-950/20 border border-emerald-900/40 rounded-xl p-4 flex justify-between items-center mt-4">
+            <div className="border-t border-[var(--border)] pt-4 bg-[var(--battery-soft)] border border-[var(--battery)]/20 rounded-xl p-4 flex justify-between items-center mt-4">
               <div>
-                <span className="text-[10px] text-slate-400 font-bold uppercase block font-mono">Net Year 1 Operating Cash Savings:</span>
-                <span className="text-xs text-slate-400">Proposed CapEx returns these cash gains annually.</span>
+                <span className="text-[10px] text-[var(--text-tertiary)] font-bold uppercase block font-mono">Net Year 1 Operating Cash Savings:</span>
+                <span className="text-xs text-[var(--text-tertiary)]">Proposed CapEx returns these cash gains annually.</span>
               </div>
-              <span className="text-xl font-black text-emerald-400 font-mono">${annualSavingsUSD.toLocaleString()} / yr</span>
+              <span className="text-xl font-black text-[var(--battery)] font-mono">${annualSavingsUSD.toLocaleString()} / yr</span>
             </div>
           </div>
         </div>
@@ -690,16 +658,16 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
 
       {/* Tab 3: 25-Year Cash Flow Projection */}
       {activeTab === 'cashflow' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm space-y-6">
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-6 shadow-sm space-y-6">
           <div>
-            <h3 className="text-sm font-bold text-slate-200">25-Year Cumulative Cash Flow Curve & Breakeven</h3>
-            <p className="text-xs text-slate-400">
+            <h3 className="text-sm font-bold text-[var(--text-primary)]">25-Year Cumulative Cash Flow Curve & Breakeven</h3>
+            <p className="text-xs text-[var(--text-tertiary)]">
               Visualizes the initial capital investment outlay (negative) recouping via annual operating savings. Crossover at Year {simplePaybackYears}.
             </p>
           </div>
 
           {/* SVG Cash Flow Curve */}
-          <div className="bg-slate-950 rounded-xl p-2 border border-slate-850">
+          <div className="bg-[var(--bg-secondary)] rounded-xl p-2 border border-[var(--border)]">
             <svg viewBox={`0 0 ${cfChartWidth} ${cfChartHeight}`} className="w-full h-auto select-none">
               {/* Zero Reference Line */}
               <line
@@ -707,7 +675,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                 y1={getCFY(0)}
                 x2={cfChartWidth - paddingRight}
                 y2={getCFY(0)}
-                className="stroke-slate-700"
+                className="stroke-[var(--border)]"
                 strokeWidth="1.5"
                 strokeDasharray="2 2"
               />
@@ -720,7 +688,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                   y1={r * cfChartHeight}
                   x2={cfChartWidth - paddingRight}
                   y2={r * cfChartHeight}
-                  className="stroke-slate-900"
+                  className="stroke-[var(--border)]"
                   strokeWidth="1"
                 />
               ))}
@@ -741,7 +709,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                     y1={10}
                     x2={getCFX(Math.floor(simplePaybackYears))}
                     y2={cfChartHeight - 20}
-                    className="stroke-emerald-500/30"
+                    className="stroke-[var(--battery)]/40"
                     strokeWidth="1.5"
                     strokeDasharray="3 3"
                   />
@@ -749,7 +717,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                     cx={getCFX(Math.floor(simplePaybackYears))}
                     cy={getCFY(0)}
                     r="6"
-                    className="fill-emerald-400 stroke-slate-950 shadow-lg"
+                    className="fill-[var(--battery)] stroke-white shadow-lg"
                     strokeWidth="2.5"
                   />
                 </g>
@@ -758,7 +726,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
               {/* Cumulative Line Path */}
               <path
                 d={cfLinePath}
-                className="stroke-emerald-400 fill-none"
+                className="stroke-[var(--battery)] fill-none"
                 strokeWidth="3"
                 strokeLinecap="round"
               />
@@ -770,13 +738,13 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                     cx={getCFX(y)}
                     cy={getCFY(cashFlows[y].cumulativeCashFlow)}
                     r="4"
-                    className="fill-slate-950 stroke-emerald-500"
+                    className="fill-white stroke-[var(--battery)]"
                     strokeWidth="1.5"
                   />
                   <text
                     x={getCFX(y)}
                     y={getCFY(cashFlows[y].cumulativeCashFlow) - 8}
-                    className="fill-slate-400 text-[8px] font-mono"
+                    className="fill-[var(--text-tertiary)] text-[8px] font-mono"
                     textAnchor="middle"
                   >
                     ${Math.round(cashFlows[y].cumulativeCashFlow / 1000)}k
@@ -784,7 +752,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                   <text
                     x={getCFX(y)}
                     y={cfChartHeight - 8}
-                    className="fill-slate-500 text-[8px] font-mono"
+                    className="fill-[var(--text-muted)] text-[8px] font-mono"
                     textAnchor="middle"
                   >
                     Y{y}
@@ -796,7 +764,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
               <text
                 x={getCFX(Math.floor(simplePaybackYears)) + 10}
                 y={getCFY(0) - 8}
-                className="fill-emerald-400 text-[9px] font-bold font-mono"
+                className="fill-[var(--battery)] text-[9px] font-bold font-mono"
                 textAnchor="start"
               >
                 Breakeven: {simplePaybackYears} years
@@ -807,43 +775,39 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
           {/* Cash Flow Spreadsheet Table */}
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-xs font-bold text-slate-300 uppercase tracking-wider font-mono">
+              <span className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider font-mono">
                 Project Lifecycle Economic Cash Flow Ledger:
               </span>
               <button
                 onClick={() => setShowFullTable(!showFullTable)}
-                className="text-xs text-emerald-400 font-semibold flex items-center gap-1 hover:text-emerald-300"
+                className="text-xs text-[var(--battery)] font-semibold flex items-center gap-1 hover:text-[var(--battery)]"
               >
                 {showFullTable ? (
-                  <>
-                    Show Fewer Years <ChevronUp className="w-3.5 h-3.5" />
-                  </>
+                  <>Show Fewer Years <ChevronUp className="w-3.5 h-3.5" /></>
                 ) : (
-                  <>
-                    Show All 25 Years <ChevronDown className="w-3.5 h-3.5" />
-                  </>
+                  <>Show All 25 Years <ChevronDown className="w-3.5 h-3.5" /></>
                 )}
               </button>
             </div>
 
-            <div className="overflow-x-auto border border-slate-800 rounded-lg">
+            <div className="overflow-x-auto border border-[var(--border)] rounded-lg">
               <table className="w-full text-left border-collapse text-xs font-mono">
                 <thead>
-                  <tr className="bg-slate-950 border-b border-slate-800 text-slate-400 text-[10px] uppercase">
+                  <tr className="bg-[var(--bg-card-muted)] border-b border-[var(--border)] text-[var(--text-tertiary)] text-[10px] uppercase">
                     <th className="py-2.5 px-4 text-center">Year</th>
                     <th className="py-2.5 px-4 text-right">Cost Without Solar</th>
                     <th className="py-2.5 px-4 text-right">Cost With Solar</th>
-                    <th className="py-2.5 px-4 text-right text-emerald-400">Annual Savings</th>
+                    <th className="py-2.5 px-4 text-right text-[var(--battery)]">Annual Savings</th>
                     <th className="py-2.5 px-4 text-right">Cumulative Cash Flow</th>
                     <th className="py-2.5 px-4 text-center">ROI Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/50 text-slate-300">
+                <tbody className="divide-y divide-[var(--border)] text-[var(--text-secondary)]">
                   {cashFlows
                     .filter((_, idx) => showFullTable || idx <= 8 || idx === 15 || idx === 25)
                     .map((cf) => (
-                      <tr key={cf.year} className="hover:bg-slate-950/40 transition">
-                        <td className="py-2 px-4 text-center font-bold text-slate-400">
+                      <tr key={cf.year} className="hover:bg-[var(--bg-card-muted)] transition">
+                        <td className="py-2 px-4 text-center font-bold text-[var(--text-tertiary)]">
                           {cf.year === 0 ? 'Year 0' : `Year ${cf.year}`}
                         </td>
                         <td className="py-2 px-4 text-right">
@@ -854,23 +818,23 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                             ? `-$${totalCapExUSD.toLocaleString()}`
                             : `-$${Math.abs(cf.cashFlowWithSolar).toLocaleString()}`}
                         </td>
-                        <td className="py-2 px-4 text-right font-bold text-emerald-400">
+                        <td className="py-2 px-4 text-right font-bold text-[var(--battery)]">
                           {cf.year === 0 ? '-' : `+$${cf.netCashFlow.toLocaleString()}`}
                         </td>
                         <td
                           className={`py-2 px-4 text-right font-bold ${
-                            cf.cumulativeCashFlow < 0 ? 'text-red-400' : 'text-emerald-400'
+                            cf.cumulativeCashFlow < 0 ? 'text-red-600' : 'text-[var(--battery)]'
                           }`}
                         >
                           {cf.cumulativeCashFlow < 0 ? '-' : ''}${Math.abs(cf.cumulativeCashFlow).toLocaleString()}
                         </td>
                         <td className="py-2 px-4 text-center">
                           {cf.year === 0 ? (
-                            <span className="text-red-400 text-[10px]">Capital Outlay</span>
+                            <span className="text-red-600 text-[10px]">Capital Outlay</span>
                           ) : cf.cumulativeCashFlow < 0 ? (
-                            <span className="text-slate-500 text-[10px]">Amortizing</span>
+                            <span className="text-[var(--text-muted)] text-[10px]">Amortizing</span>
                           ) : (
-                            <span className="bg-emerald-950 text-emerald-400 text-[9px] px-1.5 py-0.5 rounded font-bold border border-emerald-900 uppercase">
+                            <span className="bg-[var(--battery-soft)] text-[var(--battery)] text-[9px] px-1.5 py-0.5 rounded font-bold border border-[var(--battery)]/30 uppercase">
                               Net Profit
                             </span>
                           )}
@@ -879,7 +843,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                     ))}
                   {!showFullTable && (
                     <tr>
-                      <td colSpan={6} className="py-2.5 px-4 text-center text-[10px] text-slate-500 bg-slate-950/20 italic">
+                      <td colSpan={6} className="py-2.5 px-4 text-center text-[10px] text-[var(--text-muted)] bg-[var(--bg-card-muted)] italic">
                         * Mid-years truncated for readability. Click &quot;Show All 25 Years&quot; to expand complete projection spreadsheet.
                       </td>
                     </tr>
@@ -892,16 +856,16 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
       )}
 
       {/* 4. Action Bar for Bankable Proposal */}
-      <div className="bg-gradient-to-r from-blue-950 to-slate-900 border border-blue-800/40 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center gap-6 shadow-lg shadow-blue-950/20">
+      <div className="bg-[var(--grid-soft)] border border-[var(--grid)]/20 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center gap-6 shadow-lg">
         <div className="flex items-start gap-4">
-          <div className="p-3 bg-blue-900/50 text-emerald-400 rounded-xl border border-blue-700/60 mt-1">
+          <div className="p-3 bg-white/60 text-[var(--battery)] rounded-xl border border-[var(--border)] mt-1">
             <CheckCircle2 className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="font-bold text-slate-100 text-base flex items-center gap-2">
+            <h3 className="font-bold text-[var(--text-primary)] text-base flex items-center gap-2">
               Techno-Economic Sizing Complete
             </h3>
-            <p className="text-xs text-slate-400 max-w-lg leading-relaxed mt-1">
+            <p className="text-xs text-[var(--text-tertiary)] max-w-lg leading-relaxed mt-1">
               Your parametric modeling calculations have successfully converged. A bankable, investment-grade feasibility proposal is ready for client review.
             </p>
           </div>
@@ -909,7 +873,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
 
         <button
           onClick={onViewProposal}
-          className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-sm px-6 py-3 rounded-xl transition shadow-lg shadow-emerald-500/20 flex items-center gap-2 active:scale-95 whitespace-nowrap"
+          className="bg-[var(--battery)] hover:bg-emerald-700 text-white font-bold text-sm px-6 py-3 rounded-xl transition shadow-lg shadow-emerald-500/20 flex items-center gap-2 active:scale-95 whitespace-nowrap"
         >
           <FileText className="w-4 h-4" /> Generate Bankable PDF Proposal
         </button>

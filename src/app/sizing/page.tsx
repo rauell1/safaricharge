@@ -26,26 +26,26 @@ export default function SizingPage() {
   }, [inputs]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       {/* Header */}
-      <div className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-sm sticky top-0 z-10">
+      <div className="border-b border-[var(--border)] bg-[var(--bg-card)]/90 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-[1600px] mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/demo" className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition font-mono">
+            <Link href="/demo" className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition font-mono">
               <ArrowLeft className="w-3.5 h-3.5" />
               Back to Dashboard
             </Link>
-            <div className="w-px h-4 bg-slate-800" />
+            <div className="w-px h-4 bg-[var(--border)]" />
             <div className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-md bg-emerald-500 flex items-center justify-center font-black text-slate-950 text-xs">S</span>
-              <span className="text-sm font-bold text-white font-mono tracking-tight">
-                Safari<span className="text-emerald-400">Charge</span>
-                <span className="text-slate-500 font-normal ml-2">/ Parametric Sizing Engine</span>
+              <span className="w-6 h-6 rounded-md bg-[var(--battery)] flex items-center justify-center font-black text-white text-xs">S</span>
+              <span className="text-sm font-bold text-[var(--text-primary)] font-mono tracking-tight">
+                Safari<span className="text-[var(--battery)]">Charge</span>
+                <span className="text-[var(--text-muted)] font-normal ml-2">/ Parametric Sizing Engine</span>
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-[10px] font-mono text-slate-500">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <div className="flex items-center gap-2 text-[10px] font-mono text-[var(--text-muted)]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--battery)] animate-pulse" />
             Live Simulation
           </div>
         </div>
@@ -68,8 +68,8 @@ export default function SizingPage() {
                 onViewProposal={() => setShowProposal(true)}
               />
             ) : (
-              <div className="flex flex-col items-center justify-center h-64 text-slate-500 space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center">
+              <div className="flex flex-col items-center justify-center h-64 text-[var(--text-muted)] space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] flex items-center justify-center">
                   <span className="text-2xl">⚡</span>
                 </div>
                 <p className="text-sm font-mono">Adjust parameters to run simulation...</p>
