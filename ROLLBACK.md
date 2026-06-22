@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 310 | `rollback/merge-branch-main-of-github-com-rauell-2026-06-22-88b01f8` | `88b01f8` | Merge branch 'main' of github.com:rauell1/safaricharge (3f +18/-3) | 2026-06-22 |
 | 309 | `rollback/style-brand-redesign-all-pages-for-lig-2026-06-22-50f6a08` | `50f6a08` | style(brand): redesign all pages for light-mode consistency, improve transitions, unify footer logo, and enforce dashboard auth gating (8f +169/-152) | 2026-06-22 |
 | 308 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-06-22-9eebb41` | `9eebb41` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-06-22 |
 | 307 | `rollback/fix-sizing-audit-solarcalculator-again-2026-06-22-b879d48` | `b879d48` | fix(sizing): audit solarCalculator against Excel and surface engineering warnings (2f +74/-39) | 2026-06-22 |
@@ -3256,6 +3257,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: style(brand): redesign all pages for light-mode consistency, improve transitions, unify footer logo, and enforce dashboard auth gating
 - **Date**: 2026-06-22
 - **Changed**: 8 file(s), +169/-152 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #310 — `rollback/merge-branch-main-of-github-com-rauell-2026-06-22-88b01f8`
+
+- **Branch**: `rollback/merge-branch-main-of-github-com-rauell-2026-06-22-88b01f8`
+- **Commit**: `88b01f824799c5926ecb30023d483c1991f20d73`
+- **Subject**: Merge branch 'main' of github.com:rauell1/safaricharge
+- **Date**: 2026-06-22
+- **Changed**: 3 file(s), +18/-3 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
