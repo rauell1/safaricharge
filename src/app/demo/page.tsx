@@ -60,7 +60,7 @@ import { PVSizingSection } from '@/components/configuration/PVSizingSection';
 import { RecommendationComponents } from '@/components/energy/RecommendationComponents';
 import { SimulationNodes } from '@/components/simulation/SimulationNodes';
 import { ValidationPanel } from '@/components/simulation/ValidationPanel';
-import { SizingDispatchPanel } from '@/components/simulation/SizingDispatchPanel';
+import { SizingDispatchPanel, buildInputs as buildSizingInputs } from '@/components/simulation/SizingDispatchPanel';
 import { SimpleDashboard } from '@/components/simulation/SimpleDashboard';
 import { SafariChargeAIAssistant } from '@/components/ai/AIAssistant';
 import { ScenariosTabView } from '@/components/scenarios/ScenariosTabView';
@@ -1709,8 +1709,35 @@ function DemoSimulationView({
         ? Math.min(100, ((totalConsumptionKwh - totalGridImportKwh) / totalConsumptionKwh) * 100)
         : 0;
       
+      // Compute sizing snapshot for hardware BOM + financial storage
+      let sizingSnapshot: Record<string, unknown> | undefined;
+      try {
+        const { runSimulation } = await import('@/lib/sizing/solarCalculator');
+        const sizingInputs = buildSizingInputs(systemConfig, activeLocation.name);
+        const sizingResults = runSimulation(sizingInputs);
+        sizingSnapshot = {
+          solarCapacityKWp: sizingResults.solarCapacityKWp,
+          batteryCapacityKWh: sizingResults.batteryCapacityKWh,
+          inverterCapacityKW: sizingResults.inverterCapacityKW,
+          totalCapExKSh: sizingResults.totalCapExKSh,
+          totalCapExUSD: sizingResults.totalCapExUSD,
+          annualSavingsUSD: sizingResults.annualSavingsUSD,
+          annualPVGeneratedKWh: sizingResults.annualPVGeneratedKWh,
+          systemAutonomyPercent: sizingResults.systemAutonomyPercent,
+          simplePaybackYears: sizingResults.simplePaybackYears,
+          irrPercent: sizingResults.irrPercent,
+          npvUSD: sizingResults.npvUSD,
+          lcoeUSDPerKWh: sizingResults.lcoeUSDPerKWh,
+          panel: sizingResults.bomLineItems.find(b => b.section === '1. Solar PV Modules')?.description ?? '',
+          battery: sizingResults.bomLineItems.find(b => b.section === '2. Energy Storage' && b.itemNumber === '2')?.description ?? '',
+          inverter: sizingResults.bomLineItems.find(b => b.section === '3. Inverter & Monitoring' && b.itemNumber === '6')?.description ?? '',
+        };
+      } catch {
+        // sizing snapshot is best-effort; don't block the save if it fails
+      }
+
       const runName = `Sim - ${new Date().toLocaleString()}`;
-      
+
       await saveSimulationRun({
         name: runName,
         solarCapacityKw: systemConfig.solarCapacityKW,
@@ -1720,6 +1747,7 @@ function DemoSimulationView({
         locationName: activeLocation.displayName,
         latitude: activeLocation.latitude,
         longitude: activeLocation.longitude,
+        sizingSnapshot,
         summaryJson: {
           totalSolarKwh,
           totalLoadKwh,

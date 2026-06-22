@@ -208,6 +208,8 @@ export interface SaveSimulationRunInput {
   longitude?: number;
   summaryJson: Record<string, unknown>;
   minuteData: SimulationMinutePoint[];
+  /** BOM / financial snapshot from the sizing engine (stored in sizing_snapshot column) */
+  sizingSnapshot?: Record<string, unknown>;
 }
 
 /**
@@ -257,6 +259,7 @@ export async function saveSimulationRun(
     p_longitude: run.longitude ?? null,
     p_summary_json: run.summaryJson,
     p_minute_data: minuteData,
+    p_sizing_snapshot: run.sizingSnapshot ?? null,
   });
 
   if (error) {

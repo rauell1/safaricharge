@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { ExternalLink, Zap, TrendingUp, Sun, Cable } from 'lucide-react';
+import { ExternalLink, Zap, TrendingUp, Sun, Cable, AlertTriangle, Package, DollarSign } from 'lucide-react';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
 import { runSimulation } from '@/lib/sizing/solarCalculator';
 import type { SimulationInputs } from '@/lib/sizing/solarCalculator';
@@ -18,7 +18,7 @@ import {
 
 // ─── Bridge: store config → SimulationInputs ────────────────────────────────
 
-function buildInputs(
+export function buildInputs(
   systemConfig: {
     solarCapacityKW: number;
     batteryCapacityKWh: number;
@@ -133,7 +133,6 @@ function DispatchChart({
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[280px]" aria-label="24-hour dispatch chart">
-      {/* Grid lines */}
       {[0.25, 0.5, 0.75, 1].map((f) => (
         <line
           key={f}
@@ -146,35 +145,17 @@ function DispatchChart({
           strokeDasharray="3 3"
         />
       ))}
-
-      {/* Grid import area */}
       <path d={toArea(gridImp, maxPow)} fill="rgba(59,130,246,0.12)" />
-
-      {/* Solar area */}
       <path d={toArea(solar, maxPow)} fill="rgba(251,191,36,0.12)" />
-
-      {/* Lines */}
       <path d={toLine(gridImp, maxPow)} fill="none" stroke="#3b82f6" strokeWidth={1.5} />
       <path d={toLine(solar, maxPow)} fill="none" stroke="#fbbf24" strokeWidth={2} />
       <path d={toLine(load, maxPow)} fill="none" stroke="#f87171" strokeWidth={1.5} strokeDasharray="5 3" />
       <path d={soc.map((v, i) => `${i === 0 ? 'M' : 'L'}${px(i).toFixed(1)},${socPy(v).toFixed(1)}`).join(' ')} fill="none" stroke="#34d399" strokeWidth={1.5} strokeDasharray="2 2" />
-
-      {/* X-axis labels */}
       {hourLabels.map((h) => (
-        <text
-          key={h}
-          x={px(h)}
-          y={H - 4}
-          textAnchor="middle"
-          fontSize={9}
-          fill="var(--text-tertiary)"
-          fontFamily="monospace"
-        >
+        <text key={h} x={px(h)} y={H - 4} textAnchor="middle" fontSize={9} fill="var(--text-tertiary)" fontFamily="monospace">
           {String(h).padStart(2, '0')}h
         </text>
       ))}
-
-      {/* Y-axis label */}
       <text x={padL - 4} y={padT + cH / 2} textAnchor="end" fontSize={9} fill="var(--text-tertiary)" fontFamily="monospace">
         {maxPow.toFixed(0)}kW
       </text>
@@ -202,6 +183,33 @@ function KpiChip({
         <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</span>
       </div>
       <div className={`text-base font-black tabular-nums ${color}`}>{value}</div>
+    </div>
+  );
+}
+
+// ─── Hardware row ─────────────────────────────────────────────────────────────
+
+function HardwareRow({
+  label,
+  description,
+  qty,
+  unit,
+  totalKSh,
+}: {
+  label: string;
+  description: string;
+  qty: number;
+  unit: string;
+  totalKSh: number;
+}) {
+  return (
+    <div className="grid grid-cols-[auto_1fr_auto_auto] gap-x-3 items-center rounded-lg bg-[var(--bg-card-muted)] px-3 py-2">
+      <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--text-tertiary)] w-14 shrink-0">{label}</span>
+      <span className="text-xs text-[var(--text-primary)] truncate">{description}</span>
+      <span className="text-[11px] text-[var(--text-tertiary)] tabular-nums whitespace-nowrap">×{qty} {unit}</span>
+      <span className="text-[11px] font-bold text-[var(--text-primary)] tabular-nums whitespace-nowrap text-right">
+        KSh {totalKSh.toLocaleString()}
+      </span>
     </div>
   );
 }
@@ -251,12 +259,31 @@ export function SizingDispatchPanel() {
     lcoeUSDPerKWh,
     cableSizingResults,
     totalCapExKSh,
+    subtotalCapExKSh,
+    contingencyKSh,
+    epcMarginKSh,
     npvUSD,
+    irrPercent,
+    annualSavingsUSD,
+    bomLineItems,
+    pvOversizeWarning,
+    batteryVoltageWarning,
   } = results;
 
+  // All monetary display in KSh
+  const npvKSh = Math.round(npvUSD * KSH_PER_USD);
+  const annualSavingsKSh = Math.round(annualSavingsUSD * KSH_PER_USD);
   const lcoeKSh = (lcoeUSDPerKWh * KSH_PER_USD).toFixed(1);
-  const selfSuff = systemAutonomyPercent.toFixed(0);
-  const payback = simplePaybackYears > 0 ? `${simplePaybackYears.toFixed(1)} yr` : '—';
+
+  const payback = simplePaybackYears > 0 && simplePaybackYears < 99
+    ? `${simplePaybackYears.toFixed(1)} yr`
+    : '—';
+
+  // Pull the three main hardware products from the BOM
+  const pvRow    = bomLineItems.find(b => b.section === '1. Solar PV Modules');
+  const battRow  = bomLineItems.find(b => b.section === '2. Energy Storage' && b.itemNumber === '2');
+  const invRow   = bomLineItems.find(b => b.section === '3. Inverter & Monitoring' && b.itemNumber === '6');
+  const bosKSh   = totalCapExKSh - (pvRow?.totalKSh ?? 0) - (battRow?.totalKSh ?? 0) - (invRow?.totalKSh ?? 0);
 
   return (
     <div className="space-y-4 py-2">
@@ -267,8 +294,7 @@ export function SizingDispatchPanel() {
             Parametric Dispatch Analysis
           </h3>
           <p className="text-xs text-[var(--text-tertiary)]">
-            {solarCapacityKWp.toFixed(1)} kWp · {battKWh.toFixed(1)} kWh · {activeLocation.displayName} ·
-            24-hour theoretical dispatch
+            {solarCapacityKWp.toFixed(1)} kWp · {battKWh.toFixed(1)} kWh · {activeLocation.displayName} · 24-hour theoretical dispatch
           </p>
         </div>
         <Link
@@ -280,51 +306,126 @@ export function SizingDispatchPanel() {
         </Link>
       </div>
 
+      {/* Engineering validation warnings */}
+      {(pvOversizeWarning || batteryVoltageWarning) && (
+        <div className="space-y-2">
+          {pvOversizeWarning && (
+            <div className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              <span>{pvOversizeWarning}</span>
+            </div>
+          )}
+          {batteryVoltageWarning && (
+            <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-400">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              <span>{batteryVoltageWarning}</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* KPI chips */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <KpiChip
-          icon={Sun}
-          label="Solar Gen / yr"
-          value={`${(annualPVGeneratedKWh / 1000).toFixed(1)} MWh`}
-          color="text-amber-400"
-        />
-        <KpiChip
-          icon={Zap}
-          label="Self-Sufficiency"
-          value={`${selfSuff}%`}
-          color="text-emerald-400"
-        />
-        <KpiChip
-          icon={TrendingUp}
-          label="Simple Payback"
-          value={payback}
-          color="text-sky-400"
-        />
-        <KpiChip
-          icon={TrendingUp}
-          label="LCOE"
-          value={`${lcoeKSh} KSh/kWh`}
-          color="text-violet-400"
-        />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+        <KpiChip icon={Sun} label="Solar / yr" value={`${(annualPVGeneratedKWh / 1000).toFixed(1)} MWh`} color="text-amber-400" />
+        <KpiChip icon={Zap} label="Self-Suff." value={`${systemAutonomyPercent.toFixed(0)}%`} color="text-emerald-400" />
+        <KpiChip icon={TrendingUp} label="Payback" value={payback} color="text-sky-400" />
+        <KpiChip icon={TrendingUp} label="IRR" value={`${irrPercent.toFixed(1)}%`} color="text-violet-400" />
+        <KpiChip icon={DollarSign} label="LCOE" value={`${lcoeKSh} KSh/kWh`} color="text-orange-400" />
+        <KpiChip icon={TrendingUp} label="25yr NPV" value={`KSh ${(npvKSh / 1_000_000).toFixed(2)} M`} color={npvKSh >= 0 ? 'text-emerald-400' : 'text-red-400'} />
       </div>
 
       {/* 24h dispatch chart */}
       <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3 overflow-x-auto">
         <div className="flex flex-wrap items-center gap-3 mb-2 text-[10px] text-[var(--text-tertiary)]">
-          <span className="flex items-center gap-1">
-            <span className="inline-block w-2 h-0.5 rounded bg-amber-400" /> Solar
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="inline-block w-2 h-0.5 rounded bg-red-400" style={{ borderTop: '1px dashed #f87171', background: 'transparent' }} /> Load
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="inline-block w-2 h-0.5 rounded bg-blue-400" /> Grid import
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="inline-block w-2 h-0.5 rounded bg-emerald-400" style={{ borderTop: '1px dotted #34d399', background: 'transparent' }} /> Batt SoC %
-          </span>
+          <span className="flex items-center gap-1"><span className="inline-block w-2 h-0.5 rounded bg-amber-400" /> Solar</span>
+          <span className="flex items-center gap-1"><span className="inline-block w-3 border-t border-dashed border-red-400" /> Load</span>
+          <span className="flex items-center gap-1"><span className="inline-block w-2 h-0.5 rounded bg-blue-400" /> Grid import</span>
+          <span className="flex items-center gap-1"><span className="inline-block w-3 border-t border-dotted border-emerald-400" /> Batt SoC %</span>
         </div>
         <DispatchChart rows={hourlyProfile} />
+      </div>
+
+      {/* Hardware BOM — main products */}
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3">
+        <div className="flex items-center gap-1.5 mb-2.5">
+          <Package className="h-3.5 w-3.5 text-[var(--solar)]" />
+          <span className="text-xs font-semibold text-[var(--text-secondary)]">Bill of Materials — Main Equipment</span>
+        </div>
+        <div className="space-y-1.5">
+          {pvRow && (
+            <HardwareRow
+              label="PV"
+              description={pvRow.description}
+              qty={pvRow.qty}
+              unit="pcs"
+              totalKSh={pvRow.totalKSh}
+            />
+          )}
+          {battRow && (
+            <HardwareRow
+              label="Battery"
+              description={battRow.description}
+              qty={battRow.qty}
+              unit="pcs"
+              totalKSh={battRow.totalKSh}
+            />
+          )}
+          {invRow && (
+            <HardwareRow
+              label="Inverter"
+              description={invRow.description}
+              qty={invRow.qty}
+              unit="pcs"
+              totalKSh={invRow.totalKSh}
+            />
+          )}
+          {/* BOS + install + contingency + EPC */}
+          <div className="grid grid-cols-[auto_1fr_auto_auto] gap-x-3 items-center rounded-lg bg-[var(--bg-card-muted)] px-3 py-2">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--text-tertiary)] w-14 shrink-0">BOS & Inst</span>
+            <span className="text-xs text-[var(--text-tertiary)]">Cables · Mounting · Protection · Labour</span>
+            <span className="text-[11px] text-[var(--text-tertiary)]" />
+            <span className="text-[11px] font-bold text-[var(--text-primary)] tabular-nums text-right">
+              KSh {Math.max(0, bosKSh).toLocaleString()}
+            </span>
+          </div>
+          {/* Subtotal / contingency / EPC strip */}
+          <div className="mt-2 border-t border-[var(--border)] pt-2 space-y-1">
+            <div className="flex justify-between text-[10px] text-[var(--text-tertiary)]">
+              <span>Subtotal (ex contingency &amp; EPC)</span>
+              <span className="tabular-nums">KSh {subtotalCapExKSh.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-[10px] text-[var(--text-tertiary)]">
+              <span>Contingency (5%)</span>
+              <span className="tabular-nums">KSh {contingencyKSh.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-[10px] text-[var(--text-tertiary)]">
+              <span>EPC Margin (18%)</span>
+              <span className="tabular-nums">KSh {epcMarginKSh.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-xs font-bold text-[var(--text-primary)] border-t border-[var(--border)] pt-1 mt-1">
+              <span>Total CapEx (incl. VAT-ex)</span>
+              <span className="tabular-nums">KSh {totalCapExKSh.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Financial summary */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px]">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2.5">
+          <div className="text-[var(--text-tertiary)] mb-0.5">Total CapEx</div>
+          <div className="font-bold text-[var(--text-primary)] tabular-nums">KSh {(totalCapExKSh / 1_000_000).toFixed(2)} M</div>
+        </div>
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2.5">
+          <div className="text-[var(--text-tertiary)] mb-0.5">Annual Savings</div>
+          <div className="font-bold text-emerald-400 tabular-nums">KSh {annualSavingsKSh.toLocaleString()}</div>
+        </div>
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2.5">
+          <div className="text-[var(--text-tertiary)] mb-0.5">25-yr NPV</div>
+          <div className={`font-bold tabular-nums ${npvKSh >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            KSh {npvKSh >= 0 ? '+' : ''}{(npvKSh / 1_000_000).toFixed(2)} M
+          </div>
+        </div>
       </div>
 
       {/* Cable sizing */}
@@ -332,47 +433,25 @@ export function SizingDispatchPanel() {
         <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3">
           <div className="flex items-center gap-1.5 mb-2.5">
             <Cable className="h-3.5 w-3.5 text-[var(--grid)]" />
-            <span className="text-xs font-semibold text-[var(--text-secondary)]">
-              IEC 60364-5-52 Cable Sizing
-            </span>
+            <span className="text-xs font-semibold text-[var(--text-secondary)]">IEC 60364-5-52 Cable Sizing</span>
           </div>
           <div className="space-y-1">
-            {cableSizingResults.slice(0, 3).map((c) => (
+            {cableSizingResults.slice(0, 4).map((c) => (
               <div
                 key={c.circuit}
                 className="grid grid-cols-[1fr_auto_auto_auto] gap-2 text-[11px] rounded-lg bg-[var(--bg-card-muted)] px-3 py-1.5 items-center"
               >
                 <span className="text-[var(--text-secondary)] truncate">{c.circuit}</span>
-                <span className="font-bold text-[var(--text-primary)] tabular-nums">
-                  {c.recommendedSizeMM2} mm²
-                </span>
+                <span className="font-bold text-[var(--text-primary)] tabular-nums">{c.recommendedSizeMM2} mm²</span>
                 {c.parallelRuns > 1 && (
                   <span className="text-[var(--text-tertiary)]">×{c.parallelRuns}</span>
                 )}
-                <span className="text-[var(--text-tertiary)] tabular-nums">
-                  {c.designCurrentA.toFixed(0)} A
-                </span>
+                <span className="text-[var(--text-tertiary)] tabular-nums">{c.designCurrentA.toFixed(0)} A</span>
               </div>
             ))}
           </div>
         </div>
       )}
-
-      {/* Financial summary strip */}
-      <div className="grid grid-cols-2 gap-2 text-[11px]">
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2 flex items-center justify-between">
-          <span className="text-[var(--text-tertiary)]">Total CapEx</span>
-          <span className="font-bold text-[var(--text-primary)]">
-            KSh {(totalCapExKSh / 1_000_000).toFixed(2)} M
-          </span>
-        </div>
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2 flex items-center justify-between">
-          <span className="text-[var(--text-tertiary)]">25-yr NPV</span>
-          <span className={`font-bold ${npvUSD >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-            ${npvUSD >= 0 ? '+' : ''}{(npvUSD / 1000).toFixed(1)}K
-          </span>
-        </div>
-      </div>
 
       {/* Project presets */}
       <div>
