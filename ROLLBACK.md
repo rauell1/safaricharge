@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 305 | `rollback/style-brand-use-infinity-cycle-logo-co-2026-06-22-4faab22` | `4faab22` | style(brand): use infinity cycle logo consistently across website (1f +1/-1) | 2026-06-22 |
 | 304 | `rollback/feat-ux-add-simple-advanced-simulation-2026-06-21-c2ddaae` | `c2ddaae` | feat(ux): add Simple/Advanced simulation mode toggle with new dashboard (3f +674/-31) | 2026-06-21 |
 | 303 | `rollback/feat-simulation-add-parametric-dispatc-2026-06-21-0f95241` | `0f95241` | feat(simulation): add Parametric Dispatch Panel to simulation accordion (2f +403/-0) | 2026-06-21 |
 | 302 | `rollback/feat-integrate-parametric-sizing-engin-2026-06-21-2541a3a` | `2541a3a` | feat: integrate Parametric Sizing Engine at /sizing (8f +3066/-1) | 2026-06-21 |
@@ -3201,6 +3202,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat(ux): add Simple/Advanced simulation mode toggle with new dashboard
 - **Date**: 2026-06-21
 - **Changed**: 3 file(s), +674/-31 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #305 — `rollback/style-brand-use-infinity-cycle-logo-co-2026-06-22-4faab22`
+
+- **Branch**: `rollback/style-brand-use-infinity-cycle-logo-co-2026-06-22-4faab22`
+- **Commit**: `4faab22be321bcadc96d9c99650e609d76a98c3c`
+- **Subject**: style(brand): use infinity cycle logo consistently across website
+- **Date**: 2026-06-22
+- **Changed**: 1 file(s), +1/-1 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
