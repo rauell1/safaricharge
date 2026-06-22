@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 308 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-06-22-9eebb41` | `9eebb41` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-06-22 |
 | 307 | `rollback/fix-sizing-audit-solarcalculator-again-2026-06-22-b879d48` | `b879d48` | fix(sizing): audit solarCalculator against Excel and surface engineering warnings (2f +74/-39) | 2026-06-22 |
 | 306 | `rollback/docs-add-comprehensive-readme-with-arc-2026-06-22-2db868c` | `2db868c` | docs: add comprehensive README with architecture diagrams and update CLAUDE.md (2f +426/-272) | 2026-06-22 |
 | 305 | `rollback/style-brand-use-infinity-cycle-logo-co-2026-06-22-4faab22` | `4faab22` | style(brand): use infinity cycle logo consistently across website (1f +1/-1) | 2026-06-22 |
@@ -3234,6 +3235,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix(sizing): audit solarCalculator against Excel and surface engineering warnings
 - **Date**: 2026-06-22
 - **Changed**: 2 file(s), +74/-39 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #308 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-06-22-9eebb41`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-06-22-9eebb41`
+- **Commit**: `9eebb41817973bd12b3795b158ffad58895bfb45`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-06-22
+- **Changed**: 1 file(s), +1/-1 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
