@@ -64,30 +64,16 @@ function DashboardLayoutInner({
     });
   }, [router]);
 
-  // ── Site-leave guard ──────────────────────────────────────────────────────
+  // Reset transient state (sim data, local sizing config) when the user
+  // actually leaves the page (browser tab close / navigate away to another domain).
   useEffect(() => {
-    const resetTransientState = () => {
+    const handlePageHide = () => {
+      if (isExternalUploadActive()) { clearExternalUploadActive(); return; }
       useEnergySystemStore.getState().resetSystem();
       try { localStorage.removeItem(SIZING_SIMULATOR_STORAGE_KEY); } catch { /* ignore */ }
     };
-
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (isExternalUploadActive()) return;
-      event.preventDefault();
-      event.returnValue = '';
-    };
-
-    const handlePageHide = () => {
-      if (isExternalUploadActive()) { clearExternalUploadActive(); return; }
-      resetTransientState();
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
     window.addEventListener('pagehide', handlePageHide);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('pagehide', handlePageHide);
-    };
+    return () => window.removeEventListener('pagehide', handlePageHide);
   }, []);
 
   return (
