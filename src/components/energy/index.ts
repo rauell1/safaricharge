@@ -11,5 +11,5 @@ export type { ThermalDeratingPanelProps } from './ThermalDeratingPanel';
 export { GridStabilityWidget } from './GridStabilityWidget';
 export type { GridStabilityWidgetProps } from './GridStabilityWidget';
 export { EnergyReportModal } from './EnergyReportModal';
-// RecommendationComponents lives in src/components/recommendation/ — not energy/
+// RecommendationComponents lives in src/components/recommendation/ -  not energy/
 export { RecommendationComponents } from '@/components/recommendation/RecommendationComponents';

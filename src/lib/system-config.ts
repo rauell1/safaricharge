@@ -1,5 +1,5 @@
 /**
- * SafariCharge – System Configuration Types & Defaults
+ * SafariCharge - System Configuration Types & Defaults
  *
  * Defines the complete system configuration structure including dynamic loads,
  * hardware specifications, and validation functions.
@@ -152,15 +152,15 @@ export interface InverterConfig {
 }
 
 export interface BatteryConfig {
-  /** Usable capacity in kWh — always computed from (bankModules × perModuleKwh) when bankModules is set. */
+  /** Usable capacity in kWh -  always computed from (bankModules × perModuleKwh) when bankModules is set. */
   capacityKwh: number;
   /** Voltage type */
   voltage: VoltageType;
   /** Chemistry type (for degradation modeling) */
   chemistry: 'lifepo4' | 'lead-acid' | 'nmc';
-  /** Maximum charge rate in kW — always computed from datasheet when bankModules is set. */
+  /** Maximum charge rate in kW -  always computed from datasheet when bankModules is set. */
   maxChargeKw: number;
-  /** Maximum discharge rate in kW — always computed from datasheet when bankModules is set. */
+  /** Maximum discharge rate in kW -  always computed from datasheet when bankModules is set. */
   maxDischargeKw: number;
   /** Minimum reserve to maintain (% of capacity) */
   minReservePct: number;
@@ -202,9 +202,9 @@ export interface SystemConfiguration {
   /** Dynamic load configurations */
   loads: LoadConfig[];
 
-  /** Real-world PV system performance ratio derate (0.65–0.95). */
+  /** Real-world PV system performance ratio derate (0.65-0.95). */
   performanceRatio: number;
-  /** Additional partial shading loss percentage (0–50). */
+  /** Additional partial shading loss percentage (0-50). */
   shadingLossPct: number;
 
   /**
@@ -212,11 +212,11 @@ export interface SystemConfiguration {
    * These drive both physics (via catalog-physics-bridge) and UI (docs hub).
    *
    * When set, the physics engine resolves datasheet-accurate values for:
-   *   - Panel temperature coefficient (panelTempCoefficientPerDegC)
-   *   - Panel degradation (yr1 + annual)
-   *   - Bifacial gain (if module is bifacial)
-   *   - Inverter peak efficiency
-   *   - Battery round-trip efficiency
+   *  - Panel temperature coefficient (panelTempCoefficientPerDegC)
+   *  - Panel degradation (yr1 + annual)
+   *  - Bifacial gain (if module is bifacial)
+   *  - Inverter peak efficiency
+   *  - Battery round-trip efficiency
    *
    * The installed component list is built from these IDs via
    * buildInstalledComponentSummaries() so the config panel and docs hub
@@ -333,7 +333,7 @@ export const DEFAULT_EV_FLEET: EVLoadConfig = {
  * NOTE: The 60 kWh / 30 kW / 40 kW numbers in previous versions reflected the
  * legacy config constants. They are updated here to match the chosen bank spec
  * (Pylontech US5000 × 4). Adjust bankModules and the inverter preset in the UI
- * to change the bank size — all totals will recompute via resolveBatteryBankConfig.
+ * to change the bank size -  all totals will recompute via resolveBatteryBankConfig.
  */
 export const DEFAULT_SYSTEM_CONFIG: SystemConfiguration = {
   mode: 'auto',

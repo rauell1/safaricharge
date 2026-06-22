@@ -206,7 +206,7 @@ function Sidebar({
       data-side={side}
       data-slot="sidebar"
     >
-      {/* Sidebar gap spacer — no transform, no will-change, no overflow:hidden.
+      {/* Sidebar gap spacer -  no transform, no will-change, no overflow:hidden.
           These properties would create a new CSS containing block and cause
           `fixed`-position dialogs/overlays rendered inside this subtree to
           be positioned relative to this element instead of the viewport.
@@ -217,7 +217,7 @@ function Sidebar({
         className={cn(
           "relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
           "group-data-[collapsible=offcanvas]:w-0",
-          // NOTE: do NOT add rotate, scale, or translate here — it would
+          // NOTE: do NOT add rotate, scale, or translate here -  it would
           // create a stacking context that breaks fixed-position children.
           variant === "floating" || variant === "inset"
             ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
@@ -245,7 +245,7 @@ function Sidebar({
         <div
           data-sidebar="sidebar"
           data-slot="sidebar-inner"
-          // No will-change here — it would promote this element to its own
+          // No will-change here -  it would promote this element to its own
           // GPU compositing layer and create a new containing block for any
           // fixed-position descendants, collapsing their width to the sidebar
           // width instead of the full viewport width.
@@ -694,7 +694,7 @@ function SidebarMenuSubButton({
       data-size={size}
       data-active={isActive}
       className={cn(
-        // No -translate-x-px here either — same reason as SidebarMenuSub.
+        // No -translate-x-px here either -  same reason as SidebarMenuSub.
         // Visual alignment achieved through padding only.
         "text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground [&>svg]:text-sidebar-accent-foreground flex h-7 min-w-0 items-center gap-2 overflow-hidden rounded-md px-2 outline-hidden focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
         "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",

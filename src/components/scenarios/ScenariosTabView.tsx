@@ -44,12 +44,12 @@ export const dynamic = 'force-dynamic';
 // ── Helper formatters ──────────────────────────────────────────────────────────
 
 const fmt = (v: number, dec = 1) =>
-  Number.isFinite(v) ? v.toFixed(dec) : '—';
+  Number.isFinite(v) ? v.toFixed(dec) : ' - ';
 
 const fmtKES = (v: number) =>
   Number.isFinite(v) && v !== 0
     ? `KES ${v.toLocaleString('en-KE', { maximumFractionDigits: 0 })}`
-    : '—';
+    : ' - ';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', {
@@ -942,10 +942,10 @@ export function ScenariosTabView({ onNavigateSection }: ScenariosTabViewProps) {
                             <TableCell>
                               {b ? <DeltaCell value={`${fmt(s.finance.paybackYears)} yr`} current={s.finance.paybackYears} baseline={b.finance.paybackYears} higherIsBetter={false} /> : <span className="text-[var(--text-primary)]">{fmt(s.finance.paybackYears)} yr</span>}
                             </TableCell>
-                            <TableCell className="text-[var(--text-primary)]">{s.engineering ? fmt(s.engineering.specificYieldKWhPerKWp) : '—'}</TableCell>
-                            <TableCell className="text-[var(--text-primary)]">{s.engineering ? `${fmt(s.engineering.performanceRatioPct)}%` : '—'}</TableCell>
-                            <TableCell className="text-[var(--text-primary)]">{s.engineering ? `${fmt(s.engineering.capacityFactorPct)}%` : '—'}</TableCell>
-                            <TableCell className="text-[var(--text-primary)]">{s.engineering ? fmt(s.engineering.batteryCycles, 2) : '—'}</TableCell>
+                            <TableCell className="text-[var(--text-primary)]">{s.engineering ? fmt(s.engineering.specificYieldKWhPerKWp) : ' - '}</TableCell>
+                            <TableCell className="text-[var(--text-primary)]">{s.engineering ? `${fmt(s.engineering.performanceRatioPct)}%` : ' - '}</TableCell>
+                            <TableCell className="text-[var(--text-primary)]">{s.engineering ? `${fmt(s.engineering.capacityFactorPct)}%` : ' - '}</TableCell>
+                            <TableCell className="text-[var(--text-primary)]">{s.engineering ? fmt(s.engineering.batteryCycles, 2) : ' - '}</TableCell>
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-1">
                                 <Button

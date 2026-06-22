@@ -542,7 +542,7 @@ function SiteSetupForm() {
                 label="Location"
                 value={details.location
                   ? `${details.location.city} (${details.location.lat.toFixed(4)}, ${details.location.lon.toFixed(4)})`
-                  : '—'}
+                  : ' - '}
               />
             </div>
           </div>

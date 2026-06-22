@@ -42,7 +42,7 @@ function AlertDialogOverlay({
     <AlertDialogPrimitive.Overlay
       data-slot="alert-dialog-overlay"
       className={cn(
-        // z-[199]: consistent with DialogOverlay — sits above sidebar (z-[60])
+        // z-[199]: consistent with DialogOverlay -  sits above sidebar (z-[60])
         // and header but just below AlertDialogContent (z-[200]).
         "data-[state=open]:animate-in data-[state=closed]:animate-out",
         "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",

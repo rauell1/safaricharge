@@ -15,7 +15,7 @@ export interface LiveAlert {
 
 /**
  * Derives a live alert list from the current energy system store state.
- * No static defaults — every alert reflects real simulation conditions.
+ * No static defaults -  every alert reflects real simulation conditions.
  */
 export function useLiveAlerts(): LiveAlert[] {
   const nodes        = useEnergySystemStore((s) => s.nodes);
@@ -47,7 +47,7 @@ export function useLiveAlerts(): LiveAlert[] {
         id:        'bat-critical',
         type:      'error',
         title:     'Battery Critical',
-        message:   `Battery at ${batSoc.toFixed(0)}% — grid import imminent unless solar recovers.`,
+        message:   `Battery at ${batSoc.toFixed(0)}% -  grid import imminent unless solar recovers.`,
         timestamp: now,
       });
     } else if (batSoc < 20) {
@@ -95,7 +95,7 @@ export function useLiveAlerts(): LiveAlert[] {
         id:        'solar-peak',
         type:      'info',
         title:     'Peak Solar Generation',
-        message:   `Array at ${solarKW.toFixed(1)} kW — near full capacity. Optimal generation window active.`,
+        message:   `Array at ${solarKW.toFixed(1)} kW -  near full capacity. Optimal generation window active.`,
         timestamp: now,
       });
     }
@@ -176,7 +176,7 @@ export function useLiveAlerts(): LiveAlert[] {
       type: inverterTempEstimate >= 55 ? 'warning' : 'info',
       title: 'Thermal Derating Forecast',
       message: 'System approaching thermal derating threshold',
-      context: `Inverter temp at ${inverterTempEstimate.toFixed(0)}°C — derating begins at 65°C`,
+      context: `Inverter temp at ${inverterTempEstimate.toFixed(0)}°C -  derating begins at 65°C`,
       predictive: true,
       timestamp: now,
     });

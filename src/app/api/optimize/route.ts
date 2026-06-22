@@ -118,6 +118,6 @@ export async function GET() {
   return NextResponse.json({
     service: 'SafariCharge MILP Optimizer Proxy',
     methods: ['POST'],
-    docs: '/api/optimize — POST an OptimizeRequest to receive an OptimizeResponse',
+    docs: '/api/optimize -  POST an OptimizeRequest to receive an OptimizeResponse',
   });
 }

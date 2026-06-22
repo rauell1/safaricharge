@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Live Solar Energy Demo — Try the Simulator Free | SafariCharge',
+  title: 'Live Solar Energy Demo -  Try the Simulator Free | SafariCharge',
   description:
-    'Try SafariCharge free. Simulate a solar + BESS microgrid, run MILP dispatch optimization, and see real KPLC cost savings — no sign-up required.',
+    'Try SafariCharge free. Simulate a solar + BESS microgrid, run MILP dispatch optimization, and see real KPLC cost savings -  no sign-up required.',
   keywords: [
     'solar energy simulator Kenya',
     'free solar simulation',
@@ -29,9 +29,9 @@ export const metadata: Metadata = {
     locale: 'en_KE',
     url: 'https://solar.rauell.systems/demo',
     siteName: 'SafariCharge',
-    title: 'Live Solar Energy Demo — Try the Simulator Free | SafariCharge',
+    title: 'Live Solar Energy Demo -  Try the Simulator Free | SafariCharge',
     description:
-      'Simulate a solar + BESS microgrid, run MILP dispatch optimization, and see KPLC cost savings — no sign-up required.',
+      'Simulate a solar + BESS microgrid, run MILP dispatch optimization, and see KPLC cost savings -  no sign-up required.',
     images: [
       {
         url: '/opengraph-image',
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     creator: '@rauell1',
     title: 'Live Solar Energy Demo | SafariCharge',
     description:
-      'Simulate solar + BESS, optimize KPLC tariffs, forecast ROI — free, no sign-up.',
+      'Simulate solar + BESS, optimize KPLC tariffs, forecast ROI -  free, no sign-up.',
     images: ['/opengraph-image'],
   },
 }

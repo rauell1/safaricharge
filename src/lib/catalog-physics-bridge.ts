@@ -138,36 +138,36 @@ function detectBifacial(entry: SolarComponentEntry): boolean {
 // chemistry and capacity; RTE is documented in installation manuals).
 
 const BATTERY_RTE_LIBRARY: Record<string, number> = {
-  // BYD Battery-Box Premium HVS series — datasheet: 96 % RTE (LFP)
+  // BYD Battery-Box Premium HVS series -  datasheet: 96 % RTE (LFP)
   'byd-hvs':                   0.96,
   'byd-hvs-5.1':               0.96,
   'byd-hvs-10.2':              0.96,
   'byd-hvs-15.4':              0.96,
-  // BYD Battery-Box Premium HVM series — datasheet: 96 % RTE
+  // BYD Battery-Box Premium HVM series -  datasheet: 96 % RTE
   'byd-hvm':                   0.96,
   'byd-hvm-8.3':               0.96,
   'byd-hvm-11.0':              0.96,
   'byd-hvm-13.8':              0.96,
   'byd-hvm-16.6':              0.96,
   'byd-hvm-22.1':              0.96,
-  // Pylontech US5000 — datasheet: ≥96 % RTE (LFP, 48V)
+  // Pylontech US5000 -  datasheet: ≥96 % RTE (LFP, 48V)
   'pylontech-us5000':          0.96,
   'pylontech-up5000':          0.96,
-  // Sungrow SBR series — datasheet: 96 % RTE (LFP)
+  // Sungrow SBR series -  datasheet: 96 % RTE (LFP)
   'sungrow-sbr096':            0.96,
   'sungrow-sbr128':            0.96,
   'sungrow-sbr160':            0.96,
   'sungrow-sbr192':            0.96,
   'sungrow-sbr224':            0.96,
   'sungrow-sbr256':            0.96,
-  // Tesla Powerwall 3 — datasheet: 90 % RTE (AC-coupled, NMC)
+  // Tesla Powerwall 3 -  datasheet: 90 % RTE (AC-coupled, NMC)
   'tesla-powerwall-3':         0.90,
-  // CATL Tener — datasheet: 95 % RTE (LFP)
+  // CATL Tener -  datasheet: 95 % RTE (LFP)
   'catl-tener':                0.95,
   'catl-tener-5mwh':           0.95,
-  // Huawei LUNA2000 — datasheet: 95.5 % RTE
+  // Huawei LUNA2000 -  datasheet: 95.5 % RTE
   'huawei-luna2000':           0.955,
-  // Alpha ESS Smile B3 / B5 — datasheet: 95.2 % RTE
+  // Alpha ESS Smile B3 / B5 -  datasheet: 95.2 % RTE
   'alpha-ess-smile-b3':        0.952,
   'alpha-ess-smile-b5':        0.952,
 };
@@ -179,9 +179,9 @@ const BATTERY_RTE_LIBRARY: Record<string, number> = {
 /**
  * Resolve physics simulation parameters from installed catalog component IDs.
  *
- * @param moduleId    - SOLAR_COMPONENT_CATALOG id for the installed PV module.
- * @param inverterId  - SOLAR_COMPONENT_CATALOG id for the installed inverter.
- * @param batteryId   - SOLAR_COMPONENT_CATALOG id for the installed battery.
+ * @param moduleId   - SOLAR_COMPONENT_CATALOG id for the installed PV module.
+ * @param inverterId - SOLAR_COMPONENT_CATALOG id for the installed inverter.
+ * @param batteryId  - SOLAR_COMPONENT_CATALOG id for the installed battery.
  *
  * Any id that is not found in the catalog falls back to the constants in
  * config.ts, so the simulation always has valid numeric inputs.
@@ -240,7 +240,7 @@ export function resolveCatalogPhysicsParams(
       findSpec(inverterEntry, 'electrical details');
     if (effRaw) {
       const eff = parseEfficiency(effRaw);
-      // Only accept plausible inverter efficiencies (0.90–0.999)
+      // Only accept plausible inverter efficiencies (0.90-0.999)
       if (eff !== undefined && eff >= 0.9 && eff <= 0.999) {
         inverterMaxEfficiency = eff;
       }
@@ -308,9 +308,9 @@ export function resolveCatalogPhysicsParams(
  */
 export const DEFAULT_CATALOG_PHYSICS_PARAMS: CatalogPhysicsParams =
   resolveCatalogPhysicsParams(
-    'jinko-tiger-neo-66hl4m-bdv',   // Jinko Tiger Neo 66HL4M-BDV — verified datasheet
-    'deye-sun-sg04lp1-3-6k',         // Deye SG04LP1 series — verified datasheet
-    'pylontech-us5000'               // Pylontech US5000 — 96 % RTE from datasheet library
+    'jinko-tiger-neo-66hl4m-bdv',   // Jinko Tiger Neo 66HL4M-BDV -  verified datasheet
+    'deye-sun-sg04lp1-3-6k',         // Deye SG04LP1 series -  verified datasheet
+    'pylontech-us5000'               // Pylontech US5000 -  96 % RTE from datasheet library
   );
 
 // ---------------------------------------------------------------------------

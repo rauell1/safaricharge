@@ -38,7 +38,7 @@ const DEFAULT_LOCATION: LocationOption = {
   annualAvgSunHours: 5.4,
   isKosapTarget: false,
   electrificationRatePct: null,
-  countyNote: 'East Africa — elevation 1795 m, avg 22.0°C, annual GHI 1971 kWh/m².',
+  countyNote: 'East Africa -  elevation 1795 m, avg 22.0°C, annual GHI 1971 kWh/m².',
 };
 
 // Static Nairobi solar data used for engineering KPI calculations
@@ -377,7 +377,7 @@ const MAX_MINUTE_DATA_POINTS = 420 * 30;
 /**
  * Returns true if the value looks enough like a SavedScenario to be imported
  * safely.  We check the required top-level shape without being overly strict
- * about every nested field — downstream rendering is already null-safe.
+ * about every nested field -  downstream rendering is already null-safe.
  */
 function isScenarioShape(v: unknown): v is SavedScenario {
   if (!v || typeof v !== 'object') return false;
@@ -398,7 +398,7 @@ function isScenarioShape(v: unknown): v is SavedScenario {
   );
 }
 
-// Create the store — scenarios are persisted in Supabase (call loadScenarios on mount)
+// Create the store -  scenarios are persisted in Supabase (call loadScenarios on mount)
 export const useEnergySystemStore = create<EnergySystemState>()(
   (set, get) => ({
       nodes: initialNodes,
@@ -651,7 +651,7 @@ export const useEnergySystemStore = create<EnergySystemState>()(
             ? updated.slice(updated.length - MAX_SCENARIOS)
             : updated;
 
-        // Optimistic update — mark as syncing
+        // Optimistic update -  mark as syncing
         set({ scenarios: next, isSyncingScenarios: true, scenarioSyncError: null });
 
         upsertScenario(scenario)
@@ -724,7 +724,7 @@ export const useEnergySystemStore = create<EnergySystemState>()(
               annualAvgSunHours: city.avgDailyPsh,
               isKosapTarget: false,
               electrificationRatePct: null,
-              countyNote: `${city.region} — elevation ${city.elevation} m, avg ${city.avgTempC}°C, annual GHI ${city.annualGHI} kWh/m².`,
+              countyNote: `${city.region} -  elevation ${city.elevation} m, avg ${city.avgTempC}°C, annual GHI ${city.annualGHI} kWh/m².`,
             };
           } else {
             activeLocation = {
@@ -776,7 +776,7 @@ export const useEnergySystemStore = create<EnergySystemState>()(
               annualAvgSunHours: matchedCity.avgDailyPsh,
               isKosapTarget: false,
               electrificationRatePct: null,
-              countyNote: `${matchedCity.region} — elevation ${matchedCity.elevation} m, avg ${matchedCity.avgTempC}°C, annual GHI ${matchedCity.annualGHI} kWh/m².`,
+              countyNote: `${matchedCity.region} -  elevation ${matchedCity.elevation} m, avg ${matchedCity.avgTempC}°C, annual GHI ${matchedCity.annualGHI} kWh/m².`,
             };
           } else {
             activeLocation = {
@@ -899,7 +899,7 @@ export const useEnergySystemStore = create<EnergySystemState>()(
           return {
             imported: 0,
             skipped: 0,
-            error: 'Invalid JSON — could not parse the pasted text.',
+            error: 'Invalid JSON -  could not parse the pasted text.',
           };
         }
 

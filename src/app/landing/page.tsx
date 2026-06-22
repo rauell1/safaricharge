@@ -8,42 +8,41 @@ import {
   Menu, X,
 } from 'lucide-react';
 import { BrandLogo } from '@/components/brand-logo';
-import { ThemeToggle } from '@/components/theme-toggle';
 
 const features = [
   {
     icon: Zap,
     title: 'Battery Dispatch Optimizer',
     description:
-      'Automatically minimize your Kenya Power electricity bill. Our MILP engine calculates the ideal solar battery charge and discharge schedule every 5 minutes — storing solar energy when it\'s cheap and deploying it during KPLC peak tariff windows.',
+      'Automatically minimize your Kenya Power electricity bill. Our MILP engine calculates the ideal solar battery charge and discharge schedule every 5 minutes -  storing solar energy when it\'s cheap and deploying it during KPLC peak tariff windows.',
     accent: 'var(--battery)',
   },
   {
     icon: BarChart3,
     title: 'Real-Time Solar Analytics',
     description:
-      'Monitor your solar panels\' live AC output, track irradiance, catch inverter limits, and detect curtailment — all from a single dashboard built for Kenyan solar installations.',
+      'Monitor your solar panels\' live AC output, track irradiance, catch inverter limits, and detect curtailment -  all from a single dashboard built for Kenyan solar installations.',
     accent: 'var(--solar)',
   },
   {
     icon: Battery,
     title: 'Smart Battery Management',
     description:
-      'Keep your battery storage system healthy and cost-effective. Automatic state-of-charge protection, smart charge/discharge logic, and battery health KPIs — no expensive BMS hardware required.',
+      'Keep your battery storage system healthy and cost-effective. Automatic state-of-charge protection, smart charge/discharge logic, and battery health KPIs -  no expensive BMS hardware required.',
     accent: 'var(--grid)',
   },
   {
     icon: Globe,
     title: 'KPLC Tariff Engine',
     description:
-      'Model your exact Kenya Power electricity bill — base rate, fuel surcharge, FERFA, INFA, ERC levy, WRA, and VAT — across EV, domestic, and commercial tariff profiles.',
+      'Model your exact Kenya Power electricity bill -  base rate, fuel surcharge, FERFA, INFA, ERC levy, WRA, and VAT -  across EV, domestic, and commercial tariff profiles.',
     accent: 'var(--ev)',
   },
   {
     icon: TrendingDown,
     title: 'Savings & Carbon Reports',
     description:
-      'See monthly KSh savings against your KPLC baseline, grid displacement percentage, CO₂ emissions avoided, and peak demand reduction — exportable to CSV or PDF.',
+      'See monthly KSh savings against your KPLC baseline, grid displacement percentage, CO₂ emissions avoided, and peak demand reduction -  exportable to CSV or PDF.',
     accent: 'var(--consumption)',
   },
   {
@@ -73,7 +72,7 @@ const heroKpis = [
 const steps = [
   {
     title: 'Define your solar system',
-    description: 'Enter your solar panel capacity, battery storage specs, and location — or connect a live Modbus feed from SMA, Fronius, or Sungrow inverters.',
+    description: 'Enter your solar panel capacity, battery storage specs, and location -  or connect a live Modbus feed from SMA, Fronius, or Sungrow inverters.',
   },
   {
     title: 'Optimize battery dispatch',
@@ -81,7 +80,7 @@ const steps = [
   },
   {
     title: 'Track savings and export',
-    description: 'View real-time solar output, battery state of charge, KPLC cost savings in KSh, and CO₂ avoided — all exportable to CSV or PDF.',
+    description: 'View real-time solar output, battery state of charge, KPLC cost savings in KSh, and CO₂ avoided -  all exportable to CSV or PDF.',
   },
 ];
 
@@ -187,7 +186,6 @@ export default function LandingPage() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <ThemeToggle />
             <Link
               href="/dashboard"
               className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors"
@@ -335,7 +333,7 @@ export default function LandingPage() {
               lineHeight: 1.75,
             }}
           >
-            Reducing your Kenya Power electricity bill takes more than solar panels — it requires
+            Reducing your Kenya Power electricity bill takes more than solar panels -  it requires
             smart battery dispatch and accurate tariff modelling. SafariCharge simulates your solar
             + battery system, optimises charge cycles against KPLC peak rates, and shows exactly
             how much you save each month.
@@ -565,7 +563,7 @@ export default function LandingPage() {
               Solar energy management tools for Kenya
             </h2>
             <p style={{ color: 'var(--site-page-muted)', lineHeight: 1.75, maxWidth: '44ch' }}>
-              From solar panel monitoring to battery dispatch optimization and KPLC tariff analysis — everything a Kenyan solar installation needs in one free platform.
+              From solar panel monitoring to battery dispatch optimization and KPLC tariff analysis -  everything a Kenyan solar installation needs in one free platform.
             </p>
           </div>
 
@@ -693,7 +691,7 @@ export default function LandingPage() {
               <p className="text-base mb-3" style={{ color: 'var(--text-primary)' }}>
                 <em>&ldquo;{item.quote}&rdquo;</em>
               </p>
-              <p className="text-sm" style={{ color: 'var(--site-page-muted)' }}>— {item.by}</p>
+              <p className="text-sm" style={{ color: 'var(--site-page-muted)' }}> -  {item.by}</p>
             </div>
           ))}
         </div>

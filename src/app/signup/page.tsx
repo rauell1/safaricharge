@@ -6,7 +6,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { BrandLogo } from '@/components/brand-logo'
-import { ThemeToggle } from '@/components/theme-toggle'
 
 function RegisterForm() {
   const router = useRouter()
@@ -221,7 +220,6 @@ export default function SignupPage() {
         <header style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', height: 60, borderBottom: '1px solid var(--site-page-border)', background: 'var(--site-nav-bg)', backdropFilter: 'blur(10px)' }}>
           <BrandLogo href="/landing" />
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <ThemeToggle />
             <Link href="/landing" style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--site-page-muted)', fontSize: 13, textDecoration: 'none' }}>
               <ArrowLeft size={14} /> Back to home
             </Link>

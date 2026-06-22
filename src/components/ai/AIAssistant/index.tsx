@@ -3,7 +3,7 @@
  * AIAssistant/index.tsx
  * SafariChargeAIAssistant component + AIMessageText renderer.
  *
- * All colours use CSS var tokens — no hardcoded palette.
+ * All colours use CSS var tokens -  no hardcoded palette.
  * Works with both .light and .dark classes from next-themes.
  */
 
@@ -354,7 +354,7 @@ export const SafariChargeAIAssistant = ({
             />
             {isAutoMode ? 'Live' : 'Paused'}
           </div>
-          {/* Clear conversation button — only when there are user messages */}
+          {/* Clear conversation button -  only when there are user messages */}
           {messages.length > 1 && (
             <button
               onClick={() => { setMessages(INITIAL_MESSAGES); conversationIdRef.current = null; }}
@@ -406,7 +406,7 @@ export const SafariChargeAIAssistant = ({
         </div>
       </div>
 
-      {/* Live status bar — single row, no wrapping */}
+      {/* Live status bar -  single row, no wrapping */}
       <div
         className="px-4 py-2 flex-shrink-0"
         style={{
@@ -448,7 +448,7 @@ export const SafariChargeAIAssistant = ({
             </span>
           )}
         </div>
-        {/* Context data line — shown only when we have minute-level simulation data */}
+        {/* Context data line -  shown only when we have minute-level simulation data */}
         {(minuteData?.length ?? 0) > 0 && (
           <p
             className="text-[10px] font-mono mt-1"
@@ -507,7 +507,7 @@ export const SafariChargeAIAssistant = ({
               {msg.role === 'assistant' ? (
                 <>
                   <AIMessageText text={msg.text} />
-                  {/* Copy button — appears on hover via CSS group trick; using inline state */}
+                  {/* Copy button -  appears on hover via CSS group trick; using inline state */}
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(msg.text).catch(() => {});

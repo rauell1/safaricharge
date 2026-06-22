@@ -100,7 +100,7 @@ export function resampleTo5MinBuckets(
 }
 
 /**
- * Returns only the filled portion of the grid — useful for progressive
+ * Returns only the filled portion of the grid -  useful for progressive
  * rendering during active simulation (don't plot future zeros).
  *
  * Returns buckets 0…lastFilledSlot where lastFilledSlot is the highest

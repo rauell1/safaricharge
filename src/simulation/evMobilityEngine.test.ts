@@ -9,7 +9,7 @@ afterEach(() => {
 });
 
 describe('simulateEVFleet', () => {
-  it('residential: no charging outside 22:00–07:00 window', () => {
+  it('residential: no charging outside 22:00-07:00 window', () => {
     const config = {
       ...defaultEVFleetConfig(),
       useCase: 'residential' as const,

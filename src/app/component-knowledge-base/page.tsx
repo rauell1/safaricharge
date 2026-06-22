@@ -10,7 +10,7 @@ export default function ComponentKnowledgeBasePage() {
           <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Component Knowledge Base</h1>
           <p className="text-sm text-[var(--text-secondary)] max-w-3xl leading-relaxed">
             Browse the full component catalog, review detailed specs, and access official documentation
-            for every Tier 1 brand — all sourced directly from manufacturer download centres.
+            for every Tier 1 brand -  all sourced directly from manufacturer download centres.
           </p>
         </div>
 

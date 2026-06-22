@@ -158,7 +158,7 @@ export default function ParametricInputs({ onChange }: ParametricInputsProps) {
   const pvOversizeOK = actualPVkWp <= maxAllowablePVkWp;
   const panelObj = PANEL_CATALOG.find(p => p.ratingWatts === panelWattage) || PANEL_CATALOG[0];
   const panelTotalPriceKSh = panelsRequired * panelObj.costKSh;
-  const stockWarning = panelWattage === 620 ? '⚠ Low stock (~50 units) — consider 625W' : '';
+  const stockWarning = panelWattage === 620 ? '⚠ Low stock (~50 units) -  consider 625W' : '';
 
   // Battery
   const modKWh = dynessLine === 'Stack280' ? 14.3 : 5.12;
@@ -268,7 +268,7 @@ export default function ParametricInputs({ onChange }: ParametricInputsProps) {
           <select value={locationId} onChange={e => setLocationId(e.target.value)}
             className="flex-1 min-w-0 bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer font-medium">
             {SOLAR_LOCATIONS.map(loc => (
-              <option key={loc.id} value={loc.id}>{loc.name}, {loc.country} — {loc.peakSunHours} PSH, KSh {loc.gridTariffKSh}/kWh, Grid {loc.gridReliability}%</option>
+              <option key={loc.id} value={loc.id}>{loc.name}, {loc.country} -  {loc.peakSunHours} PSH, KSh {loc.gridTariffKSh}/kWh, Grid {loc.gridReliability}%</option>
             ))}
           </select>
           <div className="flex items-center gap-3 text-[11px] font-mono text-slate-400 shrink-0">
@@ -357,9 +357,9 @@ export default function ParametricInputs({ onChange }: ParametricInputsProps) {
             <select value={invVoltageClass} onChange={e => setInvVoltageClass(e.target.value as VoltageClass)}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-blue-500 cursor-pointer">
               <option value="LV (48V)">LV (48V battery)</option>
-              {invBrand !== 'Jinko' && <option value="HV (160-700V)">HV (160-700V) — AM2</option>}
-              {invBrand === 'Deye' && <option value="HV (160-800V)">HV (160-800V) — BM3/BM4</option>}
-              {invBrand === 'Solis' && <option value="HV (150-850V)">HV (150-850V) — S6</option>}
+              {invBrand !== 'Jinko' && <option value="HV (160-700V)">HV (160-700V) -  AM2</option>}
+              {invBrand === 'Deye' && <option value="HV (160-800V)">HV (160-800V) -  BM3/BM4</option>}
+              {invBrand === 'Solis' && <option value="HV (150-850V)">HV (150-850V) -  S6</option>}
               <option value="Grid-Tied">Grid-Tied (no battery)</option>
             </select>
           </div>
@@ -369,7 +369,7 @@ export default function ParametricInputs({ onChange }: ParametricInputsProps) {
               className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-blue-500 cursor-pointer">
               {filteredInverters.length === 0 && <option>No models in database</option>}
               {filteredInverters.map(inv => (
-                <option key={inv.id} value={inv.id}>{inv.model} — {inv.phase} {(inv.ratingWatts||0)/1000}kW</option>
+                <option key={inv.id} value={inv.id}>{inv.model} -  {inv.phase} {(inv.ratingWatts||0)/1000}kW</option>
               ))}
             </select>
           </div>
@@ -413,7 +413,7 @@ export default function ParametricInputs({ onChange }: ParametricInputsProps) {
             <select value={panelWattage} onChange={e => setPanelWattage(parseInt(e.target.value))}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500 cursor-pointer">
               {PANEL_CATALOG.map(p => (
-                <option key={p.id} value={p.ratingWatts}>{p.ratingWatts}W — KSh {p.costKSh.toLocaleString()} — {p.model}</option>
+                <option key={p.id} value={p.ratingWatts}>{p.ratingWatts}W -  KSh {p.costKSh.toLocaleString()} -  {p.model}</option>
               ))}
             </select>
           </div>
@@ -434,7 +434,7 @@ export default function ParametricInputs({ onChange }: ParametricInputsProps) {
 
         <div className={`flex items-center gap-2 rounded-xl px-3 py-2 text-[11px] font-semibold ${pvOversizeOK ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border border-red-500/20 text-red-400'}`}>
           {pvOversizeOK ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
-          {pvOversizeOK ? 'PV Oversize Check: OK — within inverter input limits' : `WARNING — ${nf(actualPVkWp,1)}kWp exceeds ${nf(maxAllowablePVkWp,1)}kWp inverter max!`}
+          {pvOversizeOK ? 'PV Oversize Check: OK -  within inverter input limits' : `WARNING -  ${nf(actualPVkWp,1)}kWp exceeds ${nf(maxAllowablePVkWp,1)}kWp inverter max!`}
         </div>
       </Section>
 
@@ -443,7 +443,7 @@ export default function ParametricInputs({ onChange }: ParametricInputsProps) {
         summary={isGridTied ? 'No battery (Grid-Tied)' : `${actualBatMods} modules · ${nf(actualBatteryKWh,1)} kWh · ${batTowers} tower(s)`}>
         {isGridTied ? (
           <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-center text-slate-500 text-sm">
-            ⚠ Grid-Tied inverter selected — no battery storage. Change voltage class in Section B to add batteries.
+            ⚠ Grid-Tied inverter selected -  no battery storage. Change voltage class in Section B to add batteries.
           </div>
         ) : (
           <>

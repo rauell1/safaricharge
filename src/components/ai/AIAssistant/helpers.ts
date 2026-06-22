@@ -1,14 +1,14 @@
 /**
  * helpers.ts
  * Pure computation helpers for the SafariCharge AI assistant.
- * Extracted from src/app/page.tsx — no React dependencies.
+ * Extracted from src/app/page.tsx -  no React dependencies.
  */
 
 import type { BatteryPrediction } from '@/components/energy/BatteryPredictionCard';
 import type { DerivedSystemConfig, SimulationMinuteRecord } from '@/types/simulation-core';
 import type { AiSystemData } from '@/types/dashboard';
 
-// Feed-in tariff rate — kept here so helpers are self-contained.
+// Feed-in tariff rate -  kept here so helpers are self-contained.
 const FEED_IN_TARIFF_RATE = 5.0;
 
 // ---------------------------------------------------------------------------
@@ -359,7 +359,7 @@ export const buildAiSystemData = ({
 };
 
 // ---------------------------------------------------------------------------
-// Learning context builder — derives behavioural patterns from full minuteData
+// Learning context builder -  derives behavioural patterns from full minuteData
 // ---------------------------------------------------------------------------
 
 export type LearningContext = {

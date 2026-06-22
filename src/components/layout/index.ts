@@ -1,4 +1,4 @@
-// Layout shell — app chrome that wraps all dashboard views
+// Layout shell -  app chrome that wraps all dashboard views
 export { DashboardLayout } from './DashboardLayout';
 export { DashboardSidebar } from './DashboardSidebar';
 export { DashboardHeader } from './DashboardHeader';

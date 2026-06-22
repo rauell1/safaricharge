@@ -6,10 +6,10 @@
  * battery SOC, solar, load, and grid data.
  *
  * KEY CONTRACT:
- *   - `createPhysicsState()` must be called ONCE when the simulation starts
+ *  - `createPhysicsState()` must be called ONCE when the simulation starts
  *     (or when systemConfig changes). The returned object is mutated in-place
  *     by every subsequent `tickPhysicsEngine()` call.
- *   - Never recreate PhysicsEngineState inside the tick loop — that resets
+ *  - Never recreate PhysicsEngineState inside the tick loop -  that resets
  *     batteryKwh to the initial value each step, which is the root cause of
  *     the SOC-flat bug described in ENGINEERING_ISSUES_V2_2026-04-10.md §A.
  */
@@ -34,7 +34,7 @@ import {
 } from './config';
 
 // ---------------------------------------------------------------------------
-// State factory — call once per simulation session
+// State factory -  call once per simulation session
 // ---------------------------------------------------------------------------
 
 /**
@@ -61,7 +61,7 @@ export function createPhysicsState(config: SystemConfiguration): PhysicsEngineSt
 }
 
 // ---------------------------------------------------------------------------
-// Catalog params cache — recomputed only when installed IDs change
+// Catalog params cache -  recomputed only when installed IDs change
 // ---------------------------------------------------------------------------
 
 let _cachedCatalogParams: CatalogPhysicsParams | null = null;
@@ -101,7 +101,7 @@ function getCatalogParams(config: SystemConfiguration): CatalogPhysicsParams {
 // ---------------------------------------------------------------------------
 
 export interface TickPhysicsParams {
-  /** Persistent state object — mutated in place each tick */
+  /** Persistent state object -  mutated in place each tick */
   state: PhysicsEngineState;
   systemConfig: SystemConfiguration;
   currentDate: Date;
@@ -127,7 +127,7 @@ export interface TickPhysicsParams {
 }
 
 // ---------------------------------------------------------------------------
-// Single tick — call inside your simulation interval/loop
+// Single tick -  call inside your simulation interval/loop
 // ---------------------------------------------------------------------------
 
 /**
@@ -169,18 +169,18 @@ export function tickPhysicsEngine(params: TickPhysicsParams) {
     state.evSocs  // ← use live EV SOCs, not stale initial values
   );
 
-  // 3. Run physics — state.batteryKwh is mutated in place ✅
+  // 3. Run physics -  state.batteryKwh is mutated in place ✅
   //    catalogParams carries datasheet-derived: panelTempCoefficientPerDegC,
   //    panelFirstYearDegradation, panelAnnualDegradationRate, isBifacial,
   //    bifacialGainFactor, inverterMaxEfficiency, mpptEfficiency,
-  //    batteryRoundTripEfficiency — all resolved from the component IDs in
+  //    batteryRoundTripEfficiency -  all resolved from the component IDs in
   //    systemConfig.installedModuleId / installedInverterId / installedBatteryId.
   const result = calculateInstantPhysics(
     systemConfig,
     scenario,
     hour,
     solarData,
-    state,        // ← same object reference every tick — this is the fix
+    state,        // ← same object reference every tick -  this is the fix
     priorityMode,
     gridEnabled,
     isPeakTime,

@@ -4,12 +4,12 @@
  * Returns the authenticated user's immutable audit trail from audit_log.
  *
  * Query parameters:
- *   resource  — filter by table name (e.g. "saved_scenarios")
- *   action    — filter by operation (e.g. "saved_scenarios.update")
- *   since     — ISO timestamp lower bound (default: 30 days ago)
- *   until     — ISO timestamp upper bound (default: now)
- *   limit     — max rows to return (default: 50, max: 200)
- *   offset    — pagination offset (default: 0)
+ *   resource  -  filter by table name (e.g. "saved_scenarios")
+ *   action    -  filter by operation (e.g. "saved_scenarios.update")
+ *   since     -  ISO timestamp lower bound (default: 30 days ago)
+ *   until     -  ISO timestamp upper bound (default: now)
+ *   limit     -  max rows to return (default: 50, max: 200)
+ *   offset    -  pagination offset (default: 0)
  *
  * The query only returns rows where actor_id = auth.uid() (enforced by RLS).
  * Service-role access to audit_log is intentionally not exposed via this route.
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     .select('id, ts, action, resource, resource_id, org_id, old_data, new_data, metadata', {
       count: 'exact',
     })
-    .eq('actor_id', user.id)   // redundant with RLS — belt-and-suspenders
+    .eq('actor_id', user.id)   // redundant with RLS -  belt-and-suspenders
     .gte('ts', since)
     .lte('ts', until)
     .order('ts', { ascending: false })

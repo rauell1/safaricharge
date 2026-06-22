@@ -11,9 +11,9 @@ import { useState, useEffect } from 'react'
  * every portal at a dedicated #modal-root <div> that is the LAST child
  * of <body> (outside ALL layout wrappers) guarantees:
  *
- *  - The containing block is the true viewport (no overflow/transform parent)
- *  - The portal renders above every layout layer without z-index tricks
- *  - SSR never tries to access `document` (state starts null)
+ * - The containing block is the true viewport (no overflow/transform parent)
+ * - The portal renders above every layout layer without z-index tricks
+ * - SSR never tries to access `document` (state starts null)
  */
 export function useModalRoot(): HTMLElement | null {
   const [root, setRoot] = useState<HTMLElement | null>(null)

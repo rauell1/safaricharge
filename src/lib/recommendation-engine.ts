@@ -717,7 +717,7 @@ export function generateForecastRecommendations(
         `${totalSurplusKwh.toFixed(1)} kWh of surplus solar is forecast. ` +
         (chargeableKwh > 0.5
           ? `Charge battery now (${chargeableKwh.toFixed(1)} kWh available headroom) to store the excess.`
-          : 'Battery is near full — consider exporting surplus to the grid for feed-in credit.'),
+          : 'Battery is near full -  consider exporting surplus to the grid for feed-in credit.'),
       estimatedImpactKwh: chargeableKwh,
     });
   }
@@ -752,7 +752,7 @@ export function generateForecastRecommendations(
     recommendations.push({
       type: 'deficit',
       priority: 'high',
-      title: 'Low solar generation forecast — preserve battery reserves',
+      title: 'Low solar generation forecast -  preserve battery reserves',
       description:
         `Only ${totalForecastSolarKwh.toFixed(1)} kWh of solar is expected today (below 40 % of capacity). ` +
         `With battery at ${currentSoc.toFixed(0)}% SOC, avoid non-essential loads during evening hours to maintain backup capability.`,

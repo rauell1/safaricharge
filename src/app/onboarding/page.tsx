@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Building2, Loader2, Phone, UserRound } from 'lucide-react'
 import { BrandLogo } from '@/components/brand-logo'
-import { ThemeToggle } from '@/components/theme-toggle'
 
 function Field({ id, label, icon, ...props }: any) {
   return (
@@ -124,7 +123,6 @@ export default function OnboardingPage() {
         <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 55% 45% at 50% 0%, rgba(16,185,129,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
         <header style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', padding: '0 24px', height: 60, borderBottom: '1px solid var(--border)' }}>
           <BrandLogo href="/landing" size="sm" />
-          <ThemeToggle />
         </header>
         <div style={{ position: 'relative', zIndex: 10, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
           <div style={{ width: '100%', maxWidth: 440, borderRadius: 18, border: '1px solid var(--border)', background: 'var(--bg-card-muted)', backdropFilter: 'blur(24px)', boxShadow: '0 32px 80px rgba(0,0,0,0.18)', padding: '32px 28px' }}>

@@ -5,7 +5,6 @@ import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { BrandLogo } from '@/components/brand-logo';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import type { DashboardSection } from '@/components/layout/DashboardSidebar';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
@@ -222,7 +221,7 @@ const AFRICA_LOCATIONS: LocationOption[] = AFRICA_CITIES.map((city: AfricaCity) 
   annualAvgSunHours: city.avgDailyPsh,
   isKosapTarget: false,
   electrificationRatePct: null,
-  countyNote: `${city.region} — elevation ${city.elevation} m, avg ${city.avgTempC}°C, annual GHI ${city.annualGHI} kWh/m².`,
+  countyNote: `${city.region} -  elevation ${city.elevation} m, avg ${city.avgTempC}°C, annual GHI ${city.annualGHI} kWh/m².`,
 }));
 
 const DEFAULT_LOCATION: LocationOption = AFRICA_LOCATIONS.find(l => l.name === 'Nairobi') ?? AFRICA_LOCATIONS[0];
@@ -374,7 +373,7 @@ function DemoLocationOnboardingWizard({
                   }`}
                 >
                   <span className="text-xs font-bold text-[var(--text-primary)]">{loc.displayName}</span>
-                  <span className="text-[10px] opacity-75 mt-0.5">{loc.countyNote.split(' — ')[0]}</span>
+                  <span className="text-[10px] opacity-75 mt-0.5">{loc.countyNote.split(' -  ')[0]}</span>
                   <span className="text-[10px] font-bold text-[#22c55e] mt-1.5 flex items-center gap-1">
                     <Sun className="h-3 w-3 inline" /> {loc.annualAvgSunHours.toFixed(2)} hr/day sun
                   </span>
@@ -751,7 +750,6 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
             <BrandLogo href="/landing" />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <ThemeToggle />
           </div>
         </header>
 
@@ -909,7 +907,7 @@ function DemoIntegratedShell({ initialSection }: DemoIntegratedShellProps) {
                 </button>
               </div>
               <p style={{ fontSize: 12, color: 'var(--text-secondary, #666)', marginBottom: 10, marginTop: 2 }}>
-                212 cities across Africa — Meteonorm irradiance data
+                212 cities across Africa -  Meteonorm irradiance data
               </p>
               <div style={{ position: 'relative', marginBottom: 10 }}>
                 <Search style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, color: 'var(--text-tertiary, #999)', pointerEvents: 'none' }} />

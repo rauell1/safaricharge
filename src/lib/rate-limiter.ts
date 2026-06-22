@@ -6,7 +6,7 @@
  * scales across multiple server instances and survives restarts.
  *
  * Fail-open: if Supabase is unavailable the request is allowed and a warning
- * is logged — rate-limiter failures never block legitimate traffic.
+ * is logged -  rate-limiter failures never block legitimate traffic.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -54,7 +54,7 @@ export async function checkRateLimit(
 ): Promise<NextResponse | null> {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceRoleKey) {
-    console.warn('[RateLimit] SUPABASE_SERVICE_ROLE_KEY not set — skipping rate limit check');
+    console.warn('[RateLimit] SUPABASE_SERVICE_ROLE_KEY not set -  skipping rate limit check');
     return null;
   }
 
@@ -80,7 +80,7 @@ export async function checkRateLimit(
     });
 
     if (error) {
-      console.warn('[RateLimit] RPC error — allowing request (fail open):', error.message);
+      console.warn('[RateLimit] RPC error -  allowing request (fail open):', error.message);
       return null;
     }
 
@@ -102,7 +102,7 @@ export async function checkRateLimit(
     return null;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.warn('[RateLimit] Unexpected error — allowing request (fail open):', message);
+    console.warn('[RateLimit] Unexpected error -  allowing request (fail open):', message);
     return null;
   }
 }

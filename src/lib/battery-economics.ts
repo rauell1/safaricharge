@@ -1,11 +1,11 @@
 /**
- * SafariCharge Battery Economics Optimizer  — v2 (2026-04)
+ * SafariCharge Battery Economics Optimizer  -  v2 (2026-04)
  *
  * Changes vs v1:
- *  - Demand-charge savings component (captures 20–30 % of commercial bill savings)
- *  - Rate-dependent round-trip efficiency (RTE) — LiFePO4 degrades at high C-rate
- *  - Inflation-adjusted replacement cost (5 % p.a.)
- *  - Maintenance reduced to 1 % p.a. (industry norm for Li-ion; 2 % was lead-acid)
+ * - Demand-charge savings component (captures 20-30 % of commercial bill savings)
+ * - Rate-dependent round-trip efficiency (RTE) -  LiFePO4 degrades at high C-rate
+ * - Inflation-adjusted replacement cost (5 % p.a.)
+ * - Maintenance reduced to 1 % p.a. (industry norm for Li-ion; 2 % was lead-acid)
  */
 
 export interface BatteryEconomicAnalysis {
@@ -44,9 +44,9 @@ interface OptimizationInput {
   solarCapacity_kW: number;
   /** All-in grid energy price KES/kWh (use computeAllInRate from tariff-config) */
   gridPrice_per_kWh: number;
-  /** Contracted demand in kW — set > 0 for commercial tariffs to enable demand-charge savings */
+  /** Contracted demand in kW -  set > 0 for commercial tariffs to enable demand-charge savings */
   contractedDemand_kW?: number;
-  /** Demand charge rate KES/kW/month — KPLC SC1 ≈ 650 KES/kW/month */
+  /** Demand charge rate KES/kW/month -  KPLC SC1 ≈ 650 KES/kW/month */
   demandChargeRate_KES_per_kW_month?: number;
   batteryCost_per_kWh?: number;
   discountRate?: number;
@@ -109,7 +109,7 @@ export function optimizeBatterySize(input: OptimizationInput): BatteryOptimizati
   recommendation.isRecommended = true;
 
   const summary =
-    `Recommended ${recommendation.capacity_kWh} kWh battery — ` +
+    `Recommended ${recommendation.capacity_kWh} kWh battery -  ` +
     `${recommendation.roi25Years_pct.toFixed(0)} % ROI over 25 years ` +
     `(payback ${recommendation.paybackPeriod_years.toFixed(1)} yrs, ` +
     `NPV KES ${(recommendation.npv25Years_KES / 1_000_000).toFixed(2)} M).`;
@@ -175,7 +175,7 @@ function analyzeBatterySize(
   const annualDemandSavings_KES =
     demandReduction_kW * demandChargeRate_KES_per_kW_month * 12;
 
-  // ── Maintenance (1 % p.a. — Li-ion industry norm) ─────────────────────────
+  // ── Maintenance (1 % p.a. -  Li-ion industry norm) ─────────────────────────
   const annualMaintenance_KES = upfrontCost_KES * 0.01;
   const totalAnnualSavings = annualGridSavings_KES + annualDemandSavings_KES;
   const netAnnualSavings_KES = totalAnnualSavings - annualMaintenance_KES;
@@ -200,19 +200,19 @@ function analyzeBatterySize(
   // ── Reasoning ─────────────────────────────────────────────────────────────
   let reasoning: string;
   if (capacity_kWh === 0) {
-    reasoning = 'No battery — baseline scenario.';
+    reasoning = 'No battery -  baseline scenario.';
   } else if (capacity_kWh < nightConsumption_kWh * 0.5) {
-    reasoning = `Too small — only ${(capacity_kWh / nightConsumption_kWh * 100).toFixed(0)} % of night load.`;
+    reasoning = `Too small -  only ${(capacity_kWh / nightConsumption_kWh * 100).toFixed(0)} % of night load.`;
   } else if (capacity_kWh > dailyConsumption_kWh * 2) {
-    reasoning = `Oversized — ${(capacity_kWh / dailyConsumption_kWh).toFixed(1)}× daily consumption.`;
+    reasoning = `Oversized -  ${(capacity_kWh / dailyConsumption_kWh).toFixed(1)}× daily consumption.`;
   } else if (paybackPeriod_years < 5) {
-    reasoning = `Excellent ROI — payback ${paybackPeriod_years.toFixed(1)} yrs.`;
+    reasoning = `Excellent ROI -  payback ${paybackPeriod_years.toFixed(1)} yrs.`;
   } else if (paybackPeriod_years < 8) {
-    reasoning = `Good ROI — ${paybackPeriod_years.toFixed(1)} yr payback.`;
+    reasoning = `Good ROI -  ${paybackPeriod_years.toFixed(1)} yr payback.`;
   } else if (paybackPeriod_years < 12) {
-    reasoning = `Acceptable — ${paybackPeriod_years.toFixed(1)} yr payback.`;
+    reasoning = `Acceptable -  ${paybackPeriod_years.toFixed(1)} yr payback.`;
   } else {
-    reasoning = `Poor ROI — ${paybackPeriod_years.toFixed(1)} yr payback exceeds battery lifetime.`;
+    reasoning = `Poor ROI -  ${paybackPeriod_years.toFixed(1)} yr payback exceeds battery lifetime.`;
   }
 
   return {
@@ -272,9 +272,9 @@ function estimateCycleLife(
 
 /**
  * NPV with:
- *  - energy savings growing at energyInflationRate each year
- *  - demand savings growing at the same inflation rate
- *  - replacement cost inflated at energyInflationRate at each replacement year
+ * - energy savings growing at energyInflationRate each year
+ * - demand savings growing at the same inflation rate
+ * - replacement cost inflated at energyInflationRate at each replacement year
  */
 function calculateNPV(
   upfrontCost: number,

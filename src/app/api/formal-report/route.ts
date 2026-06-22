@@ -1319,7 +1319,7 @@ function generateReportHTML(data: ReportRequest): string {
     <div class="section">
       <div class="section-title">
         <span class="section-number">${data.recommendation ? '10' : '9'}</span>
-        <span>Financial Analysis — CAPEX, NPV, IRR &amp; LCOE</span>
+        <span>Financial Analysis -  CAPEX, NPV, IRR &amp; LCOE</span>
       </div>
 
       <div style="background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;">

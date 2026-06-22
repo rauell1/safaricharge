@@ -270,7 +270,7 @@ function MobileDiagram({
   const loadActive = flowDirection.solarToHome    || flowDirection.batteryToHome || flowDirection.gridToHome;
 
   return (
-    /* outer wrapper: fixed intrinsic size — the SVG and nodes share the same
+    /* outer wrapper: fixed intrinsic size -  the SVG and nodes share the same
        coordinate origin so lines land exactly at node centres */
     <div className="relative mx-auto" style={{ width: SVG_W, height: SVG_H }}>
 
@@ -610,7 +610,7 @@ export function PowerFlowVisualization({
           />
         </div>
 
-        {/* ── DESKTOP diagram (≥ 640 px) — unchanged ── */}
+        {/* ── DESKTOP diagram (≥ 640 px) -  unchanged ── */}
         <div className="hidden sm:block rounded-[24px] border border-[var(--border)] bg-[var(--bg-secondary)]/60 p-6">
           <div className="flex flex-col items-center gap-5 py-2">
 

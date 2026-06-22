@@ -1,12 +1,12 @@
 /**
- * /api/scenarios/[id] — Per-scenario mutations
+ * /api/scenarios/[id] -  Per-scenario mutations
  *
  * PATCH  → rename a scenario
  * DELETE → permanently delete a scenario
  *
  * Both handlers verify the session and rely on RLS to ensure a user can only
  * mutate their own scenarios.  No extra .eq('user_id', user.id) filter is
- * needed — the policy enforces it at the DB level.
+ * needed -  the policy enforces it at the DB level.
  */
 
 import { NextResponse, type NextRequest } from 'next/server';
@@ -79,7 +79,7 @@ export async function PATCH(
   }
 
   if (!data) {
-    // Row wasn't updated — either it doesn't exist or belongs to another user.
+    // Row wasn't updated -  either it doesn't exist or belongs to another user.
     // Both cases are presented as 404 to avoid leaking information.
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }

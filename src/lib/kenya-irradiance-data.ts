@@ -4,10 +4,10 @@
  * Kenya county-level solar irradiance presets for SafariCharge.
  *
  * Data sources:
- *   - NASA POWER (power.larc.nasa.gov) — county centroid coordinates
- *   - PVGIS v5.2 — annual/monthly kWh/kWp (PVOUT) at optimal tilt
- *   - Kenya Meteorological Department monthly irradiance bulletins
- *   - Week 6 Solar PV Forum notes (Roy Otieno, 2026)
+ *  - NASA POWER (power.larc.nasa.gov) -  county centroid coordinates
+ *  - PVGIS v5.2 -  annual/monthly kWh/kWp (PVOUT) at optimal tilt
+ *  - Kenya Meteorological Department monthly irradiance bulletins
+ *  - Week 6 Solar PV Forum notes (Roy Otieno, 2026)
  *
  * PSH (Peak Sun Hours) = daily plane-of-array irradiance in kWh/m²/day
  * assuming optimal fixed tilt ≈ |latitude| degrees.
@@ -15,18 +15,18 @@
  * KOSAP counties are the 14 counties prioritised under the Kenya Off-grid
  * Solar Access Project (World Bank / REA, 2018-2025).
  *
- * Grid reliability index (1–5):
+ * Grid reliability index (1-5):
  *   5 = Nairobi/Mombasa urban core (< 2 h outage/month)
  *   1 = Remote arid/semi-arid (> 8 h outage/day or no grid)
  */
 
 export type ClimateZone =
-  | 'highland'       // Central highlands, Aberdares — cooler, moderate sun
-  | 'coastal'        // Mombasa, Kilifi — humid, high diffuse radiation
-  | 'arid'           // Turkana, Marsabit — hottest, highest DNI
-  | 'semi-arid'      // Machakos, Kajiado — high sun, moderate temps
-  | 'lake-victoria'  // Kisumu, Homa Bay — high cloud cover, lower PSH
-  | 'urban';         // Nairobi metro — mix of highland + urban heat island
+  | 'highland'       // Central highlands, Aberdares -  cooler, moderate sun
+  | 'coastal'        // Mombasa, Kilifi -  humid, high diffuse radiation
+  | 'arid'           // Turkana, Marsabit -  hottest, highest DNI
+  | 'semi-arid'      // Machakos, Kajiado -  high sun, moderate temps
+  | 'lake-victoria'  // Kisumu, Homa Bay -  high cloud cover, lower PSH
+  | 'urban';         // Nairobi metro -  mix of highland + urban heat island
 
 export interface KenyaCountyIrradiance {
   county: string;
@@ -56,7 +56,7 @@ export interface KenyaCountyIrradiance {
   /** KOSAP off-grid priority county (14 counties) */
   isKosap: boolean;
   /**
-   * Grid reliability score 1–5.
+   * Grid reliability score 1-5.
    * 5 = very reliable urban; 1 = minimal/no grid access.
    */
   gridReliability: number;

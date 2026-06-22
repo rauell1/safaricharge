@@ -18,7 +18,7 @@ interface DashboardHeaderProps {
   onLocationClick?: () => void;
   onRecommendationClick?: () => void;
   onDownload?: () => void;
-  /** @deprecated — Save Scenario has moved to the Scenarios page. This prop is kept for compatibility but is no longer used. */
+  /** @deprecated -  Save Scenario has moved to the Scenarios page. This prop is kept for compatibility but is no longer used. */
   onSaveScenario?: (name: string) => void;
   locationName?: string;
   notificationCount?: number;
@@ -208,7 +208,7 @@ export function DashboardHeader({
                     <p style={{ marginTop: '3px', fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                       {item.description}
                     </p>
-                    {/* Action row — always horizontal */}
+                    {/* Action row -  always horizontal */}
                     <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                       {item.actionLabel && item.onAction && (
                         <button

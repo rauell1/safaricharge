@@ -63,19 +63,19 @@ export function EngineeringKpisCard({ deratingPct = 0, showDeratingBadge = false
               <tr className="border-b border-[var(--border)]">
                 <td className="py-2">Specific Yield</td>
                 <td className="py-2">{kpis.specificYield.toFixed(1)} kWh/kWp/yr</td>
-                <td className="py-2">1400–2000</td>
+                <td className="py-2">1400-2000</td>
                 <td className="py-2"><StatusBadge tone={kpis.benchmarks.specificYield} /></td>
               </tr>
               <tr className="border-b border-[var(--border)]">
                 <td className="py-2">Performance Ratio</td>
                 <td className="py-2">{(kpis.performanceRatio * 100).toFixed(1)}%</td>
-                <td className="py-2">75–90%</td>
+                <td className="py-2">75-90%</td>
                 <td className="py-2"><StatusBadge tone={kpis.benchmarks.performanceRatio} /></td>
               </tr>
               <tr className="border-b border-[var(--border)]">
                 <td className="py-2">Capacity Factor</td>
                 <td className="py-2">{(kpis.capacityFactor * 100).toFixed(1)}%</td>
-                <td className="py-2">18–22%</td>
+                <td className="py-2">18-22%</td>
                 <td className="py-2"><StatusBadge tone={kpis.benchmarks.capacityFactor} /></td>
               </tr>
               <tr className="border-b border-[var(--border)]">
@@ -88,37 +88,37 @@ export function EngineeringKpisCard({ deratingPct = 0, showDeratingBadge = false
                 <td className="py-2">Grid Independence</td>
                 <td className="py-2">{(kpis.gridIndependence * 100).toFixed(1)}%</td>
                 <td className="py-2">Higher is better</td>
-                <td className="py-2">—</td>
+                <td className="py-2"> - </td>
               </tr>
               <tr className="border-b border-[var(--border)]">
                 <td className="py-2">Battery Cycles / Year</td>
                 <td className="py-2">{kpis.batteryCyclesPerYear.toFixed(1)}</td>
                 <td className="py-2">Simulation-derived</td>
-                <td className="py-2">—</td>
+                <td className="py-2"> - </td>
               </tr>
               <tr className="border-b border-[var(--border)]">
                 <td className="py-2">CO₂ Avoided</td>
                 <td className="py-2">{kpis.co2AvoidedKgPerYear.toFixed(1)} kg/yr</td>
                 <td className="py-2">Grid factor 0.4 kg/kWh</td>
-                <td className="py-2">—</td>
+                <td className="py-2"> - </td>
               </tr>
               <tr className="border-b border-[var(--border)]">
                 <td className="py-2">LCOE</td>
-                <td className="py-2">{financeSummary ? `KES ${financeSummary.lcoeKesPerKwh.toFixed(2)}/kWh` : '—'}</td>
+                <td className="py-2">{financeSummary ? `KES ${financeSummary.lcoeKesPerKwh.toFixed(2)}/kWh` : ' - '}</td>
                 <td className="py-2">Finance model</td>
-                <td className="py-2">—</td>
+                <td className="py-2"> - </td>
               </tr>
               <tr className="border-b border-[var(--border)]">
                 <td className="py-2">NPV / IRR</td>
-                <td className="py-2">{financeSummary ? `KES ${financeSummary.npvKes.toFixed(0)} / ${financeSummary.irrPct.toFixed(1)}%` : '—'}</td>
+                <td className="py-2">{financeSummary ? `KES ${financeSummary.npvKes.toFixed(0)} / ${financeSummary.irrPct.toFixed(1)}%` : ' - '}</td>
                 <td className="py-2">Finance model</td>
-                <td className="py-2">—</td>
+                <td className="py-2"> - </td>
               </tr>
               <tr>
                 <td className="py-2">Simple Payback</td>
-                <td className="py-2">{financeSummary ? `${financeSummary.paybackYears.toFixed(2)} years` : '—'}</td>
+                <td className="py-2">{financeSummary ? `${financeSummary.paybackYears.toFixed(2)} years` : ' - '}</td>
                 <td className="py-2">Finance model</td>
-                <td className="py-2">—</td>
+                <td className="py-2"> - </td>
               </tr>
             </tbody>
           </table>

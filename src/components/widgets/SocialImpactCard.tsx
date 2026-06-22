@@ -44,7 +44,7 @@ export function SocialImpactCard({
                 </button>
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-xs text-xs">
-                Kenya receives around 4–6 kWh/m²/day in most regions, often higher than many temperate markets, improving solar economics.
+                Kenya receives around 4-6 kWh/m²/day in most regions, often higher than many temperate markets, improving solar economics.
                 <a className="ml-1 underline" href="https://globalsolaratlas.info/" target="_blank" rel="noreferrer">Global Solar Atlas</a>
               </TooltipContent>
             </Tooltip>

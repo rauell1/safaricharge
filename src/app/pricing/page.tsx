@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Pricing — Free Solar Simulation Platform | SafariCharge',
+  title: 'Pricing -  Free Solar Simulation Platform | SafariCharge',
   description:
     'SafariCharge is free to use. Simulate solar PV + BESS systems, run MILP dispatch optimization, and analyze KPLC tariff savings at no cost.',
   robots: {
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     locale: 'en_KE',
     url: 'https://solar.rauell.systems/pricing',
     siteName: 'SafariCharge',
-    title: 'Pricing — Free Solar Simulation Platform | SafariCharge',
+    title: 'Pricing -  Free Solar Simulation Platform | SafariCharge',
     description: 'SafariCharge is free to use for solar + BESS simulation and KPLC tariff analysis.',
     images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'SafariCharge Pricing' }],
   },
@@ -51,7 +51,7 @@ export default function PricingPage() {
       <div className="max-w-2xl w-full text-center">
         <h1 className="text-4xl font-bold mb-4">Simple, transparent pricing</h1>
         <p className="text-[var(--text-secondary)] text-lg mb-12">
-          SafariCharge is free to use — no credit card, no hidden fees.
+          SafariCharge is free to use -  no credit card, no hidden fees.
         </p>
 
         {tiers.map((tier) => (
@@ -76,7 +76,7 @@ export default function PricingPage() {
               href="/demo"
               className="inline-block w-full text-center bg-[var(--solar)] text-black font-semibold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity"
             >
-              Try the demo — no sign-up
+              Try the demo -  no sign-up
             </Link>
           </div>
         ))}

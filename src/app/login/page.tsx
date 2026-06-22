@@ -6,7 +6,6 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { BrandLogo } from '@/components/brand-logo'
-import { ThemeToggle } from '@/components/theme-toggle'
 
 function LoginForm() {
   const router = useRouter()
@@ -74,7 +73,7 @@ function LoginForm() {
         }
       }
     } catch {
-      // Network error — proceed to dashboard; middleware will enforce onboarding if needed.
+      // Network error -  proceed to dashboard; middleware will enforce onboarding if needed.
     }
 
     // Direct redirection via full reload to force session cookie sync with Next.js edge middleware
@@ -336,7 +335,6 @@ export default function LoginPage() {
         <header style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', height: 60, borderBottom: '1px solid var(--site-page-border)', background: 'var(--site-nav-bg)', backdropFilter: 'blur(10px)' }}>
           <BrandLogo href="/landing" />
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <ThemeToggle />
             <Link href="/landing" style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--site-page-muted)', fontSize: 13, textDecoration: 'none' }}>
               <ArrowLeft size={14} /> Back to home
             </Link>

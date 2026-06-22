@@ -2,10 +2,10 @@
  * PVSizingSection
  *
  * Self-contained PV Sizing Calculator rendered inside the System Configuration page.
- * All sizing logic lives in @/lib/pv-sizing — this component is purely presentational.
+ * All sizing logic lives in @/lib/pv-sizing -  this component is purely presentational.
  *
  * The "Load into simulator" flow writes to localStorage (SIZING_SIMULATOR_STORAGE_KEY)
- * and navigates to /simulation — identical behaviour to the previous standalone /sizing page.
+ * and navigates to /simulation -  identical behaviour to the previous standalone /sizing page.
  *
  * Label change: "System Type" → "Installation Type"
  *   Rationale: the field only gates battery sizing (off-grid requires battery capacity +
@@ -269,16 +269,16 @@ export function PVSizingSection({ locationOverride }: { locationOverride?: Locat
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="400">400 W — Generic mono-Si</SelectItem>
-              <SelectItem value="500">500 W — Generic mono-Si</SelectItem>
-              <SelectItem value="575">575 W — Jinko Tiger Neo 72HL4-BDV</SelectItem>
-              <SelectItem value="590">590 W — Jinko Tiger Neo 72HL4-BDV</SelectItem>
-              <SelectItem value="600">600 W — Jinko Tiger Neo 72HL4-BDV</SelectItem>
-              <SelectItem value="605">605 W — Jinko Tiger Neo 66HL4M-BDV</SelectItem>
-              <SelectItem value="615">615 W — Jinko Tiger Neo 66HL4M-BDV</SelectItem>
-              <SelectItem value="620">620 W — Jinko Tiger Neo 66HL4M-BDV</SelectItem>
-              <SelectItem value="625">625 W — Jinko Tiger Neo 66HL4M-BDV</SelectItem>
-              <SelectItem value="630">630 W — Jinko Tiger Neo 66HL4M-BDV</SelectItem>
+              <SelectItem value="400">400 W -  Generic mono-Si</SelectItem>
+              <SelectItem value="500">500 W -  Generic mono-Si</SelectItem>
+              <SelectItem value="575">575 W -  Jinko Tiger Neo 72HL4-BDV</SelectItem>
+              <SelectItem value="590">590 W -  Jinko Tiger Neo 72HL4-BDV</SelectItem>
+              <SelectItem value="600">600 W -  Jinko Tiger Neo 72HL4-BDV</SelectItem>
+              <SelectItem value="605">605 W -  Jinko Tiger Neo 66HL4M-BDV</SelectItem>
+              <SelectItem value="615">615 W -  Jinko Tiger Neo 66HL4M-BDV</SelectItem>
+              <SelectItem value="620">620 W -  Jinko Tiger Neo 66HL4M-BDV</SelectItem>
+              <SelectItem value="625">625 W -  Jinko Tiger Neo 66HL4M-BDV</SelectItem>
+              <SelectItem value="630">630 W -  Jinko Tiger Neo 66HL4M-BDV</SelectItem>
             </SelectContent>
           </Select>
         </div>

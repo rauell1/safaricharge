@@ -5,9 +5,9 @@
 /* ═══════════════════════════════════════════════════════════════
    SAFARICHARGE DESIGN TOKENS
    Strategy:
-   - :root  = LIGHT mode (default, first load, no flash)
-   - .dark  = dark mode overrides
-   - .light = explicit light override (same as :root, for next-themes)
+  - :root  = LIGHT mode (default, first load, no flash)
+  - .dark  = dark mode overrides
+  - .light = explicit light override (same as :root, for next-themes)
    Every colour token, surface, border and text level is declared in
    both contexts so NO section of the UI can ever stay in the wrong
    mode. Hardcoded hex/rgba values are banned outside these blocks.
@@ -58,7 +58,7 @@
   --text-tertiary:    #4a6658;
   --text-muted:       #688070;
 
-  /* Brand accents — dark enough for light backgrounds */
+  /* Brand accents -  dark enough for light backgrounds */
   --solar:            #b45309;
   --solar-bright:     #d97706;
   --solar-soft:       rgba(180,83,9,0.10);
@@ -138,105 +138,11 @@
   --site-nav-link-hover: rgba(13,31,23,0.90);
   --site-nav-link-bg-hover: rgba(13,31,23,0.05);
 
-  /* Card shadow — light */
+  /* Card shadow -  light */
   --card-shadow:       0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
   --card-shadow-hover: 0 4px 8px rgba(0,0,0,0.10), 0 12px 24px rgba(0,0,0,0.07);
 }
 
-/* ─── DARK MODE ─────────────────────────────────────────────── */
-.dark {
-  color-scheme: dark;
-
-  --background:             222 32% 6%;
-  --foreground:             210 40% 96%;
-  --card:                   222 28% 10%;
-  --card-foreground:        210 36% 92%;
-  --popover:                222 30% 12%;
-  --popover-foreground:     210 36% 92%;
-  --primary:                152 66% 42%;
-  --primary-foreground:     144 86% 96%;
-  --secondary:              220 20% 18%;
-  --secondary-foreground:   213 32% 88%;
-  --muted:                  218 16% 22%;
-  --muted-foreground:       214 22% 72%;
-  --accent:                 44 95% 52%;
-  --accent-foreground:      219 33% 10%;
-  --destructive:            0 72% 60%;
-  --destructive-foreground: 0 0% 100%;
-  --border-color:           220 18% 26%;
-  --input:                  220 18% 22%;
-  --ring:                   152 66% 42%;
-
-  --bg-primary:       #080d18;
-  --bg-secondary:     #0d1424;
-  --bg-card:          #101929;
-  --bg-card-hover:    #162035;
-  --bg-card-muted:    rgba(255,255,255,0.035);
-
-  --border:           rgba(255,255,255,0.08);
-  --border-strong:    rgba(168,210,255,0.18);
-  --border-hover:     rgba(168,210,255,0.26);
-
-  --text-primary:     #f1f5f9;
-  --text-secondary:   #b0bec5;
-  --text-tertiary:    #78909c;
-  --text-muted:       #546e7a;
-
-  --solar:            #f59e0b;
-  --solar-bright:     #fbbf24;
-  --solar-soft:       rgba(245,158,11,0.10);
-
-  --battery:          #10b981;
-  --battery-bright:   #34d399;
-  --battery-soft:     rgba(16,185,129,0.10);
-
-  --consumption:      #06b6d4;
-  --consumption-soft: rgba(6,182,212,0.10);
-
-  --grid:             #3b82f6;
-  --grid-bright:      #60a5fa;
-  --grid-soft:        rgba(59,130,246,0.10);
-
-  --ev:               #a855f7;
-  --ev-bright:        #c084fc;
-  --ev-soft:          rgba(168,85,247,0.10);
-
-  --alert:            #ef4444;
-  --alert-bright:     #f87171;
-  --alert-soft:       rgba(239,68,68,0.10);
-
-  --success:          #22c55e;
-  --warning:          #f59e0b;
-  --warning-soft:     rgba(245,158,11,0.10);
-
-  --sidebar-background:           220 28% 10%;
-  --sidebar-foreground:           215 14% 65%;
-  --sidebar-primary:              215 14% 40%;
-  --sidebar-primary-foreground:   215 14% 85%;
-  --sidebar-accent:               220 18% 16%;
-  --sidebar-accent-foreground:    215 14% 85%;
-  --sidebar-border:               220 16% 14%;
-  --sidebar-ring:                 217 33% 17%;
-
-  /* ── Site-shell tokens — dark overrides ── */
-  --site-page-bg:      #03070f;
-  --site-page-fg:      #f8fafc;
-  --site-page-muted:   rgba(255,255,255,0.42);
-  --site-page-soft:    rgba(255,255,255,0.20);
-  --site-page-border:  rgba(255,255,255,0.05);
-  --site-page-surface: rgba(255,255,255,0.025);
-
-  /* Landing decorative tokens — dark */
-  --site-grid-line:    rgba(16,185,129,0.03);
-  --site-top-glow:     rgba(16,185,129,0.18);
-  --site-nav-bg:       rgba(3,7,15,0.85);
-  --site-nav-link:     rgba(255,255,255,0.42);
-  --site-nav-link-hover: rgba(255,255,255,0.90);
-  --site-nav-link-bg-hover: rgba(255,255,255,0.05);
-
-  --card-shadow:       0 1px 2px rgba(0,0,0,0.35), 0 4px 12px rgba(0,0,0,0.22);
-  --card-shadow-hover: 0 4px 6px rgba(0,0,0,0.45), 0 12px 24px rgba(0,0,0,0.30), 0 0 0 1px var(--border-strong);
-}
 
 /* ─── Base ───────────────────────────────────────────────────── */
 /*
@@ -307,7 +213,7 @@ label, caption, figcaption {
 
 /* ─── Page shell ─────────────────────────────────────────────── */
 /*
-  overflow-x: hidden lives here — on the content shell, not on html/body.
+  overflow-x: hidden lives here -  on the content shell, not on html/body.
   This prevents layout-level horizontal overflow (e.g. a wide chart or
   table briefly expanding the page) without ever touching fixed overlays.
 */
@@ -407,7 +313,7 @@ label, caption, figcaption {
   box-shadow: 0 14px 48px rgba(0,0,0,0.32), 0 2px 12px rgba(0,0,0,0.2);
 }
 
-/* ─── Dialog / AlertDialog / Sheet — global safety net ──────── */
+/* ─── Dialog / AlertDialog / Sheet -  global safety net ──────── */
 [data-slot='dialog-content'],
 [data-slot='alert-dialog-content'],
 [data-slot='sheet-content'] {
@@ -701,13 +607,13 @@ header {
 /*
   ── Tailwind v4 max-width compatibility fix ──────────────────────────────
   The custom spacing scale (tailwind.config.ts) defines sm/md/lg/xl/2xl as
-  tiny spacing values (0.5rem–3rem). In v4, max-w-* derives from --spacing-*,
+  tiny spacing values (0.5rem-3rem). In v4, max-w-* derives from --spacing-*,
   so max-w-xl resolves to 32px instead of the expected ~576px container width.
 
   @utility cannot override generated utilities (they appear later in the same
   @layer utilities block). This @layer utilities block appended here comes AFTER
   the auto-generated spacing utilities in source order, so within the same layer
-  it wins via the "later source position wins" rule — no !important needed.
+  it wins via the "later source position wins" rule -  no !important needed.
   Responsive variants are covered explicitly below.
 */
 @layer utilities {
@@ -718,7 +624,7 @@ header {
   .max-w-2xl { max-width: 42rem; }
 }
 
-/* Responsive variants — same fix for sm:, md:, lg: prefixes */
+/* Responsive variants -  same fix for sm:, md:, lg: prefixes */
 @media (min-width: 640px) {
   @layer utilities {
     .sm\:max-w-sm  { max-width: 24rem; }

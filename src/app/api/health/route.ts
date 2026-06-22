@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server';
  * ECS, Fly.io), and uptime monitors to verify the application process is
  * running and reachable.
  *
- * Intentionally minimal – it does NOT hit the database or external services
+ * Intentionally minimal - it does NOT hit the database or external services
  * so it remains fast (< 5 ms) even under heavy load and does not generate
  * false negatives when downstream dependencies are degraded.
  */

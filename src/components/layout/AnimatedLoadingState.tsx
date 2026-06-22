@@ -58,7 +58,7 @@ export function AnimatedLoadingState({
           <div className="absolute inset-x-5 top-5 h-5 rounded-full bg-[var(--battery)]/20 blur-xl animate-pulse" />
         </div>
 
-        {/* Text — explicit width + whitespace handling prevents word-per-line wrapping */}
+        {/* Text -  explicit width + whitespace handling prevents word-per-line wrapping */}
         <div className="space-y-2">
           <h2 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h2>
           <p

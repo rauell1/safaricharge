@@ -1,5 +1,5 @@
 /**
- * SafariCharge – Supabase Database types
+ * SafariCharge - Supabase Database types
  *
  * Manually crafted to match the schema in:
  *   supabase/migrations/20260523_profiles.sql

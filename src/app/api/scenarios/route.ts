@@ -1,5 +1,5 @@
 /**
- * /api/scenarios — Saved Scenarios CRUD
+ * /api/scenarios -  Saved Scenarios CRUD
  *
  * Route handlers for listing and creating/updating a user's saved scenarios.
  * Per-scenario mutations (rename, delete) live in ./[id]/route.ts.
@@ -10,7 +10,7 @@
  * so the logged-in user's JWT is read from the http-only session cookie that
  * @supabase/ssr writes at /auth/callback.  This means:
  *
- *   • RLS policies run as the signed-in user — no manual user_id filtering needed.
+ *   • RLS policies run as the signed-in user -  no manual user_id filtering needed.
  *   • The server never trusts a user-supplied user_id in the request body.
  *   • 401 is returned when the cookie is absent or the session has expired.
  *
@@ -64,7 +64,7 @@ function rowToResponse(row: ScenarioRow): ScenarioResponse {
  * Create a service_role client for admin operations.
  *
  * MUST only be called from server-side code (Route Handlers, Server Actions).
- * NEVER expose the service_role key to the browser — it bypasses ALL RLS.
+ * NEVER expose the service_role key to the browser -  it bypasses ALL RLS.
  */
 function createAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -89,7 +89,7 @@ function createAdminClient() {
  * Response 500: { error: string }
  */
 export async function GET(): Promise<NextResponse> {
-  // 1. Build the SSR client — reads the user's session from the http-only cookie.
+  // 1. Build the SSR client -  reads the user's session from the http-only cookie.
   const supabase = await createServerSupabaseClient();
   if (!supabase) {
     return NextResponse.json({ error: 'Server misconfiguration: missing Supabase credentials.' }, { status: 500 });
@@ -108,7 +108,7 @@ export async function GET(): Promise<NextResponse> {
 
   // 3. Fetch scenarios.
   //    RLS policy "saved_scenarios: users select own" automatically restricts
-  //    rows to those where user_id = auth.uid() — no .eq('user_id', user.id) needed.
+  //    rows to those where user_id = auth.uid() -  no .eq('user_id', user.id) needed.
   const { data, error } = await supabase
     .from('saved_scenarios')
     .select('*')
@@ -130,7 +130,7 @@ export async function GET(): Promise<NextResponse> {
  * Create or update (upsert) a saved scenario.
  *
  * Request body must match the SavedScenario application shape.  The server
- * derives user_id from the verified session — never from the request body.
+ * derives user_id from the verified session -  never from the request body.
  *
  * Body schema:
  * {
@@ -191,7 +191,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // Build the DB row.  user_id is always taken from the verified JWT — the
+  // Build the DB row.  user_id is always taken from the verified JWT -  the
   // client cannot supply or override it.
   const row: ScenarioInsert = {
     ...(body.id ? { id: body.id } : {}),
@@ -225,7 +225,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // rate_limit_counters or any other service-only table without needing a
   // permissive RLS policy.  This is appropriate for server-side audit logging
   // where you want to record ALL write operations regardless of who triggered
-  // them — something you should NEVER do with the user-session client.
+  // them -  something you should NEVER do with the user-session client.
   try {
     const admin = createAdminClient();
     await admin
@@ -240,7 +240,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { onConflict: 'user_id,key' }
       );
   } catch (adminErr) {
-    // Non-fatal — audit log failure must never block the user response.
+    // Non-fatal -  audit log failure must never block the user response.
     console.warn('[POST /api/scenarios] Admin audit log failed:', adminErr);
   }
 

@@ -173,7 +173,7 @@ export default function AdminDashboard() {
 
           {error && (
             <div style={{ padding: '12px 16px', borderRadius: 10, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: 13, marginBottom: 24 }}>
-              {error} — <button onClick={fetchStats} style={{ background: 'none', border: 'none', color: '#f87171', textDecoration: 'underline', cursor: 'pointer', fontSize: 13 }}>Retry</button>
+              {error} -  <button onClick={fetchStats} style={{ background: 'none', border: 'none', color: '#f87171', textDecoration: 'underline', cursor: 'pointer', fontSize: 13 }}>Retry</button>
             </div>
           )}
 
@@ -189,10 +189,10 @@ export default function AdminDashboard() {
 
           {/* Stat cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
-            <StatCard icon={Users} label="Total Users" value={loading ? '—' : (stats?.users ?? 0)} color="#10b981" sub="registered profiles" />
-            <StatCard icon={FolderOpen} label="Scenarios" value={loading ? '—' : (stats?.scenarios ?? 0)} color="#6366f1" sub="saved configurations" />
-            <StatCard icon={Activity} label="Sim Runs" value={loading ? '—' : (stats?.simulation_runs ?? 0)} color="#f59e0b" sub="simulation sessions" />
-            <StatCard icon={MessageSquare} label="AI Chats" value={loading ? '—' : (stats?.ai_conversations ?? 0)} color="#06b6d4" sub={`${stats?.ai_messages ?? 0} messages total`} />
+            <StatCard icon={Users} label="Total Users" value={loading ? ' - ' : (stats?.users ?? 0)} color="#10b981" sub="registered profiles" />
+            <StatCard icon={FolderOpen} label="Scenarios" value={loading ? ' - ' : (stats?.scenarios ?? 0)} color="#6366f1" sub="saved configurations" />
+            <StatCard icon={Activity} label="Sim Runs" value={loading ? ' - ' : (stats?.simulation_runs ?? 0)} color="#f59e0b" sub="simulation sessions" />
+            <StatCard icon={MessageSquare} label="AI Chats" value={loading ? ' - ' : (stats?.ai_conversations ?? 0)} color="#06b6d4" sub={`${stats?.ai_messages ?? 0} messages total`} />
           </div>
 
           {/* Two-column lower section */}
@@ -292,7 +292,7 @@ export default function AdminDashboard() {
                     { label: 'Sim Runs', value: stats?.simulation_runs ?? 0, color: '#6366f1' },
                   ].map(({ label, value, color }) => (
                     <div key={label} style={{ padding: '14px 16px', borderRadius: 12, background: `${color}08`, border: `1px solid ${color}20` }}>
-                      <div style={{ fontSize: 22, fontWeight: 700, color, lineHeight: 1 }}>{loading ? '—' : value}</div>
+                      <div style={{ fontSize: 22, fontWeight: 700, color, lineHeight: 1 }}>{loading ? ' - ' : value}</div>
                       <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>{label}</div>
                     </div>
                   ))}

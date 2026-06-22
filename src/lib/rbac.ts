@@ -4,7 +4,7 @@
  * Role hierarchy (lowest → highest):
  *   viewer < operator < analyst < admin < owner
  *
- * Usage — check that the current user has at least a given role in an org:
+ * Usage -  check that the current user has at least a given role in an org:
  *
  *   const role = await getOrgRole(supabase, userId, orgId);
  *   if (!hasMinRole(role, 'analyst')) return forbidden();

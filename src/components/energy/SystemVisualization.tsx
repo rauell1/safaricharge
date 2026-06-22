@@ -88,7 +88,7 @@ export function SystemVisualization() {
           <Zap className="h-5 w-5 text-[var(--battery)]" />
           System Visualization
           <span className="text-xs font-normal text-[var(--text-tertiary)] ml-2">
-            Live with energy flow — click a node to jump to its detail page
+            Live with energy flow -  click a node to jump to its detail page
           </span>
         </CardTitle>
       </CardHeader>
@@ -279,7 +279,7 @@ export function SystemVisualization() {
             </div>
           )}
           <div className="mt-2 text-[10px] text-[var(--text-tertiary)]">
-            Driven by the shared energySystemStore — always in sync with the energy flow diagram.
+            Driven by the shared energySystemStore -  always in sync with the energy flow diagram.
           </div>
         </div>
       </CardContent>

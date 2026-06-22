@@ -40,7 +40,7 @@ export async function GET(request: Request) {
 
       // Check whether this user has completed onboarding (has a full_name).
       // New users get a skeleton profile row from the handle_new_user trigger
-      // but with an empty full_name — they must go through /onboarding first.
+      // but with an empty full_name -  they must go through /onboarding first.
       let profileComplete = isAdmin // admins skip onboarding
       if (!isAdmin) {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL

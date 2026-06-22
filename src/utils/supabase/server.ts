@@ -6,9 +6,9 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
 
 /**
  * Server-side Supabase client for use in:
- *   - React Server Components
- *   - Route Handlers  (src/app/api/**)
- *   - Server Actions
+ *  - React Server Components
+ *  - Route Handlers  (src/app/api/**)
+ *  - Server Actions
  *
  * Usage:
  *   const supabase = await createClient()
@@ -27,7 +27,7 @@ export const createClient = async () => {
             cookieStore.set(name, value, options)
           );
         } catch {
-          // Called from a Server Component — safe to ignore;
+          // Called from a Server Component -  safe to ignore;
           // the middleware will refresh the session.
         }
       },

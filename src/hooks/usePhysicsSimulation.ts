@@ -5,7 +5,7 @@
  * battery SOC, solar power, grid flows, and minute data all update
  * correctly each simulation tick.
  *
- * ROOT CAUSE FIX (Issue A — ENGINEERING_ISSUES_V2_2026-04-10.md):
+ * ROOT CAUSE FIX (Issue A -  ENGINEERING_ISSUES_V2_2026-04-10.md):
  *   calculateInstantPhysics was implemented but never called from the
  *   running app. This hook is the missing caller. It:
  *     1. Persists PhysicsEngineState across ticks via useRef
@@ -103,7 +103,7 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
   } = options;
 
   // -------------------------------------------------------------------------
-  // Store write actions — these are stable references (Zustand guarantees
+  // Store write actions -  these are stable references (Zustand guarantees
   // action identity across renders), so they are safe deps for useCallback.
   // -------------------------------------------------------------------------
   const applySimulationTick = useEnergySystemStore((s) => s.applySimulationTick);
@@ -130,7 +130,7 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
   // Reading it reactively would make this hook re-render on every tick,
   // recreating `tick` and restarting the setInterval in useDemoEnergySystem.
   // Instead, we call useEnergySystemStore.getState().accumulators imperatively
-  // inside the tick body — see step 8 below.
+  // inside the tick body -  see step 8 below.
 
   // -------------------------------------------------------------------------
   // Persistent physics state (survives re-renders, resets only on unmount)
@@ -212,7 +212,7 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
   );
 
   // -------------------------------------------------------------------------
-  // Core tick function — call this every simulation timestep
+  // Core tick function -  call this every simulation timestep
   // -------------------------------------------------------------------------
   const tick = useCallback(
     (timeOfDay: number, currentDate: Date) => {

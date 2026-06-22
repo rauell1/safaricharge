@@ -9,7 +9,7 @@
  *
  * All physical constants are imported from config.ts (single source of truth).
  * Component-specific overrides (temp coefficient, inverter efficiency, etc.)
- * are accepted via the optional CatalogPhysicsParams argument — resolved by
+ * are accepted via the optional CatalogPhysicsParams argument -  resolved by
  * catalog-physics-bridge.ts from the SOLAR_COMPONENT_CATALOG datasheet specs.
  */
 
@@ -60,7 +60,7 @@ export type PriorityMode =
   | 'backup';   // keep battery reserved; draw from grid unless critical
 
 /**
- * Solar site data — matches the shape used in useDemoEnergySystem.ts
+ * Solar site data -  matches the shape used in useDemoEnergySystem.ts
  * and NAIROBI_SOLAR_DATA in page.tsx.
  */
 export interface SolarData {
@@ -78,7 +78,7 @@ export interface SolarData {
   tiltDeg?: number;
   /** Panel azimuth in degrees, 180 = south-facing (optional). */
   azimuthDeg?: number;
-  /** Daily peak irradiance at the site (W/m²) — optional legacy field. */
+  /** Daily peak irradiance at the site (W/m²) -  optional legacy field. */
   peakIrradiance?: number;
 }
 
@@ -93,10 +93,10 @@ export interface PhysicsEngineState {
   evSocs: Record<string, number>;
   /** Whether each EV is currently at home (plugged in). */
   evIsHome: Record<string, boolean>;
-  /** Current soiling loss factor (0–1, 1 = clean). */
+  /** Current soiling loss factor (0-1, 1 = clean). */
   soilingFactor: number;
   /**
-   * Accumulated age in fractional years — used to apply annual panel
+   * Accumulated age in fractional years -  used to apply annual panel
    * degradation across long-run simulations.
    */
   panelAgeYears?: number;
@@ -125,7 +125,7 @@ export interface DayScenario {
   loadProfiles: Partial<Record<string, HourlyProfile>>;
   /** Which EVs are "at home" today (randomly set each day). */
   evIsHome: Record<string, boolean>;
-  /** Daily solar-generation multiplier (weather perturbation 0.5–1.05). */
+  /** Daily solar-generation multiplier (weather perturbation 0.5-1.05). */
   solarMultiplier: number;
   /** Simulated calendar month (0-based, JS Date-compatible). */
   monthIndex: number;
@@ -137,7 +137,7 @@ export interface PhysicsTickResult {
   solarPowerKw: number;
   /** Battery power: positive = charging, negative = discharging (kW). */
   batteryPowerKw: number;
-  /** Battery SOC (0–100 %). */
+  /** Battery SOC (0-100 %). */
   batteryLevelPct: number;
   /** Grid power imported this tick (kW). */
   gridImportKw: number;
@@ -227,7 +227,7 @@ export function generateDayScenario(
     }
   }
 
-  // Solar multiplier: clear (1.0), partial cloud (0.65–0.9), overcast (0.4–0.65)
+  // Solar multiplier: clear (1.0), partial cloud (0.65-0.9), overcast (0.4-0.65)
   const solarMultiplier = dailyRandom(date, 42, 0.55, 1.05);
 
   return {
@@ -324,7 +324,7 @@ function buildLoadProfile(
 // ---------------------------------------------------------------------------
 
 /**
- * Core energy-balance function — called every simulation tick.
+ * Core energy-balance function -  called every simulation tick.
  *
  * Mutates `state.batteryKwh` and `state.evSocs` in-place so SOC
  * accumulates correctly across ticks.

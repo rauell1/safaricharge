@@ -1,5 +1,5 @@
 /**
- * Supabase DB service layer — typed CRUD helpers for the SafariCharge data model.
+ * Supabase DB service layer -  typed CRUD helpers for the SafariCharge data model.
  *
  * All scenario/simulation functions use the BROWSER client so RLS policies run
  * against the signed-in user's session.
@@ -106,7 +106,7 @@ export async function fetchScenarios(): Promise<SavedScenario[]> {
  *
  * Pass scenario.version (from a previous DB read) so the server can detect
  * concurrent edits from other tabs/devices.  New scenarios have no version
- * yet — omit it (undefined) and the RPC skips the conflict check.
+ * yet -  omit it (undefined) and the RPC skips the conflict check.
  *
  * Returns the version number the DB assigned to the saved row.
  * Throws on any DB/network error or version conflict.
@@ -217,7 +217,7 @@ export interface SaveSimulationRunInput {
  *
  * Uses the save_simulation_run_atomic RPC, which inserts the header row and
  * all minute data in a single transaction.  If any insert fails the entire
- * save is rolled back — no orphaned headers or partial data sets.
+ * save is rolled back -  no orphaned headers or partial data sets.
  *
  * Returns the new run's UUID.
  */
@@ -381,7 +381,7 @@ export async function getUserPreference<T>(key: string): Promise<T | null> {
 }
 
 /**
- * Upsert a user preference. Fire-and-forget — callers should not await.
+ * Upsert a user preference. Fire-and-forget -  callers should not await.
  */
 export async function setUserPreference(key: string, value: unknown): Promise<void> {
   try {
@@ -396,7 +396,7 @@ export async function setUserPreference(key: string, value: unknown): Promise<vo
         { onConflict: 'user_id,key' }
       );
   } catch {
-    // Silently swallow — preferences are best-effort
+    // Silently swallow -  preferences are best-effort
   }
 }
 

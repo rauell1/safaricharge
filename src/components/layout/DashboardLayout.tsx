@@ -104,7 +104,7 @@ function DashboardLayoutInner({
 
         Fix: DashboardSidebar and SidebarInset are now the direct children of
         SidebarProvider. The AI assistant and mobile nav live inside SidebarInset
-        — they're fixed/portal-rendered so they don't affect flow layout.
+        -  they're fixed/portal-rendered so they don't affect flow layout.
       */}
       <DashboardSidebar
         activeSection={activeSection}
@@ -115,8 +115,8 @@ function DashboardLayoutInner({
       <SidebarInset className="flex flex-col min-h-screen min-w-0 bg-[var(--bg-primary)] text-[var(--text-primary)]">
         {/*
           AI panel renders via DialogPortal into #modal-root (fixed, outside
-          this subtree) — zero effect on flow layout.
-          MobileBottomNav is position:fixed — also zero effect on flow.
+          this subtree) -  zero effect on flow layout.
+          MobileBottomNav is position:fixed -  also zero effect on flow.
         */}
         <SafariChargeAIAssistant
           isOpen={aiOpen}
@@ -134,7 +134,7 @@ function DashboardLayoutInner({
           onSectionChange={onSectionChange}
         />
 
-        {/* Content area — pb-16 reserves space for mobile bottom nav */}
+        {/* Content area -  pb-16 reserves space for mobile bottom nav */}
         <div className="flex-1 min-w-0 pb-16 md:pb-0">
           {children}
         </div>

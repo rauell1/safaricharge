@@ -42,7 +42,7 @@ const CATEGORY_OPTIONS: Array<SolarComponentCategory | 'All'> = [
   'Monitoring',
 ];
 
-const cleanText = (text: string) => text.replace(/[–—]/g, '-');
+const cleanText = (text: string) => text.replace(/[- - ]/g, '-');
 const getHostnameLabel = (url: string) => {
   try {
     return new URL(url).hostname.replace(/^www\./, '');

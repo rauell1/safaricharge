@@ -17,7 +17,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL("https://solar.rauell.systems"),
   title: {
-    default: "SafariCharge — Solar Energy Management Platform",
+    default: "SafariCharge -  Solar Energy Management Platform",
     template: "%s | SafariCharge",
   },
   description:
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
     alternateLocale: ["en_US", "en_GB"],
     url: "https://solar.rauell.systems",
     siteName: "SafariCharge",
-    title: "SafariCharge — Solar Energy Management Platform",
+    title: "SafariCharge -  Solar Energy Management Platform",
     description:
       "Solar PV + BESS simulation, MILP dispatch optimization, and KPLC tariff analysis for Kenya and Africa.",
     images: [
@@ -66,7 +66,7 @@ export const metadata: Metadata = {
         url: "/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "SafariCharge Solar Energy Dashboard — Kenya and Africa",
+        alt: "SafariCharge Solar Energy Dashboard -  Kenya and Africa",
       },
     ],
   },
@@ -74,7 +74,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     site: "@rauell1",
     creator: "@rauell1",
-    title: "SafariCharge — Solar Energy Management Platform",
+    title: "SafariCharge -  Solar Energy Management Platform",
     description:
       "Solar PV + BESS simulation, MILP dispatch optimization, and KPLC tariff analysis for Kenya and Africa.",
     images: ["/opengraph-image"],
@@ -124,7 +124,7 @@ export default function RootLayout({
         </ThemeProvider>
 
         {/*
-          #modal-root — the single mount point for ALL Radix portals.
+          #modal-root -  the single mount point for ALL Radix portals.
 
           WHY this exists:
             Radix Dialog/Sheet/Tooltip portals default to document.body,
@@ -132,7 +132,7 @@ export default function RootLayout({
             attach to the nearest hydrated root instead of true <body>.
             That lands the portal inside the SidebarProvider/SidebarInset
             layout tree, which has overflow/transition properties that
-            create a CSS containing block — causing `position:fixed`
+            create a CSS containing block -  causing `position:fixed`
             dialogs to measure 50vw against the sidebar box instead of
             the viewport, collapsing them to a vertical strip.
 

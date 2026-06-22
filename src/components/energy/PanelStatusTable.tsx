@@ -55,7 +55,7 @@ function StatusBadge({ status }: { status: 'online' | 'warning' | 'offline' }) {
 
 function EfficiencyBar({ value }: { value: number }) {
   const getColor = (e: number) => e >= 95 ? 'var(--battery)' : e >= 80 ? 'var(--solar)' : 'var(--alert)';
-  if (value <= 0) return <span className="text-xs text-[var(--text-tertiary)]">—</span>;
+  if (value <= 0) return <span className="text-xs text-[var(--text-tertiary)]"> - </span>;
   return (
     <div className="flex items-center gap-2">
       <div className="flex-1">
@@ -158,9 +158,9 @@ export function PanelStatusTable({ panels = defaultPanels, isLoading }: PanelSta
                 <TableRow key={panel.id} className="transition-colors hover:bg-[var(--bg-card-muted)]" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-card)' }}>
                   <TableCell className="font-mono text-sm text-[var(--text-primary)] font-medium">{panel.id}</TableCell>
                   <TableCell className="text-[var(--text-primary)]">
-                    <span style={{ color: panel.output > 0 ? 'var(--battery)' : 'var(--text-tertiary)' }}>{panel.output > 0 ? panel.output.toFixed(0) : '—'}</span>
+                    <span style={{ color: panel.output > 0 ? 'var(--battery)' : 'var(--text-tertiary)' }}>{panel.output > 0 ? panel.output.toFixed(0) : ' - '}</span>
                   </TableCell>
-                  <TableCell className="text-[var(--text-primary)]">{panel.voltage > 0 ? panel.voltage.toFixed(1) : '—'}</TableCell>
+                  <TableCell className="text-[var(--text-primary)]">{panel.voltage > 0 ? panel.voltage.toFixed(1) : ' - '}</TableCell>
                   <TableCell><StatusBadge status={panel.status} /></TableCell>
                   <TableCell><EfficiencyBar value={panel.efficiency} /></TableCell>
                 </TableRow>
@@ -173,5 +173,5 @@ export function PanelStatusTable({ panels = defaultPanels, isLoading }: PanelSta
   );
 }
 
-// Default export alias — supports: import PanelStatusTable from '...'
+// Default export alias -  supports: import PanelStatusTable from '...'
 export default PanelStatusTable;

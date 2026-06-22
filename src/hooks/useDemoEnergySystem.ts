@@ -7,10 +7,10 @@ import { usePhysicsSimulation } from '@/hooks/usePhysicsSimulation';
 import type { SolarData } from '@/lib/physics-engine';
 
 // ---------------------------------------------------------------------------
-// Module-level constants — stable references, no re-render churn
+// Module-level constants -  stable references, no re-render churn
 // ---------------------------------------------------------------------------
 
-/** Peak-tariff window: 17:00–21:00 Kenya KPLC evening peak. */
+/** Peak-tariff window: 17:00-21:00 Kenya KPLC evening peak. */
 const DEMO_PEAK_WINDOW: [number, number] = [17, 21];
 
 const DEMO_SOLAR_DATA: SolarData = {
@@ -22,7 +22,7 @@ const DEMO_SOLAR_DATA: SolarData = {
 };
 
 // ---------------------------------------------------------------------------
-// Base timing — speed multiplier is applied dynamically in the effect
+// Base timing -  speed multiplier is applied dynamically in the effect
 // 420 ticks/day × BASE_INTERVAL_MS = one simulated day in ~42 s at 1×
 // ---------------------------------------------------------------------------
 const BASE_INTERVAL_MS = 100;
@@ -35,8 +35,8 @@ const HOURS_PER_TICK   = 24 / TICKS_PER_DAY; // ~3.43 simulated minutes/tick
  * Drives the live simulation tick loop.
  *
  * FIX (this PR):
- *   - isAutoMode  → tick only fires when isAutoMode === true (Play/Pause works)
- *   - simSpeed    → interval = BASE_INTERVAL_MS / simSpeed, so 10× runs 10×
+ *  - isAutoMode  → tick only fires when isAutoMode === true (Play/Pause works)
+ *  - simSpeed    → interval = BASE_INTERVAL_MS / simSpeed, so 10× runs 10×
  *                   faster wall-clock; cable animation speed is a separate
  *                   cosmetic concern handled in SimulationNodes.
  */
@@ -61,7 +61,7 @@ export function useDemoEnergySystem(enabled = true) {
     peakWindow: DEMO_PEAK_WINDOW,
   });
 
-  // Simulated clock — live in refs so interval closure is stable
+  // Simulated clock -  live in refs so interval closure is stable
   const timeOfDayRef   = useRef<number>(0);
   const currentDateRef = useRef<Date>(new Date());
   const tickCountRef   = useRef<number>(0);
@@ -104,7 +104,7 @@ export function useDemoEnergySystem(enabled = true) {
     }
   }, [tick]);
 
-  // ── Live interval — respects isAutoMode and simSpeed ─────────────────────
+  // ── Live interval -  respects isAutoMode and simSpeed ─────────────────────
   //
   // We subscribe to both values from the store *outside* the effect so that
   // when either changes, the effect re-runs, tearning down the old interval
@@ -124,7 +124,7 @@ export function useDemoEnergySystem(enabled = true) {
       );
     }
 
-    // Paused or disabled — do not start an interval.
+    // Paused or disabled -  do not start an interval.
     if (!enabled || !isAutoMode) return;
 
     // Speed-scaled interval: 1× = 100 ms, 10× = 10 ms, 0.25× = 400 ms

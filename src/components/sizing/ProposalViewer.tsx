@@ -215,7 +215,7 @@ export default function ProposalViewer({ results, projectName, clientName, engin
             <div className="space-y-1 flex-1">
               <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase font-mono tracking-wider print:text-emerald-600"><Award className="w-4 h-4" /> ESG Compliance Certificate</div>
               <p className="text-[11px] text-slate-300 leading-relaxed print:text-slate-800">
-                This installation will avoid <strong>{results.annualCO2SavedTons} metric tons of CO₂ emissions annually</strong> — equivalent to <strong>{results.equivalentTreesPlanted} mature trees</strong> planted.
+                This installation will avoid <strong>{results.annualCO2SavedTons} metric tons of CO₂ emissions annually</strong> -  equivalent to <strong>{results.equivalentTreesPlanted} mature trees</strong> planted.
                 Qualifies for regional carbon credit applications.
               </p>
             </div>

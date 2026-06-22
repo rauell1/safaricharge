@@ -69,7 +69,7 @@ export type GridDirection   = 'import' | 'export' | 'neutral';
 export type StorageDirection = 'charge' | 'discharge' | 'idle';
 
 // ---------------------------------------------------------------------------
-// RigidCable — vertical animated power cable
+// RigidCable -  vertical animated power cable
 // ---------------------------------------------------------------------------
 export const RigidCable = React.memo(
   ({
@@ -250,7 +250,7 @@ export const SolarPanelProduct = React.memo(
             {power.toFixed(2)} <span className="text-xs font-normal text-[var(--text-secondary)]">kW</span>
           </div>
           <div className="text-[9px] text-[var(--text-tertiary)] mt-0.5">
-            {isNight ? '🌙 Night — no generation' : `${(utilization * 100).toFixed(0)}% utilisation`}
+            {isNight ? '🌙 Night -  no generation' : `${(utilization * 100).toFixed(0)}% utilisation`}
           </div>
         </div>
       </div>
@@ -418,25 +418,25 @@ GridProduct.displayName = 'GridProduct';
 // EV Charger & Inverter configuration presets
 // ---------------------------------------------------------------------------
 const EV_CHARGER_PRESETS = [
-  { id: 'ac7',   label: '7.4 kW AC — Level 2 Home',       maxKw: 7.4,  connectionType: 'AC' as const },
-  { id: 'ac22',  label: '22 kW AC — Three-Phase Type 2',   maxKw: 22,   connectionType: 'AC' as const },
-  { id: 'dc50',  label: '50 kW DC — Fast Charge CCS2',     maxKw: 50,   connectionType: 'DC' as const },
-  { id: 'dc120', label: '120 kW DC — Ultra-Fast CCS2',     maxKw: 120,  connectionType: 'DC' as const },
-  { id: 'dc150', label: '150 kW DC — HPC (High Power)',    maxKw: 150,  connectionType: 'DC' as const },
-  { id: 'dc350', label: '350 kW DC — Hypercharger',        maxKw: 350,  connectionType: 'DC' as const },
+  { id: 'ac7',   label: '7.4 kW AC -  Level 2 Home',       maxKw: 7.4,  connectionType: 'AC' as const },
+  { id: 'ac22',  label: '22 kW AC -  Three-Phase Type 2',   maxKw: 22,   connectionType: 'AC' as const },
+  { id: 'dc50',  label: '50 kW DC -  Fast Charge CCS2',     maxKw: 50,   connectionType: 'DC' as const },
+  { id: 'dc120', label: '120 kW DC -  Ultra-Fast CCS2',     maxKw: 120,  connectionType: 'DC' as const },
+  { id: 'dc150', label: '150 kW DC -  HPC (High Power)',    maxKw: 150,  connectionType: 'DC' as const },
+  { id: 'dc350', label: '350 kW DC -  Hypercharger',        maxKw: 350,  connectionType: 'DC' as const },
 ];
 
 const INVERTER_PRESETS = [
-  // ── Deye — single-phase SG04LP1 series (3–6 kW, 97.6% eff, 16-unit parallel) ────────
+  // ── Deye -  single-phase SG04LP1 series (3-6 kW, 97.6% eff, 16-unit parallel) ────────
   { id: 'deye-3.6',  label: 'Deye SUN-3.6K-SG04LP1-EU-SM2 (3.6 kW, 1Ø)',  kw: 3.6  },
   { id: 'deye-5sp',  label: 'Deye SUN-5K-SG04LP1-EU-SM2 (5 kW, 1Ø)',       kw: 5    },
   { id: 'deye-6sp',  label: 'Deye SUN-6K-SG04LP1-EU-SM2 (6 kW, 1Ø)',       kw: 6    },
-  // ── Deye — three-phase SG05LP3 series (3–12 kW, 97.6% eff, 10-unit parallel) ─────────
+  // ── Deye -  three-phase SG05LP3 series (3-12 kW, 97.6% eff, 10-unit parallel) ─────────
   { id: 'deye-3',    label: 'Deye SUN-3K-SG05LP3-EU-SM2 (3 kW, 3Ø)',       kw: 3    },
   { id: 'deye-5',    label: 'Deye SUN-5K-SG05LP3-EU-SM2 (5 kW, 3Ø)',       kw: 5    },
   { id: 'deye-8',    label: 'Deye SUN-8K-SG05LP3-EU-SM2 (8 kW, 3Ø)',       kw: 8    },
   { id: 'deye-12',   label: 'Deye SUN-12K-SG05LP3-EU-SM2 (12 kW, 3Ø)',     kw: 12   },
-  // ── Deye — three-phase SG05LP3 large series (14–20 kW, 97.6% eff, 350 A batt) ────────
+  // ── Deye -  three-phase SG05LP3 large series (14-20 kW, 97.6% eff, 350 A batt) ────────
   { id: 'deye-14',   label: 'Deye SUN-14K-SG05LP3-EU-SM2 (14 kW, 3Ø)',     kw: 14   },
   { id: 'deye-16',   label: 'Deye SUN-16K-SG05LP3-EU-SM2 (16 kW, 3Ø)',     kw: 16   },
   { id: 'deye-18',   label: 'Deye SUN-18K-SG05LP3-EU-SM2 (18 kW, 3Ø)',     kw: 18   },
@@ -529,7 +529,7 @@ function SocTimelineChart({ points }: { points: number[] }) {
 }
 
 // ---------------------------------------------------------------------------
-// SimulationControls — sticky top bar
+// SimulationControls -  sticky top bar
 // ---------------------------------------------------------------------------
 const SPEED_PRESETS = [0.25, 0.5, 1, 2, 5, 10, 30] as const;
 
@@ -652,7 +652,7 @@ function SimulationControls() {
 }
 
 // ---------------------------------------------------------------------------
-// SimulationNodes — SLD layout
+// SimulationNodes -  SLD layout
 // ---------------------------------------------------------------------------
 export function SimulationNodes() {
   const nodes            = useEnergySystemStore((s) => s.nodes);
@@ -928,7 +928,7 @@ export function SimulationNodes() {
             </div>
           </div>
 
-          {/* ── Row 3: Inverter bank (1–5 units based on capacity ÷ 10 kW) ── */}
+          {/* ── Row 3: Inverter bank (1-5 units based on capacity ÷ 10 kW) ── */}
           <div className="flex justify-center gap-3 py-2 flex-wrap">
             {Array.from({ length: inverterCount }, (_, i) => (
               <div key={i} className="flex flex-col items-center gap-0">
@@ -959,10 +959,10 @@ export function SimulationNodes() {
             </span>
           </div>
 
-          {/* ── Row 4: AC loads — dynamic from fullSystemConfig.loads ── */}
+          {/* ── Row 4: AC loads -  dynamic from fullSystemConfig.loads ── */}
           <div className="flex flex-nowrap justify-start sm:justify-around items-start gap-x-4 gap-y-6 px-2 pt-4 pb-3">
 
-            {/* Grid — always first */}
+            {/* Grid -  always first */}
             <div className="flex flex-col items-center gap-0 flex-shrink-0">
               <RigidCable
                 height={36}
@@ -1013,7 +1013,7 @@ export function SimulationNodes() {
               );
             })}
 
-            {/* EV chargers — from local config */}
+            {/* EV chargers -  from local config */}
             {Array.from({ length: evChargerCount }, (_, idx) => {
               const evPow  = getEvPower(idx);
               const evSocV = getEvSoc(idx);

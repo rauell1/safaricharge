@@ -4,18 +4,18 @@
  * Kenya-specific social impact calculator for SafariCharge.
  *
  * Grounded in:
- *   - M-KOPA Impact Report 2022/23 (productive use, income uplift)
- *   - GOGLA (Global Off-Grid Lighting Association) Impact Report 2022
- *     — 0.5 L kerosene/day/household displacement factor
- *   - IEA Africa Energy Outlook 2023
- *     — 100 kWh/month rural Kenya household baseline
- *   - KPLC Annual Report 2023/24
- *     — Grid emission factor: 0.395 kgCO₂/kWh (2023 Kenya grid mix)
- *   - IPCC AR6 WG3 (2022)
- *     — Kerosene combustion: 2.54 kgCO₂/litre
- *   - KOSAP (Kenya Off-Grid Solar Access Project)
- *     — 14 priority counties for off-grid solar deployment
- *   - REA (Rural Electrification Authority) Kenya electrification targets
+ *  - M-KOPA Impact Report 2022/23 (productive use, income uplift)
+ *  - GOGLA (Global Off-Grid Lighting Association) Impact Report 2022
+ *     -  0.5 L kerosene/day/household displacement factor
+ *  - IEA Africa Energy Outlook 2023
+ *     -  100 kWh/month rural Kenya household baseline
+ *  - KPLC Annual Report 2023/24
+ *     -  Grid emission factor: 0.395 kgCO₂/kWh (2023 Kenya grid mix)
+ *  - IPCC AR6 WG3 (2022)
+ *     -  Kerosene combustion: 2.54 kgCO₂/litre
+ *  - KOSAP (Kenya Off-Grid Solar Access Project)
+ *     -  14 priority counties for off-grid solar deployment
+ *  - REA (Rural Electrification Authority) Kenya electrification targets
  *
  * All monetary values in KES unless stated otherwise.
  */
@@ -272,6 +272,6 @@ export function capacityForHouseholds(
   return denominator > 0 ? monthlyLoadKwh / denominator : 0;
 }
 
-void systemCapacityKwp; // suppress unused-var warning — available to callers via input
+void systemCapacityKwp; // suppress unused-var warning -  available to callers via input
 
-function systemCapacityKwp(_: number): void { /* unused — parameter on input type */ }
+function systemCapacityKwp(_: number): void { /* unused -  parameter on input type */ }

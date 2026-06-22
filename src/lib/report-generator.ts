@@ -229,7 +229,7 @@ export function generateReportHTML(data: ReportData): string {
     totalSolarKWh, totalSavingsKES, totalGridImportKWh, totalGridExportKWh, totalEvKWh,
   } = data;
 
-  const fmt = (n: number, d = 0) => Number.isFinite(n) ? n.toLocaleString('en-KE', { maximumFractionDigits: d }) : '—';
+  const fmt = (n: number, d = 0) => Number.isFinite(n) ? n.toLocaleString('en-KE', { maximumFractionDigits: d }) : ' - ';
   const fmtKes = (n: number) => `KES ${fmt(n)}`;
 
   // Downsample simulation points for charts (max 200 points)
@@ -287,7 +287,7 @@ export function generateReportHTML(data: ReportData): string {
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>SafariCharge System Report — ${locationName}</title>
+<title>SafariCharge System Report -  ${locationName}</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; color: #1a2e1e; background: #f5f7f4; }
@@ -351,7 +351,7 @@ export function generateReportHTML(data: ReportData): string {
 <button class="print-btn no-print" onclick="window.print()">&#x2B07; Save as PDF</button>
 
 <!-- ═══════════════════════════════════════════════════════════
-     PAGE 1 — COVER
+     PAGE 1 -  COVER
      ═══════════════════════════════════════════════════════════ -->
 <div class="page cover">
   <div class="cover-accent"></div>
@@ -376,7 +376,7 @@ export function generateReportHTML(data: ReportData): string {
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
-     PAGE 2 — EXECUTIVE SUMMARY
+     PAGE 2 -  EXECUTIVE SUMMARY
      ═══════════════════════════════════════════════════════════ -->
 <div class="page page-break">
   <h2 class="section-title">Executive Summary</h2>
@@ -434,7 +434,7 @@ export function generateReportHTML(data: ReportData): string {
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
-     PAGE 3 — SYSTEM CONFIGURATION
+     PAGE 3 -  SYSTEM CONFIGURATION
      ═══════════════════════════════════════════════════════════ -->
 <div class="page page-break">
   <h2 class="section-title">System Configuration</h2>
@@ -492,7 +492,7 @@ export function generateReportHTML(data: ReportData): string {
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
-     PAGE 4 — ENERGY SIMULATION RESULTS
+     PAGE 4 -  ENERGY SIMULATION RESULTS
      ═══════════════════════════════════════════════════════════ -->
 <div class="page page-break">
   <h2 class="section-title">Energy Simulation Results</h2>
@@ -529,7 +529,7 @@ export function generateReportHTML(data: ReportData): string {
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
-     PAGE 5 — FINANCIAL ANALYSIS
+     PAGE 5 -  FINANCIAL ANALYSIS
      ═══════════════════════════════════════════════════════════ -->
 <div class="page page-break">
   <h2 class="section-title">Financial Analysis</h2>
@@ -581,7 +581,7 @@ export function generateReportHTML(data: ReportData): string {
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
-     PAGE 6 — RECOMMENDATIONS & CONCLUSION
+     PAGE 6 -  RECOMMENDATIONS & CONCLUSION
      ═══════════════════════════════════════════════════════════ -->
 <div class="page page-break">
   <h2 class="section-title">Recommendations &amp; Conclusion</h2>

@@ -52,7 +52,7 @@ export function GridStabilityWidget({
         </CardHeader>
         <CardContent className="p-4 sm:p-6">
           <div className="rounded-lg border border-dashed border-[var(--border)] p-4 text-base text-[var(--text-secondary)]">
-            Grid data integration pending — Awaiting Kenya Power API
+            Grid data integration pending -  Awaiting Kenya Power API
           </div>
         </CardContent>
       </Card>

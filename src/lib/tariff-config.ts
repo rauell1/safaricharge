@@ -1,4 +1,4 @@
-// EPRA 2025/26 tariff schedule — effective 1 Feb 2026
+// EPRA 2025/26 tariff schedule -  effective 1 Feb 2026
 // Source: EPRA Retail Electricity Tariffs Order, Gazette Notice No. 1752 (Jan 2026)
 // Off-peak base rates corrected from prior 8.0/14.0/15.5 (overstated by ~27%)
 export type TariffProfileType = 'ev' | 'domestic' | 'small-commercial';
@@ -10,7 +10,7 @@ export interface TariffProfile {
   effectiveFrom: string; // ISO date
   version: string;
   peakHours: Array<{ start: number; end: number }>;
-  /** Hours classed as medium-rate (shoulder) — only populated where the tariff has a 3-tier TOU */
+  /** Hours classed as medium-rate (shoulder) -  only populated where the tariff has a 3-tier TOU */
   shoulderHours?: Array<{ start: number; end: number }>;
   weekendOffPeak: boolean;
   energy: {
@@ -56,8 +56,8 @@ export const TARIFF_PROFILES: Record<TariffProfileType, TariffProfile> = {
     energy: {
       // EPRA 2025/26 EV-TOU schedule
       highRateBase: 16.00,   // peak: unchanged
-      mediumRateBase: 10.50, // shoulder tier (10:00–18:00, 22:00–06:00 on weekdays)
-      lowRateBase: 6.30,     // off-peak corrected (was 8.0 — 27% overstated)
+      mediumRateBase: 10.50, // shoulder tier (10:00-18:00, 22:00-06:00 on weekdays)
+      lowRateBase: 6.30,     // off-peak corrected (was 8.0 -  27% overstated)
       fuelEnergyCost: 3.10,
       ferfa: 1.2061,
       infa: 0.46,
@@ -77,7 +77,7 @@ export const TARIFF_PROFILES: Record<TariffProfileType, TariffProfile> = {
     energy: {
       // Domestic is a 2-tier TOU; no shoulder band
       highRateBase: 18.00,   // evening peak: unchanged
-      lowRateBase: 11.10,    // off-peak corrected (was 14.0 — ~27% overstated)
+      lowRateBase: 11.10,    // off-peak corrected (was 14.0 -  ~27% overstated)
       fuelEnergyCost: 3.10,
       ferfa: 1.2061,
       infa: 0.46,
@@ -103,7 +103,7 @@ export const TARIFF_PROFILES: Record<TariffProfileType, TariffProfile> = {
     energy: {
       highRateBase: 19.50,   // peak: unchanged
       mediumRateBase: 13.80, // shoulder: added for 3-tier SC tariff
-      lowRateBase: 11.40,    // off-peak corrected (was 15.5 — ~36% overstated)
+      lowRateBase: 11.40,    // off-peak corrected (was 15.5 -  ~36% overstated)
       fuelEnergyCost: 3.10,
       ferfa: 1.2061,
       infa: 0.46,

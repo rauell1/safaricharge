@@ -21,7 +21,7 @@ async function getAuthUser() {
   }
 }
 
-/** GET /api/user-preferences?keys=key1,key2  — returns { prefs: { key: value } } */
+/** GET /api/user-preferences?keys=key1,key2  -  returns { prefs: { key: value } } */
 export async function GET(request: Request) {
   const user = await getAuthUser();
   if (!user) return NextResponse.json({ prefs: {} });

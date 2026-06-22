@@ -158,7 +158,7 @@ export async function GET(request: Request) {
       }));
     }
   } catch {
-    // Not authenticated or cookie store unavailable — skip assets
+    // Not authenticated or cookie store unavailable -  skip assets
   }
 
   const url = new URL(request.url);
@@ -195,7 +195,7 @@ export async function POST(request: Request) {
     const { data: { user } } = await serverClient.auth.getUser();
     userId = user?.id ?? null;
   } catch {
-    // Not authenticated — proceed as anonymous upload
+    // Not authenticated -  proceed as anonymous upload
   }
 
   const formData = await request.formData();

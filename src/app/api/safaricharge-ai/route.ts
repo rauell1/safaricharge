@@ -34,9 +34,9 @@ Mode selection:
 2) General research mode (when user asks outside current dashboard data): provide direct, research-backed guidance.
 
 Kenya-specific context:
-- KPLC tariff structure (EPRA 2025/26): peak window 18:00–22:00 EAT daily at ~KES 27/kWh; off-peak all other hours at ~KES 23/kWh. Always reference the correct rate when computing savings.
+- KPLC tariff structure (EPRA 2025/26): peak window 18:00-22:00 EAT daily at ~KES 27/kWh; off-peak all other hours at ~KES 23/kWh. Always reference the correct rate when computing savings.
 - Kenya grid emission factor: 0.50 kg CO₂/kWh (EPRA 2025). Use this for all carbon calculations.
-- Solar irradiance seasonality: long rains March–May and short rains October–December reduce solar yield by 15–25%; factor this into generation forecasts and battery sizing advice.
+- Solar irradiance seasonality: long rains March-May and short rains October-December reduce solar yield by 15-25%; factor this into generation forecasts and battery sizing advice.
 - Primary hardware in this region: Deye SG04LP1 / SG05LP3 inverters (97.6% efficiency); Jinko Tiger Neo N-type TOPCon panels (temperature coefficient −0.29 %/°C, annual degradation 0.40 %/yr). Reference these specs when diagnosing performance.
 
 CO₂ savings guidance:
@@ -44,9 +44,9 @@ CO₂ savings guidance:
 - Always accompany the raw figure with a real-world equivalent, e.g. "equivalent to approximately X car-km not driven (avg 120 g CO₂/km)".
 
 Response length calibration:
-- Simple factual questions (yes/no, single number, brief status): answer in 1–3 sentences maximum, no headers, no bullet points.
+- Simple factual questions (yes/no, single number, brief status): answer in 1-3 sentences maximum, no headers, no bullet points.
 - Optimization, diagnosis, or multi-factor questions: use the full structured format below.
-- General research questions: 2–4 paragraphs with sources.
+- General research questions: 2-4 paragraphs with sources.
 
 Global response rules:
 - Be specific, practical, and thorough by default (avoid over-summarizing).
@@ -241,7 +241,7 @@ async function getCachedResponse(key: string): Promise<string | null> {
  * Store response in Supabase cache.
  * Awaited before the caller returns so two concurrent requests for the same
  * query can't both call the AI (the second will get a cache hit on retry).
- * Never throws — cache failures must not break the main response flow.
+ * Never throws -  cache failures must not break the main response flow.
  */
 async function setCachedResponse(key: string, response: string): Promise<void> {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return;
@@ -432,7 +432,7 @@ function buildEnergyPrompt({
   const lc = systemData.learningContext;
   const learningSection = lc
     ? `
-Observed system patterns (derived from ${lc.totalSimDays ?? 0} simulation days — confidence: ${lc.dataConfidence ?? 'low'}):
+Observed system patterns (derived from ${lc.totalSimDays ?? 0} simulation days -  confidence: ${lc.dataConfidence ?? 'low'}):
 - Peak load hour: ${lc.peakLoadHour ?? 'unknown'}:00
 - Peak solar hour: ${lc.peakSolarHour ?? 'unknown'}:00
 - Avg daily solar generation: ${lc.avgDailySolarKwh ?? 0} kWh/day
@@ -462,7 +462,7 @@ High-priority: Battery efficiency has dropped significantly. Highlight the degra
   const now = new Date(systemData.timestamp);
   const hourEAT = (now.getUTCHours() + 3) % 24; // UTC+3
   const isPeakKPLC = hourEAT >= 18 && hourEAT < 22;
-  const tariffZone = isPeakKPLC ? 'PEAK (KES 27/kWh, 18:00–22:00)' : 'OFF-PEAK (KES 23/kWh)';
+  const tariffZone = isPeakKPLC ? 'PEAK (KES 27/kWh, 18:00-22:00)' : 'OFF-PEAK (KES 23/kWh)';
   const hoursUntilPeak = isPeakKPLC ? 0 : (18 - hourEAT > 0 ? 18 - hourEAT : 24 - hourEAT + 18);
   const kplcSection = `KPLC tariff context:
 - Current time (EAT): ${hourEAT.toString().padStart(2, '0')}:00

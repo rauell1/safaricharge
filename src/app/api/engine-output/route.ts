@@ -17,8 +17,8 @@
  *   "batteryCapacityKwh": number   // usable battery kWh
  *   "tiltDeg":            number   // panel tilt (degrees)
  *   "azimuthDeg":         number   // panel azimuth (degrees, 180 = south)
- *   "performanceRatio":   number   // optional PV PR derate (0.65–0.95)
- *   "shadingLossPct":     number   // optional shading loss in percent (0–50)
+ *   "performanceRatio":   number   // optional PV PR derate (0.65-0.95)
+ *   "shadingLossPct":     number   // optional shading loss in percent (0-50)
  *   "simulationYear":     number   // calendar year (e.g. 2023)
  * }
  *
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     rawBody = await request.json();
   } catch {
-    // empty body — apply all defaults
+    // empty body -  apply all defaults
   }
 
   const parsed = bodySchema.safeParse(rawBody);
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   };
 
   // ------------------------------------------------------------------
-  // Physics engine state — initialised once, mutated across ticks
+  // Physics engine state -  initialised once, mutated across ticks
   // ------------------------------------------------------------------
   const state: PhysicsEngineState = {
     batteryKwh: batteryCapacityKwh * 0.5, // start at 50 % SOC
@@ -172,12 +172,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const tick = calculateInstantPhysics(
       config,
       scenario,
-      hourOfDay,           // timeOfDay in hours (0–23)
+      hourOfDay,           // timeOfDay in hours (0-23)
       solarData,
       state,
       'auto',
       true,                // gridEnabled
-      hourOfDay >= 18 && hourOfDay < 22, // isPeakTime (18:00–22:00)
+      hourOfDay >= 18 && hourOfDay < 22, // isPeakTime (18:00-22:00)
       25.0,                // peakRate (KES/kWh)
       15.0,                // offPeakRate (KES/kWh)
     );

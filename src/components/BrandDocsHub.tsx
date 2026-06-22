@@ -41,7 +41,7 @@ const BRAND_META: Record<string, BrandMeta> = {
   APsystems:          { downloadCentre: 'https://usa.apsystems.com/resources/',                       access: 'public',     eastAfricaReady: false },
   Omnik:              { downloadCentre: 'https://www.omniksolar.com/download/',                       access: 'public',     eastAfricaReady: false },
   // ── Batteries ─────────────────────────────────────────────────────────────
-  Tesla:              { downloadCentre: 'https://energylibrary.tesla.com',                            access: 'public',     eastAfricaReady: false, note: 'energylibrary.tesla.com — cleanest single source' },
+  Tesla:              { downloadCentre: 'https://energylibrary.tesla.com',                            access: 'public',     eastAfricaReady: false, note: 'energylibrary.tesla.com -  cleanest single source' },
   BYD:                { downloadCentre: 'https://www.bydbatterybox.com/downloads/',                   access: 'public',     eastAfricaReady: true,  note: 'Well-organised by model; no login needed' },
   Pylontech:          { downloadCentre: 'https://en.pylontech.com.cn/download/',                     access: 'public',     eastAfricaReady: true  },
   Dyness:             { downloadCentre: 'https://www.dyness.com/download',                            access: 'public',     eastAfricaReady: false },
@@ -290,7 +290,7 @@ export function BrandDocsHub() {
         <div>
           <h2 className="text-xl font-bold text-[var(--text-primary)]">Brand Documentation Hub</h2>
           <p className="text-sm text-[var(--text-muted)] mt-0.5">
-            {brandCategoryPairs.length} brands across {SOLAR_COMPONENT_CATALOG.length} catalog entries — direct links to official datasheets and download centres.
+            {brandCategoryPairs.length} brands across {SOLAR_COMPONENT_CATALOG.length} catalog entries -  direct links to official datasheets and download centres.
           </p>
         </div>
         {/* EA filter */}

@@ -210,7 +210,7 @@ function forecastTsToTimeOfDay(ts: string): number {
 /**
  * Build a closed SVG polygon path for a confidence band.
  *
- * The band runs from (timeOfDay, lowKw) to (timeOfDay, highKw) — a filled
+ * The band runs from (timeOfDay, lowKw) to (timeOfDay, highKw) -  a filled
  * area between two lines sharing the same X coordinates.
  */
 function buildConfidenceBandPath(
@@ -378,7 +378,7 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
               </linearGradient>
             </defs>
 
-            {/* Night zone shading: 00:00–06:00 and 18:00–24:00 */}
+            {/* Night zone shading: 00:00-06:00 and 18:00-24:00 */}
             <rect x={getX(0)} y={padding.top} width={getX(6) - getX(0)} height={innerHeight} fill={palette.border} fillOpacity="0.18" />
             <rect x={getX(18)} y={padding.top} width={getX(24) - getX(18)} height={innerHeight} fill={palette.border} fillOpacity="0.18" />
 
@@ -456,7 +456,7 @@ const DailyEnergyGraph = React.memo(function DailyEnergyGraph({
               );
             })()}
 
-            {/* Forecast overlay — only rendered when showOverlay=true and data available */}
+            {/* Forecast overlay -  only rendered when showOverlay=true and data available */}
             {hasForecast && (
               <g opacity="0.85">
                 {/* Confidence bands */}

@@ -1,6 +1,6 @@
-// SafariCharge Ltd — Production Sizing & Quoting Engine
+// SafariCharge Ltd -  Production Sizing & Quoting Engine
 // Translates formulas from "solar_sizing_calculator_Final" Google Sheets (May 2026)
-// Sections A–F: System Sizing → BOM → Cable Engineering → Financial Returns
+// Sections A-F: System Sizing → BOM → Cable Engineering → Financial Returns
 
 import {
   SolarLocation, LoadProfilePreset,
@@ -181,7 +181,7 @@ function selectCable(designCurrentA: number, voltageV: number, oneWayLengthM: nu
 
   // Per IEC/Excel methodology: parallel runs are ONLY added when design current
   // exceeds the largest single cable's ampacity (530A for 300mm²).
-  // Do NOT split into parallel runs to save cost — that diverges from the Excel.
+  // Do NOT split into parallel runs to save cost -  that diverges from the Excel.
   const largestSpec = CABLE_REFERENCE[CABLE_REFERENCE.length - 1]; // 300mm², 530A
   const runs = Math.max(1, Math.ceil(designCurrentA / largestSpec.ampacityA));
   const currentPerRun = designCurrentA / runs;
@@ -196,7 +196,7 @@ function selectCable(designCurrentA: number, voltageV: number, oneWayLengthM: nu
     }
   }
 
-  // Voltage drop can't be met even with largest cable — return largest available
+  // Voltage drop can't be met even with largest cable -  return largest available
   return {
     sizeMM2: largestSpec.sizeMM2,
     parallelRuns: runs,
@@ -269,7 +269,7 @@ export function runSimulation(inputs: SimulationInputs): SimulationResults {
     const minV = voltClass.includes('150') ? 150 : 160;
     const maxV = voltClass.includes('800') ? 800 : voltClass.includes('850') ? 850 : 700;
     if (towerVoltage < minV || towerVoltage > maxV) {
-      batteryVoltageWarning = `Tower voltage (${towerVoltage.toFixed(0)} V) is outside inverter battery voltage window (${minV}–${maxV} V). Adjust modules per tower.`;
+      batteryVoltageWarning = `Tower voltage (${towerVoltage.toFixed(0)} V) is outside inverter battery voltage window (${minV}-${maxV} V). Adjust modules per tower.`;
     }
   }
 

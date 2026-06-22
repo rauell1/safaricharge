@@ -5,7 +5,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 /**
  * POST /api/profile
  * Upserts the authenticated user's own profile row using the service role.
- * Requires a valid session — the caller's user id is taken from the session,
+ * Requires a valid session -  the caller's user id is taken from the session,
  * never from the request body, preventing any user from overwriting another.
  */
 export async function POST(request: Request) {
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { full_name, phone, organization } = body
 
-    // id and email always come from the verified session — never the body.
+    // id and email always come from the verified session -  never the body.
     const { error } = await adminSupabase.from('profiles').upsert(
       {
         id: user.id,
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     }
 
     const response = NextResponse.json({ ok: true })
-    // Mark onboarding complete — middleware reads this cookie to skip the DB check
+    // Mark onboarding complete -  middleware reads this cookie to skip the DB check
     // on every subsequent request.
     response.cookies.set('sc_onboarded', '1', {
       httpOnly: true, sameSite: 'lax', secure: true, path: '/',

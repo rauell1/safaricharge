@@ -339,7 +339,7 @@ function FrequencyGauge({ hz }: { hz: number }) {
       <div className="flex justify-center gap-4 text-xs">
         <span className="flex items-center gap-1">
           <span className="h-2 w-2 rounded-full bg-[var(--battery)] inline-block" />
-          Normal (49.5–50.5)
+          Normal (49.5-50.5)
         </span>
         <span className="flex items-center gap-1">
           <span className="h-2 w-2 rounded-full bg-amber-400 inline-block" />
@@ -509,7 +509,7 @@ export function EnergyIntelligenceView() {
 
   /**
    * Simplified health model: ~0.03% degradation per full equivalent cycle
-   * (LFP: ~3000+ cycles to 80% — 0.007%/cycle; NMC: ~500–2000 cycles).
+   * (LFP: ~3000+ cycles to 80% -  0.007%/cycle; NMC: ~500-2000 cycles).
    * We apply 0.03%/cycle as a conservative average.
    */
   const batHealthPct = useMemo(

@@ -1,8 +1,8 @@
 /**
- * SafariCharge – Central configuration file
+ * SafariCharge - Central configuration file
  *
  * All system-level constants and physical coefficients are defined here.
- * KPLC tariff numbers are the single source of truth in tariff-config.ts —
+ * KPLC tariff numbers are the single source of truth in tariff-config.ts - 
  * import from there instead of duplicating values here.
  */
 
@@ -16,7 +16,7 @@ export const PV_CAPACITY_KW = 50.0;
 /** Rated inverter output capacity (kW) */
 export const INVERTER_CAPACITY_KW = 48.0;
 
-/** Usable battery bank capacity (kWh) – LiFePO₄ */
+/** Usable battery bank capacity (kWh) - LiFePO₄ */
 export const BATTERY_CAPACITY_KWH = 60.0;
 
 /**
@@ -25,7 +25,7 @@ export const BATTERY_CAPACITY_KWH = 60.0;
  */
 export const BATTERY_ROUND_TRIP_EFFICIENCY = 0.96;
 
-/** Maximum AC EV charger output (kW) – Level 2 22 kW unit */
+/** Maximum AC EV charger output (kW) - Level 2 22 kW unit */
 export const EV_CHARGER_RATE_KW = 22.0;
 
 /** Maximum battery charge rate from solar / grid (kW) */

@@ -237,10 +237,10 @@ async function exportCSVZip() {
     `SafariCharge Data Export\n` +
     `Generated: ${new Date().toISOString()}\n\n` +
     `Files:\n` +
-    `  energy-data.csv       - Daily energy generation, consumption, battery and grid figures\n` +
+    `  energy-data.csv      - Daily energy generation, consumption, battery and grid figures\n` +
     `  financial-results.csv - Revenue, cost, profit and ROI per simulation period\n` +
-    `  system-config.csv     - System parameters (panel capacity, battery size, etc.)\n` +
-    `  simulation-log.csv    - Step-by-step simulation log (if available)\n\n` +
+    `  system-config.csv    - System parameters (panel capacity, battery size, etc.)\n` +
+    `  simulation-log.csv   - Step-by-step simulation log (if available)\n\n` +
     `Open each CSV in Excel or Google Sheets individually to keep datasets clean.\n`
   );
   const content = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });

@@ -1,5 +1,5 @@
 /**
- * SafariCharge – Optimizer Service Client
+ * SafariCharge - Optimizer Service Client
  *
  * Thin TypeScript wrapper around the Python Pyomo optimizer service.
  * Converts the TariffProfile from tariff-config.ts into per-step price

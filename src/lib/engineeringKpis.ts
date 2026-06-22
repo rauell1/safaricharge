@@ -44,7 +44,7 @@ export interface EngineeringKpiInput {
   planeIrradianceKWhPerM2?: number;
   /**
    * Fallback daily peak sun hours for PR estimation (default: 5.5 h/day
-   * — representative for Nairobi, Kenya).
+   * -  representative for Nairobi, Kenya).
    */
   peakSunHoursPerDay?: number;
 }
@@ -54,9 +54,9 @@ export interface EngineeringKpiResult {
   performanceRatioPct: number;
   capacityFactorPct: number;
   batteryCycles: number;
-  /** Fraction of total load met without grid import (0–100 %). */
+  /** Fraction of total load met without grid import (0-100 %). */
   selfSufficiencyPct: number;
-  /** Fraction of total load that came from the grid (0–100 %). */
+  /** Fraction of total load that came from the grid (0-100 %). */
   gridDependencyPct: number;
   /** True when PR was estimated from PSH rather than measured irradiance. */
   prIsEstimated: boolean;

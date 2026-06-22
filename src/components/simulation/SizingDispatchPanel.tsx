@@ -277,7 +277,7 @@ export function SizingDispatchPanel() {
 
   const payback = simplePaybackYears > 0 && simplePaybackYears < 99
     ? `${simplePaybackYears.toFixed(1)} yr`
-    : '—';
+    : ' - ';
 
   // Pull the three main hardware products from the BOM
   const pvRow    = bomLineItems.find(b => b.section === '1. Solar PV Modules');
@@ -345,11 +345,11 @@ export function SizingDispatchPanel() {
         <DispatchChart rows={hourlyProfile} />
       </div>
 
-      {/* Hardware BOM — main products */}
+      {/* Hardware BOM -  main products */}
       <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3">
         <div className="flex items-center gap-1.5 mb-2.5">
           <Package className="h-3.5 w-3.5 text-[var(--solar)]" />
-          <span className="text-xs font-semibold text-[var(--text-secondary)]">Bill of Materials — Main Equipment</span>
+          <span className="text-xs font-semibold text-[var(--text-secondary)]">Bill of Materials -  Main Equipment</span>
         </div>
         <div className="space-y-1.5">
           {pvRow && (
