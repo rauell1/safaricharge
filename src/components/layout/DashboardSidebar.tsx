@@ -12,8 +12,7 @@ import {
   ShieldCheck,
   Zap,
   TrendingUp,
-  Sun,
-  Moon,
+
   Download,
   LogOut,
   BarChart3,
@@ -21,7 +20,7 @@ import {
 import Link from 'next/link';
 import { BrandLogo } from '@/components/brand-logo';
 import { usePathname } from 'next/navigation';
-import { useTheme } from 'next-themes';
+
 import { createClient } from '@/lib/supabase';
 import {
   Sidebar,
@@ -52,7 +51,8 @@ export type DashboardSection =
   | 'financial-model'
   | 'export'
   | 'admin'
-  | 'sizing';
+  | 'sizing'
+  | 'simulator';
 
 export interface SidebarContextMetric {
   label: string;
@@ -111,43 +111,6 @@ function GovernancePanelContent() {
         expectedOutput={expectedOutputBaseline}
       />
     </div>
-  );
-}
-
-// ── Theme toggle ─────────────────────────────────────────────────────────
-function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
-  return (
-    <button
-      type="button"
-      onClick={() => setTheme(isDark ? 'light' : 'dark')}
-      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-      className="flex w-full items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-card)] hover:border-[var(--border-hover)] transition-all duration-150"
-    >
-      <span className="flex items-center gap-2.5">
-        {isDark ? (
-          <Sun className="h-4 w-4 text-[var(--solar)]" />
-        ) : (
-          <Moon className="h-4 w-4 text-[var(--battery)]" />
-        )}
-        <span className="text-[var(--text-secondary)]">
-          {isDark ? 'Light mode' : 'Dark mode'}
-        </span>
-      </span>
-      <span
-        className="relative inline-flex h-5 w-9 shrink-0 rounded-full border border-[var(--border-strong)] transition-colors duration-200"
-        style={{ background: isDark ? 'var(--battery-soft)' : 'var(--bg-card-muted)' }}
-      >
-        <span
-          className="absolute top-0.5 left-0.5 h-4 w-4 rounded-full shadow-sm transition-transform duration-200"
-          style={{
-            background: isDark ? 'var(--battery)' : 'var(--text-tertiary)',
-            transform: isDark ? 'translateX(16px)' : 'translateX(0)',
-          }}
-        />
-      </span>
-    </button>
   );
 }
 
@@ -216,6 +179,7 @@ export function DashboardSidebar({
       label: string;
       icon: React.ElementType;
     }> = [
+      { id: 'simulator', label: 'Simulator', icon: FlaskConical },
       { id: 'sizing', label: 'Sizing Engine', icon: BarChart3 },
       { id: 'export', label: 'Export', icon: Download },
     ];
@@ -266,6 +230,8 @@ export function DashboardSidebar({
               window.location.assign('/export');
             } else if (item.id === 'sizing') {
               window.location.assign('/sizing');
+            } else if (item.id === 'simulator') {
+              window.location.assign('/simulation');
             } else if (onSectionChange) {
               onSectionChange(item.id);
             } else {
@@ -308,7 +274,7 @@ export function DashboardSidebar({
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Tools group — Export + Admin live here */}
+        {/* Tools group -  Export + Admin live here */}
         <SidebarGroup className="mt-4">
           <SidebarGroupLabel className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
             Tools
@@ -360,9 +326,8 @@ export function DashboardSidebar({
         </SidebarGroup>
       </SidebarContent>
 
-      {/* Footer: theme toggle + status + sign out */}
+      {/* Footer: status + sign out */}
       <SidebarFooter className="px-4 py-4 border-t border-[var(--border)] bg-[var(--bg-card)] space-y-3">
-        <ThemeToggle />
         <button
           type="button"
           onClick={handleSignOut}

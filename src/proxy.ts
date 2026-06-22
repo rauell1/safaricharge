@@ -7,6 +7,7 @@ const PUBLIC_EXACT: Set<string> = new Set([
   '/',
   '/landing',
   '/demo',
+  '/simulation',
   '/pricing',
   '/sitemap.xml',
   '/robots.txt',
@@ -129,7 +130,7 @@ export async function proxy(request: NextRequest) {
     response.cookies.delete(SESSION_TOUCH_COOKIE)
     response.cookies.delete(ONBOARDING_COOKIE)
     // Delete Supabase auth cookies so the Supabase session cannot be reused
-    // after our TTL expires — prevents a bypass via direct URL navigation.
+    // after our TTL expires -  prevents a bypass via direct URL navigation.
     request.cookies.getAll()
       .filter(c => c.name.startsWith('sb-'))
       .forEach(c => response.cookies.delete(c.name))
@@ -254,7 +255,7 @@ export async function proxy(request: NextRequest) {
 
   // Touch the TTL cookie so active users never get logged out mid-session.
   // maxAge is longer than SESSION_TTL_MS so the cookie is still present when
-  // the user returns after inactivity — allowing the value check to fire.
+  // the user returns after inactivity -  allowing the value check to fire.
   supabaseResponse.cookies.set(SESSION_TOUCH_COOKIE, String(now), {
     httpOnly: true,
     sameSite: 'lax',
