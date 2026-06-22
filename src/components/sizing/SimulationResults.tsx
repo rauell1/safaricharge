@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import {
   TrendingUp,
@@ -8,7 +10,8 @@ import {
   ChevronDown,
   ChevronUp,
   Award,
-  CheckCircle2
+  CheckCircle2,
+  AlertTriangle
 } from 'lucide-react';
 import { SimulationResults as SimResultsType } from '@/lib/sizing/solarCalculator';
 
@@ -60,7 +63,9 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
     irrPercent,
     annualCO2SavedTons,
     equivalentTreesPlanted,
-    cashFlows
+    cashFlows,
+    pvOversizeWarning,
+    batteryVoltageWarning
   } = results;
 
   // Render SVG Chart for 24-Hour Power Flow
@@ -141,6 +146,24 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
 
   return (
     <div className="space-y-8">
+      {/* Engineering validation warnings */}
+      {(pvOversizeWarning || batteryVoltageWarning) && (
+        <div className="space-y-2">
+          {pvOversizeWarning && (
+            <div className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
+              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>{pvOversizeWarning}</span>
+            </div>
+          )}
+          {batteryVoltageWarning && (
+            <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-400">
+              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>{batteryVoltageWarning}</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 1. Main Bankability Badges */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm flex flex-col justify-between relative overflow-hidden">

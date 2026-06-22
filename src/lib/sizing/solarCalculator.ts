@@ -110,6 +110,10 @@ export interface SimulationResults {
   panelAreaRequiredM2: number;
   actualDcAcRatio: number;
 
+  // Engineering validation warnings (null = OK)
+  pvOversizeWarning: string | null;
+  batteryVoltageWarning: string | null;
+
   // Hourly dispatch
   hourlyProfile: HourlySimulationRow[];
   annualLoadKWh: number;
@@ -175,41 +179,29 @@ export interface SimulationResults {
 function selectCable(designCurrentA: number, voltageV: number, oneWayLengthM: number,
   maxVoltageDropPercent: number, isAC: boolean): { sizeMM2: number; parallelRuns: number; pricePerM: number } {
 
-  // Ampacity check: select minimum size whose ampacity >= designCurrent / parallelRuns
-  let bestRuns = 1;
-  let bestSize: CableSpec | null = null;
-  let bestPrice = Infinity;
+  // Per IEC/Excel methodology: parallel runs are ONLY added when design current
+  // exceeds the largest single cable's ampacity (530A for 300mm²).
+  // Do NOT split into parallel runs to save cost — that diverges from the Excel.
+  const largestSpec = CABLE_REFERENCE[CABLE_REFERENCE.length - 1]; // 300mm², 530A
+  const runs = Math.max(1, Math.ceil(designCurrentA / largestSpec.ampacityA));
+  const currentPerRun = designCurrentA / runs;
 
-  // Try 1 to 4 parallel runs
-  for (let runs = 1; runs <= 4; runs++) {
-    const currentPerRun = designCurrentA / runs;
-
-    for (const spec of CABLE_REFERENCE) {
-      if (spec.ampacityA < currentPerRun) continue;
-
-      // Voltage drop check
-      const voltageDropV = (spec.mVperAm / 1000) * currentPerRun * oneWayLengthM;
-      const voltageDropPercent = (voltageDropV / voltageV) * 100;
-
-      if (voltageDropPercent <= maxVoltageDropPercent) {
-        const price = isAC ? spec.acPricePerM : spec.dcPricePerM;
-        if (price < bestPrice) {
-          bestRuns = runs;
-          bestSize = spec;
-          bestPrice = price;
-        }
-        break; // First qualifying size is the smallest for this run count
-      }
+  for (const spec of CABLE_REFERENCE) {
+    if (spec.ampacityA < currentPerRun) continue;
+    const voltageDropV = (spec.mVperAm / 1000) * currentPerRun * oneWayLengthM;
+    const voltageDropPercent = (voltageDropV / voltageV) * 100;
+    if (voltageDropPercent <= maxVoltageDropPercent) {
+      const price = isAC ? spec.acPricePerM : spec.dcPricePerM;
+      return { sizeMM2: spec.sizeMM2, parallelRuns: runs, pricePerM: price };
     }
   }
 
-  if (!bestSize) {
-    // Fallback to largest cable, 4 runs
-    const largest = CABLE_REFERENCE[CABLE_REFERENCE.length - 1];
-    return { sizeMM2: largest.sizeMM2, parallelRuns: 4, pricePerM: isAC ? largest.acPricePerM : largest.dcPricePerM };
-  }
-
-  return { sizeMM2: bestSize.sizeMM2, parallelRuns: bestRuns, pricePerM: bestPrice };
+  // Voltage drop can't be met even with largest cable — return largest available
+  return {
+    sizeMM2: largestSpec.sizeMM2,
+    parallelRuns: runs,
+    pricePerM: isAC ? largestSpec.acPricePerM : largestSpec.dcPricePerM,
+  };
 }
 
 // ─── SOLAR IRRADIANCE SHAPE ─────────────────────────────────────────────────
@@ -243,11 +235,16 @@ export function runSimulation(inputs: SimulationInputs): SimulationResults {
   // Target PV array = inverter AC capacity × oversize ratio
   const totalInverterACkW = (inverterQty * (inverter.ratingWatts || 50000)) / 1000;
   const targetPVkWp = totalInverterACkW * dcAcOversizeRatio;
-  // maxPVPerInverter available from inverter spec for PV oversize validation
   const actualPanelQty = panelQty || Math.ceil((targetPVkWp * 1000) / (panel.ratingWatts || 620));
   const solarCapacityKWp = (actualPanelQty * (panel.ratingWatts || 620)) / 1000;
   const actualDcAcRatio = solarCapacityKWp / totalInverterACkW;
-  // PV oversize check: actual array vs inverter max (archived to bomLineItems as needed)
+
+  // PV oversize check vs inverter max PV input (Excel Section C warning)
+  const maxAllowedPVkWp = (inverter.maxPVInputKWp || 0) * inverterQty;
+  const pvOversizeWarning: string | null =
+    maxAllowedPVkWp > 0 && solarCapacityKWp > maxAllowedPVkWp
+      ? `PV array (${solarCapacityKWp.toFixed(1)} kWp) exceeds inverter max PV input (${maxAllowedPVkWp.toFixed(1)} kWp for ${inverterQty} unit${inverterQty > 1 ? 's' : ''}). Reduce panel count or adjust DC/AC ratio.`
+      : null;
 
   // ── Section D: Battery Sizing ────────────────────────────────────────
   const batteryCapacityKWh = batteryQty * (battery.capacityKWh || 5.12);
@@ -263,6 +260,18 @@ export function runSimulation(inputs: SimulationInputs): SimulationResults {
   const actualBatteryKWh = actualModules * (battery.capacityKWh || 5.12);
   const bduRequired = isHV ? towersRequired : 0;
   const towerVoltage = isHV ? modulesPerTower * 51.2 : 48;
+
+  // Battery voltage window check vs inverter spec (Excel Section D warning)
+  let batteryVoltageWarning: string | null = null;
+  if (isHV) {
+    const voltClass = inverter.voltageClass || '';
+    // Deye AM2 = 160-700V, Deye BM3/4 = 160-800V, Solis = 150-850V
+    const minV = voltClass.includes('150') ? 150 : 160;
+    const maxV = voltClass.includes('800') ? 800 : voltClass.includes('850') ? 850 : 700;
+    if (towerVoltage < minV || towerVoltage > maxV) {
+      batteryVoltageWarning = `Tower voltage (${towerVoltage.toFixed(0)} V) is outside inverter battery voltage window (${minV}–${maxV} V). Adjust modules per tower.`;
+    }
+  }
 
   // ── Panel area ────────────────────────────────────────────────────────
   const panelAreaRequiredM2 = actualPanelQty * 2.3;
@@ -418,10 +427,11 @@ export function runSimulation(inputs: SimulationInputs): SimulationResults {
   // Battery rack/cabinet
   let rackCost = 45000 * towersRequired;
   if (isLV) {
-    const cabinet = BATTERY_CABINET_SIZES.filter(c => c.slots >= batteryQty).sort((a,b) => a.slots - b.slots)[0] || BATTERY_CABINET_SIZES[BATTERY_CABINET_SIZES.length-1];
+    // Use modulesRequired (calculated from target kWh) not batteryQty (user-input units)
+    const cabinet = BATTERY_CABINET_SIZES.filter(c => c.slots >= modulesRequired).sort((a,b) => a.slots - b.slots)[0] || BATTERY_CABINET_SIZES[BATTERY_CABINET_SIZES.length-1];
     rackCost = cabinet.costKSh;
   }
-  bom.push({ section:'2. Energy Storage', itemNumber:'4', description:'Battery rack / enclosure / base stand', unit:'set', qty:towersRequired, unitPriceKSh:Math.round(rackCost/towersRequired), unitPriceUSD:Math.round(rackCost/towersRequired/KSH_PER_USD), totalKSh:rackCost, totalUSD:Math.round(rackCost/KSH_PER_USD), notes:isLV ? `Suntree cabinet (${batteryQty} slots)` : `HV tower stand` });
+  bom.push({ section:'2. Energy Storage', itemNumber:'4', description:'Battery rack / enclosure / base stand', unit:'set', qty:towersRequired, unitPriceKSh:Math.round(rackCost/towersRequired), unitPriceUSD:Math.round(rackCost/towersRequired/KSH_PER_USD), totalKSh:rackCost, totalUSD:Math.round(rackCost/KSH_PER_USD), notes:isLV ? `Suntree cabinet (${modulesRequired} slots)` : `HV tower stand` });
 
   // Battery cable
   const battCableCost = towersRequired * battRunLength * 2 * battCable.parallelRuns * battCable.pricePerM;
@@ -594,7 +604,7 @@ export function runSimulation(inputs: SimulationInputs): SimulationResults {
   for (let y=1; y<=projectLifeYears; y++) {
     const df = Math.pow(1+discountRate/100, y);
     const esc = Math.pow(1+inflationRate/100, y);
-    const deg = Math.pow(0.995, y);
+    const deg = Math.pow(0.996, y); // 0.40%/yr per Jinko 30-yr linear warranty
     discountedOpex += (totalAnnualOpExUSD*esc)/df;
     discountedGen += (annualPVGeneratedKWh*deg)/df;
   }
@@ -611,6 +621,8 @@ export function runSimulation(inputs: SimulationInputs): SimulationResults {
     inverterCapacityKW: Math.round(totalInverterACkW*10)/10,
     panelAreaRequiredM2: Math.round(panelAreaRequiredM2*10)/10,
     actualDcAcRatio: Math.round(actualDcAcRatio*100)/100,
+    pvOversizeWarning,
+    batteryVoltageWarning,
 
     hourlyProfile,
     annualLoadKWh, annualPVGeneratedKWh, annualGridImportKWh, annualGridExportKWh,
