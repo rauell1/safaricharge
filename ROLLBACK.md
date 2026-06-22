@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 309 | `rollback/style-brand-redesign-all-pages-for-lig-2026-06-22-50f6a08` | `50f6a08` | style(brand): redesign all pages for light-mode consistency, improve transitions, unify footer logo, and enforce dashboard auth gating (8f +169/-152) | 2026-06-22 |
 | 308 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-06-22-9eebb41` | `9eebb41` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-06-22 |
 | 307 | `rollback/fix-sizing-audit-solarcalculator-again-2026-06-22-b879d48` | `b879d48` | fix(sizing): audit solarCalculator against Excel and surface engineering warnings (2f +74/-39) | 2026-06-22 |
 | 306 | `rollback/docs-add-comprehensive-readme-with-arc-2026-06-22-2db868c` | `2db868c` | docs: add comprehensive README with architecture diagrams and update CLAUDE.md (2f +426/-272) | 2026-06-22 |
@@ -3245,6 +3246,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-06-22
 - **Changed**: 1 file(s), +1/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #309 — `rollback/style-brand-redesign-all-pages-for-lig-2026-06-22-50f6a08`
+
+- **Branch**: `rollback/style-brand-redesign-all-pages-for-lig-2026-06-22-50f6a08`
+- **Commit**: `50f6a08cd6e16351f44b8777c29ab8e1b6bf0014`
+- **Subject**: style(brand): redesign all pages for light-mode consistency, improve transitions, unify footer logo, and enforce dashboard auth gating
+- **Date**: 2026-06-22
+- **Changed**: 8 file(s), +169/-152 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
