@@ -51,8 +51,7 @@ export type DashboardSection =
   | 'financial-model'
   | 'export'
   | 'admin'
-  | 'sizing'
-  | 'simulator';
+  | 'sizing';
 
 export interface SidebarContextMetric {
   label: string;
@@ -165,12 +164,12 @@ export function DashboardSidebar({
     label: string;
     icon: React.ElementType;
   }> = [
-    { id: 'dashboard',           label: 'Operations',           icon: LayoutDashboard },
-    { id: 'simulation',          label: 'Physical Simulation',  icon: FlaskConical },
-    { id: 'configuration',       label: 'System Sizing & Design', icon: SlidersHorizontal },
-    { id: 'scenarios',           label: 'Scenarios & History',  icon: BookMarked },
-    { id: 'financial',           label: 'Financial Modeling',   icon: DollarSign },
-    { id: 'energy-intelligence', label: 'Intelligence & AI',    icon: Zap },
+    { id: 'dashboard',           label: 'Operations',   icon: LayoutDashboard },
+    { id: 'simulation',          label: 'Simulate',     icon: FlaskConical },
+    { id: 'configuration',       label: 'Design',       icon: SlidersHorizontal },
+    { id: 'scenarios',           label: 'History',      icon: BookMarked },
+    { id: 'financial',           label: 'Financials',   icon: DollarSign },
+    { id: 'energy-intelligence', label: 'AI Insights',  icon: Zap },
   ];
 
   const toolsNavItems = useMemo(() => {
@@ -179,9 +178,8 @@ export function DashboardSidebar({
       label: string;
       icon: React.ElementType;
     }> = [
-      { id: 'simulator', label: 'Simulator', icon: FlaskConical },
-      { id: 'sizing', label: 'Sizing Engine', icon: BarChart3 },
-      { id: 'export', label: 'Export', icon: Download },
+      { id: 'sizing', label: 'Size a System', icon: BarChart3 },
+      { id: 'export', label: 'Export',        icon: Download },
     ];
     if (isAdminUser) {
       items.push({ id: 'admin', label: 'Admin Console', icon: ShieldCheck });
@@ -230,8 +228,6 @@ export function DashboardSidebar({
               window.location.assign('/export');
             } else if (item.id === 'sizing') {
               window.location.assign('/sizing');
-            } else if (item.id === 'simulator') {
-              window.location.assign('/simulation');
             } else if (onSectionChange) {
               onSectionChange(item.id);
             } else {

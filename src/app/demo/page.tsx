@@ -85,26 +85,26 @@ function OnboardingTour({
       actionLabel: 'Get Started',
     },
     {
-      title: 'Step 1: System Sizing & Design',
-      description: 'Click on "System Sizing & Design" tab in the navigation to run the advanced physical sizing calculator or tune PV panels & Battery capacity.',
+      title: 'Step 1: Simulate your system',
+      description: 'Go to "Simulate" to pick a preset (Home, Office, Factory...), choose your hardware, and watch the live energy chart run in real time.',
       targetSection: 'configuration' as DashboardSection,
-      actionLabel: 'Go to Sizing',
+      actionLabel: 'Go to Design',
     },
     {
-      title: 'Step 2: Operations & Simulation',
-      description: 'On the main Dashboard (Operations), you can view active grid frequency, real-time power flows, and run simulation loops.',
+      title: 'Step 2: Design with load data',
+      description: 'In "Design", answer a few questions about your appliances and the load-based sizing calculator builds a full BOM and 25-year financial model.',
       targetSection: 'dashboard' as DashboardSection,
       actionLabel: 'Go to Operations',
     },
     {
       title: 'Step 3: Financial Modeling',
-      description: 'Explore Capex/Opex forecasts, live savings, dynamic LCOE, NPV, and IRR planning in the Financial Modeling tab.',
+      description: 'Explore CapEx/OpEx forecasts, live savings, dynamic LCOE, NPV, and IRR planning in the Financials tab.',
       targetSection: 'financial' as DashboardSection,
-      actionLabel: 'Go to Finance',
+      actionLabel: 'Go to Financials',
     },
     {
-      title: 'Step 4: AI & Irradiance Intelligence',
-      description: 'Need assistance? Switch to the "Intelligence & AI" tab to analyze county-wide NASA irradiance curves or consult the AI Copilot!',
+      title: 'Step 4: AI Insights',
+      description: 'Switch to "AI Insights" to analyze county-wide NASA irradiance curves or chat with the AI Copilot for recommendations.',
       targetSection: 'energy-intelligence' as DashboardSection,
       actionLabel: 'Finish Tour',
     },
@@ -1015,7 +1015,7 @@ function DemoSectionRenderer({
     case 'simulation':
       return <DemoSimulationView onNavigateSection={onNavigateSection} financialInputs={financialInputs} />;
     case 'configuration':
-      return <DemoConfigurationView activeLocation={activeLocation} onLocationPickerOpen={onLocationPickerOpen} />;
+      return <DemoConfigurationView activeLocation={activeLocation} onLocationPickerOpen={onLocationPickerOpen} onNavigateSection={onNavigateSection} />;
     case 'financial':
       return <DemoFinancialView financialInputs={financialInputs} onFinancialInputsChange={onFinancialInputsChange} />;
     case 'recommendation':
@@ -1888,8 +1888,7 @@ function DemoSimulationView({
   );
 }
 
-function DemoConfigurationView({ activeLocation, onLocationPickerOpen }: { activeLocation: LocationOption; onLocationPickerOpen: () => void }) {
-  const [mode, setMode] = useState<'sliders' | 'calculator'>('sliders');
+function DemoConfigurationView({ activeLocation, onLocationPickerOpen, onNavigateSection }: { activeLocation: LocationOption; onLocationPickerOpen: () => void; onNavigateSection: (s: DashboardSection) => void }) {
   return (
     <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6 lg:space-y-8">
@@ -1899,51 +1898,39 @@ function DemoConfigurationView({ activeLocation, onLocationPickerOpen }: { activ
               <SlidersHorizontal size={20} className="text-[var(--solar)]" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-[var(--text-primary)]">System Sizing &amp; Design</h2>
-              <p className="text-sm text-[var(--text-tertiary)]">Tune component parameters manually or run the physical sizing calculations</p>
+              <h2 className="text-2xl font-bold text-[var(--text-primary)]">System Design</h2>
+              <p className="text-sm text-[var(--text-tertiary)]">Load-based sizing calculator - answer a few questions to get a full BOM and financial model</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex bg-[var(--bg-card-muted)] border border-[var(--border)] rounded-xl p-1 gap-1">
-              <button
-                type="button"
-                onClick={() => setMode('sliders')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  mode === 'sliders'
-                    ? 'bg-[var(--battery)] text-white shadow-md'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                Manual sliders
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode('calculator')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  mode === 'calculator'
-                    ? 'bg-[var(--battery)] text-white shadow-md'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                Advanced Sizing Calculator
-              </button>
-            </div>
-            <button
-              type="button"
-              onClick={onLocationPickerOpen}
-              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-strong)] bg-[var(--bg-card-hover)] px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:border-[var(--battery)] hover:text-[var(--battery)] transition-colors"
-            >
-              <MapPin size={14} className="shrink-0" />
-              <span className="max-w-[120px] truncate">{activeLocation.displayName}</span>
-              <span className="text-[10px] text-[var(--text-tertiary)]">{activeLocation.county}</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onLocationPickerOpen}
+            className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-strong)] bg-[var(--bg-card-hover)] px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)] hover:border-[var(--battery)] hover:text-[var(--battery)] transition-colors"
+          >
+            <MapPin size={14} className="shrink-0" />
+            <span className="max-w-[120px] truncate">{activeLocation.displayName}</span>
+            <span className="text-[10px] text-[var(--text-tertiary)]">{activeLocation.county}</span>
+          </button>
         </div>
-        {mode === 'calculator' ? (
-          <PVSizingSection locationOverride={activeLocation} />
-        ) : (
-          <LoadConfigComponents />
-        )}
+
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-[var(--battery)]/30 bg-[var(--battery-soft)] px-4 py-3">
+          <div className="flex items-center gap-3">
+            <FlaskConical size={18} className="text-[var(--battery)] shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-[var(--text-primary)]">Hardware already configured in Simulate</p>
+              <p className="text-xs text-[var(--text-secondary)]">Inverter model, battery bank, panels, and location are set in the Simulate tab and sync here automatically.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigateSection('simulation')}
+            className="shrink-0 rounded-lg bg-[var(--battery)] px-3 py-1.5 text-xs font-bold text-white hover:opacity-90 transition-opacity"
+          >
+            Go to Simulate
+          </button>
+        </div>
+
+        <PVSizingSection locationOverride={activeLocation} />
       </div>
     </main>
   );
