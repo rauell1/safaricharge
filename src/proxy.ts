@@ -48,6 +48,22 @@ function withTimingHeaders(response: NextResponse, metrics: Record<string, numbe
   return response
 }
 
+function redirectWithCookies(request: NextRequest, toPath: string, supabaseResponse: NextResponse) {
+  const response = NextResponse.redirect(new URL(toPath, request.url))
+  // Copy cookies from supabaseResponse to the redirect response
+  supabaseResponse.cookies.getAll().forEach((cookie) => {
+    response.cookies.set(cookie.name, cookie.value, {
+      path: cookie.path,
+      domain: cookie.domain,
+      maxAge: cookie.maxAge,
+      secure: cookie.secure,
+      httpOnly: cookie.httpOnly,
+      sameSite: cookie.sameSite,
+    } as any)
+  })
+  return response
+}
+
 function isPublic(pathname: string): boolean {
   if (PUBLIC_EXACT.has(pathname)) return true
   return PUBLIC_PREFIXES.some(p => pathname.startsWith(p))
@@ -124,11 +140,23 @@ export async function proxy(request: NextRequest) {
   const ttlCheckMs = Date.now() - ttlCheckStart
 
   if (isExpired) {
+    // If the user is visiting the login or signup page, do not redirect them to landing.
+    // Instead, just clear the expired session cookies and allow them to proceed.
+    if (pathname === '/login' || pathname === '/signup') {
+      const response = NextResponse.next()
+      response.cookies.delete(SESSION_TOUCH_COOKIE)
+      response.cookies.delete(ONBOARDING_COOKIE)
+      request.cookies.getAll()
+        .filter(c => c.name.startsWith('sb-'))
+        .forEach(c => response.cookies.delete(c.name))
+      return response
+    }
+
     const response = NextResponse.redirect(new URL('/landing?reason=session_expired', request.url))
     response.cookies.delete(SESSION_TOUCH_COOKIE)
     response.cookies.delete(ONBOARDING_COOKIE)
     // Delete Supabase auth cookies so the Supabase session cannot be reused
-    // after our TTL expires -  prevents a bypass via direct URL navigation.
+    // after our TTL expires - prevents a bypass via direct URL navigation.
     request.cookies.getAll()
       .filter(c => c.name.startsWith('sb-'))
       .forEach(c => response.cookies.delete(c.name))
@@ -173,9 +201,9 @@ export async function proxy(request: NextRequest) {
 
   if (sessionError || !session?.user || !session.user.email_confirmed_at) {
     if (pathname === '/login' || pathname === '/signup') {
-      return NextResponse.next()
+      return supabaseResponse
     }
-    const response = NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(pathname)}`, request.url))
+    const response = redirectWithCookies(request, `/login?next=${encodeURIComponent(pathname)}`, supabaseResponse)
     const totalMs = Date.now() - middlewareStart
     if (AUTH_TIMING_DEBUG) {
       console.info(`[auth-timing][middleware] unauthenticated get_session=${getSessionMs}ms total=${totalMs}ms path=${pathname}`)
@@ -202,9 +230,9 @@ export async function proxy(request: NextRequest) {
 
     if (error || !user || !user.email_confirmed_at) {
       if (pathname === '/login' || pathname === '/signup') {
-        return NextResponse.next()
+        return supabaseResponse
       }
-      const response = NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(pathname)}`, request.url))
+      const response = redirectWithCookies(request, `/login?next=${encodeURIComponent(pathname)}`, supabaseResponse)
       const totalMs = Date.now() - middlewareStart
       if (AUTH_TIMING_DEBUG) {
         console.info(`[auth-timing][middleware] invalid_user get_session=${getSessionMs}ms get_user=${getUserMs}ms total=${totalMs}ms path=${pathname}`)
@@ -233,27 +261,25 @@ export async function proxy(request: NextRequest) {
   const isAdmin = currentUser.email && adminEmails.includes(currentUser.email.toLowerCase())
 
   if (pathname === '/login' || pathname === '/signup' || pathname === '/landing') {
-    return NextResponse.redirect(new URL(isAdmin ? '/admin' : '/dashboard', request.url))
+    return redirectWithCookies(request, isAdmin ? '/admin' : '/dashboard', supabaseResponse)
   }
 
   // Enforce onboarding: non-admin users must have a complete profile before
   // accessing any protected route. The cookie is set by /api/profile (GET + POST).
   // ONBOARDING_EXEMPT paths are allowed through so users can complete the flow.
   if (!isAdmin && !request.cookies.get(ONBOARDING_COOKIE)?.value && !ONBOARDING_EXEMPT.has(pathname)) {
-    return NextResponse.redirect(new URL('/onboarding', request.url))
+    return redirectWithCookies(request, '/onboarding', supabaseResponse)
   }
 
   if (pathname.startsWith('/admin')) {
     if (!isAdmin) {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
+      return redirectWithCookies(request, '/dashboard', supabaseResponse)
     }
   }
 
-
-
   // Touch the TTL cookie so active users never get logged out mid-session.
   // maxAge is longer than SESSION_TTL_MS so the cookie is still present when
-  // the user returns after inactivity -  allowing the value check to fire.
+  // the user returns after inactivity - allowing the value check to fire.
   supabaseResponse.cookies.set(SESSION_TOUCH_COOKIE, String(now), {
     httpOnly: true,
     sameSite: 'lax',
