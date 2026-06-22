@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Sun, Zap, BarChart3, Battery, ArrowRight, Shield,
@@ -8,6 +8,7 @@ import {
   Menu, X,
 } from 'lucide-react';
 import { BrandLogo } from '@/components/brand-logo';
+import { createClient } from '@/lib/supabase';
 
 const features = [
   {
@@ -102,6 +103,20 @@ const NAV_LINKS = [
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        setIsAuthenticated(!!session?.user);
+      } catch (err) {
+        setIsAuthenticated(false);
+      }
+    };
+    checkAuth();
+  }, []);
 
   return (
     <div
@@ -186,37 +201,40 @@ export default function LandingPage() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <Link
-              href="/dashboard"
-              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors"
-              style={{
-                color: 'var(--site-nav-link)',
-                border: '1px solid var(--site-page-border)',
-              }}
-            >
-              <Activity className="w-3.5 h-3.5" />
-              Dashboard
-            </Link>
-            <Link
-              href="/login"
-              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors"
-              style={{
-                color: 'var(--site-nav-link)',
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--battery)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-nav-link)'; }}
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/signup"
-              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-1.5 rounded-lg transition-colors"
-              style={{ background: 'var(--battery)', color: '#fff' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--battery-bright)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--battery)'; }}
-            >
-              Get Started <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+            {isAuthenticated === true ? (
+              <Link
+                href="/dashboard"
+                className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-1.5 rounded-lg transition-colors text-white"
+                style={{ background: 'var(--battery)' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--battery-bright)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--battery)'; }}
+              >
+                Go to Dashboard <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors"
+                  style={{
+                    color: 'var(--site-nav-link)',
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--battery)'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-nav-link)'; }}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-1.5 rounded-lg transition-colors"
+                  style={{ background: 'var(--battery)', color: '#fff' }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--battery-bright)'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--battery)'; }}
+                >
+                  Get Started <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </>
+            )}
             {/* Mobile hamburger */}
             <button
               type="button"
@@ -251,30 +269,35 @@ export default function LandingPage() {
               </a>
             ))}
             <div className="mt-2 pt-3 flex flex-col gap-2" style={{ borderTop: '1px solid var(--site-page-border)' }}>
-              <Link
-                href="/dashboard"
-                className="flex items-center justify-center gap-1.5 text-sm font-medium px-4 py-2 rounded-xl transition-colors"
-                style={{ color: 'var(--site-nav-link)', border: '1px solid var(--site-page-border)' }}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Activity className="w-3.5 h-3.5" /> Dashboard
-              </Link>
-              <Link
-                href="/login"
-                className="flex items-center justify-center gap-1.5 text-sm font-medium px-4 py-2 rounded-xl transition-colors"
-                style={{ color: 'var(--site-nav-link)', border: '1px solid var(--site-page-border)' }}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/signup"
-                className="flex items-center justify-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl text-white transition-colors"
-                style={{ background: 'var(--battery)' }}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Get Started <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+              {isAuthenticated === true ? (
+                <Link
+                  href="/dashboard"
+                  className="flex items-center justify-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl text-white transition-colors"
+                  style={{ background: 'var(--battery)' }}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Go to Dashboard <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="flex items-center justify-center gap-1.5 text-sm font-medium px-4 py-2 rounded-xl transition-colors"
+                    style={{ color: 'var(--site-nav-link)', border: '1px solid var(--site-page-border)' }}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="flex items-center justify-center gap-1.5 text-sm font-semibold px-4 py-2.5 rounded-xl text-white transition-colors"
+                    style={{ background: 'var(--battery)' }}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Get Started <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -369,7 +392,7 @@ export default function LandingPage() {
 
           <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 mb-14">
             <Link
-              href="/dashboard"
+              href={isAuthenticated ? "/dashboard" : "/signup"}
               aria-label="Access the application"
               className="group inline-flex items-center gap-2 font-semibold text-sm px-7 py-3.5 rounded-xl text-white transition-all"
               style={{
@@ -385,7 +408,7 @@ export default function LandingPage() {
                 (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 0 40px rgba(16,185,129,0.3)';
               }}
             >
-              Go to App <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+              {isAuthenticated ? "Go to Dashboard" : "Get Started - Free"} <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
 
             <a
@@ -650,7 +673,7 @@ export default function LandingPage() {
             KPLC electricity cost modelling for your Kenya solar system.
           </p>
           <Link
-            href="/dashboard"
+            href={isAuthenticated ? "/dashboard" : "/signup"}
             className="group inline-flex items-center gap-2 font-semibold text-sm px-8 py-4 rounded-xl text-white transition-all"
             style={{
               background: 'var(--battery)',
@@ -666,7 +689,7 @@ export default function LandingPage() {
               (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 0 40px rgba(16,185,129,0.28)';
             }}
           >
-            Go to Dashboard <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+            {isAuthenticated ? "Go to Dashboard" : "Sign Up for Free"} <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
       </section>
@@ -726,7 +749,7 @@ export default function LandingPage() {
             reduce KPLC electricity costs and maximise solar panel output.
           </p>
           <Link
-            href="/dashboard"
+            href={isAuthenticated ? "/dashboard" : "/signup"}
             className="group inline-flex items-center gap-2 font-semibold px-9 py-4 rounded-xl text-white transition-all"
             style={{
               background: 'var(--battery)',
@@ -742,7 +765,7 @@ export default function LandingPage() {
               (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 0 48px rgba(16,185,129,0.3)';
             }}
           >
-            Get Started Now <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+            {isAuthenticated ? "Go to Dashboard" : "Get Started Now"} <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
       </section>
@@ -757,11 +780,8 @@ export default function LandingPage() {
           style={{ color: 'var(--site-page-muted)' }}
         >
           <div>
-            <div className="flex items-center gap-2.5 mb-3">
-              <svg width="18" height="18" viewBox="0 0 28 28" fill="none">
-                <path d="M14 7 L17.5 13 L21 13 L14 21 L16 15 L12 15 Z" fill="var(--battery)" />
-              </svg>
-              <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>SafariCharge</span>
+            <div className="mb-4">
+              <BrandLogo href="/landing" size="sm" />
             </div>
             <p className="mb-2">Solar energy management for Kenya and Africa</p>
             <p>© {new Date().getFullYear()} SafariCharge</p>
@@ -770,7 +790,7 @@ export default function LandingPage() {
           <div>
             <p className="font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Links</p>
             <div className="space-y-2">
-              <Link href="/dashboard" className="block transition-colors" style={{ color: 'var(--site-page-muted)' }}
+              <Link href={isAuthenticated ? "/dashboard" : "/signup"} className="block transition-colors" style={{ color: 'var(--site-page-muted)' }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)'; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--site-page-muted)'; }}
               >Dashboard</Link>

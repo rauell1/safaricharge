@@ -6,8 +6,6 @@ import type { NextRequest } from 'next/server'
 const PUBLIC_EXACT: Set<string> = new Set([
   '/',
   '/landing',
-  '/demo',
-  '/simulation',
   '/pricing',
   '/sitemap.xml',
   '/robots.txt',
@@ -177,7 +175,7 @@ export async function proxy(request: NextRequest) {
     if (pathname === '/login' || pathname === '/signup') {
       return NextResponse.next()
     }
-    const response = NextResponse.redirect(new URL('/landing', request.url))
+    const response = NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(pathname)}`, request.url))
     const totalMs = Date.now() - middlewareStart
     if (AUTH_TIMING_DEBUG) {
       console.info(`[auth-timing][middleware] unauthenticated get_session=${getSessionMs}ms total=${totalMs}ms path=${pathname}`)
@@ -206,7 +204,7 @@ export async function proxy(request: NextRequest) {
       if (pathname === '/login' || pathname === '/signup') {
         return NextResponse.next()
       }
-      const response = NextResponse.redirect(new URL('/landing', request.url))
+      const response = NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(pathname)}`, request.url))
       const totalMs = Date.now() - middlewareStart
       if (AUTH_TIMING_DEBUG) {
         console.info(`[auth-timing][middleware] invalid_user get_session=${getSessionMs}ms get_user=${getUserMs}ms total=${totalMs}ms path=${pathname}`)

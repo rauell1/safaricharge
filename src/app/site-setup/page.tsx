@@ -53,7 +53,7 @@ function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      style={{ width: '100%', background: 'var(--bg-card-muted)', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 14px', color: 'var(--text-primary)', fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+      style={{ width: '100%', background: '#ffffff', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 14px', color: 'var(--text-primary)', fontSize: 14, outline: 'none', boxSizing: 'border-box', transition: 'all 0.2s' }}
     />
   )
 }
@@ -65,7 +65,7 @@ function NumberInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
       min="0"
       step="any"
       {...props}
-      style={{ width: '100%', background: 'var(--bg-card-muted)', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 14px', color: 'var(--text-primary)', fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+      style={{ width: '100%', background: '#ffffff', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 14px', color: 'var(--text-primary)', fontSize: 14, outline: 'none', boxSizing: 'border-box', transition: 'all 0.2s' }}
     />
   )
 }
@@ -653,9 +653,9 @@ export default function SiteSetupPage() {
               maxWidth: 440,
               borderRadius: 18,
               border: '1px solid var(--border)',
-              background: 'var(--bg-card-muted)',
+              background: 'var(--bg-card)',
               backdropFilter: 'blur(24px)',
-              boxShadow: '0 32px 80px rgba(0,0,0,0.18)',
+              boxShadow: '0 20px 48px rgba(13,31,23,0.08), 0 1px 4px rgba(13,31,23,0.02)',
               padding: '32px 28px',
             }}
           >

@@ -14,7 +14,7 @@ function Field({ id, label, icon, ...props }: any) {
       </label>
       <div style={{ position: 'relative' }}>
         <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', pointerEvents: 'none' }}>{icon}</div>
-        <input id={id} {...props} style={{ width: '100%', background: 'var(--bg-card-muted)', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 14px 11px 42px', color: 'var(--text-primary)', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+        <input id={id} {...props} style={{ width: '100%', background: '#ffffff', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 14px 11px 42px', color: 'var(--text-primary)', fontSize: 14, outline: 'none', boxSizing: 'border-box', transition: 'all 0.2s' }} />
       </div>
     </div>
   )
@@ -125,7 +125,7 @@ export default function OnboardingPage() {
           <BrandLogo href="/landing" size="sm" />
         </header>
         <div style={{ position: 'relative', zIndex: 10, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <div style={{ width: '100%', maxWidth: 440, borderRadius: 18, border: '1px solid var(--border)', background: 'var(--bg-card-muted)', backdropFilter: 'blur(24px)', boxShadow: '0 32px 80px rgba(0,0,0,0.18)', padding: '32px 28px' }}>
+          <div style={{ width: '100%', maxWidth: 440, borderRadius: 18, border: '1px solid var(--border)', background: 'var(--bg-card)', backdropFilter: 'blur(24px)', boxShadow: '0 20px 48px rgba(13,31,23,0.08), 0 1px 4px rgba(13,31,23,0.02)', padding: '32px 28px' }}>
             <Suspense fallback={<div style={{ color: 'var(--text-tertiary)', fontSize: 14 }}>Loading…</div>}>
               <OnboardingForm />
             </Suspense>

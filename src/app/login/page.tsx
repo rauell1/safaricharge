@@ -142,7 +142,7 @@ function LoginForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="input-glow"
-                style={{ width: '100%', background: 'rgba(3,7,18,0.5)', border: '1px solid var(--site-page-border)', borderRadius: 10, padding: '12px 14px 12px 42px', color: 'var(--site-page-fg)', fontSize: 14, outline: 'none', boxSizing: 'border-box', transition: 'all 0.2s' }}
+                style={{ width: '100%', background: '#ffffff', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px 12px 42px', color: 'var(--text-primary)', fontSize: 14, outline: 'none', boxSizing: 'border-box', transition: 'all 0.2s' }}
               />
             </div>
           </div>
@@ -230,7 +230,7 @@ function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="input-glow"
-              style={{ width: '100%', background: 'rgba(3,7,18,0.5)', border: '1px solid var(--site-page-border)', borderRadius: 10, padding: '12px 14px 12px 42px', color: 'var(--site-page-fg)', fontSize: 14, outline: 'none', boxSizing: 'border-box', transition: 'all 0.2s' }}
+              style={{ width: '100%', background: '#ffffff', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px 12px 42px', color: 'var(--text-primary)', fontSize: 14, outline: 'none', boxSizing: 'border-box', transition: 'all 0.2s' }}
             />
           </div>
         </div>
@@ -261,7 +261,7 @@ function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="input-glow"
-              style={{ width: '100%', background: 'rgba(3,7,18,0.5)', border: '1px solid var(--site-page-border)', borderRadius: 10, padding: '12px 14px 12px 42px', color: 'var(--site-page-fg)', fontSize: 14, outline: 'none', boxSizing: 'border-box', transition: 'all 0.2s' }}
+              style={{ width: '100%', background: '#ffffff', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px 12px 42px', color: 'var(--text-primary)', fontSize: 14, outline: 'none', boxSizing: 'border-box', transition: 'all 0.2s' }}
             />
           </div>
         </div>
@@ -343,7 +343,7 @@ export default function LoginPage() {
 
         {/* Main Content Form */}
         <div style={{ position: 'relative', zIndex: 10, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, overflowY: 'auto' }}>
-          <div style={{ width: '100%', maxWidth: 440, borderRadius: 20, border: '1px solid var(--site-page-border)', background: 'var(--site-page-surface)', backdropFilter: 'blur(30px)', padding: '36px 32px', boxSizing: 'border-box', boxShadow: '0 24px 60px rgba(0,0,0,0.2)' }}>
+          <div style={{ width: '100%', maxWidth: 440, borderRadius: 20, border: '1px solid var(--border)', background: 'var(--site-page-surface)', backdropFilter: 'blur(30px)', padding: '36px 32px', boxSizing: 'border-box', boxShadow: '0 20px 48px rgba(13,31,23,0.08), 0 1px 4px rgba(13,31,23,0.02)' }}>
             <Suspense fallback={<div style={{ color: 'var(--site-page-muted)', fontSize: 14 }}>Loading…</div>}>
               <LoginForm />
             </Suspense>

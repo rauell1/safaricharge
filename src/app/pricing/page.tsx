@@ -73,10 +73,10 @@ export default function PricingPage() {
               ))}
             </ul>
             <Link
-              href="/demo"
+              href="/signup"
               className="inline-block w-full text-center bg-[var(--solar)] text-black font-semibold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity"
             >
-              Try the demo -  no sign-up
+              Sign Up to Access Dashboard
             </Link>
           </div>
         ))}
