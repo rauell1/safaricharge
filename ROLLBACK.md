@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 306 | `rollback/docs-add-comprehensive-readme-with-arc-2026-06-22-2db868c` | `2db868c` | docs: add comprehensive README with architecture diagrams and update CLAUDE.md (2f +426/-272) | 2026-06-22 |
 | 305 | `rollback/style-brand-use-infinity-cycle-logo-co-2026-06-22-4faab22` | `4faab22` | style(brand): use infinity cycle logo consistently across website (1f +1/-1) | 2026-06-22 |
 | 304 | `rollback/feat-ux-add-simple-advanced-simulation-2026-06-21-c2ddaae` | `c2ddaae` | feat(ux): add Simple/Advanced simulation mode toggle with new dashboard (3f +674/-31) | 2026-06-21 |
 | 303 | `rollback/feat-simulation-add-parametric-dispatc-2026-06-21-0f95241` | `0f95241` | feat(simulation): add Parametric Dispatch Panel to simulation accordion (2f +403/-0) | 2026-06-21 |
@@ -3212,6 +3213,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: style(brand): use infinity cycle logo consistently across website
 - **Date**: 2026-06-22
 - **Changed**: 1 file(s), +1/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #306 — `rollback/docs-add-comprehensive-readme-with-arc-2026-06-22-2db868c`
+
+- **Branch**: `rollback/docs-add-comprehensive-readme-with-arc-2026-06-22-2db868c`
+- **Commit**: `2db868c289a58dd6e29792eaeab6f8db062585e9`
+- **Subject**: docs: add comprehensive README with architecture diagrams and update CLAUDE.md
+- **Date**: 2026-06-22
+- **Changed**: 2 file(s), +426/-272 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
