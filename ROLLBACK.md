@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 312 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-06-24-60786a9` | `60786a9` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-06-24 |
 | 311 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-06-23-1dea94a` | `1dea94a` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-06-23 |
 | 310 | `rollback/merge-branch-main-of-github-com-rauell-2026-06-22-88b01f8` | `88b01f8` | Merge branch 'main' of github.com:rauell1/safaricharge (3f +18/-3) | 2026-06-22 |
 | 309 | `rollback/style-brand-redesign-all-pages-for-lig-2026-06-22-50f6a08` | `50f6a08` | style(brand): redesign all pages for light-mode consistency, improve transitions, unify footer logo, and enforce dashboard auth gating (8f +169/-152) | 2026-06-22 |
@@ -3277,6 +3278,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Commit**: `1dea94abb9f3516ad6bc5c87b96b52f482299895`
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-06-23
+- **Changed**: 1 file(s), +1/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #312 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-06-24-60786a9`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-06-24-60786a9`
+- **Commit**: `60786a94cf3f99c41fbb3c768ba795b864ab27a7`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-06-24
 - **Changed**: 1 file(s), +1/-1 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
