@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 325 | `rollback/fix-mobile-prevent-ios-auto-zoom-on-fo-2026-07-03-c1a3b71` | `c1a3b71` | fix(mobile): prevent iOS auto-zoom-on-focus from scrambling layout (1f +17/-0) | 2026-07-03 |
 | 324 | `rollback/fix-sizing-repair-bom-financial-formul-2026-07-03-0641eba` | `0641eba` | fix(sizing): repair BOM/financial formula parity and polish page UI (10f +443/-111) | 2026-07-03 |
 | 323 | `rollback/security-restrict-auth-and-signup-to-r-2026-07-03-dde6d61` | `dde6d61` | security: restrict auth and signup to royokola3@gmail.com (6f +48/-6) | 2026-07-03 |
 | 322 | `rollback/feat-sizing-migrate-catalogs-to-supaba-2026-07-03-517cab4` | `517cab4` | feat(sizing): migrate catalogs to Supabase and rebuild engine to match updated Excel model (15f +2171/-927) | 2026-07-03 |
@@ -3421,6 +3422,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix(sizing): repair BOM/financial formula parity and polish page UI
 - **Date**: 2026-07-03
 - **Changed**: 10 file(s), +443/-111 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #325 — `rollback/fix-mobile-prevent-ios-auto-zoom-on-fo-2026-07-03-c1a3b71`
+
+- **Branch**: `rollback/fix-mobile-prevent-ios-auto-zoom-on-fo-2026-07-03-c1a3b71`
+- **Commit**: `c1a3b718ab99a565472dc5977c438ff32bcfcf52`
+- **Subject**: fix(mobile): prevent iOS auto-zoom-on-focus from scrambling layout
+- **Date**: 2026-07-03
+- **Changed**: 1 file(s), +17/-0 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
