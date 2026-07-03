@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 326 | `rollback/fix-sizing-fix-real-grid-overlap-bug-i-2026-07-03-532bd66` | `532bd66` | fix(sizing): fix real grid overlap bug in Load-Based Sizing fields (1f +1/-1) | 2026-07-03 |
 | 325 | `rollback/fix-mobile-prevent-ios-auto-zoom-on-fo-2026-07-03-c1a3b71` | `c1a3b71` | fix(mobile): prevent iOS auto-zoom-on-focus from scrambling layout (1f +17/-0) | 2026-07-03 |
 | 324 | `rollback/fix-sizing-repair-bom-financial-formul-2026-07-03-0641eba` | `0641eba` | fix(sizing): repair BOM/financial formula parity and polish page UI (10f +443/-111) | 2026-07-03 |
 | 323 | `rollback/security-restrict-auth-and-signup-to-r-2026-07-03-dde6d61` | `dde6d61` | security: restrict auth and signup to royokola3@gmail.com (6f +48/-6) | 2026-07-03 |
@@ -3432,6 +3433,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix(mobile): prevent iOS auto-zoom-on-focus from scrambling layout
 - **Date**: 2026-07-03
 - **Changed**: 1 file(s), +17/-0 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #326 — `rollback/fix-sizing-fix-real-grid-overlap-bug-i-2026-07-03-532bd66`
+
+- **Branch**: `rollback/fix-sizing-fix-real-grid-overlap-bug-i-2026-07-03-532bd66`
+- **Commit**: `532bd66120e53606b272ae705e1e3bdac009c67b`
+- **Subject**: fix(sizing): fix real grid overlap bug in Load-Based Sizing fields
+- **Date**: 2026-07-03
+- **Changed**: 1 file(s), +1/-1 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
