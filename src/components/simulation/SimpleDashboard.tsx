@@ -9,6 +9,7 @@ import { AFRICA_CITIES } from '@/lib/africa-locations-data';
 import { INVERTER_CATALOG, BATTERY_CATALOG, PANEL_CATALOG } from '@/lib/sizing/mockData';
 import { buildInputs } from '@/components/simulation/SizingDispatchPanel';
 import { runSimulation } from '@/lib/sizing/solarCalculator';
+import { useSizingCatalog } from '@/hooks/useSizingCatalog';
 import { LoadProfilePicker } from './LoadProfilePicker';
 import { cn } from '@/lib/utils';
 
@@ -212,14 +213,17 @@ export function SimpleDashboard({ onSaveRun, isSaving }: SimpleDashboardProps) {
 
   // ── Sizing financials ─────────────────────────────────────────────────────
 
+  const { catalog: sizingCatalog } = useSizingCatalog();
+
   const sizingResults = useMemo(() => {
+    if (!sizingCatalog) return null;
     try {
-      const inputs = buildInputs(systemConfig, activeLocation.name);
-      return runSimulation(inputs);
+      const inputs = buildInputs(systemConfig, activeLocation.name, sizingCatalog);
+      return runSimulation(inputs, sizingCatalog);
     } catch {
       return null;
     }
-  }, [systemConfig, activeLocation.name]);
+  }, [systemConfig, activeLocation.name, sizingCatalog]);
 
   const totalCapExKSh = sizingResults?.totalCapExKSh ?? 0;
   const annualSavingsKSh = Math.round((sizingResults?.annualSavingsUSD ?? 0) * KSH_PER_USD);

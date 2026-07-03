@@ -42,3 +42,4 @@ validation/.venv/
 
 .vercel
 .env*.local
+.env*

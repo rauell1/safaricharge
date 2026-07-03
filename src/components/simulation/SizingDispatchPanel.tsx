@@ -4,17 +4,11 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 import { ExternalLink, Zap, TrendingUp, Sun, Cable, AlertTriangle, Package, DollarSign } from 'lucide-react';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
+import { useSizingCatalog } from '@/hooks/useSizingCatalog';
 import { runSimulation } from '@/lib/sizing/solarCalculator';
 import type { SimulationInputs } from '@/lib/sizing/solarCalculator';
-import {
-  SOLAR_LOCATIONS,
-  LOAD_PROFILES,
-  INVERTER_CATALOG,
-  PANEL_CATALOG,
-  BATTERY_CATALOG,
-  PROJECT_PRESETS,
-  KSH_PER_USD,
-} from '@/lib/sizing/mockData';
+import type { SizingCatalog } from '@/lib/sizing/catalogTypes';
+import { SOLAR_LOCATIONS, LOAD_PROFILES, PROJECT_PRESETS, KSH_PER_USD } from '@/lib/sizing/mockData';
 
 // ─── Bridge: store config → SimulationInputs ────────────────────────────────
 
@@ -27,6 +21,7 @@ export function buildInputs(
     loadProfile?: 'residential' | 'commercial' | 'industrial' | 'fleet-depot';
   },
   locationName: string,
+  catalog: SizingCatalog,
 ): SimulationInputs {
   const location =
     SOLAR_LOCATIONS.find(
@@ -44,13 +39,13 @@ export function buildInputs(
       (l) => l.id === (profileMap[systemConfig.loadProfile ?? 'residential'] ?? 'profile-residential-med'),
     ) ?? LOAD_PROFILES[0];
 
-  const panel = PANEL_CATALOG.find((p) => p.id === 'panel-jinko-580') ?? PANEL_CATALOG[0];
-  const panelQty = Math.max(1, Math.round((systemConfig.solarCapacityKW * 1000) / (panel.ratingWatts ?? 580)));
+  const panel = catalog.panels.find((p) => p.wattage === 580) ?? catalog.panels[0];
+  const panelQty = Math.max(1, Math.round((systemConfig.solarCapacityKW * 1000) / (panel.wattage ?? 580)));
 
-  const hybridInverters = INVERTER_CATALOG.filter((i) => i.category === 'inverter');
+  const hybridInverters = catalog.inverters.filter((i) => i.category === 'hybrid');
   const inverter = hybridInverters.reduce((best, i) => {
-    const di = Math.abs((i.ratingWatts ?? 0) / 1000 - systemConfig.inverterKW);
-    const db = Math.abs((best.ratingWatts ?? 0) / 1000 - systemConfig.inverterKW);
+    const di = Math.abs(i.ratedAcW / 1000 - systemConfig.inverterKW);
+    const db = Math.abs(best.ratedAcW / 1000 - systemConfig.inverterKW);
     return di < db ? i : best;
   }, hybridInverters[0]);
 
@@ -59,35 +54,55 @@ export function buildInputs(
     battKWh <= 51.2 ? 'LV48' : battKWh <= 200 ? 'Stack100' : 'Stack280';
   const battery =
     dynessProductLine === 'LV48'
-      ? (BATTERY_CATALOG.find((b) => b.id === 'bat-dyness-dl5.0') ?? BATTERY_CATALOG[0])
+      ? (catalog.batteries.find((b) => b.category === 'lv48') ?? catalog.batteries[0])
       : dynessProductLine === 'Stack100'
-      ? (BATTERY_CATALOG.find((b) => b.id === 'bat-dyness-stack100-mod') ?? BATTERY_CATALOG[2])
-      : (BATTERY_CATALOG.find((b) => b.id === 'bat-dyness-stack280-0.7c') ?? BATTERY_CATALOG[4]);
-  const batteryQty = Math.max(1, Math.round(battKWh / (battery.capacityKWh ?? 5.12)));
+      ? (catalog.batteries.find((b) => b.category === 'hv_stack100') ?? catalog.batteries[0])
+      : (catalog.batteries.find((b) => b.category === 'hv_stack280') ?? catalog.batteries[0]);
+  const batteryQty = Math.max(1, Math.round(battKWh / (battery.moduleKwh ?? 5.12)));
 
   return {
     location,
     loadProfile,
     loadMultiplier: 1.0,
+    systemArchitecture: 'central_inverter',
     panelId: panel.id,
     panelQty,
     inverterId: inverter.id,
     inverterQty: 1,
     batteryId: battery.id,
     batteryQty,
-    mountingType: 'pitched',
     dcAcOversizeRatio: 1.3,
     targetBatteryKWh: battKWh,
     dynessProductLine,
-    gridOutageSimulation: systemConfig.gridOutageEnabled,
+    panelsPerString: 7,
+    microPanelId: catalog.panels[0]?.id ?? '',
+    microInverterId: catalog.inverters.find((i) => i.category === 'microinverter')?.id ?? '',
+    microTargetSystemKW: 5,
+    installationMethod: 'clipped_direct',
+    ambientTempC: 30,
+    minDesignAmbientTempC: 10,
     contingencyPercent: 5,
     epcMarginPercent: 18,
-    dieselGenCapacityKW: 0,
-    dieselFuelPriceUSD: 1.2,
-    discountRate: 0.12,
-    inflationRate: 0.055,
+    specificYieldKWhPerKWpDay: 4.3,
+    selfConsumptionRatioPercent: 85,
+    gridTariffKShPerKWh: location.gridTariffKSh,
+    tariffEscalationPercent: 6,
+    panelDegradationPercent: 0.5,
+    annualOMCostPercent: 1.5,
+    omEscalationPercent: 5,
+    batteryReplacementYear: 11,
+    batteryReplacementCostPercent: 60,
+    discountRate: 12,
+    inflationRate: 5.5,
     projectLifeYears: 25,
-    includeGeneratorInterface: false,
+    useTOUTariff: false,
+    kplcCustomerSegment: 'Residential',
+    tariffStructure: 'Standard',
+    monthlyConsumptionKWh: 1000,
+    debtFractionPercent: 0,
+    loanInterestRatePercent: 15,
+    loanTermYears: 5,
+    includeGeneratorInterface: !!systemConfig.gridOutageEnabled,
     includeWeatherproofEnclosure: true,
     includeKPLCapplication: false,
     includeOandM: true,
@@ -99,7 +114,7 @@ export function buildInputs(
 function DispatchChart({
   rows,
 }: {
-  rows: import('@/lib/sizing/solarCalculator').HourlySimulationRow[];
+  rows: import('@/lib/sizing/types').HourlyIllustrativeRow[];
 }) {
   const W = 560;
   const H = 140;
@@ -219,9 +234,10 @@ function HardwareRow({
 export function SizingDispatchPanel() {
   const systemConfig = useEnergySystemStore((s) => s.systemConfig);
   const activeLocation = useEnergySystemStore((s) => s.activeLocation);
+  const { catalog } = useSizingCatalog();
 
   const inputs = useMemo(
-    () => buildInputs(systemConfig, activeLocation.name),
+    () => (catalog ? buildInputs(systemConfig, activeLocation.name, catalog) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       systemConfig.solarCapacityKW,
@@ -230,16 +246,18 @@ export function SizingDispatchPanel() {
       systemConfig.gridOutageEnabled,
       systemConfig.loadProfile,
       activeLocation.name,
+      catalog,
     ],
   );
 
   const results = useMemo(() => {
+    if (!inputs || !catalog) return null;
     try {
-      return runSimulation(inputs);
+      return runSimulation(inputs, catalog);
     } catch {
       return null;
     }
-  }, [inputs]);
+  }, [inputs, catalog]);
 
   if (!results) {
     return (

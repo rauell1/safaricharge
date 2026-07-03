@@ -1401,8 +1401,9 @@ function DemoSimulationView({
       let sizingSnapshot: Record<string, unknown> | undefined;
       try {
         const { runSimulation } = await import('@/lib/sizing/solarCalculator');
-        const sizingInputs = buildSizingInputs(systemConfig, activeLocation.name);
-        const sizingResults = runSimulation(sizingInputs);
+        const sizingCatalog = await fetch('/api/sizing-catalog').then((r) => r.json());
+        const sizingInputs = buildSizingInputs(systemConfig, activeLocation.name, sizingCatalog);
+        const sizingResults = runSimulation(sizingInputs, sizingCatalog);
         sizingSnapshot = {
           solarCapacityKWp: sizingResults.solarCapacityKWp,
           batteryCapacityKWh: sizingResults.batteryCapacityKWh,

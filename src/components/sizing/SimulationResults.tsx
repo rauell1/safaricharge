@@ -65,7 +65,11 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
     equivalentTreesPlanted,
     cashFlows,
     pvOversizeWarning,
-    batteryVoltageWarning
+    batteryVoltageWarning,
+    systemArchitecture,
+    touTariff,
+    financing,
+    extraMetrics
   } = results;
 
   const chartHeight = 200;
@@ -204,6 +208,78 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
         </div>
       </div>
 
+      {/* 1.5 Extended Financial Metrics */}
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-6 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h4 className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider font-mono">
+            Extended Investment Metrics
+          </h4>
+          {systemArchitecture === 'microinverter' && (
+            <span className="text-[10px] bg-purple-50 text-purple-700 px-2 py-0.5 rounded font-mono border border-purple-200">
+              Microinverter System (AC-coupled)
+            </span>
+          )}
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 text-center">
+          <div className="bg-[var(--bg-card-muted)] p-3 rounded-lg border border-[var(--border)]">
+            <span className="block text-[9px] text-[var(--text-muted)] uppercase font-mono">Discounted Payback</span>
+            <span className="text-sm font-extrabold text-[var(--text-primary)] font-mono">{extraMetrics.discountedPaybackYears} yrs</span>
+          </div>
+          <div className="bg-[var(--bg-card-muted)] p-3 rounded-lg border border-[var(--border)]">
+            <span className="block text-[9px] text-[var(--text-muted)] uppercase font-mono">Modified IRR (MIRR)</span>
+            <span className="text-sm font-extrabold text-[var(--text-primary)] font-mono">{extraMetrics.mirrPercent}%</span>
+          </div>
+          <div className="bg-[var(--bg-card-muted)] p-3 rounded-lg border border-[var(--border)]">
+            <span className="block text-[9px] text-[var(--text-muted)] uppercase font-mono">Lifetime ROI</span>
+            <span className="text-sm font-extrabold text-[var(--text-primary)] font-mono">{extraMetrics.roiPercent}%</span>
+          </div>
+          <div className="bg-[var(--bg-card-muted)] p-3 rounded-lg border border-[var(--border)]">
+            <span className="block text-[9px] text-[var(--text-muted)] uppercase font-mono">Profitability Index</span>
+            <span className="text-sm font-extrabold text-[var(--text-primary)] font-mono">{extraMetrics.profitabilityIndex}x</span>
+          </div>
+          <div className="bg-[var(--bg-card-muted)] p-3 rounded-lg border border-[var(--border)]">
+            <span className="block text-[9px] text-[var(--text-muted)] uppercase font-mono">Savings-to-Invest Ratio</span>
+            <span className="text-sm font-extrabold text-[var(--text-primary)] font-mono">{extraMetrics.savingsToInvestmentRatio}x</span>
+          </div>
+        </div>
+
+        {touTariff && (
+          <div className="mt-4 pt-4 border-t border-[var(--border)] flex flex-wrap gap-4 text-xs font-mono text-[var(--text-tertiary)]">
+            <span>KPLC Category: <strong className="text-[var(--text-primary)]">{touTariff.category}</strong></span>
+            <span>Peak Tariff: <strong className="text-[var(--text-primary)]">KSh {touTariff.effectivePeakTariffKShPerKWh}/kWh</strong></span>
+            {touTariff.effectiveOffPeakTariffKShPerKWh != null && (
+              <span>Off-Peak Tariff: <strong className="text-[var(--text-primary)]">KSh {touTariff.effectiveOffPeakTariffKShPerKWh}/kWh</strong></span>
+            )}
+            <span>Blended Tariff: <strong className="text-[var(--battery)]">KSh {touTariff.blendedTariffKShPerKWh}/kWh</strong></span>
+          </div>
+        )}
+
+        {financing.loanAmountUSD > 0 && (
+          <div className="mt-4 pt-4 border-t border-[var(--border)] grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
+            <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+              <span className="block text-[9px] text-purple-700 uppercase font-mono">Loan Amount</span>
+              <span className="text-sm font-extrabold text-purple-700 font-mono">${financing.loanAmountUSD.toLocaleString()}</span>
+            </div>
+            <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+              <span className="block text-[9px] text-purple-700 uppercase font-mono">Equity</span>
+              <span className="text-sm font-extrabold text-purple-700 font-mono">${financing.equityUSD.toLocaleString()}</span>
+            </div>
+            <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+              <span className="block text-[9px] text-purple-700 uppercase font-mono">DSCR</span>
+              <span className="text-sm font-extrabold text-purple-700 font-mono">{financing.dscr}x</span>
+            </div>
+            <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+              <span className="block text-[9px] text-purple-700 uppercase font-mono">Year-1 ROE</span>
+              <span className="text-sm font-extrabold text-purple-700 font-mono">{financing.roePercent}%</span>
+            </div>
+            <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+              <span className="block text-[9px] text-purple-700 uppercase font-mono">Equity Payback</span>
+              <span className="text-sm font-extrabold text-purple-700 font-mono">{financing.equityPaybackYears} yrs</span>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* 2. Technical System Specifications Bar */}
       <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4 border-b border-[var(--border)] pb-3">
@@ -327,7 +403,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                 <span className="flex items-center gap-1">
                   <span className="w-3 h-1.5 bg-red-600 rounded-sm" /> Grid Import (kW)
                 </span>
-                {results.inputs.dieselGenCapacityKW > 0 && (
+                {annualDieselGenKWh > 0 && (
                   <span className="flex items-center gap-1">
                     <span className="w-3 h-1.5 bg-gray-400 rounded-sm" /> Diesel Gen (kW)
                   </span>

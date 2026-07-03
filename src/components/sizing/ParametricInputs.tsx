@@ -3,30 +3,33 @@ import {
   MapPin, RefreshCw, AlertTriangle, CheckCircle2,
   ChevronDown, ChevronRight, ArrowRight,
 } from 'lucide-react';
-import {
-  SOLAR_LOCATIONS, LOAD_PROFILES, PROJECT_PRESETS, ProjectPreset,
-  INVERTER_CATALOG, PANEL_CATALOG, BATTERY_CATALOG
-} from '@/lib/sizing/mockData';
-import { SimulationInputs } from '@/lib/sizing/solarCalculator';
+import { SOLAR_LOCATIONS, LOAD_PROFILES, PROJECT_PRESETS, ProjectPreset } from '@/lib/sizing/mockData';
+import type { SimulationInputs } from '@/lib/sizing/solarCalculator';
+import type { SizingCatalog, CatalogInverter } from '@/lib/sizing/catalogTypes';
+import type { KPLCCustomerSegment, TariffStructure } from '@/lib/sizing/financialEngine';
+import type { InstallationMethod } from '@/lib/sizing/cableSizing';
+import { INSTALL_METHOD_LABELS } from '@/lib/sizing/cableSizing';
 
-interface ParametricInputsProps { onChange: (inputs: SimulationInputs) => void; }
+interface ParametricInputsProps {
+  catalog: SizingCatalog;
+  onChange: (inputs: SimulationInputs) => void;
+}
 
 type SizingMethod = 'direct' | 'load-based';
-type InverterBrand = 'Deye' | 'Solis' | 'Jinko';
+type SystemArchitecture = 'central_inverter' | 'microinverter';
+type InverterBrand = string;
 type VoltageClass = 'LV (48V)' | 'HV (150-850V)' | 'HV (160-700V)' | 'HV (160-800V)' | 'Grid-Tied';
 type DynessProductLine = 'Stack100' | 'Stack280' | 'LV48';
 
-const fmtKSh = (n: number) => n >= 1e6 ? `${(n/1e6).toFixed(2)}M` : n >= 1e3 ? `${(n/1e3).toFixed(0)}K` : String(n);
-const nf = (n: number, d=1) => n.toFixed(d);
+const fmtKSh = (n: number) => n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(0)}K` : String(n);
+const nf = (n: number, d = 1) => n.toFixed(d);
 
-// ── Animated Number ─────────────────────────────────────────────────────────
 const AnimatedValue = ({ value, unit, className }: { value: string; unit?: string; className?: string }) => (
   <span className={`transition-all duration-300 ${className || ''}`}>
     {value}{unit && <span className="text-[0.7em] ml-0.5 opacity-70">{unit}</span>}
   </span>
 );
 
-// ── Collapsible Section Wrapper ─────────────────────────────────────────────
 const Section = ({ id, label, color, defaultOpen, children, summary }: {
   id: string; label: string; color: string;
   defaultOpen?: boolean; children: React.ReactNode; summary?: React.ReactNode;
@@ -53,7 +56,6 @@ const Section = ({ id, label, color, defaultOpen, children, summary }: {
   );
 };
 
-// ── Metric Badge ────────────────────────────────────────────────────────────
 const Metric = ({ label, value, unit, color = 'slate', size = 'md' }: {
   label: string; value: string; unit?: string; color?: string; size?: string;
 }) => {
@@ -74,12 +76,28 @@ const Metric = ({ label, value, unit, color = 'slate', size = 'md' }: {
   );
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-export default function ParametricInputs({ onChange }: ParametricInputsProps) {
+function inverterVoltageClassOptions(catalog: SizingCatalog, brand: string): { value: VoltageClass; label: string }[] {
+  const models = catalog.inverters.filter((i) => i.brand === brand && i.category !== 'microinverter');
+  const opts: { value: VoltageClass; label: string }[] = [];
+  const has = (pred: (i: CatalogInverter) => boolean) => models.some(pred);
+  if (has((i) => (i.voltageClass || '').includes('LV'))) opts.push({ value: 'LV (48V)', label: 'LV (48V battery)' });
+  if (has((i) => (i.voltageClass || '').includes('160-700'))) opts.push({ value: 'HV (160-700V)', label: 'HV (160-700V) - AM2' });
+  if (has((i) => (i.voltageClass || '').includes('160-800'))) opts.push({ value: 'HV (160-800V)', label: 'HV (160-800V) - BM3/BM4' });
+  if (has((i) => (i.voltageClass || '').includes('150-850'))) opts.push({ value: 'HV (150-850V)', label: 'HV (150-850V) - S6' });
+  if (has((i) => i.category === 'grid_tied')) opts.push({ value: 'Grid-Tied', label: 'Grid-Tied (no battery)' });
+  return opts;
+}
+
+export default function ParametricInputs({ catalog, onChange }: ParametricInputsProps) {
+  const brands = useMemo(() => Array.from(new Set(catalog.inverters.filter((i) => i.category !== 'microinverter').map((i) => i.brand))), [catalog]);
+
   // ── Project ──
   const [projectName, setProjectName] = useState('New Sizing Project');
   const [clientName, setClientName] = useState('Enterprise Client');
   const [locationId, setLocationId] = useState(SOLAR_LOCATIONS[0].id);
+
+  // ── Architecture ──
+  const [architecture, setArchitecture] = useState<SystemArchitecture>('central_inverter');
 
   // ── Section A ──
   const [sizingMethod, setSizingMethod] = useState<SizingMethod>('direct');
@@ -89,60 +107,98 @@ export default function ParametricInputs({ onChange }: ParametricInputsProps) {
   const [backupAutonomyHrs, setBackupAutonomyHrs] = useState(4);
 
   // ── Section B ──
-  const [invBrand, setInvBrand] = useState<InverterBrand>('Deye');
+  const [invBrand, setInvBrand] = useState<InverterBrand>(brands[0] ?? 'Deye');
   const [invVoltageClass, setInvVoltageClass] = useState<VoltageClass>('HV (160-800V)');
-  const [selectedInverterId, setSelectedInverterId] = useState('inv-deye-50k-hv');
+  const [selectedInverterId, setSelectedInverterId] = useState('');
   const [invManualOverride, setInvManualOverride] = useState<number | null>(null);
 
   // ── Section C ──
   const [dcAcOversize, setDcAcOversize] = useState(1.30);
   const [panelWattage, setPanelWattage] = useState(620);
+  const [panelsPerString, setPanelsPerString] = useState(7);
 
   // ── Section D ──
   const [dynessLine, setDynessLine] = useState<DynessProductLine>('Stack100');
   const [targetBatteryKWh, setTargetBatteryKWh] = useState(50);
 
-  // ── Section G ──
+  // ── Section F: Microinverter ──
+  const [microTargetKW, setMicroTargetKW] = useState(5);
+  const [microPanelWattage, setMicroPanelWattage] = useState(450);
+  const [microInverterId, setMicroInverterId] = useState('');
+
+  // ── Section G: Cable engineering ──
+  const [installMethod, setInstallMethod] = useState<InstallationMethod>('clipped_direct');
+  const [ambientTempC, setAmbientTempC] = useState(30);
+  const [minDesignAmbientTempC, setMinDesignAmbientTempC] = useState(10);
+
+  // ── Financial Analysis ──
+  const [specificYield, setSpecificYield] = useState(4.3);
+  const [selfConsumptionPct, setSelfConsumptionPct] = useState(85);
+  const [tariffEscalation, setTariffEscalation] = useState(6);
+  const [panelDegradation, setPanelDegradation] = useState(0.5);
+  const [omCostPct, setOmCostPct] = useState(1.5);
+  const [omEscalation, setOmEscalation] = useState(5);
+  const [batteryReplYear, setBatteryReplYear] = useState(11);
+  const [batteryReplCostPct, setBatteryReplCostPct] = useState(60);
+  const [discountRate, setDiscountRate] = useState(12);
+  const [inflationRate, setInflationRate] = useState(5.5);
+  const [contingencyPct, setContingencyPct] = useState(5.0);
+  const [epcMarginPct, setEpcMarginPct] = useState(15.0);
+
+  // ── KPLC Time-of-Use ──
+  const [useTOU, setUseTOU] = useState(false);
+  const [kplcSegment, setKplcSegment] = useState<KPLCCustomerSegment>('Residential');
+  const [tariffStructure, setTariffStructure] = useState<TariffStructure>('Standard');
+  const [monthlyConsumptionKWh, setMonthlyConsumptionKWh] = useState(1000);
+
+  // ── Financing ──
+  const [debtFractionPct, setDebtFractionPct] = useState(0);
+  const [loanRatePct, setLoanRatePct] = useState(15);
+  const [loanTermYears, setLoanTermYears] = useState(5);
+
+  // ── Add-ons ──
   const [includeGenInterface, setIncludeGenInterface] = useState(true);
   const [includeEnclosure, setIncludeEnclosure] = useState(false);
   const [includeKPLC, setIncludeKPLC] = useState(false);
   const [includeOandM, setIncludeOandM] = useState(false);
-  const [dieselGenKW] = useState(0);
-  const [dieselFuelPrice] = useState(1.30);
-  const [discountRate, setDiscountRate] = useState(8.0);
-  const [inflationRate, setInflationRate] = useState(4.5);
-  const [contingencyPct, setContingencyPct] = useState(5.0);
-  const [epcMarginPct, setEpcMarginPct] = useState(15.0);
 
   const location = SOLAR_LOCATIONS.find(l => l.id === locationId) || SOLAR_LOCATIONS[0];
   const loadProfile = LOAD_PROFILES[0];
 
-  // ── DERIVED CALCULATIONS ──────────────────────────────────────────────────
   const suggestedInverterKW = peakLoadKW * 1.25;
   const suggestedBatteryKWh_raw = peakLoadKW * backupAutonomyHrs;
   const effectiveTargetKW = sizingMethod === 'direct' ? directTargetKW : suggestedInverterKW;
 
   const filteredInverters = useMemo(() =>
-    INVERTER_CATALOG.filter(inv => {
+    catalog.inverters.filter((inv) => {
+      if (inv.category === 'microinverter') return false;
       if (inv.brand !== invBrand) return false;
       const vc = inv.voltageClass || '';
-      if (invVoltageClass === 'Grid-Tied') return vc === 'Grid-Tied';
+      if (invVoltageClass === 'Grid-Tied') return inv.category === 'grid_tied';
       if (invVoltageClass === 'LV (48V)') return vc.includes('LV');
-      if (invVoltageClass.includes('HV')) return vc.includes('HV');
+      if (invVoltageClass.includes('HV')) return vc.includes(invVoltageClass.replace('HV ', '').replace(/[()]/g, ''));
       return vc === invVoltageClass;
-    }), [invBrand, invVoltageClass]);
+    }), [catalog, invBrand, invVoltageClass]);
 
   useEffect(() => {
-    if (filteredInverters.length > 0 && !filteredInverters.find(i => i.id === selectedInverterId))
+    if (filteredInverters.length > 0 && !filteredInverters.find(i => i.id === selectedInverterId)) {
       setSelectedInverterId(filteredInverters[0].id);
+    }
   }, [filteredInverters, selectedInverterId]);
 
-  const selectedInv = INVERTER_CATALOG.find(i => i.id === selectedInverterId) || filteredInverters[0] || INVERTER_CATALOG[0];
-  const invUnitACkW = (selectedInv.ratingWatts || 50000) / 1000;
-  const invUnitMaxPV = selectedInv.maxPVInputKWp || 75;
-  const invUnitPriceKSh = selectedInv.costKSh || 850000;
-  const invArchitecture = selectedInv.voltageClass || 'HV';
-  const isGridTied = invArchitecture === 'Grid-Tied';
+  const microInverters = useMemo(() => catalog.inverters.filter((i) => i.category === 'microinverter'), [catalog]);
+  useEffect(() => {
+    if (microInverters.length > 0 && !microInverters.find((i) => i.id === microInverterId)) {
+      setMicroInverterId(microInverters[0].id);
+    }
+  }, [microInverters, microInverterId]);
+
+  const selectedInv = catalog.inverters.find(i => i.id === selectedInverterId) || filteredInverters[0] || catalog.inverters[0];
+  const invUnitACkW = (selectedInv?.ratedAcW ?? 50000) / 1000;
+  const invUnitMaxPV = selectedInv?.maxPvInputKwp ?? 75;
+  const invUnitPriceKSh = selectedInv?.priceKsh ?? 850000;
+  const invArchitecture = selectedInv?.voltageClass || selectedInv?.category || 'HV';
+  const isGridTied = selectedInv?.category === 'grid_tied';
   const isHV = invArchitecture.includes('HV');
   const isLV = invArchitecture.includes('LV');
 
@@ -150,24 +206,22 @@ export default function ParametricInputs({ onChange }: ParametricInputsProps) {
   const actualInvUnits = invManualOverride ?? suggestedInvUnits;
   const totalInverterACkW = actualInvUnits * invUnitACkW;
 
-  // PV
   const targetPVkWp = totalInverterACkW * dcAcOversize;
   const maxAllowablePVkWp = actualInvUnits * invUnitMaxPV;
   const panelsRequired = Math.ceil((targetPVkWp * 1000) / panelWattage);
   const actualPVkWp = (panelsRequired * panelWattage) / 1000;
   const pvOversizeOK = actualPVkWp <= maxAllowablePVkWp;
-  const panelObj = PANEL_CATALOG.find(p => p.ratingWatts === panelWattage) || PANEL_CATALOG[0];
-  const panelTotalPriceKSh = panelsRequired * panelObj.costKSh;
-  const stockWarning = panelWattage === 620 ? '⚠ Low stock (~50 units) - consider 625W' : '';
+  const panelObj = catalog.panels.find(p => p.wattage === panelWattage) || catalog.panels[0];
+  const panelTotalPriceKSh = panelsRequired * (panelObj?.priceKsh ?? 11900);
+  const stockWarning = panelWattage === 620 ? 'Low stock (~50 units) - consider 625W' : '';
 
-  // Battery
-  const modKWh = dynessLine === 'Stack280' ? 14.3 : 5.12;
-  const modCost = dynessLine === 'Stack280'
-    ? (BATTERY_CATALOG.find(b => b.id === 'bat-dyness-stack280-0.7c')?.costKSh || 288877)
+  const battery = dynessLine === 'Stack280'
+    ? catalog.batteries.find((b) => b.category === 'hv_stack280')
     : dynessLine === 'Stack100'
-      ? (BATTERY_CATALOG.find(b => b.id === 'bat-dyness-stack100-mod')?.costKSh || 132500)
-      : (BATTERY_CATALOG.find(b => b.id === 'bat-dyness-dl5.0')?.costKSh || 115264);
-  const bduCost = 95000;
+      ? catalog.batteries.find((b) => b.category === 'hv_stack100')
+      : catalog.batteries.find((b) => b.category === 'lv48');
+  const modKWh = battery?.moduleKwh ?? (dynessLine === 'Stack280' ? 14.3 : 5.12);
+  const modCost = battery?.pricePerModuleKsh ?? 132500;
   const batModsReq = Math.max(0, Math.ceil(targetBatteryKWh / modKWh));
   const maxPerTower = 15;
   const batTowers = isHV && !isGridTied ? Math.max(1, Math.ceil(batModsReq / maxPerTower)) : (batModsReq > 0 ? 1 : 0);
@@ -177,7 +231,6 @@ export default function ParametricInputs({ onChange }: ParametricInputsProps) {
   const bduCount = isHV && !isGridTied ? batTowers : 0;
   const towerVoltage = isHV ? modsPerTower * 51.2 : 48;
 
-  // Voltage check
   let vCheckOK = true; let vCheckMsg = 'OK';
   if (isHV && !isGridTied && batModsReq > 0) {
     const vr = invArchitecture;
@@ -186,40 +239,55 @@ export default function ParametricInputs({ onChange }: ParametricInputsProps) {
     else if (vr.includes('150-850V')) { vCheckOK = towerVoltage >= 150 && towerVoltage <= 850; vCheckMsg = vCheckOK ? `OK (${towerVoltage}V in 150-850V)` : `WARN: ${towerVoltage}V outside 150-850V`; }
   }
 
-  const roughCapExKSh = panelTotalPriceKSh + (actualInvUnits * invUnitPriceKSh) + (actualBatMods * modCost) + (bduCount * bduCost) + (actualPVkWp * 14000);
+  const roughCapExKSh = panelTotalPriceKSh + (actualInvUnits * invUnitPriceKSh) + (actualBatMods * modCost) + (bduCount * 95000) + (actualPVkWp * 14000);
   const roughCapExUSD = Math.round(roughCapExKSh / 127.5);
 
-  // ── Sync to parent ────────────────────────────────────────────────────────
   useEffect(() => {
-    const panelId = PANEL_CATALOG.find(p => p.ratingWatts === panelWattage)?.id || 'panel-jinko-620';
-    const batteryId = dynessLine === 'Stack280' ? 'bat-dyness-stack280-0.7c' : dynessLine === 'Stack100' ? 'bat-dyness-stack100-mod' : 'bat-dyness-dl5.0';
+    const panelId = catalog.panels.find(p => p.wattage === panelWattage)?.id ?? catalog.panels[0]?.id ?? '';
+    const microPanelId = catalog.panels.find(p => p.wattage === microPanelWattage)?.id ?? catalog.panels[0]?.id ?? '';
+
     onChange({
       location, loadProfile, loadMultiplier: 1.0,
+      systemArchitecture: architecture,
       panelId, panelQty: panelsRequired,
       inverterId: selectedInverterId, inverterQty: actualInvUnits,
-      batteryId, batteryQty: actualBatMods,
-      mountingType: 'pitched',
+      batteryId: battery?.id ?? '', batteryQty: actualBatMods,
       dcAcOversizeRatio: dcAcOversize, targetBatteryKWh, dynessProductLine: dynessLine,
-      gridOutageSimulation: true,
+      panelsPerString,
+      microPanelId, microInverterId, microTargetSystemKW: microTargetKW,
+      installationMethod: installMethod, ambientTempC, minDesignAmbientTempC,
       contingencyPercent: contingencyPct, epcMarginPercent: epcMarginPct,
-      dieselGenCapacityKW: dieselGenKW, dieselFuelPriceUSD: dieselFuelPrice,
+      specificYieldKWhPerKWpDay: specificYield, selfConsumptionRatioPercent: selfConsumptionPct,
+      gridTariffKShPerKWh: location.gridTariffKSh, tariffEscalationPercent: tariffEscalation,
+      panelDegradationPercent: panelDegradation, annualOMCostPercent: omCostPct, omEscalationPercent: omEscalation,
+      batteryReplacementYear: batteryReplYear, batteryReplacementCostPercent: batteryReplCostPct,
       discountRate, inflationRate, projectLifeYears: 25,
+      useTOUTariff: useTOU, kplcCustomerSegment: kplcSegment, tariffStructure, monthlyConsumptionKWh,
+      debtFractionPercent: debtFractionPct, loanInterestRatePercent: loanRatePct, loanTermYears,
       includeGeneratorInterface: includeGenInterface, includeWeatherproofEnclosure: includeEnclosure,
-      includeKPLCapplication: includeKPLC, includeOandM: includeOandM
+      includeKPLCapplication: includeKPLC, includeOandM: includeOandM,
     });
-  }, [locationId, sizingMethod, directTargetKW, dailyConsumptionKWh, peakLoadKW, backupAutonomyHrs,
-      selectedInverterId, actualInvUnits, dcAcOversize, panelWattage,
-      targetBatteryKWh, dynessLine, dieselGenKW, dieselFuelPrice, discountRate, inflationRate,
-      contingencyPct, epcMarginPct, includeGenInterface, includeEnclosure, includeKPLC, includeOandM]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    catalog, architecture, locationId, sizingMethod, directTargetKW, dailyConsumptionKWh, peakLoadKW, backupAutonomyHrs,
+    selectedInverterId, actualInvUnits, dcAcOversize, panelWattage, panelsPerString,
+    targetBatteryKWh, dynessLine, microTargetKW, microPanelWattage, microInverterId,
+    installMethod, ambientTempC, minDesignAmbientTempC,
+    specificYield, selfConsumptionPct, tariffEscalation, panelDegradation, omCostPct, omEscalation,
+    batteryReplYear, batteryReplCostPct, discountRate, inflationRate,
+    useTOU, kplcSegment, tariffStructure, monthlyConsumptionKWh,
+    debtFractionPct, loanRatePct, loanTermYears,
+    contingencyPct, epcMarginPct, includeGenInterface, includeEnclosure, includeKPLC, includeOandM,
+  ]);
 
-  // ── Preset loader ─────────────────────────────────────────────────────────
   const loadPreset = (preset: ProjectPreset) => {
     setProjectName(preset.name); setClientName(preset.clientName); setLocationId(preset.locationId);
     setSizingMethod('direct');
-    const pPanel = PANEL_CATALOG.find(p => p.id === preset.selectedPanelId);
-    if (pPanel) setPanelWattage(pPanel.ratingWatts || 620);
-    const pInv = INVERTER_CATALOG.find(i => i.id === preset.selectedInverterId);
-    if (pInv) { setInvBrand(pInv.brand as InverterBrand); setInvVoltageClass((pInv.voltageClass || 'HV (160-800V)') as VoltageClass); setSelectedInverterId(pInv.id); }
+    setArchitecture('central_inverter');
+    const pPanel = catalog.panels.find(p => p.id === preset.selectedPanelId);
+    if (pPanel) setPanelWattage(pPanel.wattage);
+    const pInv = catalog.inverters.find(i => i.id === preset.selectedInverterId);
+    if (pInv) { setInvBrand(pInv.brand); setInvVoltageClass((pInv.voltageClass || 'HV (160-800V)') as VoltageClass); setSelectedInverterId(pInv.id); }
     if (preset.selectedBatteryId.includes('stack280')) setDynessLine('Stack280');
     else if (preset.selectedBatteryId.includes('stack100')) setDynessLine('Stack100');
     else setDynessLine('LV48');
@@ -233,7 +301,6 @@ export default function ParametricInputs({ onChange }: ParametricInputsProps) {
     <div className="space-y-5">
       {/* PRESETS + PROJECT ROW */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Quick Presets */}
         <div className="lg:col-span-2 bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-4">
           <div className="flex flex-wrap items-center gap-2">
             <RefreshCw className="w-3.5 h-3.5 text-[var(--battery)] shrink-0" />
@@ -241,13 +308,12 @@ export default function ParametricInputs({ onChange }: ParametricInputsProps) {
             {PROJECT_PRESETS.map(p => (
               <button key={p.name} onClick={() => loadPreset(p)}
                 className="bg-[var(--bg-card-muted)] hover:bg-[var(--battery-soft)] hover:text-[var(--battery)] text-[var(--text-secondary)] text-[10px] px-3 py-1.5 rounded-lg border border-[var(--border)] hover:border-[var(--battery)]/40 font-medium transition-all duration-200 active:scale-95">
-                {p.name.split(' ')[0]} <span className="text-[var(--text-muted)]">({p.name.includes('Lagos')?'NG':p.name.includes('Joburg')?'ZA':'KE'})</span>
+                {p.name.split(' ')[0]} <span className="text-[var(--text-muted)]">({p.name.includes('Lagos') ? 'NG' : p.name.includes('Joburg') ? 'ZA' : 'KE'})</span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Project Name + Client */}
         <div className="space-y-2">
           <input type="text" value={projectName} onChange={e => setProjectName(e.target.value)}
             className="w-full bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--battery)]/50 placeholder-[var(--text-muted)] font-medium"
@@ -283,257 +349,421 @@ export default function ParametricInputs({ onChange }: ParametricInputsProps) {
         </div>
       </div>
 
-      {/* SECTION A: SYSTEM SIZE */}
-      <Section id="A" label="System Size Input" color="bg-[var(--solar-soft)] text-[var(--solar)] border border-[var(--solar)]/20"
-        summary={`Target: ${nf(effectiveTargetKW, 1)} kW · Method: ${sizingMethod === 'direct' ? 'Direct' : 'Load-based'}`}>
-        <div className="flex gap-1 bg-[var(--bg-card-muted)] rounded-xl p-1 w-fit">
-          <button onClick={() => setSizingMethod('direct')}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${sizingMethod === 'direct' ? 'bg-[var(--battery)] text-white shadow-lg shadow-emerald-600/20' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'}`}>
-            📏 Direct kW Entry
-          </button>
-          <button onClick={() => setSizingMethod('load-based')}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${sizingMethod === 'load-based' ? 'bg-[var(--battery)] text-white shadow-lg shadow-emerald-600/20' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'}`}>
-            ⚡ Load-Based Sizing
-          </button>
-        </div>
-
-        {sizingMethod === 'direct' ? (
-          <div className="space-y-2">
-            <div className="flex justify-between items-end">
-              <span className="text-[10px] text-[var(--text-muted)]">Target system size</span>
-              <span className="text-lg font-black text-[var(--solar)] font-mono">{nf(directTargetKW)} <span className="text-sm font-normal text-[var(--solar)]/70">kW</span></span>
-            </div>
-            <input type="range" min={1} max={400} step={1} value={directTargetKW}
-              onChange={e => setDirectTargetKW(parseInt(e.target.value)||1)}
-              className="w-full accent-amber-500 h-2 rounded-lg cursor-pointer" />
-            <div className="flex justify-between text-[8px] text-[var(--text-muted)] font-mono"><span>1kW</span><span>100</span><span>200</span><span>300</span><span>400kW</span></div>
+      {/* ARCHITECTURE TOGGLE */}
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-4">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider font-mono">System Architecture:</span>
+          <div className="flex gap-1 bg-[var(--bg-card-muted)] rounded-xl p-1">
+            <button onClick={() => setArchitecture('central_inverter')}
+              className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${architecture === 'central_inverter' ? 'bg-[var(--battery)] text-white shadow-lg shadow-emerald-600/20' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'}`}>
+              Hybrid / Grid-Tied / Off-Grid
+            </button>
+            <button onClick={() => setArchitecture('microinverter')}
+              className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${architecture === 'microinverter' ? 'bg-[var(--battery)] text-white shadow-lg shadow-emerald-600/20' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'}`}>
+              Microinverter (AC-coupled)
+            </button>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {[
-              { label: 'Daily Consumption', value: dailyConsumptionKWh, set: setDailyConsumptionKWh, unit: 'kWh/day', min: 1 },
-              { label: 'Peak Load', value: peakLoadKW, set: setPeakLoadKW, unit: 'kW', min: 1 },
-              { label: 'Backup Autonomy', value: backupAutonomyHrs, set: setBackupAutonomyHrs, unit: 'hours', min: 0.5, step: 0.5 },
-            ].map(f => (
-              <div key={f.label} className="flex flex-col">
-                <span className="text-[10px] text-[var(--text-muted)] mb-1">{f.label}</span>
-                <div className="relative">
-                  <input type="number" min={f.min} step={f.step || 1} value={f.value}
-                    onChange={e => f.set(Math.max(f.min, parseFloat(e.target.value) || 0))}
-                    className="w-full bg-[var(--solar-soft)] border border-[var(--solar)]/30 rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--solar)] transition" />
-                  <span className="absolute right-3 top-2.5 text-[10px] text-[var(--solar)]/70 font-mono">{f.unit}</span>
+        </div>
+        <p className="text-[10px] text-[var(--text-muted)] mt-2">
+          Mutually exclusive per the sizing model: a real project uses one architecture or the other, not both.
+        </p>
+      </div>
+
+      {architecture === 'central_inverter' ? (
+        <>
+          {/* SECTION A: SYSTEM SIZE */}
+          <Section id="A" label="System Size Input" color="bg-[var(--solar-soft)] text-[var(--solar)] border border-[var(--solar)]/20"
+            summary={`Target: ${nf(effectiveTargetKW, 1)} kW - Method: ${sizingMethod === 'direct' ? 'Direct' : 'Load-based'}`}>
+            <div className="flex gap-1 bg-[var(--bg-card-muted)] rounded-xl p-1 w-fit">
+              <button onClick={() => setSizingMethod('direct')}
+                className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${sizingMethod === 'direct' ? 'bg-[var(--battery)] text-white shadow-lg shadow-emerald-600/20' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'}`}>
+                Direct kW Entry
+              </button>
+              <button onClick={() => setSizingMethod('load-based')}
+                className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${sizingMethod === 'load-based' ? 'bg-[var(--battery)] text-white shadow-lg shadow-emerald-600/20' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'}`}>
+                Load-Based Sizing
+              </button>
+            </div>
+
+            {sizingMethod === 'direct' ? (
+              <div className="space-y-2">
+                <div className="flex justify-between items-end">
+                  <span className="text-[10px] text-[var(--text-muted)]">Target system size</span>
+                  <span className="text-lg font-black text-[var(--solar)] font-mono">{nf(directTargetKW)} <span className="text-sm font-normal text-[var(--solar)]/70">kW</span></span>
+                </div>
+                <input type="range" min={1} max={400} step={1} value={directTargetKW}
+                  onChange={e => setDirectTargetKW(parseInt(e.target.value) || 1)}
+                  className="w-full accent-amber-500 h-2 rounded-lg cursor-pointer" />
+                <div className="flex justify-between text-[8px] text-[var(--text-muted)] font-mono"><span>1kW</span><span>100</span><span>200</span><span>300</span><span>400kW</span></div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[
+                  { label: 'Daily Consumption', value: dailyConsumptionKWh, set: setDailyConsumptionKWh, unit: 'kWh/day', min: 1 },
+                  { label: 'Peak Load', value: peakLoadKW, set: setPeakLoadKW, unit: 'kW', min: 1 },
+                  { label: 'Backup Autonomy', value: backupAutonomyHrs, set: setBackupAutonomyHrs, unit: 'hours', min: 0.5, step: 0.5 },
+                ].map(f => (
+                  <div key={f.label} className="flex flex-col">
+                    <span className="text-[10px] text-[var(--text-muted)] mb-1">{f.label}</span>
+                    <div className="relative">
+                      <input type="number" min={f.min} step={f.step || 1} value={f.value}
+                        onChange={e => f.set(Math.max(f.min, parseFloat(e.target.value) || 0))}
+                        className="w-full bg-[var(--solar-soft)] border border-[var(--solar)]/30 rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--solar)] transition" />
+                      <span className="absolute right-3 top-2.5 text-[10px] text-[var(--solar)]/70 font-mono">{f.unit}</span>
+                    </div>
+                  </div>
+                ))}
+                <div className="col-span-3 grid grid-cols-2 gap-3 mt-2">
+                  <Metric label="Suggested Inverter Size" value={nf(suggestedInverterKW, 1)} unit="kW" color="amber" />
+                  <Metric label="Suggested Battery Capacity" value={nf(suggestedBatteryKWh_raw, 1)} unit="kWh" color="amber" />
                 </div>
               </div>
-            ))}
-            <div className="col-span-3 grid grid-cols-2 gap-3 mt-2">
-              <Metric label="→ Suggested Inverter Size" value={nf(suggestedInverterKW, 1)} unit="kW" color="amber" />
-              <Metric label="→ Suggested Battery Capacity" value={nf(suggestedBatteryKWh_raw, 1)} unit="kWh" color="amber" />
+            )}
+
+            <div className="bg-[var(--battery-soft)] border border-[var(--battery)]/20 rounded-xl px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ArrowRight className="w-4 h-4 text-[var(--battery)]" />
+                <span className="text-xs font-bold text-[var(--battery)] font-mono uppercase tracking-wider">Effective Target</span>
+              </div>
+              <span className="text-xl font-black text-[var(--battery)] font-mono">{nf(effectiveTargetKW, 1)} <span className="text-sm font-normal text-[var(--battery)]/70">kW</span></span>
             </div>
-          </div>
-        )}
+          </Section>
 
-        <div className="bg-[var(--battery-soft)] border border-[var(--battery)]/20 rounded-xl px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ArrowRight className="w-4 h-4 text-[var(--battery)]" />
-            <span className="text-xs font-bold text-[var(--battery)] font-mono uppercase tracking-wider">Effective Target</span>
-          </div>
-          <span className="text-xl font-black text-[var(--battery)] font-mono">{nf(effectiveTargetKW, 1)} <span className="text-sm font-normal text-[var(--battery)]/70">kW</span></span>
-        </div>
-      </Section>
-
-      {/* SECTION B: INVERTER */}
-      <Section id="B" label="Inverter Selection" color="bg-[var(--grid-soft)] text-[var(--grid)] border border-[var(--grid)]/20"
-        summary={selectedInv ? `${selectedInv.brand} ${selectedInv.model.split('-').slice(0,3).join('-')} · ${actualInvUnits}×${nf(invUnitACkW,1)}kW · KSh ${fmtKSh(invUnitPriceKSh)}` : 'Select inverter'}>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="flex flex-col">
-            <span className="text-[10px] text-[var(--text-muted)] mb-1">Brand</span>
-            <select value={invBrand} onChange={e => setInvBrand(e.target.value as InverterBrand)}
-              className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--grid)] cursor-pointer">
-              <option value="Deye">Deye</option><option value="Solis">Solis</option><option value="Jinko">Jinko</option>
-            </select>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] text-[var(--text-muted)] mb-1">Voltage Class</span>
-            <select value={invVoltageClass} onChange={e => setInvVoltageClass(e.target.value as VoltageClass)}
-              className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--grid)] cursor-pointer">
-              <option value="LV (48V)">LV (48V battery)</option>
-              {invBrand !== 'Jinko' && <option value="HV (160-700V)">HV (160-700V) - AM2</option>}
-              {invBrand === 'Deye' && <option value="HV (160-800V)">HV (160-800V) - BM3/BM4</option>}
-              {invBrand === 'Solis' && <option value="HV (150-850V)">HV (150-850V) - S6</option>}
-              <option value="Grid-Tied">Grid-Tied (no battery)</option>
-            </select>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] text-[var(--text-muted)] mb-1">Model ({filteredInverters.length} available)</span>
-            <select value={selectedInverterId} onChange={e => setSelectedInverterId(e.target.value)}
-              className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--grid)] cursor-pointer">
-              {filteredInverters.length === 0 && <option>No models in database</option>}
-              {filteredInverters.map(inv => (
-                <option key={inv.id} value={inv.id}>{inv.model} - {inv.phase} {(inv.ratingWatts||0)/1000}kW</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <Metric label="Rated AC Power" value={nf(invUnitACkW, 1)} unit="kW" color="blue" />
-          <Metric label="Max PV Input" value={nf(invUnitMaxPV, 1)} unit="kWp" color="blue" />
-          <Metric label="Unit Price" value={`KSh ${fmtKSh(invUnitPriceKSh)}`} color="blue" />
-          <Metric label="Architecture" value={invArchitecture} color="blue" />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-4 bg-[var(--bg-card-muted)] rounded-xl px-4 py-3 border border-[var(--border)]">
-          <span className="text-[10px] text-[var(--text-muted)]">Inverter Units:</span>
-          <span className="font-mono font-bold text-[var(--grid)]">{actualInvUnits} × {nf(invUnitACkW, 1)}kW</span>
-          <span className="text-[9px] text-[var(--text-muted)]">| Auto: {suggestedInvUnits}</span>
-          <input type="number" min={1} max={20} value={actualInvUnits}
-            onChange={e => setInvManualOverride(parseInt(e.target.value) || null)}
-            className="w-16 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-2 py-1 text-center font-mono text-[var(--solar)] text-xs focus:outline-none focus:border-[var(--solar)] ml-auto" />
-          <span className="text-[9px] text-[var(--text-muted)]">Manual override</span>
-        </div>
-
-        <div className="bg-[var(--grid-soft)] border border-[var(--grid)]/20 rounded-xl px-4 py-3 flex items-center justify-between">
-          <span className="text-xs font-bold text-[var(--grid)] font-mono uppercase">Total Inverter AC Capacity</span>
-          <span className="text-xl font-black text-[var(--grid)] font-mono">{nf(totalInverterACkW, 1)} kW</span>
-        </div>
-      </Section>
-
-      {/* SECTION C: PV ARRAY */}
-      <Section id="C" label="PV Array Sizing" color="bg-[var(--solar-soft)] text-[var(--solar)] border border-[var(--solar)]/20"
-        summary={`${panelsRequired} panels · ${nf(actualPVkWp,1)} kWp · DC/AC ${dcAcOversize.toFixed(2)}`}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <div className="flex justify-between text-[10px] text-[var(--text-muted)] mb-1"><span>DC/AC Oversize Ratio</span><span className="font-mono font-bold text-[var(--solar)]">{dcAcOversize.toFixed(2)}</span></div>
-            <input type="range" min={1.0} max={1.5} step={0.05} value={dcAcOversize}
-              onChange={e => setDcAcOversize(parseFloat(e.target.value))}
-              className="w-full accent-amber-500 h-2 rounded-lg cursor-pointer" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] text-[var(--text-muted)] mb-1">Panel Wattage</span>
-            <select value={panelWattage} onChange={e => setPanelWattage(parseInt(e.target.value))}
-              className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--solar)] cursor-pointer">
-              {PANEL_CATALOG.map(p => (
-                <option key={p.id} value={p.ratingWatts}>{p.ratingWatts}W - KSh {p.costKSh.toLocaleString()} - {p.model}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {stockWarning && (
-          <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-[11px] text-red-600 font-medium">
-            <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> {stockWarning}
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <Metric label="Target PV" value={nf(targetPVkWp, 1)} unit="kWp" color="amber" />
-          <Metric label="Max Allowed" value={nf(maxAllowablePVkWp, 1)} unit="kWp" color="slate" />
-          <Metric label="Panels Required" value={String(panelsRequired)} unit="pcs" color="amber" size="lg" />
-          <Metric label="Actual PV Array" value={nf(actualPVkWp, 1)} unit="kWp" color="amber" size="lg" />
-        </div>
-
-        <div className={`flex items-center gap-2 rounded-xl px-3 py-2 text-[11px] font-semibold ${pvOversizeOK ? 'bg-[var(--battery-soft)] border border-[var(--battery)]/20 text-[var(--battery)]' : 'bg-red-50 border border-red-200 text-red-600'}`}>
-          {pvOversizeOK ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
-          {pvOversizeOK ? 'PV Oversize Check: OK - within inverter input limits' : `WARNING - ${nf(actualPVkWp,1)}kWp exceeds ${nf(maxAllowablePVkWp,1)}kWp inverter max!`}
-        </div>
-      </Section>
-
-      {/* SECTION D: BATTERY */}
-      <Section id="D" label="Battery Storage Sizing (Dyness)" color="bg-[var(--battery-soft)] text-[var(--battery)] border border-[var(--battery)]/20"
-        summary={isGridTied ? 'No battery (Grid-Tied)' : `${actualBatMods} modules · ${nf(actualBatteryKWh,1)} kWh · ${batTowers} tower(s)`}>
-        {isGridTied ? (
-          <div className="bg-[var(--bg-card-muted)] border border-[var(--border)] rounded-xl p-4 text-center text-[var(--text-muted)] text-sm">
-            ⚠ Grid-Tied inverter selected - no battery storage. Change voltage class in Section B to add batteries.
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* SECTION B: INVERTER */}
+          <Section id="B" label="Inverter Selection" color="bg-[var(--grid-soft)] text-[var(--grid)] border border-[var(--grid)]/20"
+            summary={selectedInv ? `${selectedInv.brand} ${selectedInv.model.split('-').slice(0, 3).join('-')} - ${actualInvUnits}x${nf(invUnitACkW, 1)}kW - KSh ${fmtKSh(invUnitPriceKSh)}` : 'Select inverter'}>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="flex flex-col">
-                <span className="text-[10px] text-[var(--text-muted)] mb-1">Product Line</span>
-                <select value={dynessLine} onChange={e => setDynessLine(e.target.value as DynessProductLine)}
-                  className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--battery)] cursor-pointer"
-                  disabled={isLV}>
-                  {isLV
-                    ? <option value="LV48">LV48 (DL5.0/DL5.0C 5.12kWh, parallel)</option>
-                    : <><option value="Stack100">Stack100 (5.12kWh/module, 3-15/tower)</option>
-                       <option value="Stack280">Stack280 (14.3kWh/module, C&I scale)</option></>}
+                <span className="text-[10px] text-[var(--text-muted)] mb-1">Brand</span>
+                <select value={invBrand} onChange={e => setInvBrand(e.target.value)}
+                  className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--grid)] cursor-pointer">
+                  {brands.map((b) => <option key={b} value={b}>{b}</option>)}
                 </select>
               </div>
               <div className="flex flex-col">
-                <span className="text-[10px] text-[var(--text-muted)] mb-1">Target Capacity (kWh)</span>
-                <div className="relative">
-                  <input type="number" min={0} step={5} value={targetBatteryKWh}
-                    onChange={e => setTargetBatteryKWh(Math.max(0, parseFloat(e.target.value) || 0))}
-                    className="w-full bg-[var(--solar-soft)] border border-[var(--solar)]/30 rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--solar)] transition" />
-                  <span className="absolute right-3 top-2.5 text-[10px] text-[var(--solar)]/70 font-mono">kWh</span>
-                </div>
+                <span className="text-[10px] text-[var(--text-muted)] mb-1">Voltage Class</span>
+                <select value={invVoltageClass} onChange={e => setInvVoltageClass(e.target.value as VoltageClass)}
+                  className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--grid)] cursor-pointer">
+                  {inverterVoltageClassOptions(catalog, invBrand).map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] text-[var(--text-muted)] mb-1">Model ({filteredInverters.length} available)</span>
+                <select value={selectedInverterId} onChange={e => setSelectedInverterId(e.target.value)}
+                  className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--grid)] cursor-pointer">
+                  {filteredInverters.length === 0 && <option>No models in database</option>}
+                  {filteredInverters.map(inv => (
+                    <option key={inv.id} value={inv.id}>{inv.model} - {inv.phase} {(inv.ratedAcW || 0) / 1000}kW</option>
+                  ))}
+                </select>
               </div>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <Metric label="Modules Required" value={String(batModsReq)} unit={`×${modKWh}kWh`} color="emerald" />
-              {isHV ? <>
-                <Metric label="Towers" value={`${batTowers}`} unit={`max ${maxPerTower}/tower`} color="emerald" />
-                <Metric label="Per Tower" value={String(modsPerTower)} unit="modules" color="emerald" />
-                <Metric label="Voltage" value={nf(towerVoltage, 1)} unit="V" color="emerald" />
-              </> : <>
-                <Metric label="Actual kWh" value={nf(actualBatteryKWh, 1)} unit="kWh" color="emerald" />
-                <Metric label="BDUs" value={String(bduCount)} color="slate" />
-                <Metric label="Module Cost" value={`KSh ${fmtKSh(modCost)}`} color="slate" />
-                <div className={`rounded-xl border px-3.5 py-2.5 text-center ${vCheckOK ? 'bg-[var(--battery-soft)] border-[var(--battery)]/20' : 'bg-red-50 border-red-200'}`}>
-                  <div className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider">Voltage Check</div>
-                  <div className={`font-bold font-mono text-sm ${vCheckOK ? 'text-[var(--battery)]' : 'text-red-600'}`}>{vCheckMsg}</div>
-                </div>
-              </>}
+              <Metric label="Rated AC Power" value={nf(invUnitACkW, 1)} unit="kW" color="blue" />
+              <Metric label="Max PV Input" value={nf(invUnitMaxPV, 1)} unit="kWp" color="blue" />
+              <Metric label="Unit Price" value={`KSh ${fmtKSh(invUnitPriceKSh)}`} color="blue" />
+              <Metric label="Architecture" value={invArchitecture} color="blue" />
             </div>
 
-            {isHV && (
-              <div className="grid grid-cols-4 gap-2">
-                <Metric label="Actual Capacity" value={nf(actualBatteryKWh, 1)} unit="kWh" color="emerald" size="lg" />
-                <Metric label="BDUs Required" value={String(bduCount)} unit="1 per tower" color="emerald" />
-                <Metric label="Module Cost" value={`KSh ${fmtKSh(modCost)}`} color="slate" />
-                <div className={`rounded-xl border px-3.5 py-2.5 text-center ${vCheckOK ? 'bg-[var(--battery-soft)] border-[var(--battery)]/20' : 'bg-red-50 border-red-200'}`}>
-                  <div className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider">Voltage Check</div>
-                  <div className={`font-bold font-mono text-sm ${vCheckOK ? 'text-[var(--battery)]' : 'text-red-600'}`}>{vCheckMsg}</div>
-                </div>
+            <div className="flex flex-wrap items-center gap-4 bg-[var(--bg-card-muted)] rounded-xl px-4 py-3 border border-[var(--border)]">
+              <span className="text-[10px] text-[var(--text-muted)]">Inverter Units:</span>
+              <span className="font-mono font-bold text-[var(--grid)]">{actualInvUnits} x {nf(invUnitACkW, 1)}kW</span>
+              <span className="text-[9px] text-[var(--text-muted)]">| Auto: {suggestedInvUnits}</span>
+              <input type="number" min={1} max={20} value={actualInvUnits}
+                onChange={e => setInvManualOverride(parseInt(e.target.value) || null)}
+                className="w-16 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg px-2 py-1 text-center font-mono text-[var(--solar)] text-xs focus:outline-none focus:border-[var(--solar)] ml-auto" />
+              <span className="text-[9px] text-[var(--text-muted)]">Manual override</span>
+            </div>
+
+            <div className="bg-[var(--grid-soft)] border border-[var(--grid)]/20 rounded-xl px-4 py-3 flex items-center justify-between">
+              <span className="text-xs font-bold text-[var(--grid)] font-mono uppercase">Total Inverter AC Capacity</span>
+              <span className="text-xl font-black text-[var(--grid)] font-mono">{nf(totalInverterACkW, 1)} kW</span>
+            </div>
+          </Section>
+
+          {/* SECTION C: PV ARRAY */}
+          <Section id="C" label="PV Array Sizing" color="bg-[var(--solar-soft)] text-[var(--solar)] border border-[var(--solar)]/20"
+            summary={`${panelsRequired} panels - ${nf(actualPVkWp, 1)} kWp - DC/AC ${dcAcOversize.toFixed(2)}`}>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <div className="flex justify-between text-[10px] text-[var(--text-muted)] mb-1"><span>DC/AC Oversize Ratio</span><span className="font-mono font-bold text-[var(--solar)]">{dcAcOversize.toFixed(2)}</span></div>
+                <input type="range" min={1.0} max={1.5} step={0.05} value={dcAcOversize}
+                  onChange={e => setDcAcOversize(parseFloat(e.target.value))}
+                  className="w-full accent-amber-500 h-2 rounded-lg cursor-pointer" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] text-[var(--text-muted)] mb-1">Panel Wattage</span>
+                <select value={panelWattage} onChange={e => setPanelWattage(parseInt(e.target.value))}
+                  className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--solar)] cursor-pointer">
+                  {catalog.panels.map(p => (
+                    <option key={p.id} value={p.wattage}>{p.wattage}W - KSh {p.priceKsh.toLocaleString()} - {p.model}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] text-[var(--text-muted)] mb-1">Panels per String</span>
+                <input type="number" min={2} max={30} value={panelsPerString}
+                  onChange={e => setPanelsPerString(Math.max(2, parseInt(e.target.value) || 7))}
+                  className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--solar)]" />
+              </div>
+            </div>
+
+            {stockWarning && (
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-[11px] text-red-600 font-medium">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> {stockWarning}
               </div>
             )}
-          </>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <Metric label="Target PV" value={nf(targetPVkWp, 1)} unit="kWp" color="amber" />
+              <Metric label="Max Allowed" value={nf(maxAllowablePVkWp, 1)} unit="kWp" color="slate" />
+              <Metric label="Panels Required" value={String(panelsRequired)} unit="pcs" color="amber" size="lg" />
+              <Metric label="Actual PV Array" value={nf(actualPVkWp, 1)} unit="kWp" color="amber" size="lg" />
+            </div>
+
+            <div className={`flex items-center gap-2 rounded-xl px-3 py-2 text-[11px] font-semibold ${pvOversizeOK ? 'bg-[var(--battery-soft)] border border-[var(--battery)]/20 text-[var(--battery)]' : 'bg-red-50 border border-red-200 text-red-600'}`}>
+              {pvOversizeOK ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+              {pvOversizeOK ? 'PV Oversize Check: OK - within inverter input limits' : `WARNING - ${nf(actualPVkWp, 1)}kWp exceeds ${nf(maxAllowablePVkWp, 1)}kWp inverter max!`}
+            </div>
+          </Section>
+
+          {/* SECTION D: BATTERY */}
+          <Section id="D" label="Battery Storage Sizing (Dyness)" color="bg-[var(--battery-soft)] text-[var(--battery)] border border-[var(--battery)]/20"
+            summary={isGridTied ? 'No battery (Grid-Tied)' : `${actualBatMods} modules - ${nf(actualBatteryKWh, 1)} kWh - ${batTowers} tower(s)`}>
+            {isGridTied ? (
+              <div className="bg-[var(--bg-card-muted)] border border-[var(--border)] rounded-xl p-4 text-center text-[var(--text-muted)] text-sm">
+                Grid-Tied inverter selected - no battery storage. Change voltage class in Section B to add batteries.
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-[var(--text-muted)] mb-1">Product Line</span>
+                    <select value={dynessLine} onChange={e => setDynessLine(e.target.value as DynessProductLine)}
+                      className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--battery)] cursor-pointer"
+                      disabled={isLV}>
+                      {isLV
+                        ? <option value="LV48">LV48 (DL5.0/DL5.0C 5.12kWh, parallel)</option>
+                        : <><option value="Stack100">Stack100 (5.12kWh/module, 3-15/tower)</option>
+                          <option value="Stack280">Stack280 (14.3kWh/module, C&I scale)</option></>}
+                    </select>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-[var(--text-muted)] mb-1">Target Capacity (kWh)</span>
+                    <div className="relative">
+                      <input type="number" min={0} step={5} value={targetBatteryKWh}
+                        onChange={e => setTargetBatteryKWh(Math.max(0, parseFloat(e.target.value) || 0))}
+                        className="w-full bg-[var(--solar-soft)] border border-[var(--solar)]/30 rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--solar)] transition" />
+                      <span className="absolute right-3 top-2.5 text-[10px] text-[var(--solar)]/70 font-mono">kWh</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <Metric label="Modules Required" value={String(batModsReq)} unit={`x${modKWh}kWh`} color="emerald" />
+                  {isHV ? <>
+                    <Metric label="Towers" value={`${batTowers}`} unit={`max ${maxPerTower}/tower`} color="emerald" />
+                    <Metric label="Per Tower" value={String(modsPerTower)} unit="modules" color="emerald" />
+                    <Metric label="Voltage" value={nf(towerVoltage, 1)} unit="V" color="emerald" />
+                  </> : <>
+                    <Metric label="Actual kWh" value={nf(actualBatteryKWh, 1)} unit="kWh" color="emerald" />
+                    <Metric label="BDUs" value={String(bduCount)} color="slate" />
+                    <Metric label="Module Cost" value={`KSh ${fmtKSh(modCost)}`} color="slate" />
+                    <div className={`rounded-xl border px-3.5 py-2.5 text-center ${vCheckOK ? 'bg-[var(--battery-soft)] border-[var(--battery)]/20' : 'bg-red-50 border-red-200'}`}>
+                      <div className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider">Voltage Check</div>
+                      <div className={`font-bold font-mono text-sm ${vCheckOK ? 'text-[var(--battery)]' : 'text-red-600'}`}>{vCheckMsg}</div>
+                    </div>
+                  </>}
+                </div>
+              </>
+            )}
+          </Section>
+
+          {/* SECTION E: LIVE SUMMARY */}
+          <div className="bg-[var(--battery-soft)] border border-[var(--battery)]/20 rounded-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-8 h-8 rounded-lg bg-white/60 text-[var(--battery)] flex items-center justify-center text-sm font-black border border-[var(--battery)]/20">E</span>
+                <span className="text-sm font-bold text-[var(--battery)] uppercase tracking-wider font-mono">System Configuration Summary</span>
+              </div>
+              <span className="text-[9px] text-[var(--text-muted)] font-mono animate-pulse">Live</span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+              <Metric label="PV Array" value={nf(actualPVkWp, 1)} unit="kWp" color="emerald" size="lg" />
+              <Metric label="Panels" value={String(panelsRequired)} unit={`x${panelWattage}W`} color="emerald" />
+              <Metric label="Inverter" value={selectedInv?.model.split('-').slice(0, 3).join('-') ?? ''} color="blue" />
+              <Metric label="Inv Units" value={String(actualInvUnits)} unit={`x${nf(invUnitACkW, 1)}kW`} color="blue" />
+              <Metric label="Battery" value={nf(actualBatteryKWh, 1)} unit="kWh" color="emerald" />
+              {isHV ? <Metric label="Towers/BDUs" value={`${batTowers}/${bduCount}`} color="emerald" /> : <Metric label="Modules" value={String(actualBatMods)} unit="parallel" color="emerald" />}
+            </div>
+
+            <div className="bg-[var(--bg-card)] rounded-xl px-4 py-3 flex flex-wrap items-center justify-between gap-3 border border-[var(--border)]">
+              <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase font-mono">Estimated Hardware CapEx (ex-VAT):</span>
+              <div className="flex items-center gap-3">
+                <span className="text-lg font-black text-[var(--battery)] font-mono">KSh {roughCapExKSh.toLocaleString()}</span>
+                <span className="text-xs text-[var(--text-muted)] font-mono">≈ ${roughCapExUSD.toLocaleString()} USD</span>
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        /* SECTION F: MICROINVERTER SYSTEM SIZING */
+        <Section id="F" label="Microinverter System Sizing" color="bg-purple-50 text-purple-700 border border-purple-200"
+          summary={`Target ${nf(microTargetKW, 1)} kW AC - ${microPanelWattage}W panels`}>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="flex flex-col">
+              <span className="text-[10px] text-[var(--text-muted)] mb-1">Target System Size (kW, AC)</span>
+              <input type="number" min={0.5} step={0.5} value={microTargetKW}
+                onChange={e => setMicroTargetKW(Math.max(0.5, parseFloat(e.target.value) || 5))}
+                className="w-full bg-[var(--solar-soft)] border border-[var(--solar)]/30 rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--solar)]" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] text-[var(--text-muted)] mb-1">Panel Wattage</span>
+              <select value={microPanelWattage} onChange={e => setMicroPanelWattage(parseInt(e.target.value))}
+                className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--solar)] cursor-pointer">
+                {catalog.panels.map(p => <option key={p.id} value={p.wattage}>{p.wattage}W - {p.model}</option>)}
+              </select>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] text-[var(--text-muted)] mb-1">Microinverter Model</span>
+              <select value={microInverterId} onChange={e => setMicroInverterId(e.target.value)}
+                className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--solar)] cursor-pointer">
+                {microInverters.map(i => <option key={i.id} value={i.id}>{i.model} ({i.ratedAcW}W, {i.panelsPerUnit} panels/unit)</option>)}
+              </select>
+            </div>
+          </div>
+          <p className="text-[10px] text-[var(--text-muted)]">
+            AC-coupled, per-panel inverters - no central inverter, no battery. Each unit converts 2 panels directly to grid AC.
+          </p>
+        </Section>
+      )}
+
+      {/* SECTION G: CABLE ENGINEERING */}
+      <Section id="G" label="Cable Engineering (Derating & Voltage Window)" color="bg-[var(--grid-soft)] text-[var(--grid)] border border-[var(--grid)]/20"
+        defaultOpen={false}
+        summary={`${INSTALL_METHOD_LABELS[installMethod]} - ${ambientTempC}degC ambient`}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="flex flex-col">
+            <span className="text-[10px] text-[var(--text-muted)] mb-1">Installation Method</span>
+            <select value={installMethod} onChange={e => setInstallMethod(e.target.value as InstallationMethod)}
+              className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--grid)] cursor-pointer">
+              {Object.entries(INSTALL_METHOD_LABELS).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+            </select>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] text-[var(--text-muted)] mb-1">Ambient Temperature (degC)</span>
+            <input type="number" min={0} max={55} value={ambientTempC}
+              onChange={e => setAmbientTempC(parseFloat(e.target.value) || 30)}
+              className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--grid)]" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] text-[var(--text-muted)] mb-1">Min Design Ambient (degC, Voc check)</span>
+            <input type="number" min={-10} max={30} value={minDesignAmbientTempC}
+              onChange={e => setMinDesignAmbientTempC(parseFloat(e.target.value) || 10)}
+              className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--grid)]" />
+          </div>
+        </div>
+      </Section>
+
+      {/* SECTION: FINANCIAL ANALYSIS */}
+      <Section id="$" label="Financial Analysis Assumptions" color="bg-[var(--battery-soft)] text-[var(--battery)] border border-[var(--battery)]/20"
+        defaultOpen={false}
+        summary={`Yield ${specificYield} kWh/kWp/day - Self-consume ${selfConsumptionPct}%`}>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            ['Specific Yield (kWh/kWp/day)', specificYield, setSpecificYield, 2, 7, 0.1],
+            ['Self-Consumption Ratio %', selfConsumptionPct, setSelfConsumptionPct, 0, 100, 1],
+            ['Tariff Escalation %/yr', tariffEscalation, setTariffEscalation, 0, 15, 0.5],
+            ['Panel Degradation %/yr', panelDegradation, setPanelDegradation, 0, 2, 0.1],
+            ['Annual O&M % of CapEx', omCostPct, setOmCostPct, 0, 5, 0.1],
+            ['O&M Escalation %/yr', omEscalation, setOmEscalation, 0, 15, 0.5],
+            ['Battery Replacement Year', batteryReplYear, setBatteryReplYear, 0, 20, 1],
+            ['Battery Repl. Cost % of Storage', batteryReplCostPct, setBatteryReplCostPct, 0, 100, 5],
+          ].map(([label, val, setFn, min, max, step]) => (
+            <div key={label as string}>
+              <div className="flex justify-between text-[10px] text-[var(--text-tertiary)] mb-1">
+                <span>{label as string}</span>
+                <span className="font-mono font-bold text-[var(--battery)]">{(val as number).toFixed(2)}</span>
+              </div>
+              <input type="range" min={min as number} max={max as number} step={step as number} value={val as number}
+                onChange={e => (setFn as (v: number) => void)(parseFloat(e.target.value))}
+                className="w-full accent-emerald-600 h-1.5 rounded-lg cursor-pointer" />
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      {/* SECTION: KPLC TIME-OF-USE TARIFF */}
+      <Section id="$$" label="KPLC Time-of-Use Tariff Modeling" color="bg-[var(--grid-soft)] text-[var(--grid)] border border-[var(--grid)]/20"
+        defaultOpen={false}
+        summary={useTOU ? `${kplcSegment} - ${tariffStructure}` : `Flat rate: KSh ${location.gridTariffKSh}/kWh`}>
+        <label className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] cursor-pointer">
+          <input type="checkbox" checked={useTOU} onChange={e => setUseTOU(e.target.checked)} className="accent-blue-600 w-3.5 h-3.5 rounded" />
+          Use KPLC tariff auto-suggestion instead of flat location tariff
+        </label>
+        {useTOU && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="flex flex-col">
+              <span className="text-[10px] text-[var(--text-muted)] mb-1">Customer Segment</span>
+              <select value={kplcSegment} onChange={e => setKplcSegment(e.target.value as KPLCCustomerSegment)}
+                className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--grid)] cursor-pointer">
+                <option value="Residential">Residential</option>
+                <option value="Small Commercial">Small Commercial</option>
+                <option value="Commercial & Industrial">Commercial & Industrial</option>
+              </select>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] text-[var(--text-muted)] mb-1">Tariff Structure</span>
+              <select value={tariffStructure} onChange={e => setTariffStructure(e.target.value as TariffStructure)}
+                className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--grid)] cursor-pointer">
+                <option value="Standard">Standard</option>
+                <option value="Time-of-Use">Time-of-Use</option>
+              </select>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] text-[var(--text-muted)] mb-1">Monthly Consumption (kWh)</span>
+              <input type="number" min={0} value={monthlyConsumptionKWh}
+                onChange={e => setMonthlyConsumptionKWh(parseFloat(e.target.value) || 0)}
+                className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--grid)]" />
+            </div>
+          </div>
         )}
       </Section>
 
-      {/* SECTION E: LIVE SUMMARY */}
-      <div className="bg-[var(--battery-soft)] border border-[var(--battery)]/20 rounded-2xl p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-white/60 text-[var(--battery)] flex items-center justify-center text-sm font-black border border-[var(--battery)]/20">E</span>
-            <span className="text-sm font-bold text-[var(--battery)] uppercase tracking-wider font-mono">System Configuration Summary</span>
-          </div>
-          <span className="text-[9px] text-[var(--text-muted)] font-mono animate-pulse">● Live</span>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-          <Metric label="PV Array" value={nf(actualPVkWp, 1)} unit="kWp" color="emerald" size="lg" />
-          <Metric label="Panels" value={String(panelsRequired)} unit={`×${panelWattage}W`} color="emerald" />
-          <Metric label="Inverter" value={selectedInv.model.split('-').slice(0,3).join('-')} color="blue" />
-          <Metric label="Inv Units" value={String(actualInvUnits)} unit={`×${nf(invUnitACkW,1)}kW`} color="blue" />
-          <Metric label="Battery" value={nf(actualBatteryKWh, 1)} unit="kWh" color="emerald" />
-          {isHV ? <Metric label="Towers/BDUs" value={`${batTowers}/${bduCount}`} color="emerald" /> : <Metric label="Modules" value={String(actualBatMods)} unit="parallel" color="emerald" />}
-        </div>
-
-        <div className="bg-[var(--bg-card)] rounded-xl px-4 py-3 flex flex-wrap items-center justify-between gap-3 border border-[var(--border)]">
-          <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase font-mono">Estimated Hardware CapEx (ex-VAT):</span>
-          <div className="flex items-center gap-3">
-            <span className="text-lg font-black text-[var(--battery)] font-mono">KSh {roughCapExKSh.toLocaleString()}</span>
-            <span className="text-xs text-[var(--text-muted)] font-mono">≈ ${roughCapExUSD.toLocaleString()} USD</span>
-          </div>
-        </div>
-      </div>
-
-      {/* SECTION G: ADD-ONS & FINANCIAL */}
-      <Section id="G" label="Optional Add-Ons & Financial Parameters" color="bg-purple-50 text-purple-700 border border-purple-200"
+      {/* SECTION: FINANCING */}
+      <Section id="$$$" label="Financing (Optional Solar Loan / Asset Finance)" color="bg-purple-50 text-purple-700 border border-purple-200"
         defaultOpen={false}
-        summary={`Contingency: ${contingencyPct}% · EPC: ${epcMarginPct}% · Discount: ${discountRate}%`}>
+        summary={debtFractionPct > 0 ? `${debtFractionPct}% debt @ ${loanRatePct}%` : 'Cash purchase'}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <div className="flex justify-between text-[10px] text-[var(--text-tertiary)] mb-1"><span>Debt Fraction %</span><span className="font-mono font-bold text-purple-700">{debtFractionPct}%</span></div>
+            <input type="range" min={0} max={80} step={5} value={debtFractionPct}
+              onChange={e => setDebtFractionPct(parseFloat(e.target.value))}
+              className="w-full accent-purple-600 h-1.5 rounded-lg cursor-pointer" />
+          </div>
+          <div>
+            <div className="flex justify-between text-[10px] text-[var(--text-tertiary)] mb-1"><span>Loan Interest Rate %</span><span className="font-mono font-bold text-purple-700">{loanRatePct}%</span></div>
+            <input type="range" min={5} max={30} step={0.5} value={loanRatePct}
+              onChange={e => setLoanRatePct(parseFloat(e.target.value))}
+              className="w-full accent-purple-600 h-1.5 rounded-lg cursor-pointer" />
+          </div>
+          <div>
+            <div className="flex justify-between text-[10px] text-[var(--text-tertiary)] mb-1"><span>Loan Term (years)</span><span className="font-mono font-bold text-purple-700">{loanTermYears}</span></div>
+            <input type="range" min={1} max={15} step={1} value={loanTermYears}
+              onChange={e => setLoanTermYears(parseFloat(e.target.value))}
+              className="w-full accent-purple-600 h-1.5 rounded-lg cursor-pointer" />
+          </div>
+        </div>
+      </Section>
+
+      {/* SECTION: ADD-ONS */}
+      <Section id="H" label="Optional Add-Ons & Project Financials" color="bg-purple-50 text-purple-700 border border-purple-200"
+        defaultOpen={false}
+        summary={`Contingency: ${contingencyPct}% - EPC: ${epcMarginPct}% - Discount: ${discountRate}%`}>
         <div className="flex flex-wrap gap-2">
           {[
             ['Generator Interface', includeGenInterface, setIncludeGenInterface],
