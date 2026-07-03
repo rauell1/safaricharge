@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 322 | `rollback/feat-sizing-migrate-catalogs-to-supaba-2026-07-03-517cab4` | `517cab4` | feat(sizing): migrate catalogs to Supabase and rebuild engine to match updated Excel model (15f +2171/-927) | 2026-07-03 |
 | 321 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-03-591f26a` | `591f26a` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-07-03 |
 | 320 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-02-eff04b6` | `eff04b6` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-07-02 |
 | 319 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-01-5dc6e99` | `5dc6e99` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-07-01 |
@@ -3388,6 +3389,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-07-03
 - **Changed**: 1 file(s), +1/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #322 — `rollback/feat-sizing-migrate-catalogs-to-supaba-2026-07-03-517cab4`
+
+- **Branch**: `rollback/feat-sizing-migrate-catalogs-to-supaba-2026-07-03-517cab4`
+- **Commit**: `517cab4c26e01aad1320d7bb572837b3e3b81795`
+- **Subject**: feat(sizing): migrate catalogs to Supabase and rebuild engine to match updated Excel model
+- **Date**: 2026-07-03
+- **Changed**: 15 file(s), +2171/-927 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
