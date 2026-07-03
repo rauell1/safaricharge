@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 324 | `rollback/fix-sizing-repair-bom-financial-formul-2026-07-03-0641eba` | `0641eba` | fix(sizing): repair BOM/financial formula parity and polish page UI (10f +443/-111) | 2026-07-03 |
 | 323 | `rollback/security-restrict-auth-and-signup-to-r-2026-07-03-dde6d61` | `dde6d61` | security: restrict auth and signup to royokola3@gmail.com (6f +48/-6) | 2026-07-03 |
 | 322 | `rollback/feat-sizing-migrate-catalogs-to-supaba-2026-07-03-517cab4` | `517cab4` | feat(sizing): migrate catalogs to Supabase and rebuild engine to match updated Excel model (15f +2171/-927) | 2026-07-03 |
 | 321 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-03-591f26a` | `591f26a` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-07-03 |
@@ -3410,6 +3411,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: security: restrict auth and signup to royokola3@gmail.com
 - **Date**: 2026-07-03
 - **Changed**: 6 file(s), +48/-6 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #324 — `rollback/fix-sizing-repair-bom-financial-formul-2026-07-03-0641eba`
+
+- **Branch**: `rollback/fix-sizing-repair-bom-financial-formul-2026-07-03-0641eba`
+- **Commit**: `0641eba7be9eb9e3d04374213ac39e2f78219660`
+- **Subject**: fix(sizing): repair BOM/financial formula parity and polish page UI
+- **Date**: 2026-07-03
+- **Changed**: 10 file(s), +443/-111 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
