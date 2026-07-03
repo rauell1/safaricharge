@@ -450,7 +450,7 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
                 <div className="flex justify-between text-[8px] text-[var(--text-muted)] font-mono"><span>1kW</span><span>100</span><span>200</span><span>300</span><span>400kW</span></div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
                   { label: 'Daily Consumption', value: dailyConsumptionKWh, set: (v: number) => setDailyConsumptionKWh(v), unit: 'kWh/day', min: 1 },
                   { label: 'Peak Load', value: peakLoadKW, set: (v: number) => setPeakLoadKW(v), unit: 'kW', min: 1 },
