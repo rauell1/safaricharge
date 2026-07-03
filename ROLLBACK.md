@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 327 | `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-07-03-969e30c` | `969e30c` | docs(auto): regenerate README.md [skip ci] (1f +2/-0) | 2026-07-03 |
 | 326 | `rollback/fix-sizing-fix-real-grid-overlap-bug-i-2026-07-03-532bd66` | `532bd66` | fix(sizing): fix real grid overlap bug in Load-Based Sizing fields (1f +1/-1) | 2026-07-03 |
 | 325 | `rollback/fix-mobile-prevent-ios-auto-zoom-on-fo-2026-07-03-c1a3b71` | `c1a3b71` | fix(mobile): prevent iOS auto-zoom-on-focus from scrambling layout (1f +17/-0) | 2026-07-03 |
 | 324 | `rollback/fix-sizing-repair-bom-financial-formul-2026-07-03-0641eba` | `0641eba` | fix(sizing): repair BOM/financial formula parity and polish page UI (10f +443/-111) | 2026-07-03 |
@@ -3443,6 +3444,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix(sizing): fix real grid overlap bug in Load-Based Sizing fields
 - **Date**: 2026-07-03
 - **Changed**: 1 file(s), +1/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #327 — `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-07-03-969e30c`
+
+- **Branch**: `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-07-03-969e30c`
+- **Commit**: `969e30cdca4ecb5d67483c68573ffb361bde458a`
+- **Subject**: docs(auto): regenerate README.md [skip ci]
+- **Date**: 2026-07-03
+- **Changed**: 1 file(s), +2/-0 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
