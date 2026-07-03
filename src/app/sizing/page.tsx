@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react';
 import ParametricInputs from '@/components/sizing/ParametricInputs';
 import SimulationResults from '@/components/sizing/SimulationResults';
 import ProposalViewer from '@/components/sizing/ProposalViewer';
+import HelpPanel from '@/components/sizing/HelpPanel';
 import { runSimulation } from '@/lib/sizing/solarCalculator';
 import type { SimulationInputs, SimulationResults as SimResultsType } from '@/lib/sizing/solarCalculator';
 import { useSizingCatalog } from '@/hooks/useSizingCatalog';
@@ -31,24 +32,27 @@ export default function SizingPage() {
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       {/* Header */}
       <div className="border-b border-[var(--border)] bg-[var(--bg-card)]/90 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-[1600px] mx-auto px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/demo" className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition font-mono">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            <Link href="/demo" className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition font-mono shrink-0">
               <ArrowLeft className="w-3.5 h-3.5" />
               Back to Dashboard
             </Link>
-            <div className="w-px h-4 bg-[var(--border)]" />
-            <div className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-md bg-[var(--battery)] flex items-center justify-center font-black text-white text-xs">S</span>
-              <span className="text-sm font-bold text-[var(--text-primary)] font-mono tracking-tight">
+            <Link href="/demo" className="sm:hidden flex items-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition shrink-0" aria-label="Back to Dashboard">
+              <ArrowLeft className="w-4 h-4" />
+            </Link>
+            <div className="hidden sm:block w-px h-4 bg-[var(--border)] shrink-0" />
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="w-6 h-6 rounded-md bg-[var(--battery)] flex items-center justify-center font-black text-white text-xs shrink-0">S</span>
+              <span className="text-sm font-bold text-[var(--text-primary)] font-mono tracking-tight truncate">
                 Safari<span className="text-[var(--battery)]">Charge</span>
-                <span className="text-[var(--text-muted)] font-normal ml-2">/ Parametric Sizing Engine</span>
+                <span className="hidden sm:inline text-[var(--text-muted)] font-normal ml-2">/ Parametric Sizing Engine</span>
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-[10px] font-mono text-[var(--text-muted)]">
+          <div className="flex items-center gap-2 text-[10px] font-mono text-[var(--text-muted)] shrink-0">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--battery)] animate-pulse" />
-            Live Simulation
+            <span className="hidden sm:inline">Live Simulation</span>
           </div>
         </div>
       </div>
@@ -93,6 +97,9 @@ export default function SizingPage() {
           </div>
         )}
       </div>
+
+      {/* Help & guidance slide-over */}
+      <HelpPanel />
 
       {/* Proposal Modal */}
       {showProposal && results && (

@@ -206,6 +206,8 @@ export interface SimulationResults {
   contingencyUSD: number;
   epcMarginKSh: number;
   epcMarginUSD: number;
+  vatKSh: number;
+  vatUSD: number;
   totalCapExKSh: number;
   totalCapExUSD: number;
 

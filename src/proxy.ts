@@ -75,6 +75,15 @@ function isPublicApi(pathname: string): boolean {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // Dev-only bypass: `next dev` sets NODE_ENV to 'development'; production
+  // builds (Vercel) always run with NODE_ENV 'production', so this branch is
+  // unreachable in prod. Lets local development test authed pages without a
+  // live session.
+  if (process.env.NODE_ENV === 'development') {
+    return NextResponse.next()
+  }
+
   const middlewareStart = Date.now()
   const isApiRoute = pathname.startsWith('/api/')
   const isAuthRoute = pathname.startsWith('/auth/')

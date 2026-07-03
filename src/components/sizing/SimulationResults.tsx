@@ -203,7 +203,9 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
             <span className="text-[9px] text-[var(--text-tertiary)] line-through">Grid Baseline: ${lcoeBaselineUSDPerKWh}/kWh</span>
           </div>
           <div className="text-[10px] text-[var(--text-muted)] flex items-center gap-1">
-            <Zap className="w-3 h-3 text-teal-700" /> Saves {(((lcoeBaselineUSDPerKWh - lcoeUSDPerKWh) / lcoeBaselineUSDPerKWh) * 100).toFixed(0)}% per unit energy
+            <Zap className="w-3 h-3 text-teal-700" /> {lcoeBaselineUSDPerKWh > 0 && lcoeUSDPerKWh < lcoeBaselineUSDPerKWh
+              ? `Saves ${(((lcoeBaselineUSDPerKWh - lcoeUSDPerKWh) / lcoeBaselineUSDPerKWh) * 100).toFixed(0)}% per unit of energy vs grid`
+              : 'Compare against the grid tariff baseline'}
           </div>
         </div>
       </div>
@@ -335,10 +337,8 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
             <span className="text-[var(--text-primary)] font-bold text-[var(--grid)]">{annualGridExportKWh.toLocaleString()} kWh</span>
           </div>
           <div className="col-span-2 md:col-span-1">
-            <span className="text-[var(--text-muted)] text-[9px] block">DIESEL GEN RUN / UNMET:</span>
-            <span className="text-[var(--text-primary)] font-bold">
-              {annualDieselGenKWh > 0 ? `${annualDieselGenKWh.toLocaleString()} kWh (${annualDieselFuelLiters}L)` : '0 kWh / '}{annualUnservedLoadKWh > 0 ? ` ${annualUnservedLoadKWh.toLocaleString()} kWh blacked` : '0 blackout'}
-            </span>
+            <span className="text-[var(--text-muted)] text-[9px] block">SELF-CONSUMED ON-SITE:</span>
+            <span className="font-bold text-[var(--battery)]">{results.selfConsumedKWh.toLocaleString()} kWh</span>
           </div>
         </div>
       </div>
@@ -384,9 +384,9 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
           <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-6 shadow-sm">
             <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
               <div>
-                <h3 className="text-sm font-bold text-[var(--text-primary)]">24-Hour Hybrid Energy Balance & Dispatch Simulation</h3>
+                <h3 className="text-sm font-bold text-[var(--text-primary)]">Illustrative 24-Hour Energy Balance</h3>
                 <p className="text-xs text-[var(--text-tertiary)]">
-                  Interactive profile mapping power flow. Hover to view detailed hourly metrics.
+                  Typical-day power flow scaled to the annual generation model. Hover to view hourly detail.
                 </p>
               </div>
               {/* Legend */}
@@ -580,7 +580,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
               )}
             </div>
             <p className="text-[10px] text-[var(--text-muted)] mt-2 text-center italic">
-              * The simulation maps solar irradiation and battery limits against load demand. Batteries charge during solar peaks and discharge during deficits. Grid imports occur if battery is depleted and grid is online.
+              * Illustration only. The financial model follows the workbook methodology: annual generation = PV kWp x specific yield x 365, with the self-consumption ratio splitting on-site use from export. Batteries charge during solar peaks and discharge during deficits.
             </p>
           </div>
 
@@ -660,8 +660,12 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                 <span>EPC Contractor Margin ({results.inputs.epcMarginPercent}%):</span>
                 <span className="text-[var(--text-primary)] font-semibold">${(results.epcMarginUSD || epcMarginUSD).toLocaleString()}</span>
               </div>
+              <div className="flex justify-between">
+                <span>VAT @ 16% (Kenyan tax law):</span>
+                <span className="text-[var(--text-primary)] font-semibold">KSh {results.vatKSh.toLocaleString()} | ${results.vatUSD.toLocaleString()}</span>
+              </div>
               <div className="flex justify-between text-sm text-[var(--battery)] font-bold border-t border-dashed border-[var(--border)] pt-2">
-                <span>TOTAL INSTALLED CAPEX:</span>
+                <span>GRAND TOTAL (Incl. VAT):</span>
                 <span>KSh {results.totalCapExKSh?.toLocaleString() || totalCapExUSD.toLocaleString()} | ${(results.totalCapExUSD || totalCapExUSD).toLocaleString()}</span>
               </div>
             </div>

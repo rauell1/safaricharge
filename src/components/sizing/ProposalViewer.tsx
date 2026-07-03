@@ -172,11 +172,11 @@ export default function ProposalViewer({ results, projectName, clientName, engin
 
             {/* Grand Total */}
             <div className="bg-[var(--battery-soft)] border border-[var(--battery)]/20 rounded-xl p-4 flex flex-col md:flex-row justify-between items-center gap-4 print:bg-slate-100 print:border-slate-300">
-              <div className="text-sm font-black text-[var(--text-primary)] print:text-slate-950">GRAND TOTAL (ex-VAT):</div>
+              <div className="text-sm font-black text-[var(--text-primary)] print:text-slate-950">GRAND TOTAL (Incl. 16% VAT):</div>
               <div className="text-right">
                 <div className="text-2xl font-black text-[var(--battery)] font-mono print:text-emerald-700">KSh {results.totalCapExKSh.toLocaleString()}</div>
                 <div className="text-xs text-[var(--text-tertiary)]">{`≈`} ${results.totalCapExUSD.toLocaleString()} USD (at KSh {KSH_PER_USD}/USD)</div>
-                <div className="text-[9px] text-[var(--text-muted)] mt-1">Includes: Subtotal KSh {results.subtotalCapExKSh.toLocaleString()} + Contingency KSh {results.contingencyKSh.toLocaleString()} + EPC Margin KSh {results.epcMarginKSh.toLocaleString()}</div>
+                <div className="text-[9px] text-[var(--text-muted)] mt-1">Includes: Subtotal KSh {results.subtotalCapExKSh.toLocaleString()} + Contingency KSh {results.contingencyKSh.toLocaleString()} + EPC Margin KSh {results.epcMarginKSh.toLocaleString()} + VAT KSh {results.vatKSh.toLocaleString()}</div>
               </div>
             </div>
           </div>

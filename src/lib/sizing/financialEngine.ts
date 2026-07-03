@@ -200,19 +200,33 @@ export function computeIRR(cashFlows: CashFlowYear[]): number {
   return Math.round(irr * 1000) / 10;
 }
 
-export function computeSimplePayback(totalCapExUSD: number, annualSavingsUSD: number): number {
-  return annualSavingsUSD > 0 ? Math.round((totalCapExUSD / annualSavingsUSD) * 10) / 10 : 99;
+// Excel-style payback: find the cumulative cash-flow crossover year and
+// interpolate the fraction within it (e.g. 4.07 years, not "year 5").
+export function computeSimplePayback(cashFlows: CashFlowYear[]): number {
+  let cum = 0;
+  for (const cf of cashFlows) {
+    const prev = cum;
+    cum += cf.netCashFlow;
+    if (cum >= 0 && cf.year > 0) {
+      const frac = cf.netCashFlow > 0 ? -prev / cf.netCashFlow : 0;
+      return Math.round(((cf.year - 1) + frac) * 100) / 100;
+    }
+  }
+  return 99;
 }
 
 export function computeDiscountedPayback(cashFlows: CashFlowYear[], discountRatePercent: number): number {
   let cumDisc = 0;
-  for (let y = 0; y < cashFlows.length; y++) {
-    const cf = cashFlows[y];
-    const df = Math.pow(1 + discountRatePercent / 100, cf.year);
-    cumDisc += cf.netCashFlow / df;
-    if (cumDisc >= 0) return cf.year;
+  for (const cf of cashFlows) {
+    const prev = cumDisc;
+    const disc = cf.netCashFlow / Math.pow(1 + discountRatePercent / 100, cf.year);
+    cumDisc += disc;
+    if (cumDisc >= 0 && cf.year > 0) {
+      const frac = disc > 0 ? -prev / disc : 0;
+      return Math.round(((cf.year - 1) + frac) * 100) / 100;
+    }
   }
-  return cashFlows.length > 0 ? cashFlows[cashFlows.length - 1].year : 99;
+  return 99;
 }
 
 // Modified IRR: reinvest positive flows at the discount rate, finance negative

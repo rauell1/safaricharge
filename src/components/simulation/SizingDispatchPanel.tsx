@@ -406,10 +406,10 @@ export function SizingDispatchPanel() {
               KSh {Math.max(0, bosKSh).toLocaleString()}
             </span>
           </div>
-          {/* Subtotal / contingency / EPC strip */}
+          {/* Subtotal / contingency / EPC / VAT strip */}
           <div className="mt-2 border-t border-[var(--border)] pt-2 space-y-1">
             <div className="flex justify-between text-[10px] text-[var(--text-tertiary)]">
-              <span>Subtotal (ex contingency &amp; EPC)</span>
+              <span>Subtotal (before VAT)</span>
               <span className="tabular-nums">KSh {subtotalCapExKSh.toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-[10px] text-[var(--text-tertiary)]">
@@ -420,8 +420,12 @@ export function SizingDispatchPanel() {
               <span>EPC Margin (18%)</span>
               <span className="tabular-nums">KSh {epcMarginKSh.toLocaleString()}</span>
             </div>
+            <div className="flex justify-between text-[10px] text-[var(--text-tertiary)]">
+              <span>VAT (16%)</span>
+              <span className="tabular-nums">KSh {results.vatKSh.toLocaleString()}</span>
+            </div>
             <div className="flex justify-between text-xs font-bold text-[var(--text-primary)] border-t border-[var(--border)] pt-1 mt-1">
-              <span>Total CapEx (incl. VAT-ex)</span>
+              <span>Grand Total (incl. VAT)</span>
               <span className="tabular-nums">KSh {totalCapExKSh.toLocaleString()}</span>
             </div>
           </div>

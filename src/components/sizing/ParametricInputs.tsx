@@ -18,7 +18,10 @@ interface ParametricInputsProps {
 type SizingMethod = 'direct' | 'load-based';
 type SystemArchitecture = 'central_inverter' | 'microinverter';
 type InverterBrand = string;
-type VoltageClass = 'LV (48V)' | 'HV (150-850V)' | 'HV (160-700V)' | 'HV (160-800V)' | 'Grid-Tied';
+// Mirrors the Excel Model Lists sheet: one LV list, one HV list and one
+// Grid-Tied list per brand. Off-grid (LV 48V bus) models are folded into LV,
+// exactly as the workbook does for Solis.
+type VoltageClass = 'LV (48V)' | 'HV' | 'Grid-Tied';
 type DynessProductLine = 'Stack100' | 'Stack280' | 'LV48';
 
 const fmtKSh = (n: number) => n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(0)}K` : String(n);
@@ -41,13 +44,13 @@ const Section = ({ id, label, color, defaultOpen, children, summary }: {
         className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-[var(--bg-card-muted)] transition-colors">
         <div className="flex items-center gap-3">
           <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black ${color}`}>{id}</span>
-          <div className="text-left">
+          <div className="text-left min-w-0">
             <span className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">{label}</span>
-            {!open && summary && <span className="text-[10px] text-[var(--text-muted)] font-mono">{summary}</span>}
+            {!open && summary && <span className="sm:hidden block text-[10px] text-[var(--text-muted)] font-mono truncate">{summary}</span>}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {!open && summary && <span className="hidden sm:block text-[10px] text-[var(--text-muted)] font-mono">{summary}</span>}
+        <div className="flex items-center gap-2 min-w-0">
+          {!open && summary && <span className="hidden sm:block text-[10px] text-[var(--text-muted)] font-mono truncate max-w-[280px]">{summary}</span>}
           {open ? <ChevronDown className="w-4 h-4 text-[var(--text-tertiary)]" /> : <ChevronRight className="w-4 h-4 text-[var(--text-tertiary)]" />}
         </div>
       </button>
@@ -67,29 +70,44 @@ const Metric = ({ label, value, unit, color = 'slate', size = 'md' }: {
     slate: 'text-[var(--text-secondary)] bg-[var(--bg-card-muted)] border-[var(--border)]',
   };
   return (
-    <div className={`rounded-xl border px-3.5 py-2.5 text-center transition-all duration-300 ${colors[color]}`}>
-      <div className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider font-medium">{label}</div>
-      <div className={`font-bold font-mono ${size === 'lg' ? 'text-lg' : 'text-sm'} mt-0.5`}>
+    <div className={`rounded-xl border px-3 py-2.5 text-center transition-all duration-300 min-w-0 ${colors[color]}`} title={`${label}: ${value}${unit ? ` ${unit}` : ''}`}>
+      <div className="text-[9px] text-[var(--text-muted)] uppercase font-medium leading-tight">{label}</div>
+      <div className={`font-bold font-mono ${size === 'lg' ? 'text-lg' : 'text-sm'} mt-1 break-words leading-tight`}>
         <AnimatedValue value={value} unit={unit} />
       </div>
     </div>
   );
 };
 
+function matchesVoltageClass(inv: CatalogInverter, vclass: VoltageClass): boolean {
+  if (inv.category === 'microinverter') return false;
+  const vc = inv.voltageClass || '';
+  if (vclass === 'Grid-Tied') return inv.category === 'grid_tied';
+  if (vclass === 'LV (48V)') return vc.includes('LV'); // includes LV off-grid models, per Excel
+  return vc.includes('HV');
+}
+
 function inverterVoltageClassOptions(catalog: SizingCatalog, brand: string): { value: VoltageClass; label: string }[] {
-  const models = catalog.inverters.filter((i) => i.brand === brand && i.category !== 'microinverter');
+  const models = catalog.inverters.filter((i) => i.brand === brand);
   const opts: { value: VoltageClass; label: string }[] = [];
-  const has = (pred: (i: CatalogInverter) => boolean) => models.some(pred);
-  if (has((i) => (i.voltageClass || '').includes('LV'))) opts.push({ value: 'LV (48V)', label: 'LV (48V battery)' });
-  if (has((i) => (i.voltageClass || '').includes('160-700'))) opts.push({ value: 'HV (160-700V)', label: 'HV (160-700V) - AM2' });
-  if (has((i) => (i.voltageClass || '').includes('160-800'))) opts.push({ value: 'HV (160-800V)', label: 'HV (160-800V) - BM3/BM4' });
-  if (has((i) => (i.voltageClass || '').includes('150-850'))) opts.push({ value: 'HV (150-850V)', label: 'HV (150-850V) - S6' });
-  if (has((i) => i.category === 'grid_tied')) opts.push({ value: 'Grid-Tied', label: 'Grid-Tied (no battery)' });
+  const count = (vclass: VoltageClass) => models.filter((i) => matchesVoltageClass(i, vclass)).length;
+  const lv = count('LV (48V)'), hv = count('HV'), gt = count('Grid-Tied');
+  if (lv > 0) opts.push({ value: 'LV (48V)', label: `LV (48V battery) - ${lv} models` });
+  if (hv > 0) opts.push({ value: 'HV', label: `HV (high-voltage battery) - ${hv} models` });
+  if (gt > 0) opts.push({ value: 'Grid-Tied', label: `Grid-Tied (no battery) - ${gt} models` });
   return opts;
 }
 
+const BRAND_ORDER = ['Deye', 'Solis', 'Jinko'];
+
 export default function ParametricInputs({ catalog, onChange }: ParametricInputsProps) {
-  const brands = useMemo(() => Array.from(new Set(catalog.inverters.filter((i) => i.category !== 'microinverter').map((i) => i.brand))), [catalog]);
+  const brands = useMemo(() => {
+    const found = Array.from(new Set(catalog.inverters.filter((i) => i.category !== 'microinverter').map((i) => i.brand)));
+    return found.sort((a, b) => {
+      const ia = BRAND_ORDER.indexOf(a), ib = BRAND_ORDER.indexOf(b);
+      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+    });
+  }, [catalog]);
 
   // ── Project ──
   const [projectName, setProjectName] = useState('New Sizing Project');
@@ -104,13 +122,24 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
   const [directTargetKW, setDirectTargetKW] = useState(50);
   const [dailyConsumptionKWh, setDailyConsumptionKWh] = useState(200);
   const [peakLoadKW, setPeakLoadKW] = useState(35);
+  const [essentialLoadOverride, setEssentialLoadOverride] = useState<number | null>(null);
   const [backupAutonomyHrs, setBackupAutonomyHrs] = useState(4);
 
   // ── Section B ──
   const [invBrand, setInvBrand] = useState<InverterBrand>(brands[0] ?? 'Deye');
-  const [invVoltageClass, setInvVoltageClass] = useState<VoltageClass>('HV (160-800V)');
+  const [invVoltageClass, setInvVoltageClass] = useState<VoltageClass>('HV');
   const [selectedInverterId, setSelectedInverterId] = useState('');
   const [invManualOverride, setInvManualOverride] = useState<number | null>(null);
+
+  // Snap the voltage class to a valid option whenever the brand changes, so a
+  // brand switch never strands the user on a class with no models (e.g. Jinko
+  // has LV models only).
+  useEffect(() => {
+    const opts = inverterVoltageClassOptions(catalog, invBrand);
+    if (opts.length > 0 && !opts.some((o) => o.value === invVoltageClass)) {
+      setInvVoltageClass(opts[0].value);
+    }
+  }, [catalog, invBrand, invVoltageClass]);
 
   // ── Section C ──
   const [dcAcOversize, setDcAcOversize] = useState(1.30);
@@ -141,9 +170,11 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
   const [batteryReplYear, setBatteryReplYear] = useState(11);
   const [batteryReplCostPct, setBatteryReplCostPct] = useState(60);
   const [discountRate, setDiscountRate] = useState(12);
-  const [inflationRate, setInflationRate] = useState(5.5);
-  const [contingencyPct, setContingencyPct] = useState(5.0);
-  const [epcMarginPct, setEpcMarginPct] = useState(15.0);
+  // Defaults 0 to mirror the Excel Quotation & BOM exactly (its retail prices
+  // already embed seller margin; VAT 16% is applied by the engine on top).
+  const [contingencyPct, setContingencyPct] = useState(0);
+  const [epcMarginPct, setEpcMarginPct] = useState(0);
+  const inflationRate = 5.5; // reserved; the engine escalates via tariff/O&M rates
 
   // ── KPLC Time-of-Use ──
   const [useTOU, setUseTOU] = useState(false);
@@ -156,34 +187,39 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
   const [loanRatePct, setLoanRatePct] = useState(15);
   const [loanTermYears, setLoanTermYears] = useState(5);
 
-  // ── Add-ons ──
+  // ── Add-ons: defaults mirror the Excel BOM's default configuration
+  // (Section 8 priced via one switch, KPLC support and first-year O&M included).
   const [includeGenInterface, setIncludeGenInterface] = useState(true);
-  const [includeEnclosure, setIncludeEnclosure] = useState(false);
-  const [includeKPLC, setIncludeKPLC] = useState(false);
-  const [includeOandM, setIncludeOandM] = useState(false);
+  const [includeKPLC, setIncludeKPLC] = useState(true);
+  const [includeOandM, setIncludeOandM] = useState(true);
 
   const location = SOLAR_LOCATIONS.find(l => l.id === locationId) || SOLAR_LOCATIONS[0];
   const loadProfile = LOAD_PROFILES[0];
 
+  // Excel C14: peak load x 1.25 safety margin.
   const suggestedInverterKW = peakLoadKW * 1.25;
-  const suggestedBatteryKWh_raw = peakLoadKW * backupAutonomyHrs;
+  // Excel C15: essential load x backup hours / DoD (Dyness LiFePO4 usable DoD 90%),
+  // where essential load defaults to 50% of peak (C11) - sizes the bank so USABLE
+  // energy covers the outage.
+  const essentialLoadKW = essentialLoadOverride ?? Math.round(peakLoadKW * 0.5 * 100) / 100;
+  const suggestedBatteryKWh_raw = (essentialLoadKW * backupAutonomyHrs) / 0.9;
   const effectiveTargetKW = sizingMethod === 'direct' ? directTargetKW : suggestedInverterKW;
 
   const filteredInverters = useMemo(() =>
-    catalog.inverters.filter((inv) => {
-      if (inv.category === 'microinverter') return false;
-      if (inv.brand !== invBrand) return false;
-      const vc = inv.voltageClass || '';
-      if (invVoltageClass === 'Grid-Tied') return inv.category === 'grid_tied';
-      if (invVoltageClass === 'LV (48V)') return vc.includes('LV');
-      if (invVoltageClass.includes('HV')) return vc.includes(invVoltageClass.replace('HV ', '').replace(/[()]/g, ''));
-      return vc === invVoltageClass;
-    }), [catalog, invBrand, invVoltageClass]);
+    catalog.inverters
+      .filter((inv) => inv.brand === invBrand && matchesVoltageClass(inv, invVoltageClass))
+      .sort((a, b) => a.ratedAcW - b.ratedAcW),
+    [catalog, invBrand, invVoltageClass]);
 
   useEffect(() => {
-    if (filteredInverters.length > 0 && !filteredInverters.find(i => i.id === selectedInverterId)) {
-      setSelectedInverterId(filteredInverters[0].id);
-    }
+    if (filteredInverters.length === 0 || filteredInverters.find(i => i.id === selectedInverterId)) return;
+    // Pick the smallest model whose rating covers the target in one unit
+    // (falls back to the largest available) so switching brand/class doesn't
+    // default to a tiny unit that needs a dozen in parallel.
+    const targetW = effectiveTargetKW * 1000;
+    const bestFit = filteredInverters.find((i) => i.ratedAcW >= targetW) ?? filteredInverters[filteredInverters.length - 1];
+    setSelectedInverterId(bestFit.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filteredInverters, selectedInverterId]);
 
   const microInverters = useMemo(() => catalog.inverters.filter((i) => i.category === 'microinverter'), [catalog]);
@@ -202,18 +238,30 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
   const isHV = invArchitecture.includes('HV');
   const isLV = invArchitecture.includes('LV');
 
-  const suggestedInvUnits = Math.max(1, Math.ceil(effectiveTargetKW / invUnitACkW));
+  // Excel C24: MAX(1, CEILING(target x 0.95 / unit kW)) - allows up to 5%
+  // inverter undersizing before adding a unit (the 1.25 safety factor already
+  // covers this), preventing a tiny overshoot from doubling the inverter count.
+  const suggestedInvUnits = Math.max(1, Math.ceil((effectiveTargetKW * 0.95) / invUnitACkW));
   const actualInvUnits = invManualOverride ?? suggestedInvUnits;
   const totalInverterACkW = actualInvUnits * invUnitACkW;
 
   const targetPVkWp = totalInverterACkW * dcAcOversize;
   const maxAllowablePVkWp = actualInvUnits * invUnitMaxPV;
-  const panelsRequired = Math.ceil((targetPVkWp * 1000) / panelWattage);
+  // Excel C33: ROUND(target kWp x 1000 / panel W) - nearest panel, not ceiling.
+  const panelsRequired = Math.max(1, Math.round((targetPVkWp * 1000) / panelWattage));
   const actualPVkWp = (panelsRequired * panelWattage) / 1000;
   const pvOversizeOK = actualPVkWp <= maxAllowablePVkWp;
   const panelObj = catalog.panels.find(p => p.wattage === panelWattage) || catalog.panels[0];
   const panelTotalPriceKSh = panelsRequired * (panelObj?.priceKsh ?? 11900);
   const stockWarning = panelWattage === 620 ? 'Low stock (~50 units) - consider 625W' : '';
+
+  // Excel Section D: the battery flow follows the inverter architecture. LV
+  // inverters always use the LV48 line (DL5.0/DL5.0C parallel modules at the
+  // LV48 price); HV inverters use Stack100/Stack280.
+  useEffect(() => {
+    if (isLV && dynessLine !== 'LV48') setDynessLine('LV48');
+    else if (isHV && dynessLine === 'LV48') setDynessLine('Stack100');
+  }, [isLV, isHV, dynessLine]);
 
   const battery = dynessLine === 'Stack280'
     ? catalog.batteries.find((b) => b.category === 'hv_stack280')
@@ -264,7 +312,7 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
       discountRate, inflationRate, projectLifeYears: 25,
       useTOUTariff: useTOU, kplcCustomerSegment: kplcSegment, tariffStructure, monthlyConsumptionKWh,
       debtFractionPercent: debtFractionPct, loanInterestRatePercent: loanRatePct, loanTermYears,
-      includeGeneratorInterface: includeGenInterface, includeWeatherproofEnclosure: includeEnclosure,
+      includeGeneratorInterface: includeGenInterface, includeWeatherproofEnclosure: includeGenInterface,
       includeKPLCapplication: includeKPLC, includeOandM: includeOandM,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -277,7 +325,7 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
     batteryReplYear, batteryReplCostPct, discountRate, inflationRate,
     useTOU, kplcSegment, tariffStructure, monthlyConsumptionKWh,
     debtFractionPct, loanRatePct, loanTermYears,
-    contingencyPct, epcMarginPct, includeGenInterface, includeEnclosure, includeKPLC, includeOandM,
+    contingencyPct, epcMarginPct, includeGenInterface, includeKPLC, includeOandM,
   ]);
 
   const loadPreset = (preset: ProjectPreset) => {
@@ -287,7 +335,12 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
     const pPanel = catalog.panels.find(p => p.id === preset.selectedPanelId);
     if (pPanel) setPanelWattage(pPanel.wattage);
     const pInv = catalog.inverters.find(i => i.id === preset.selectedInverterId);
-    if (pInv) { setInvBrand(pInv.brand); setInvVoltageClass((pInv.voltageClass || 'HV (160-800V)') as VoltageClass); setSelectedInverterId(pInv.id); }
+    if (pInv) {
+      setInvBrand(pInv.brand);
+      const vc = pInv.voltageClass || '';
+      setInvVoltageClass(pInv.category === 'grid_tied' ? 'Grid-Tied' : vc.includes('LV') ? 'LV (48V)' : 'HV');
+      setSelectedInverterId(pInv.id);
+    }
     if (preset.selectedBatteryId.includes('stack280')) setDynessLine('Stack280');
     else if (preset.selectedBatteryId.includes('stack100')) setDynessLine('Stack100');
     else setDynessLine('LV48');
@@ -397,23 +450,27 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
                 <div className="flex justify-between text-[8px] text-[var(--text-muted)] font-mono"><span>1kW</span><span>100</span><span>200</span><span>300</span><span>400kW</span></div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: 'Daily Consumption', value: dailyConsumptionKWh, set: setDailyConsumptionKWh, unit: 'kWh/day', min: 1 },
-                  { label: 'Peak Load', value: peakLoadKW, set: setPeakLoadKW, unit: 'kW', min: 1 },
-                  { label: 'Backup Autonomy', value: backupAutonomyHrs, set: setBackupAutonomyHrs, unit: 'hours', min: 0.5, step: 0.5 },
+                  { label: 'Daily Consumption', value: dailyConsumptionKWh, set: (v: number) => setDailyConsumptionKWh(v), unit: 'kWh/day', min: 1 },
+                  { label: 'Peak Load', value: peakLoadKW, set: (v: number) => setPeakLoadKW(v), unit: 'kW', min: 1 },
+                  { label: 'Essential Load (outage)', value: essentialLoadKW, set: (v: number) => setEssentialLoadOverride(v), unit: 'kW', min: 0.1, step: 0.1 },
+                  { label: 'Backup Autonomy', value: backupAutonomyHrs, set: (v: number) => setBackupAutonomyHrs(v), unit: 'hours', min: 0.5, step: 0.5 },
                 ].map(f => (
-                  <div key={f.label} className="flex flex-col">
-                    <span className="text-[10px] text-[var(--text-muted)] mb-1">{f.label}</span>
+                  <div key={f.label} className="flex flex-col min-w-0">
+                    <span className="text-[10px] text-[var(--text-muted)] mb-1 truncate">{f.label}</span>
                     <div className="relative">
                       <input type="number" min={f.min} step={f.step || 1} value={f.value}
                         onChange={e => f.set(Math.max(f.min, parseFloat(e.target.value) || 0))}
-                        className="w-full bg-[var(--solar-soft)] border border-[var(--solar)]/30 rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--solar)] transition" />
-                      <span className="absolute right-3 top-2.5 text-[10px] text-[var(--solar)]/70 font-mono">{f.unit}</span>
+                        className="w-full bg-[var(--solar-soft)] border border-[var(--solar)]/30 rounded-xl pl-3 pr-14 py-2.5 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--solar)] transition" />
+                      <span className="absolute right-3 top-2.5 text-[10px] text-[var(--solar)]/70 font-mono pointer-events-none">{f.unit}</span>
                     </div>
                   </div>
                 ))}
-                <div className="col-span-3 grid grid-cols-2 gap-3 mt-2">
+                <p className="col-span-2 sm:col-span-4 text-[10px] text-[var(--text-muted)]">
+                  Essential load defaults to 50% of peak - overwrite with the surveyed backup load. Battery suggestion = essential load x backup hours / 90% usable depth of discharge (Dyness LiFePO4).
+                </p>
+                <div className="col-span-2 sm:col-span-4 grid grid-cols-2 gap-3">
                   <Metric label="Suggested Inverter Size" value={nf(suggestedInverterKW, 1)} unit="kW" color="amber" />
                   <Metric label="Suggested Battery Capacity" value={nf(suggestedBatteryKWh_raw, 1)} unit="kWh" color="amber" />
                 </div>
@@ -461,7 +518,7 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <Metric label="Rated AC Power" value={nf(invUnitACkW, 1)} unit="kW" color="blue" />
               <Metric label="Max PV Input" value={nf(invUnitMaxPV, 1)} unit="kWp" color="blue" />
               <Metric label="Unit Price" value={`KSh ${fmtKSh(invUnitPriceKSh)}`} color="blue" />
@@ -517,7 +574,7 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
               </div>
             )}
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <Metric label="Target PV" value={nf(targetPVkWp, 1)} unit="kWp" color="amber" />
               <Metric label="Max Allowed" value={nf(maxAllowablePVkWp, 1)} unit="kWp" color="slate" />
               <Metric label="Panels Required" value={String(panelsRequired)} unit="pcs" color="amber" size="lg" />
@@ -562,7 +619,7 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <Metric label="Modules Required" value={String(batModsReq)} unit={`x${modKWh}kWh`} color="emerald" />
                   {isHV ? <>
                     <Metric label="Towers" value={`${batTowers}`} unit={`max ${maxPerTower}/tower`} color="emerald" />
@@ -592,7 +649,7 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
               <span className="text-[9px] text-[var(--text-muted)] font-mono animate-pulse">Live</span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <Metric label="PV Array" value={nf(actualPVkWp, 1)} unit="kWp" color="emerald" size="lg" />
               <Metric label="Panels" value={String(panelsRequired)} unit={`x${panelWattage}W`} color="emerald" />
               <Metric label="Inverter" value={selectedInv?.model.split('-').slice(0, 3).join('-') ?? ''} color="blue" />
@@ -645,7 +702,7 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
       {/* SECTION G: CABLE ENGINEERING */}
       <Section id="G" label="Cable Engineering (Derating & Voltage Window)" color="bg-[var(--grid-soft)] text-[var(--grid)] border border-[var(--grid)]/20"
         defaultOpen={false}
-        summary={`${INSTALL_METHOD_LABELS[installMethod]} - ${ambientTempC}degC ambient`}>
+        summary={`${INSTALL_METHOD_LABELS[installMethod]} - ${ambientTempC}°C ambient`}>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="flex flex-col">
             <span className="text-[10px] text-[var(--text-muted)] mb-1">Installation Method</span>
@@ -655,13 +712,13 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
             </select>
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] text-[var(--text-muted)] mb-1">Ambient Temperature (degC)</span>
+            <span className="text-[10px] text-[var(--text-muted)] mb-1">Ambient Temperature (°C)</span>
             <input type="number" min={0} max={55} value={ambientTempC}
               onChange={e => setAmbientTempC(parseFloat(e.target.value) || 30)}
               className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--grid)]" />
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] text-[var(--text-muted)] mb-1">Min Design Ambient (degC, Voc check)</span>
+            <span className="text-[10px] text-[var(--text-muted)] mb-1">Min Design Ambient (°C, Voc check)</span>
             <input type="number" min={-10} max={30} value={minDesignAmbientTempC}
               onChange={e => setMinDesignAmbientTempC(parseFloat(e.target.value) || 10)}
               className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--grid)]" />
@@ -670,10 +727,10 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
       </Section>
 
       {/* SECTION: FINANCIAL ANALYSIS */}
-      <Section id="$" label="Financial Analysis Assumptions" color="bg-[var(--battery-soft)] text-[var(--battery)] border border-[var(--battery)]/20"
+      <Section id="H" label="Financial Analysis Assumptions" color="bg-[var(--battery-soft)] text-[var(--battery)] border border-[var(--battery)]/20"
         defaultOpen={false}
         summary={`Yield ${specificYield} kWh/kWp/day - Self-consume ${selfConsumptionPct}%`}>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           {[
             ['Specific Yield (kWh/kWp/day)', specificYield, setSpecificYield, 2, 7, 0.1],
             ['Self-Consumption Ratio %', selfConsumptionPct, setSelfConsumptionPct, 0, 100, 1],
@@ -698,7 +755,7 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
       </Section>
 
       {/* SECTION: KPLC TIME-OF-USE TARIFF */}
-      <Section id="$$" label="KPLC Time-of-Use Tariff Modeling" color="bg-[var(--grid-soft)] text-[var(--grid)] border border-[var(--grid)]/20"
+      <Section id="I" label="KPLC Time-of-Use Tariff Modeling" color="bg-[var(--grid-soft)] text-[var(--grid)] border border-[var(--grid)]/20"
         defaultOpen={false}
         summary={useTOU ? `${kplcSegment} - ${tariffStructure}` : `Flat rate: KSh ${location.gridTariffKSh}/kWh`}>
         <label className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] cursor-pointer">
@@ -735,7 +792,7 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
       </Section>
 
       {/* SECTION: FINANCING */}
-      <Section id="$$$" label="Financing (Optional Solar Loan / Asset Finance)" color="bg-purple-50 text-purple-700 border border-purple-200"
+      <Section id="J" label="Financing (Optional Solar Loan / Asset Finance)" color="bg-purple-50 text-purple-700 border border-purple-200"
         defaultOpen={false}
         summary={debtFractionPct > 0 ? `${debtFractionPct}% debt @ ${loanRatePct}%` : 'Cash purchase'}>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -761,13 +818,12 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
       </Section>
 
       {/* SECTION: ADD-ONS */}
-      <Section id="H" label="Optional Add-Ons & Project Financials" color="bg-purple-50 text-purple-700 border border-purple-200"
+      <Section id="K" label="Optional Add-Ons & Project Financials" color="bg-purple-50 text-purple-700 border border-purple-200"
         defaultOpen={false}
         summary={`Contingency: ${contingencyPct}% - EPC: ${epcMarginPct}% - Discount: ${discountRate}%`}>
         <div className="flex flex-wrap gap-2">
           {[
-            ['Generator Interface', includeGenInterface, setIncludeGenInterface],
-            ['Weatherproof Enclosure', includeEnclosure, setIncludeEnclosure],
+            ['Generator Interface & Enclosures (Section 8)', includeGenInterface, setIncludeGenInterface],
             ['KPLC Net-Metering', includeKPLC, setIncludeKPLC],
             ['1st Year O&M Contract', includeOandM, setIncludeOandM],
           ].map(([label, val, setFn]) => (
@@ -781,12 +837,11 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
           ))}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
             ['Contingency %', contingencyPct, setContingencyPct, 0, 15],
-            ['EPC Margin %', epcMarginPct, setEpcMarginPct, 5, 35],
+            ['EPC Margin %', epcMarginPct, setEpcMarginPct, 0, 35],
             ['Discount Rate %', discountRate, setDiscountRate, 2, 20],
-            ['Inflation Rate %', inflationRate, setInflationRate, 0, 15],
           ].map(([label, val, setFn, min, max]) => (
             <div key={label as string}>
               <div className="flex justify-between text-[10px] text-[var(--text-tertiary)] mb-1">

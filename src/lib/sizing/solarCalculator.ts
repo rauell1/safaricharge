@@ -115,7 +115,8 @@ function runCentralInverterPath(inputs: SimulationInputs, catalog: SizingCatalog
   // ── Section A/B: Inverter + PV Array Sizing ───────────────────────────
   const totalInverterACkW = (inverterQty * inverter.ratedAcW) / 1000;
   const targetPVkWp = totalInverterACkW * dcAcOversizeRatio;
-  const actualPanelQty = panelQty || Math.ceil((targetPVkWp * 1000) / panel.wattage);
+  // Excel C33 uses ROUND (nearest panel), not CEILING.
+  const actualPanelQty = panelQty || Math.max(1, Math.round((targetPVkWp * 1000) / panel.wattage));
   const solarCapacityKWp = (actualPanelQty * panel.wattage) / 1000;
   const actualDcAcRatio = totalInverterACkW > 0 ? solarCapacityKWp / totalInverterACkW : 0;
 
@@ -253,21 +254,26 @@ function runCentralInverterPath(inputs: SimulationInputs, catalog: SizingCatalog
   push('7. Earthing & Cable Mgmt', '18', 'Earthing system - earth rods, earth bars, copper tape bonding', 'lot', 1, 65000, 'Base lot per Kenyan electrical code');
   push('7. Earthing & Cable Mgmt', '19', 'Cable trays, trunking, conduits and ducting', 'lot', 1, 60000, 'Base lot; scales with site layout');
 
+  // Excel Section G (C90): ONE Yes/No switch prices or zeroes the whole of
+  // BOM Section 8 (gen interface + weatherproof enclosure + fire safety).
   if (includeGeneratorInterface) {
     push('8. Generator Interface', '20', 'Generator AVS/auto-start interface to inverter generator port', 'set', 1, 75000, 'Optional - delete if not required');
-    push('8. Generator Interface', '21', 'Outdoor weatherproof enclosure (inverter + battery tower), IP55/NEMA 3R', 'set', includeWeatherproofEnclosure ? 1 : 0, 180000, 'Optional - omit if installed in existing plant room');
+    push('8. Generator Interface', '21', 'Outdoor weatherproof enclosure (inverter + battery tower), IP55/NEMA 3R', 'set', 1, 180000, 'Optional - omit if installed in existing plant room');
     push('8. Generator Interface', '22', 'Fire safety provision (extinguisher, signage)', 'set', 1, 15000, 'Supplementary to battery built-in fire suppression');
   }
 
-  push('9. Installation', '23', 'Transport and delivery of equipment to site (Nairobi)', 'lot', 1, 45000, 'Base lot; larger systems may need multiple trips');
+  // Install labor per Excel BOM item 27: flat 10% of the Sections 1-8 equipment
+  // + BOS subtotal (excludes transport and Section 10 aftercare items).
   const equipmentSubtotalKSh = bom.reduce((s, i) => s + i.totalKSh, 0);
-  const installLaborRate = solarCapacityKWp > 100 ? 0.08 : (solarCapacityKWp > 15 ? 0.10 : 0.12);
-  push('9. Installation', '24', 'Installation labor, electrical works, system wiring, mechanical assembly & commissioning', 'lot', 1, Math.round(equipmentSubtotalKSh * installLaborRate), `Industry-standard rate (${Math.round(installLaborRate * 100)}%) for systems of this scale`);
+  push('9. Installation', '23', 'Transport and delivery of equipment to site (Nairobi)', 'lot', 1, 45000, 'Base lot; larger systems may need multiple trips');
+  push('9. Installation', '24', 'Installation labor, electrical works, system wiring, mechanical assembly & commissioning', 'lot', 1, Math.round(equipmentSubtotalKSh * 0.10), 'Industry-standard commercial installation rate (10% of equipment + BOS subtotal)');
 
   if (includeKPLCapplication) {
     push('10. Grid & Aftercare', '25', 'KPLC net-metering/interconnection application support', 'lot', 1, 50000, 'Applicable only if grid export is intended');
   }
-  if (isGridTied || includeKPLCapplication) {
+  // Excel BOM item 29: EPM meter auto-defaults to 1 unit ONLY when a Grid-Tied
+  // inverter is selected (qty 0 for hybrid systems even with KPLC support).
+  if (isGridTied) {
     push('10. Grid & Aftercare', '25.5', 'EPM Meter (export/import metering, 3-phase with CTs)', 'pcs', 1, 26680, 'Acrel 3-phase EPM meter with CTs (Megawatt confirmed)');
   }
   if (includeOandM) {
@@ -326,13 +332,19 @@ interface FinalizeParams {
 function finalizeResults(inputs: SimulationInputs, catalog: SizingCatalog, p: FinalizeParams): SimulationResults {
   const { contingencyPercent, epcMarginPercent } = inputs;
 
+  // Per Excel Quotation & BOM: SUBTOTAL -> VAT @ 16% -> GRAND TOTAL (incl. VAT).
+  // Contingency and EPC margin are app-side optional adders (default 0 to match
+  // the Excel, whose retail prices already embed seller margin); VAT applies on
+  // top of everything, mirroring the Excel's F68 = 16% x F67 line.
   const subtotalCapExKSh = p.bom.reduce((s, i) => s + i.totalKSh, 0);
   const subtotalCapExUSD = Math.round(subtotalCapExKSh / KSH_PER_USD);
   const contingencyKSh = Math.round(subtotalCapExKSh * contingencyPercent / 100);
   const contingencyUSD = Math.round(contingencyKSh / KSH_PER_USD);
   const epcMarginKSh = Math.round((subtotalCapExKSh + contingencyKSh) * epcMarginPercent / 100);
   const epcMarginUSD = Math.round(epcMarginKSh / KSH_PER_USD);
-  const totalCapExKSh = subtotalCapExKSh + contingencyKSh + epcMarginKSh;
+  const vatKSh = Math.round((subtotalCapExKSh + contingencyKSh + epcMarginKSh) * 0.16);
+  const vatUSD = Math.round(vatKSh / KSH_PER_USD);
+  const totalCapExKSh = subtotalCapExKSh + contingencyKSh + epcMarginKSh + vatKSh;
   const totalCapExUSD = Math.round(totalCapExKSh / KSH_PER_USD);
 
   const capexItems: CapExItem[] = p.bom.slice(0, 12).map((item) => ({
@@ -366,8 +378,12 @@ function finalizeResults(inputs: SimulationInputs, catalog: SizingCatalog, p: Fi
   });
 
   const annualOMCostUSDYear1 = (totalCapExUSD * inputs.annualOMCostPercent) / 100;
-  const batteryLineKSh = p.bom.find((i) => i.section === '2. Energy Storage')?.totalKSh ?? 0;
-  const batteryReplacementCostUSD = (batteryLineKSh / KSH_PER_USD) * (inputs.batteryReplacementCostPercent / 100);
+  // Excel Financial C17: replacement default = 60% of the full Energy Storage
+  // section subtotal (modules + BDU + rack + cable + fuse + connector).
+  const storageSectionKSh = p.bom
+    .filter((i) => i.section === '2. Energy Storage')
+    .reduce((s, i) => s + i.totalKSh, 0);
+  const batteryReplacementCostUSD = (storageSectionKSh / KSH_PER_USD) * (inputs.batteryReplacementCostPercent / 100);
 
   const cashFlowRows = buildCashFlows({
     totalCapExUSD, equityUSD: financingCalc.equityUSD,
@@ -384,7 +400,7 @@ function finalizeResults(inputs: SimulationInputs, catalog: SizingCatalog, p: Fi
   const irrPercent = computeIRR(cashFlowRows);
   const year1 = cashFlowRows.find((c) => c.year === 1);
   const annualSavingsUSD = year1 ? year1.netCashFlow : 0;
-  const simplePaybackYears = computeSimplePayback(totalCapExUSD, annualSavingsUSD);
+  const simplePaybackYears = computeSimplePayback(cashFlowRows);
   const discountedPaybackYears = computeDiscountedPayback(cashFlowRows, inputs.discountRate);
   const mirrPercent = computeMIRR(cashFlowRows.map((c) => c.netCashFlow), inputs.discountRate, inputs.loanInterestRatePercent || inputs.discountRate);
   const roiPercent = computeROI(cashFlowRows, totalCapExUSD);
@@ -452,7 +468,7 @@ function finalizeResults(inputs: SimulationInputs, catalog: SizingCatalog, p: Fi
     bomLineItems: p.bom, cableSizingResults: p.cableSizingResults,
 
     capexItems, subtotalCapExKSh, subtotalCapExUSD, contingencyKSh, contingencyUSD,
-    epcMarginKSh, epcMarginUSD, totalCapExKSh, totalCapExUSD,
+    epcMarginKSh, epcMarginUSD, vatKSh, vatUSD, totalCapExKSh, totalCapExUSD,
 
     annualGridBillWithoutSolarUSD: Math.round((annualLoadKWh * blendedTariffKShPerKWh) / KSH_PER_USD),
     annualDieselCostWithoutSolarUSD: 0,
