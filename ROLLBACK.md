@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 323 | `rollback/security-restrict-auth-and-signup-to-r-2026-07-03-dde6d61` | `dde6d61` | security: restrict auth and signup to royokola3@gmail.com (6f +48/-6) | 2026-07-03 |
 | 322 | `rollback/feat-sizing-migrate-catalogs-to-supaba-2026-07-03-517cab4` | `517cab4` | feat(sizing): migrate catalogs to Supabase and rebuild engine to match updated Excel model (15f +2171/-927) | 2026-07-03 |
 | 321 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-03-591f26a` | `591f26a` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-07-03 |
 | 320 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-02-eff04b6` | `eff04b6` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-07-02 |
@@ -3399,6 +3400,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat(sizing): migrate catalogs to Supabase and rebuild engine to match updated Excel model
 - **Date**: 2026-07-03
 - **Changed**: 15 file(s), +2171/-927 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #323 — `rollback/security-restrict-auth-and-signup-to-r-2026-07-03-dde6d61`
+
+- **Branch**: `rollback/security-restrict-auth-and-signup-to-r-2026-07-03-dde6d61`
+- **Commit**: `dde6d6141de9ca1a918e3e1c75f5c47656d313cd`
+- **Subject**: security: restrict auth and signup to royokola3@gmail.com
+- **Date**: 2026-07-03
+- **Changed**: 6 file(s), +48/-6 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
