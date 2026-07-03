@@ -43,8 +43,15 @@ function LoginForm() {
     setLoading(true)
     const supabase = createClient()
     
+    const normalizedEmail = email.trim().toLowerCase()
+    if (normalizedEmail !== 'royokola3@gmail.com') {
+      setError('Access restricted to authorized email address.')
+      setLoading(false)
+      return
+    }
+
     const { error: signInErr } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
+      email: normalizedEmail,
       password,
     })
 
@@ -86,7 +93,14 @@ function LoginForm() {
     setLoading(true)
     const supabase = createClient()
 
-    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+    const normalizedEmail = email.trim().toLowerCase()
+    if (normalizedEmail !== 'royokola3@gmail.com') {
+      setError('Access restricted to authorized email address.')
+      setLoading(false)
+      return
+    }
+
+    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
       redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
     })
 

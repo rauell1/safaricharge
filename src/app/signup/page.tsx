@@ -26,6 +26,12 @@ function RegisterForm() {
     e.preventDefault()
     reset()
 
+    const normalizedEmail = email.trim().toLowerCase()
+    if (normalizedEmail !== 'royokola3@gmail.com') {
+      setError('Registration is restricted to authorized email addresses.')
+      return
+    }
+
     if (password.length < 8) {
       setError('Password must be at least 8 characters.')
       return
@@ -38,7 +44,6 @@ function RegisterForm() {
 
     setLoading(true)
     const supabase = createClient()
-    const normalizedEmail = email.trim().toLowerCase()
 
     const { error: signUpErr } = await supabase.auth.signUp({
       email: normalizedEmail,

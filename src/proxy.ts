@@ -114,7 +114,7 @@ export async function proxy(request: NextRequest) {
       data: { user },
       error,
     } = await supabase.auth.getUser()
-    if (error || !user) {
+    if (error || !user || user.email?.toLowerCase() !== 'royokola3@gmail.com') {
       return NextResponse.json(
         { error: 'Authentication required.' },
         { status: 401, headers: { 'x-request-id': requestId } }
@@ -198,6 +198,19 @@ export async function proxy(request: NextRequest) {
   const getSessionStart = Date.now()
   const { data: { session }, error: sessionError } = await supabase.auth.getSession()
   const getSessionMs = Date.now() - getSessionStart
+
+  if (session?.user && session.user.email?.toLowerCase() !== 'royokola3@gmail.com') {
+    const response = pathname === '/login' || pathname === '/signup'
+      ? supabaseResponse
+      : redirectWithCookies(request, `/login?error=auth_failed`, supabaseResponse)
+    response.cookies.delete(SESSION_TOUCH_COOKIE)
+    response.cookies.delete(ONBOARDING_COOKIE)
+    response.cookies.delete(AUTH_VALIDATED_AT_COOKIE)
+    request.cookies.getAll()
+      .filter(c => c.name.startsWith('sb-'))
+      .forEach(c => response.cookies.delete(c.name))
+    return response
+  }
 
   if (sessionError || !session?.user || !session.user.email_confirmed_at) {
     if (pathname === '/login' || pathname === '/signup') {

@@ -85,6 +85,11 @@ export default async function RootPage() {
 
   // Authenticated users
   if (user && user.email_confirmed_at) {
+    if (user.email?.toLowerCase() !== 'royokola3@gmail.com') {
+      await supabase.auth.signOut()
+      redirect('/landing')
+    }
+
     const adminEmail = process.env.ADMIN_EMAIL || '';
     const adminEmailsEnv = process.env.ADMIN_EMAILS || adminEmail;
     const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()).filter(Boolean);

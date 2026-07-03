@@ -19,7 +19,7 @@ export async function POST(request: Request) {
   }
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-  if (authError || !user) {
+  if (authError || !user || user.email?.toLowerCase() !== 'royokola3@gmail.com') {
     return NextResponse.json({ error: 'Unauthorised.' }, { status: 401 })
   }
 
@@ -89,7 +89,7 @@ export async function GET() {
   }
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-  if (authError || !user) {
+  if (authError || !user || user.email?.toLowerCase() !== 'royokola3@gmail.com') {
     return NextResponse.json({ error: 'Unauthorised.' }, { status: 401 })
   }
 
