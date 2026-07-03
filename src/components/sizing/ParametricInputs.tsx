@@ -293,9 +293,15 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
   useEffect(() => {
     const panelId = catalog.panels.find(p => p.wattage === panelWattage)?.id ?? catalog.panels[0]?.id ?? '';
     const microPanelId = catalog.panels.find(p => p.wattage === microPanelWattage)?.id ?? catalog.panels[0]?.id ?? '';
+    // In Load-Based mode, scale the load profile shape to the surveyed daily
+    // consumption so Annual Energy Demand / System Autonomy in the results
+    // reflect what was actually entered here, not the fixed preset default.
+    const loadMultiplier = sizingMethod === 'load-based' && loadProfile.totalDailyKWh > 0
+      ? dailyConsumptionKWh / loadProfile.totalDailyKWh
+      : 1.0;
 
     onChange({
-      location, loadProfile, loadMultiplier: 1.0,
+      location, loadProfile, loadMultiplier,
       systemArchitecture: architecture,
       panelId, panelQty: panelsRequired,
       inverterId: selectedInverterId, inverterQty: actualInvUnits,
@@ -450,7 +456,7 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
                 <div className="flex justify-between text-[8px] text-[var(--text-muted)] font-mono"><span>1kW</span><span>100</span><span>200</span><span>300</span><span>400kW</span></div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 {[
                   { label: 'Daily Consumption', value: dailyConsumptionKWh, set: (v: number) => setDailyConsumptionKWh(v), unit: 'kWh/day', min: 1 },
                   { label: 'Peak Load', value: peakLoadKW, set: (v: number) => setPeakLoadKW(v), unit: 'kW', min: 1 },
@@ -462,15 +468,15 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
                     <div className="relative">
                       <input type="number" min={f.min} step={f.step || 1} value={f.value}
                         onChange={e => f.set(Math.max(f.min, parseFloat(e.target.value) || 0))}
-                        className="w-full bg-[var(--solar-soft)] border border-[var(--solar)]/30 rounded-xl pl-3 pr-14 py-2.5 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--solar)] transition" />
-                      <span className="absolute right-3 top-2.5 text-[10px] text-[var(--solar)]/70 font-mono pointer-events-none">{f.unit}</span>
+                        className="w-full bg-[var(--solar-soft)] border border-[var(--solar)]/30 rounded-xl pl-3 pr-12 py-2.5 text-sm text-[var(--text-primary)] font-mono focus:outline-none focus:border-[var(--solar)] transition" />
+                      <span className="absolute right-3 top-2.5 text-[9px] text-[var(--solar)]/70 font-mono pointer-events-none">{f.unit}</span>
                     </div>
                   </div>
                 ))}
-                <p className="col-span-2 sm:col-span-4 text-[10px] text-[var(--text-muted)]">
+                <p className="col-span-2 text-[10px] text-[var(--text-muted)]">
                   Essential load defaults to 50% of peak - overwrite with the surveyed backup load. Battery suggestion = essential load x backup hours / 90% usable depth of discharge (Dyness LiFePO4).
                 </p>
-                <div className="col-span-2 sm:col-span-4 grid grid-cols-2 gap-3">
+                <div className="col-span-2 grid grid-cols-2 gap-3">
                   <Metric label="Suggested Inverter Size" value={nf(suggestedInverterKW, 1)} unit="kW" color="amber" />
                   <Metric label="Suggested Battery Capacity" value={nf(suggestedBatteryKWh_raw, 1)} unit="kWh" color="amber" />
                 </div>
