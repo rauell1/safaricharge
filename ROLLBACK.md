@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 337 | `rollback/feat-analytics-add-google-analytics-4-2026-07-04-3a86510` | `3a86510` | feat(analytics): add Google Analytics 4 (gtag.js) (3f +30/-3) | 2026-07-04 |
 | 336 | `rollback/fix-seo-dedupe-titles-fix-demo-sub-pag-2026-07-04-c843f7f` | `c843f7f` | fix(seo): dedupe titles, fix demo sub-page canonicals, add llms.txt (8f +222/-4) | 2026-07-04 |
 | 335 | `rollback/refactor-routes-remove-orphaned-energy-2026-07-04-8618f8b` | `8618f8b` | refactor(routes): remove orphaned /energy-intelligence standalone route (4f +2/-22) | 2026-07-04 |
 | 334 | `rollback/feat-seo-implement-and-update-json-ld-2026-07-04-c424713` | `c424713` | feat(seo): implement and update JSON-LD structured data (7f +349/-112) | 2026-07-04 |
@@ -3553,6 +3554,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix(seo): dedupe titles, fix demo sub-page canonicals, add llms.txt
 - **Date**: 2026-07-04
 - **Changed**: 8 file(s), +222/-4 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #337 — `rollback/feat-analytics-add-google-analytics-4-2026-07-04-3a86510`
+
+- **Branch**: `rollback/feat-analytics-add-google-analytics-4-2026-07-04-3a86510`
+- **Commit**: `3a86510856d1c9fb89e2a71371ba48fde55f86dd`
+- **Subject**: feat(analytics): add Google Analytics 4 (gtag.js)
+- **Date**: 2026-07-04
+- **Changed**: 3 file(s), +30/-3 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
