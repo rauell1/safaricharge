@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AIAssistantProvider } from "@/contexts/AIAssistantContext";
 import { ScenarioLoader } from "@/components/ScenarioLoader";
 import { PreferencesLoader } from "@/components/PreferencesLoader";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import "./globals.css";
 
 const inter = Inter({
@@ -112,6 +113,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#01696f" />
         <meta name="msapplication-TileColor" content="#01696f" />
       </head>
+      <GoogleAnalytics />
       <body className={inter.className}>
         <ThemeProvider>
           <AIAssistantProvider>

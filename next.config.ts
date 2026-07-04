@@ -48,11 +48,11 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self' blob:",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.googletagmanager.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "img-src 'self' data: blob: https://www.transparenttextures.com https://drive.google.com",
+              "img-src 'self' data: blob: https://www.transparenttextures.com https://drive.google.com https://*.googletagmanager.com",
               // Supabase auth, realtime, storage + existing analytics endpoints
-              `connect-src 'self' ${SUPABASE_URL} https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com https://vitals.vercel-insights.com https://va.vercel-scripts.com`,
+              `connect-src 'self' ${SUPABASE_URL} https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com https://vitals.vercel-insights.com https://va.vercel-scripts.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com`,
               "font-src 'self' https://fonts.gstatic.com",
               "frame-src 'self' https://*.supabase.co",
               "worker-src blob:",
