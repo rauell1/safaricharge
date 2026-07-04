@@ -69,11 +69,40 @@ export default function EVDetailPage() {
     { label: 'Weekend', detail: '12:00 PM · Solar-only top-up' },
   ];
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://solar.rauell.systems/landing',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Demo',
+        item: 'https://solar.rauell.systems/demo',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: 'EV Charging',
+      },
+    ],
+  }
+
   return (
-    <EnergyDetailShell
-      title="EV Charging"
-      subtitle="Sessions, schedules, and live consumption"
-    >
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <EnergyDetailShell
+        title="EV Charging"
+        subtitle="Sessions, schedules, and live consumption"
+      >
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="dashboard-card">
           <CardHeader>
@@ -163,5 +192,6 @@ export default function EVDetailPage() {
         </Card>
       </div>
     </EnergyDetailShell>
+    </>
   );
 }

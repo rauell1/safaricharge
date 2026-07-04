@@ -57,58 +57,77 @@ export const metadata: Metadata = {
   },
 }
 
-const organizationJsonLd = {
+const landingPageGraphJsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'Organization',
-  name: 'SafariCharge',
-  url: 'https://solar.rauell.systems',
-  logo: 'https://solar.rauell.systems/logo.png',
-  description:
-    'Solar PV + BESS simulation and energy management platform for Kenya and Africa.',
-  founder: {
-    '@type': 'Person',
-    name: 'Roy Okola',
-  },
-  areaServed: ['KE', 'NG', 'ZA', 'ET', 'TZ', 'UG', 'GH', 'SN'],
-  knowsAbout: [
-    'Solar Energy',
-    'Battery Energy Storage Systems',
-    'KPLC Tariff Optimization',
-    'Microgrid Management',
-    'Renewable Energy Africa',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': 'https://solar.rauell.systems/#organization',
+      name: 'SafariCharge',
+      url: 'https://solar.rauell.systems',
+      logo: 'https://solar.rauell.systems/logo.png',
+      description:
+        'Solar PV + BESS simulation and energy management platform for Kenya and Africa.',
+      founder: {
+        '@type': 'Person',
+        name: 'Roy Okola',
+      },
+      areaServed: ['KE', 'NG', 'ZA', 'ET', 'TZ', 'UG', 'GH', 'SN'],
+      knowsAbout: [
+        'Solar Energy',
+        'Battery Energy Storage Systems',
+        'KPLC Tariff Optimization',
+        'Microgrid Management',
+        'Renewable Energy Africa',
+      ],
+    },
+    {
+      '@type': 'WebSite',
+      '@id': 'https://solar.rauell.systems/#website',
+      name: 'SafariCharge',
+      url: 'https://solar.rauell.systems',
+      description:
+        'Solar PV + BESS simulation, MILP dispatch optimization, and KPLC tariff analysis for Kenya and Africa.',
+      inLanguage: 'en-KE',
+      publisher: {
+        '@id': 'https://solar.rauell.systems/#organization',
+      },
+    },
+    {
+      '@type': 'WebApplication',
+      '@id': 'https://solar.rauell.systems/#webapplication',
+      name: 'SafariCharge Solar Dashboard',
+      url: 'https://solar.rauell.systems',
+      applicationCategory: 'EnergyApplication',
+      operatingSystem: 'Web',
+      description:
+        'Advanced solar PV and BESS simulation platform with MILP dispatch optimization and KPLC tariff analysis for Kenya and African microgrids.',
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'USD',
+        description: 'Free to use',
+      },
+      featureList: [
+        'Solar PV simulation',
+        'Battery storage optimization',
+        'KPLC tariff engine',
+        'MILP dispatch optimizer',
+        'EV charging integration',
+        'Financial ROI analysis',
+        'Carbon footprint tracking',
+        'Africa location database',
+      ],
+      screenshot: 'https://solar.rauell.systems/og-image.png',
+      creator: {
+        '@type': 'Person',
+        name: 'Roy Okola',
+      },
+      publisher: {
+        '@id': 'https://solar.rauell.systems/#organization',
+      },
+    },
   ],
-}
-
-const webApplicationJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'WebApplication',
-  name: 'SafariCharge Solar Dashboard',
-  url: 'https://solar.rauell.systems',
-  applicationCategory: 'EnergyApplication',
-  operatingSystem: 'Web',
-  description:
-    'Advanced solar PV and BESS simulation platform with MILP dispatch optimization and KPLC tariff analysis for Kenya and African microgrids.',
-  offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'USD',
-    description: 'Free to use',
-  },
-  featureList: [
-    'Solar PV simulation',
-    'Battery storage optimization',
-    'KPLC tariff engine',
-    'MILP dispatch optimizer',
-    'EV charging integration',
-    'Financial ROI analysis',
-    'Carbon footprint tracking',
-    'Africa location database',
-  ],
-  screenshot: 'https://solar.rauell.systems/og-image.png',
-  creator: {
-    '@type': 'Person',
-    name: 'Roy Okola',
-  },
 }
 
 export default function LandingLayout({ children }: { children: React.ReactNode }) {
@@ -116,11 +135,7 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(webApplicationJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(landingPageGraphJsonLd) }}
       />
       {children}
     </>

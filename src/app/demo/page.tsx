@@ -236,7 +236,59 @@ const KENYA_DIESEL_BACKUP_CO2_KG_PER_KWH = 0.4;
 export default function ModularDashboardDemo({
   initialSection = 'dashboard',
 }: { initialSection?: DashboardSection } = {}) {
-  return <DemoIntegratedShell initialSection={initialSection} />;
+  const demoBreadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://solar.rauell.systems/landing',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Demo',
+      },
+    ],
+  }
+
+  const softwareAppJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'SafariCharge Solar Energy Simulator',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    description: 'Simulate a solar + BESS microgrid, run MILP dispatch optimization, and see KPLC cost savings in Kenya.',
+    url: 'https://solar.rauell.systems/demo',
+    image: 'https://solar.rauell.systems/og-image.png',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+      description: 'Free demo',
+    },
+    author: {
+      '@type': 'Organization',
+      name: 'SafariCharge',
+      url: 'https://solar.rauell.systems',
+    },
+  }
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(demoBreadcrumbJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppJsonLd) }}
+      />
+      <DemoIntegratedShell initialSection={initialSection} />
+    </>
+  )
 }
 
 type DemoIntegratedShellProps = {

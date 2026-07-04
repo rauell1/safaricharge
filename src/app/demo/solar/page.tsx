@@ -35,12 +35,41 @@ export default function SolarDetailPage() {
   const capacityFactor = ((stats.totalSolarKWh / ((solar.capacityKW ?? 1) * hoursCovered)) * 100);
   const selfConsumption = Math.max(stats.totalSolarKWh - stats.totalGridExportKWh, 0);
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://solar.rauell.systems/landing',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Demo',
+        item: 'https://solar.rauell.systems/demo',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: 'Solar Generation',
+      },
+    ],
+  }
+
   return (
-    <EnergyDetailShell
-      title="Solar Generation"
-      subtitle="Realtime production, peak output, and efficiency trends"
-    >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <EnergyDetailShell
+        title="Solar Generation"
+        subtitle="Realtime production, peak output, and efficiency trends"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="dashboard-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
@@ -136,5 +165,6 @@ export default function SolarDetailPage() {
         </Card>
       </div>
     </EnergyDetailShell>
+    </>
   );
 }

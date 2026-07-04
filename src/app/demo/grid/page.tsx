@@ -38,11 +38,40 @@ export default function GridDetailPage() {
     { label: 'Feed-in +20%', value: (exportCredit * 1.2).toFixed(0) },
   ]), [exportCredit, gridCost]);
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://solar.rauell.systems/landing',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Demo',
+        item: 'https://solar.rauell.systems/demo',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: 'Grid Interaction',
+      },
+    ],
+  }
+
   return (
-    <EnergyDetailShell
-      title="Grid & Tariffs"
-      subtitle="Import vs export, costs, and tariff simulations"
-    >
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <EnergyDetailShell
+        title="Grid & Tariffs"
+        subtitle="Import vs export, costs, and tariff simulations"
+      >
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="dashboard-card">
           <CardHeader>
@@ -129,5 +158,6 @@ export default function GridDetailPage() {
         </Card>
       </div>
     </EnergyDetailShell>
+    </>
   );
 }

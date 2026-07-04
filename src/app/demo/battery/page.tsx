@@ -37,11 +37,40 @@ export default function BatteryDetailPage() {
     return { charged, discharged };
   }, [minuteData]);
 
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://solar.rauell.systems/landing',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Demo',
+        item: 'https://solar.rauell.systems/demo',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: 'Battery Storage',
+      },
+    ],
+  }
+
   return (
-    <EnergyDetailShell
-      title="Battery Detail"
-      subtitle="State of charge, charge/discharge behavior, and efficiency insights"
-    >
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <EnergyDetailShell
+        title="Battery Detail"
+        subtitle="State of charge, charge/discharge behavior, and efficiency insights"
+      >
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="dashboard-card">
           <CardHeader>
@@ -136,5 +165,6 @@ export default function BatteryDetailPage() {
         </Card>
       </div>
     </EnergyDetailShell>
+    </>
   );
 }
