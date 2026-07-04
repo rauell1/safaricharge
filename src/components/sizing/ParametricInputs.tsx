@@ -445,15 +445,15 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
             </div>
 
             {sizingMethod === 'direct' ? (
-              <div className="space-y-2">
-                <div className="flex justify-between items-end">
-                  <span className="text-[10px] text-[var(--text-muted)]">Target system size</span>
-                  <span className="text-lg font-black text-[var(--solar)] font-mono">{nf(directTargetKW)} <span className="text-sm font-normal text-[var(--solar)]/70">kW</span></span>
+              <div className="space-y-1">
+                <span className="text-[10px] text-[var(--text-muted)]">Target system size</span>
+                <div className="relative">
+                  <input type="number" min={1} max={400} step={1} value={directTargetKW}
+                    onChange={e => setDirectTargetKW(Math.min(400, Math.max(1, parseFloat(e.target.value) || 1)))}
+                    className="w-full bg-[var(--solar-soft)] border border-[var(--solar)]/30 rounded-xl pl-3 pr-12 py-2.5 text-lg font-black text-[var(--solar)] font-mono focus:outline-none focus:border-[var(--solar)] transition" />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--solar)]/70 font-mono pointer-events-none">kW</span>
                 </div>
-                <input type="range" min={1} max={400} step={1} value={directTargetKW}
-                  onChange={e => setDirectTargetKW(parseInt(e.target.value) || 1)}
-                  className="w-full accent-amber-500 h-2 rounded-lg cursor-pointer" />
-                <div className="flex justify-between text-[8px] text-[var(--text-muted)] font-mono"><span>1kW</span><span>100</span><span>200</span><span>300</span><span>400kW</span></div>
+                <span className="text-[9px] text-[var(--text-muted)]">Range: 1-400 kW</span>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">
