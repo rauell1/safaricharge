@@ -4,7 +4,6 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { Zap, Battery, Car, Activity, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { TimeSeriesChart } from '@/components/charts/TimeSeriesChart';
 import { KpiCard } from '@/components/charts/KpiCard';
 
@@ -906,13 +905,5 @@ export function EnergyIntelligenceView() {
         </div>
       </div>
     </div>
-  );
-}
-
-export default function EnergyIntelligencePage() {
-  return (
-    <DashboardLayout activeSection="energy-intelligence">
-      <EnergyIntelligenceView />
-    </DashboardLayout>
   );
 }

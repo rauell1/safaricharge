@@ -56,7 +56,7 @@ function DashboardLayoutInner({
   useEffect(() => {
     const routes = [
       '/dashboard', '/simulation', '/configuration',
-      '/energy-intelligence', '/scenarios', '/recommendation',
+      '/scenarios', '/recommendation',
       '/ai-assistant', '/live-results', '/financial',
     ];
     routes.forEach((route) => {

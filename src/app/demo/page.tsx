@@ -63,7 +63,7 @@ import { SizingDispatchPanel, buildInputs as buildSizingInputs } from '@/compone
 import { SimpleDashboard } from '@/components/simulation/SimpleDashboard';
 import { SafariChargeAIAssistant } from '@/components/ai/AIAssistant';
 import { ScenariosTabView } from '@/components/scenarios/ScenariosTabView';
-import { EnergyIntelligenceView } from '@/app/energy-intelligence/page';
+import { EnergyIntelligenceView } from '@/components/energy-intelligence/EnergyIntelligenceView';
 
 // Onboarding Overlay Tour Guide
 function OnboardingTour({
