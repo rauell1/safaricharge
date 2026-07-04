@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 333 | `rollback/fix-demo-sync-inverter-hardware-select-2026-07-04-bd8c64e` | `bd8c64e` | fix(demo): sync inverter hardware selection live to the system diagram (3f +52/-31) | 2026-07-04 |
 | 332 | `rollback/fix-seo-allow-public-crawler-unauthent-2026-07-04-a41ae5e` | `a41ae5e` | fix(seo): allow public crawler/unauthenticated access to /demo and /demo/* to resolve sitemap noindex leaks (1f +2/-1) | 2026-07-04 |
 | 331 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-04-c35f380` | `c35f380` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-07-04 |
 | 330 | `rollback/feat-physics-wire-real-world-sizing-en-2026-07-04-3f737d7` | `3f737d7` | feat(physics): wire real-world sizing-engine data into the live simulation (7f +146/-11) | 2026-07-04 |
@@ -3509,6 +3510,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix(seo): allow public crawler/unauthenticated access to /demo and /demo/* to resolve sitemap noindex leaks
 - **Date**: 2026-07-04
 - **Changed**: 1 file(s), +2/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #333 — `rollback/fix-demo-sync-inverter-hardware-select-2026-07-04-bd8c64e`
+
+- **Branch**: `rollback/fix-demo-sync-inverter-hardware-select-2026-07-04-bd8c64e`
+- **Commit**: `bd8c64eceef062c8b47e4b835dba556226a71c71`
+- **Subject**: fix(demo): sync inverter hardware selection live to the system diagram
+- **Date**: 2026-07-04
+- **Changed**: 3 file(s), +52/-31 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
