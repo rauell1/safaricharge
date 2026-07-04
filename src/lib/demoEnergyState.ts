@@ -7,6 +7,7 @@ import {
   type MinuteDataPoint,
   type NodeType,
 } from '@/stores/energySystemStore';
+import { GRID_EMISSION_FACTOR_KG_CO2_PER_KWH } from '@/lib/config';
 
 interface DemoEnergyState {
   nodes: Record<NodeType, EnergyNode>;
@@ -122,7 +123,7 @@ function buildAccumulators(minuteData: MinuteDataPoint[]): Accumulators {
     0
   );
   const feedInEarnings = minuteData.reduce((sum, d) => sum + d.gridExportKWh * FEED_IN_RATE, 0);
-  const carbonOffset = solar * 0.62; // kg CO2 avoided per kWh
+  const carbonOffset = solar * GRID_EMISSION_FACTOR_KG_CO2_PER_KWH;
 
   return {
     solar: Number(solar.toFixed(2)),

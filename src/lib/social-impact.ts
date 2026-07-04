@@ -31,6 +31,12 @@ import { KENYA_COUNTY_IRRADIANCE } from './kenya-irradiance-data';
  * Source: KPLC Annual Report 2023/24, EPRA Electricity Report 2023.
  * Kenya's grid is predominantly hydro + geothermal (~90% clean),
  * giving one of Africa's lowest emission factors.
+ *
+ * Deliberately kept distinct from config.ts's GRID_EMISSION_FACTOR_KG_CO2_PER_KWH
+ * (0.47) - that figure isn't independently sourced here, while this one carries
+ * an explicit citation to the latest published Kenya grid mix. Reconcile the two
+ * once a single authoritative source is picked; until then this file keeps its
+ * own cited value rather than silently overriding it with the less-sourced one.
  */
 export const KENYA_GRID_EMISSION_FACTOR_KG_CO2_PER_KWH = 0.395;
 

@@ -1,3 +1,6 @@
+import { selectCable } from '@/lib/sizing/cableSizing';
+import type { CatalogCableSpec } from '@/lib/sizing/catalogTypes';
+
 export interface GridNode {
   id: string;
   loadKw: number;
@@ -5,6 +8,42 @@ export interface GridNode {
   voltageKv: number;
   cableLengthM: number;
   cableMm2: number;
+}
+
+// IEC 60364-5-52 Method C reference table (PVC-insulated copper, 30degC ambient).
+// Static copy of the same physics constants the /sizing engine reads from
+// Supabase (sizing_cable_reference) - kept inline here so the real-time tick
+// loop has no network dependency, since this is physics data, not pricing.
+const AC_CABLE_REFERENCE: CatalogCableSpec[] = [
+  { sizeMm2: 1.5, ampacityA: 19.5, mvPerAm: 29.0, dcPricePerM: 58, acPricePerM: 99 },
+  { sizeMm2: 2.5, ampacityA: 27.0, mvPerAm: 18.0, dcPricePerM: 88, acPricePerM: 150 },
+  { sizeMm2: 4.0, ampacityA: 36.0, mvPerAm: 11.0, dcPricePerM: 95, acPricePerM: 162 },
+  { sizeMm2: 6.0, ampacityA: 46.0, mvPerAm: 7.3, dcPricePerM: 140, acPricePerM: 238 },
+  { sizeMm2: 10.0, ampacityA: 63.0, mvPerAm: 4.4, dcPricePerM: 268, acPricePerM: 456 },
+  { sizeMm2: 16.0, ampacityA: 85.0, mvPerAm: 2.8, dcPricePerM: 391, acPricePerM: 665 },
+  { sizeMm2: 25.0, ampacityA: 112.0, mvPerAm: 1.75, dcPricePerM: 754, acPricePerM: 1282 },
+  { sizeMm2: 35.0, ampacityA: 138.0, mvPerAm: 1.25, dcPricePerM: 1508, acPricePerM: 2564 },
+  { sizeMm2: 50.0, ampacityA: 168.0, mvPerAm: 0.93, dcPricePerM: 977, acPricePerM: 1661 },
+  { sizeMm2: 70.0, ampacityA: 213.0, mvPerAm: 0.63, dcPricePerM: 1281, acPricePerM: 2178 },
+  { sizeMm2: 95.0, ampacityA: 258.0, mvPerAm: 0.46, dcPricePerM: 1637, acPricePerM: 2783 },
+  { sizeMm2: 120.0, ampacityA: 299.0, mvPerAm: 0.37, dcPricePerM: 1975, acPricePerM: 3358 },
+  { sizeMm2: 150.0, ampacityA: 344.0, mvPerAm: 0.30, dcPricePerM: 2363, acPricePerM: 4017 },
+  { sizeMm2: 185.0, ampacityA: 392.0, mvPerAm: 0.24, dcPricePerM: 2797, acPricePerM: 4755 },
+  { sizeMm2: 240.0, ampacityA: 461.0, mvPerAm: 0.18, dcPricePerM: 3448, acPricePerM: 5862 },
+  { sizeMm2: 300.0, ampacityA: 530.0, mvPerAm: 0.15, dcPricePerM: 4125, acPricePerM: 7013 },
+];
+
+/**
+ * Sizes the AC output cable (inverter to distribution board) to the actual
+ * inverter capacity, the same IEC 60364-5-52 ampacity/voltage-drop method the
+ * /sizing engine uses - so a 5kW and a 100kW system show genuinely different
+ * line losses instead of both running through a fixed 10m/16mm2 circuit.
+ */
+export function selectAcOutputCable(inverterCapacityKw: number, runLengthM = 20): { cableLengthM: number; cableMm2: number } {
+  const voltageV = 230;
+  const designCurrentA = Math.max(1, (inverterCapacityKw * 1000) / (voltageV * 0.95));
+  const { sizeMM2 } = selectCable(AC_CABLE_REFERENCE, designCurrentA, voltageV, runLengthM, 2.5, true);
+  return { cableLengthM: runLengthM, cableMm2: sizeMM2 };
 }
 
 export interface GridConfig {

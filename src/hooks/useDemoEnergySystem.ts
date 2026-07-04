@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { buildDemoEnergyState } from '@/lib/demoEnergyState';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
 import { usePhysicsSimulation } from '@/hooks/usePhysicsSimulation';
 import type { SolarData } from '@/lib/physics-engine';
+import { suggestTariffCategory, computeTOUTariff } from '@/lib/sizing/financialEngine';
 
 // ---------------------------------------------------------------------------
 // Module-level constants -  stable references, no re-render churn
@@ -49,6 +50,25 @@ export function useDemoEnergySystem(enabled = true) {
   const gridEnabled =
     systemMode === 'off-grid' ? false : systemMode === 'on-grid' ? !gridOutageEnabled : true;
 
+  // Real KPLC Time-of-Use tariff (same tariff engine the /sizing page uses)
+  // instead of a flat hardcoded peak/off-peak pair. 'Commercial & Industrial'
+  // is the closest-matching segment to the rate magnitude this demo has always
+  // shown; a rough monthly-consumption proxy from inverter capacity is enough
+  // to pick the right CI tier (CI1 vs CI2). peakHoursFraction here is separate
+  // from DEMO_PEAK_WINDOW - that window drives which hours the tick loop
+  // treats as "peak"; peakHoursFraction only affects the resulting blended
+  // rate the sizing engine would use for a single-number model, not applicable
+  // to this hour-by-hour demo, so it doesn't need to match.
+  const inverterCapacityKw = fullSystemConfig.inverter.capacityKw;
+  const touTariff = useMemo(() => {
+    const monthlyConsumptionKWh = Math.max(500, inverterCapacityKw * 4 * 30);
+    const category = suggestTariffCategory('Commercial & Industrial', monthlyConsumptionKWh);
+    return computeTOUTariff({
+      category, tariffStructure: 'Time-of-Use',
+      variableSurchargeAdderKSh: 4.41, ercLevyKSh: 0.08, repLevyPercent: 5, vatPercent: 16, peakHoursFraction: 0.8,
+    });
+  }, [inverterCapacityKw]);
+
   const { tick } = usePhysicsSimulation({
     systemConfig: fullSystemConfig,
     solarData,
@@ -56,8 +76,8 @@ export function useDemoEnergySystem(enabled = true) {
     systemMode,
     generatorThresholdPct,
     gridEnabled,
-    peakRate: 24.31,
-    offPeakRate: 14.93,
+    peakRate: touTariff.effectivePeakTariffKShPerKWh,
+    offPeakRate: touTariff.effectiveOffPeakTariffKShPerKWh ?? touTariff.effectivePeakTariffKShPerKWh,
     peakWindow: DEMO_PEAK_WINDOW,
   });
 

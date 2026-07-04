@@ -35,6 +35,7 @@ import {
   SIM_STEP_DURATION_HOURS,
   PANEL_ANNUAL_DEGRADATION_RATE,
   PANEL_FIRST_YEAR_DEGRADATION,
+  DC_CABLE_LOSS_FRACTION,
 } from '@/lib/config';
 import type { CatalogPhysicsParams } from '@/lib/catalog-physics-bridge';
 import {
@@ -47,7 +48,7 @@ import { simulateSolar } from '@/simulation/solarEngine';
 import { stepBattery } from '@/simulation/batteryEngine';
 import type { BatteryState, BatteryStrategy } from '@/simulation/batteryEngine';
 import { simulateEVFleet } from '@/simulation/evMobilityEngine';
-import { simulatePowerFlow } from '@/simulation/gridEngine';
+import { simulatePowerFlow, selectAcOutputCable } from '@/simulation/gridEngine';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -560,13 +561,18 @@ export function calculateInstantPhysics(
   // ------------------------------------------------------------------
   // 5. Grid Power Flow & Frequency Simulation
   // ------------------------------------------------------------------
+  // DC-side losses (panel-to-inverter string wiring) are a flat fraction per
+  // the sizing engine's assumption; the AC output cable (inverter-to-DB) is
+  // separately sized below and its resistive loss is computed in gridEngine.
+  const dcSideDeratedGenerationKw = (solarPowerKw + totalV2gExportKw) * (1 - DC_CABLE_LOSS_FRACTION);
+  const { cableLengthM, cableMm2 } = selectAcOutputCable(config.inverter.capacityKw);
   const gridNode = {
     id: 'house_microgrid',
     loadKw: totalLoadKw,
-    generationKw: solarPowerKw + totalV2gExportKw,
+    generationKw: dcSideDeratedGenerationKw,
     voltageKv: 0.4,
-    cableLengthM: 10,
-    cableMm2: 16,
+    cableLengthM,
+    cableMm2,
   };
 
   const gridConfig = {

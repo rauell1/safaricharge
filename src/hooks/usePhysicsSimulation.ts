@@ -36,7 +36,7 @@ import {
   type PriorityMode,
 } from '@/lib/physics-engine';
 import type { SystemConfiguration } from '@/lib/system-config';
-import { SOILING_LOSS_PER_DAY, SOILING_MIN_FACTOR } from '@/lib/config';
+import { SOILING_LOSS_PER_DAY, SOILING_MIN_FACTOR, GRID_EMISSION_FACTOR_KG_CO2_PER_KWH, FEED_IN_TARIFF_RATE_KES } from '@/lib/config';
 import {
   resolveCatalogPhysicsParams,
   DEFAULT_CATALOG_PHYSICS_PARAMS,
@@ -434,9 +434,9 @@ export function usePhysicsSimulation(options: PhysicsSimulationOptions) {
           solar: solarKwh,
           savings: result.savingsKES,
           gridImport: gridImportKwh,
-          carbonOffset: solarKwh * 0.233, // kg CO₂ per kWh (Kenya grid factor)
+          carbonOffset: solarKwh * GRID_EMISSION_FACTOR_KG_CO2_PER_KWH,
           batDischargeKwh: adjustedBatteryPowerKw < 0 ? Math.abs(adjustedBatteryPowerKw) * timeStep : 0,
-          feedInEarnings: gridExportKwh * 5.0, // KES feed-in tariff
+          feedInEarnings: gridExportKwh * FEED_IN_TARIFF_RATE_KES,
         },
       });
     },
