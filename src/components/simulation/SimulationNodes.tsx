@@ -263,7 +263,7 @@ SolarPanelProduct.displayName = 'SolarPanelProduct';
 // InverterProduct
 // ---------------------------------------------------------------------------
 export const InverterProduct = React.memo(
-  ({ id, power, ratedCapacityKw }: { id?: number | string; power: number; ratedCapacityKw: number }) => {
+  ({ id, power, ratedCapacityKw, label }: { id?: number | string; power: number; ratedCapacityKw: number; label?: string }) => {
     const loadPct = ratedCapacityKw > 0 ? Math.min(100, (Math.abs(power) / ratedCapacityKw) * 100) : 0;
     const isActive = Math.abs(power) > 0.1;
     return (
@@ -272,7 +272,7 @@ export const InverterProduct = React.memo(
       } w-36 p-3 gap-1.5 transition-all duration-500`}>
         <div className="w-full flex justify-between items-center">
           <span className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-wide">
-            {id != null ? `INV ${id}` : 'Inverter'} · {ratedCapacityKw.toFixed(0)} kW
+            {label ?? `${id != null ? `INV ${id}` : 'Inverter'} · ${ratedCapacityKw.toFixed(0)} kW`}
           </span>
           <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-orange-400 animate-pulse' : 'bg-[var(--border)]'}`} />
         </div>
@@ -695,12 +695,13 @@ export function SimulationNodes() {
   const weather = isNight ? 'Night' : solarPower > (systemConfig.solarCapacityKW ?? 10) * 0.7 ? 'Sunny' : 'Cloudy';
 
   // Read shared config (synced via Supabase user preferences + localStorage)
-  const [invConfig]  = useUserPreference<{ presetId: string; kwPerUnit: number; units: number } | null>('sc_inverter_config', null);
   const [evConfig]   = useUserPreference<{ presetId: string; count: number } | null>('sc_ev_charger_config', null);
 
-  const invPresetId    = invConfig?.presetId    ?? 'deye-12';
-  const invKwPerUnit   = invConfig?.kwPerUnit   ?? 12;
-  const invUnits       = invConfig?.units       ?? 1;
+  // Inverter bank config now lives directly on the Zustand store's systemConfig
+  // (same field SimpleDashboard writes), so it updates live instead of via a
+  // separate user-preference key that doesn't re-sync across component instances.
+  const invUnits       = Math.max(1, systemConfig.inverterUnits ?? 1);
+  const invKwPerUnit   = (systemConfig.inverterKW ?? 12) / invUnits;
   const evPresetId     = evConfig?.presetId     ?? 'ac22';
   const evChargerCount = evConfig?.count        ?? 2;
   const selectedEvPreset = EV_CHARGER_PRESETS.find(p => p.id === evPresetId) ?? EV_CHARGER_PRESETS[1];
@@ -930,15 +931,18 @@ export function SimulationNodes() {
 
           {/* ── Row 3: Inverter bank (1-5 units based on capacity ÷ 10 kW) ── */}
           <div className="flex justify-center gap-3 py-2 flex-wrap">
-            {Array.from({ length: inverterCount }, (_, i) => (
-              <div key={i} className="flex flex-col items-center gap-0">
-                <InverterProduct
-                  id={inverterCount > 1 ? i + 1 : undefined}
-                  power={perInverterPowerKw}
-                  ratedCapacityKw={perInverterCapKw}
-                />
-              </div>
-            ))}
+            {inverterCount > 1 ? (
+              <InverterProduct
+                label={`${inverterCount}x ${perInverterCapKw.toFixed(0)}kW Inverters`}
+                power={inverterPower}
+                ratedCapacityKw={inverterCapKw}
+              />
+            ) : (
+              <InverterProduct
+                power={perInverterPowerKw}
+                ratedCapacityKw={perInverterCapKw}
+              />
+            )}
           </div>
 
           {/* ── AC Bus bar ── */}

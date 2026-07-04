@@ -28,16 +28,16 @@ type VoltageClass = typeof VOLTAGE_CLASSES[number];
 
 interface SimPreset {
   label: string; icon: string; kwLabel: string;
-  inverterId: string; batteryId: string; batteryModules: number;
+  inverterId: string; inverterUnits: number; batteryId: string; batteryModules: number;
   panelWatts: number; dcAcRatio: number; voltageClass: VoltageClass;
 }
 
 const PRESETS: SimPreset[] = [
-  { label: 'Home', icon: '🏠', kwLabel: '6 kW', inverterId: 'inv-solis-6k-lv', batteryId: 'bat-dyness-dl2.5', batteryModules: 2, panelWatts: 580, dcAcRatio: 1.3, voltageClass: 'LV (48V)' },
-  { label: 'Home+', icon: '🏘️', kwLabel: '12 kW', inverterId: 'inv-deye-12k-lv-1p', batteryId: 'bat-dyness-dl5.0', batteryModules: 5, panelWatts: 620, dcAcRatio: 1.3, voltageClass: 'LV (48V)' },
-  { label: 'Office', icon: '🏢', kwLabel: '30 kW', inverterId: 'inv-deye-30k-hv', batteryId: 'bat-dyness-stack100-mod', batteryModules: 6, panelWatts: 620, dcAcRatio: 1.3, voltageClass: 'HV (160-800V)' },
-  { label: 'Factory', icon: '🏭', kwLabel: '50 kW', inverterId: 'inv-deye-50k-hv', batteryId: 'bat-dyness-stack100-mod', batteryModules: 10, panelWatts: 620, dcAcRatio: 1.3, voltageClass: 'HV (160-800V)' },
-  { label: 'Campus', icon: '⚡', kwLabel: '100 kW', inverterId: 'inv-solis-50k-hv-3p', batteryId: 'bat-dyness-stack100-mod', batteryModules: 20, panelWatts: 625, dcAcRatio: 1.35, voltageClass: 'HV (150-850V)' },
+  { label: 'Home', icon: '🏠', kwLabel: '6 kW', inverterId: 'inv-solis-6k-lv', inverterUnits: 1, batteryId: 'bat-dyness-dl2.5', batteryModules: 2, panelWatts: 580, dcAcRatio: 1.3, voltageClass: 'LV (48V)' },
+  { label: 'Home+', icon: '🏘️', kwLabel: '12 kW', inverterId: 'inv-deye-12k-lv-1p', inverterUnits: 1, batteryId: 'bat-dyness-dl5.0', batteryModules: 5, panelWatts: 620, dcAcRatio: 1.3, voltageClass: 'LV (48V)' },
+  { label: 'Office', icon: '🏢', kwLabel: '30 kW', inverterId: 'inv-deye-30k-hv', inverterUnits: 1, batteryId: 'bat-dyness-stack100-mod', batteryModules: 6, panelWatts: 620, dcAcRatio: 1.3, voltageClass: 'HV (160-800V)' },
+  { label: 'Factory', icon: '🏭', kwLabel: '50 kW', inverterId: 'inv-deye-50k-hv', inverterUnits: 1, batteryId: 'bat-dyness-stack100-mod', batteryModules: 10, panelWatts: 620, dcAcRatio: 1.3, voltageClass: 'HV (160-800V)' },
+  { label: 'Campus', icon: '⚡', kwLabel: '2x 50 kW', inverterId: 'inv-deye-50k-hv', inverterUnits: 2, batteryId: 'bat-dyness-stack100-mod', batteryModules: 20, panelWatts: 625, dcAcRatio: 1.35, voltageClass: 'HV (160-800V)' },
 ];
 
 // ─── Rolling chart ────────────────────────────────────────────────────────────
@@ -131,6 +131,7 @@ export function SimpleDashboard({ onSaveRun, isSaving }: SimpleDashboardProps) {
 
   const [voltageClass, setVoltageClass] = useState<VoltageClass>('LV (48V)');
   const [inverterId, setInverterId] = useState('inv-deye-12k-lv-1p');
+  const [inverterUnits, setInverterUnits] = useState(1);
   const [batteryId, setBatteryId] = useState('bat-dyness-dl5.0');
   const [batteryModules, setBatteryModules] = useState(5);
   const [panelWatts, setPanelWatts] = useState(620);
@@ -157,7 +158,8 @@ export function SimpleDashboard({ onSaveRun, isSaving }: SimpleDashboardProps) {
     [panelWatts]
   );
 
-  const inverterKW = (selectedInverter?.ratingWatts ?? 12000) / 1000;
+  const inverterUnitKW = (selectedInverter?.ratingWatts ?? 12000) / 1000;
+  const inverterKW = inverterUnitKW * inverterUnits;
   const batteryKWh = batteryModules * (selectedBattery?.capacityKWh ?? 5.12);
   const solarKWp = +(inverterKW * dcAcRatio).toFixed(1);
   const panelCount = Math.ceil((solarKWp * 1000) / (selectedPanel?.ratingWatts ?? 620));
@@ -166,8 +168,8 @@ export function SimpleDashboard({ onSaveRun, isSaving }: SimpleDashboardProps) {
 
   const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const syncToStore = useCallback(() => {
-    updateSystemConfig({ inverterKW, batteryCapacityKWh: batteryKWh, solarCapacityKW: solarKWp });
-  }, [inverterKW, batteryKWh, solarKWp, updateSystemConfig]);
+    updateSystemConfig({ inverterKW, inverterUnits, batteryCapacityKWh: batteryKWh, solarCapacityKW: solarKWp });
+  }, [inverterKW, inverterUnits, batteryKWh, solarKWp, updateSystemConfig]);
 
   useEffect(() => {
     if (syncTimer.current) clearTimeout(syncTimer.current);
@@ -175,12 +177,13 @@ export function SimpleDashboard({ onSaveRun, isSaving }: SimpleDashboardProps) {
     return () => { if (syncTimer.current) clearTimeout(syncTimer.current); };
   }, [syncToStore]);
 
-  // Sync voltage class -> reset inverter to first match
+  // Sync voltage class -> only reset inverter if the current selection no longer belongs to this class
   useEffect(() => {
+    const stillValid = INVERTER_CATALOG.some(i => i.id === inverterId && i.voltageClass === voltageClass && i.category === 'inverter');
+    if (stillValid) return;
     const match = INVERTER_CATALOG.find(i => i.voltageClass === voltageClass && i.category === 'inverter');
-    if (match && match.id !== inverterId) setInverterId(match.id);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [voltageClass]);
+    if (match) setInverterId(match.id);
+  }, [voltageClass, inverterId]);
 
   // Sync location name to store
   useEffect(() => {
@@ -205,6 +208,7 @@ export function SimpleDashboard({ onSaveRun, isSaving }: SimpleDashboardProps) {
   const applyPreset = useCallback((p: SimPreset) => {
     setVoltageClass(p.voltageClass);
     setInverterId(p.inverterId);
+    setInverterUnits(p.inverterUnits);
     setBatteryId(p.batteryId);
     setBatteryModules(p.batteryModules);
     setPanelWatts(p.panelWatts);
@@ -269,7 +273,7 @@ export function SimpleDashboard({ onSaveRun, isSaving }: SimpleDashboardProps) {
                 onClick={() => applyPreset(p)}
                 className={cn(
                   'flex flex-col items-center rounded-xl border px-1 py-2 text-center transition-all',
-                  inverterId === p.inverterId
+                  inverterId === p.inverterId && inverterUnits === p.inverterUnits
                     ? 'border-[var(--battery)] bg-[var(--battery-soft)]'
                     : 'border-[var(--border)] bg-[var(--bg-card)] hover:border-[var(--battery)] hover:bg-[var(--battery-soft)]'
                 )}
@@ -298,11 +302,22 @@ export function SimpleDashboard({ onSaveRun, isSaving }: SimpleDashboardProps) {
           <div>
             <label className={labelCls}>
               Inverter
-              {selectedInverter && <span className="ml-1 font-normal normal-case text-[var(--text-muted)]">- {(selectedInverter.ratingWatts! / 1000).toFixed(1)} kW</span>}
+              <span className="ml-1 font-normal normal-case text-[var(--text-muted)]">
+                - {inverterUnits > 1 ? `${inverterUnits}x ${inverterUnitKW.toFixed(1)} kW = ${inverterKW.toFixed(1)} kW` : `${inverterUnitKW.toFixed(1)} kW`}
+              </span>
             </label>
-            <select value={inverterId} onChange={(e: ChangeEvent<HTMLSelectElement>) => setInverterId(e.target.value)} className={inputCls}>
+            <select value={inverterId} onChange={(e: ChangeEvent<HTMLSelectElement>) => setInverterId(e.target.value)} className={cn(inputCls, 'mb-2')}>
               {filteredInverters.map(i => <option key={i.id} value={i.id}>{i.brand} {i.model}</option>)}
             </select>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-[var(--text-muted)]">Units</span>
+              <input
+                type="number" min={1} max={5} value={inverterUnits}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setInverterUnits(Math.max(1, Math.min(5, +e.target.value)))}
+                className="w-16 rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-2 py-1.5 text-sm text-[var(--text-primary)] focus:border-[var(--battery)] focus:outline-none"
+              />
+              <span className="text-sm font-bold text-[var(--text-primary)]">= {inverterKW.toFixed(1)} kW total</span>
+            </div>
           </div>
 
           {/* Battery */}

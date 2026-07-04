@@ -247,6 +247,8 @@ interface EnergySystemState {
     solarCapacityKW: number;
     batteryCapacityKWh: number;
     inverterKW: number;
+    /** Number of parallel inverter units the total inverterKW is split across (default 1). */
+    inverterUnits?: number;
     ev1CapacityKWh: number;
     ev2CapacityKWh: number;
     systemMode: SystemMode;
