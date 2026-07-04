@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 332 | `rollback/fix-seo-allow-public-crawler-unauthent-2026-07-04-a41ae5e` | `a41ae5e` | fix(seo): allow public crawler/unauthenticated access to /demo and /demo/* to resolve sitemap noindex leaks (1f +2/-1) | 2026-07-04 |
 | 331 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-04-c35f380` | `c35f380` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-07-04 |
 | 330 | `rollback/feat-physics-wire-real-world-sizing-en-2026-07-04-3f737d7` | `3f737d7` | feat(physics): wire real-world sizing-engine data into the live simulation (7f +146/-11) | 2026-07-04 |
 | 329 | `rollback/chore-scope-dev-auth-bypass-to-localho-2026-07-04-84d7b40` | `84d7b40` | chore: scope dev auth bypass to localhost, lint script fixes (3f +8/-8) | 2026-07-04 |
@@ -3498,6 +3499,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-07-04
 - **Changed**: 1 file(s), +1/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #332 — `rollback/fix-seo-allow-public-crawler-unauthent-2026-07-04-a41ae5e`
+
+- **Branch**: `rollback/fix-seo-allow-public-crawler-unauthent-2026-07-04-a41ae5e`
+- **Commit**: `a41ae5e2a889eab8deea8b2807b7b7a305c3d8c2`
+- **Subject**: fix(seo): allow public crawler/unauthenticated access to /demo and /demo/* to resolve sitemap noindex leaks
+- **Date**: 2026-07-04
+- **Changed**: 1 file(s), +2/-1 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
