@@ -6,6 +6,7 @@ import type { NextRequest } from 'next/server'
 const PUBLIC_EXACT: Set<string> = new Set([
   '/',
   '/landing',
+  '/demo',
   '/pricing',
   '/sitemap.xml',
   '/robots.txt',
@@ -13,7 +14,7 @@ const PUBLIC_EXACT: Set<string> = new Set([
   '/BingSiteAuth.xml',
   '/googlee69e3a7319b06c7f.html',
 ])
-const PUBLIC_PREFIXES: string[] = ['/auth/']
+const PUBLIC_PREFIXES: string[] = ['/auth/', '/demo/']
 const API_PUBLIC_PREFIXES: string[] = [
   '/api/health',
 ]
