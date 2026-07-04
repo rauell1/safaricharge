@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 336 | `rollback/fix-seo-dedupe-titles-fix-demo-sub-pag-2026-07-04-c843f7f` | `c843f7f` | fix(seo): dedupe titles, fix demo sub-page canonicals, add llms.txt (8f +222/-4) | 2026-07-04 |
 | 335 | `rollback/refactor-routes-remove-orphaned-energy-2026-07-04-8618f8b` | `8618f8b` | refactor(routes): remove orphaned /energy-intelligence standalone route (4f +2/-22) | 2026-07-04 |
 | 334 | `rollback/feat-seo-implement-and-update-json-ld-2026-07-04-c424713` | `c424713` | feat(seo): implement and update JSON-LD structured data (7f +349/-112) | 2026-07-04 |
 | 333 | `rollback/fix-demo-sync-inverter-hardware-select-2026-07-04-bd8c64e` | `bd8c64e` | fix(demo): sync inverter hardware selection live to the system diagram (3f +52/-31) | 2026-07-04 |
@@ -3542,6 +3543,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: refactor(routes): remove orphaned /energy-intelligence standalone route
 - **Date**: 2026-07-04
 - **Changed**: 4 file(s), +2/-22 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #336 — `rollback/fix-seo-dedupe-titles-fix-demo-sub-pag-2026-07-04-c843f7f`
+
+- **Branch**: `rollback/fix-seo-dedupe-titles-fix-demo-sub-pag-2026-07-04-c843f7f`
+- **Commit**: `c843f7f7065c70bcade2b47d50d142a608cd5423`
+- **Subject**: fix(seo): dedupe titles, fix demo sub-page canonicals, add llms.txt
+- **Date**: 2026-07-04
+- **Changed**: 8 file(s), +222/-4 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
