@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 328 | `rollback/feat-sizing-replace-direct-kw-entry-sl-2026-07-04-30d08ab` | `30d08ab` | feat(sizing): replace Direct kW Entry slider with a number input (1f +8/-8) | 2026-07-04 |
 | 327 | `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-07-03-969e30c` | `969e30c` | docs(auto): regenerate README.md [skip ci] (1f +2/-0) | 2026-07-03 |
 | 326 | `rollback/fix-sizing-fix-real-grid-overlap-bug-i-2026-07-03-532bd66` | `532bd66` | fix(sizing): fix real grid overlap bug in Load-Based Sizing fields (1f +1/-1) | 2026-07-03 |
 | 325 | `rollback/fix-mobile-prevent-ios-auto-zoom-on-fo-2026-07-03-c1a3b71` | `c1a3b71` | fix(mobile): prevent iOS auto-zoom-on-focus from scrambling layout (1f +17/-0) | 2026-07-03 |
@@ -3454,6 +3455,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: docs(auto): regenerate README.md [skip ci]
 - **Date**: 2026-07-03
 - **Changed**: 1 file(s), +2/-0 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #328 — `rollback/feat-sizing-replace-direct-kw-entry-sl-2026-07-04-30d08ab`
+
+- **Branch**: `rollback/feat-sizing-replace-direct-kw-entry-sl-2026-07-04-30d08ab`
+- **Commit**: `30d08ab1ce69f06c6cad6bbc89e85d5e83e865a5`
+- **Subject**: feat(sizing): replace Direct kW Entry slider with a number input
+- **Date**: 2026-07-04
+- **Changed**: 1 file(s), +8/-8 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
