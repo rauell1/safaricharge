@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 335 | `rollback/refactor-routes-remove-orphaned-energy-2026-07-04-8618f8b` | `8618f8b` | refactor(routes): remove orphaned /energy-intelligence standalone route (4f +2/-22) | 2026-07-04 |
 | 334 | `rollback/feat-seo-implement-and-update-json-ld-2026-07-04-c424713` | `c424713` | feat(seo): implement and update JSON-LD structured data (7f +349/-112) | 2026-07-04 |
 | 333 | `rollback/fix-demo-sync-inverter-hardware-select-2026-07-04-bd8c64e` | `bd8c64e` | fix(demo): sync inverter hardware selection live to the system diagram (3f +52/-31) | 2026-07-04 |
 | 332 | `rollback/fix-seo-allow-public-crawler-unauthent-2026-07-04-a41ae5e` | `a41ae5e` | fix(seo): allow public crawler/unauthenticated access to /demo and /demo/* to resolve sitemap noindex leaks (1f +2/-1) | 2026-07-04 |
@@ -3531,6 +3532,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat(seo): implement and update JSON-LD structured data
 - **Date**: 2026-07-04
 - **Changed**: 7 file(s), +349/-112 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #335 — `rollback/refactor-routes-remove-orphaned-energy-2026-07-04-8618f8b`
+
+- **Branch**: `rollback/refactor-routes-remove-orphaned-energy-2026-07-04-8618f8b`
+- **Commit**: `8618f8b88e7c7650e90cee784cef649fcd84f818`
+- **Subject**: refactor(routes): remove orphaned /energy-intelligence standalone route
+- **Date**: 2026-07-04
+- **Changed**: 4 file(s), +2/-22 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
