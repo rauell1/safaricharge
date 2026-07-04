@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Live Solar Energy Demo -  Try the Simulator Free | SafariCharge',
+  title: 'Live Solar Energy Demo -  Try the Simulator Free',
   description:
     'Try SafariCharge free. Simulate a solar + BESS microgrid, run MILP dispatch optimization, and see real KPLC cost savings -  no sign-up required.',
   keywords: [

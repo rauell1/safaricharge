@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Pricing -  Free Solar Simulation Platform | SafariCharge',
+  title: 'Pricing -  Free Solar Simulation Platform',
   description:
     'SafariCharge is free to use. Simulate solar PV + BESS systems, run MILP dispatch optimization, and analyze KPLC tariff savings at no cost.',
   robots: {
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     siteName: 'SafariCharge',
     title: 'Pricing -  Free Solar Simulation Platform | SafariCharge',
     description: 'SafariCharge is free to use for solar + BESS simulation and KPLC tariff analysis.',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'SafariCharge Pricing' }],
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'SafariCharge Pricing' }],
   },
 }
 

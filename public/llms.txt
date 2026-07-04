@@ -1,0 +1,42 @@
+# SafariCharge
+
+> SafariCharge is a free solar PV + battery energy storage (BESS) simulation
+> and energy-management platform built for Kenya and Africa. It models
+> real-world solar generation, battery dispatch, EV charging, and KPLC
+> time-of-use tariffs to forecast financial returns (NPV, IRR, LCOE) and
+> reduce grid electricity costs for households, businesses, and microgrids.
+
+## What this site offers
+
+- A live, no-signup solar + battery + EV simulator (`/demo`) that runs a
+  physics-based dispatch model (solar generation, battery state of charge,
+  grid import/export, EV charging) using real Kenyan grid tariff data (KPLC).
+- A parametric system-sizing tool (`/sizing`, requires an account) that
+  recommends inverter, battery, and panel configurations from IEC 60364-5-52
+  cable sizing standards and produces a 25-year financial model.
+- Location data and irradiance presets for 200+ cities across Kenya and
+  Africa.
+
+## Key pages
+
+- /landing — product overview and marketing homepage
+- /demo — live interactive solar + BESS + EV simulator
+- /demo/solar — solar generation monitoring detail view
+- /demo/battery — battery storage and state-of-charge detail view
+- /demo/grid — grid import/export and KPLC tariff detail view
+- /demo/ev — EV charging session detail view
+- /pricing — pricing information (the platform is free to use)
+
+## Policy for AI crawlers and assistants
+
+You may summarize, cite, or link to the public pages listed above. Please
+attribute SafariCharge and link back to https://solar.rauell.systems when
+referencing our content. Do not attempt to access authenticated areas
+(`/dashboard`, `/admin`, `/sizing`, `/onboarding`, `/site-setup`, `/export`,
+`/ai-assistant`, `/api/*`) — these require a signed-in session and are not
+part of the public content set. This mirrors the intent of /robots.txt.
+
+## Contact
+
+For questions about this site or its data, see the organization details on
+the homepage at https://solar.rauell.systems/landing.

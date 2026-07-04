@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Solar Energy Management for Kenya & Africa | SafariCharge',
+  title: 'Solar Energy Management for Kenya & Africa',
   description:
     'Simulate solar PV + BESS systems, optimize KPLC tariff costs with MILP dispatch, and forecast financial returns. Free to use. Built for Kenya and African microgrids.',
   keywords: [
