@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 330 | `rollback/feat-physics-wire-real-world-sizing-en-2026-07-04-3f737d7` | `3f737d7` | feat(physics): wire real-world sizing-engine data into the live simulation (7f +146/-11) | 2026-07-04 |
 | 329 | `rollback/chore-scope-dev-auth-bypass-to-localho-2026-07-04-84d7b40` | `84d7b40` | chore: scope dev auth bypass to localhost, lint script fixes (3f +8/-8) | 2026-07-04 |
 | 328 | `rollback/feat-sizing-replace-direct-kw-entry-sl-2026-07-04-30d08ab` | `30d08ab` | feat(sizing): replace Direct kW Entry slider with a number input (1f +8/-8) | 2026-07-04 |
 | 327 | `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-07-03-969e30c` | `969e30c` | docs(auto): regenerate README.md [skip ci] (1f +2/-0) | 2026-07-03 |
@@ -3476,6 +3477,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: chore: scope dev auth bypass to localhost, lint script fixes
 - **Date**: 2026-07-04
 - **Changed**: 3 file(s), +8/-8 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #330 — `rollback/feat-physics-wire-real-world-sizing-en-2026-07-04-3f737d7`
+
+- **Branch**: `rollback/feat-physics-wire-real-world-sizing-en-2026-07-04-3f737d7`
+- **Commit**: `3f737d76885fe972a764f4c6ecac9784868e4b73`
+- **Subject**: feat(physics): wire real-world sizing-engine data into the live simulation
+- **Date**: 2026-07-04
+- **Changed**: 7 file(s), +146/-11 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
