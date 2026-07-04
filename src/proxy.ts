@@ -16,11 +16,6 @@ const PUBLIC_EXACT: Set<string> = new Set([
 const PUBLIC_PREFIXES: string[] = ['/auth/']
 const API_PUBLIC_PREFIXES: string[] = [
   '/api/health',
-  '/api/admin/',
-  '/api/component-library',
-  '/api/battery-modules',
-  '/api/irradiance-presets',
-  '/api/locations',
 ]
 
 const SESSION_TTL_MS = 60 * 60 * 1000       // 1 hour inactivity → force re-login
@@ -79,9 +74,12 @@ export async function proxy(request: NextRequest) {
   // Dev-only bypass: `next dev` sets NODE_ENV to 'development'; production
   // builds (Vercel) always run with NODE_ENV 'production', so this branch is
   // unreachable in prod. Lets local development test authed pages without a
-  // live session.
+  // live session when accessing via localhost / 127.0.0.1.
   if (process.env.NODE_ENV === 'development') {
-    return NextResponse.next()
+    const host = request.headers.get('host') || '';
+    if (host.includes('localhost') || host.includes('127.0.0.1')) {
+      return NextResponse.next()
+    }
   }
 
   const middlewareStart = Date.now()
@@ -250,7 +248,7 @@ export async function proxy(request: NextRequest) {
     const { data: { user }, error } = await supabase.auth.getUser()
     getUserMs = Date.now() - getUserStart
 
-    if (error || !user || !user.email_confirmed_at) {
+    if (error || !user || !user.email_confirmed_at || user.email?.toLowerCase() !== 'royokola3@gmail.com') {
       if (pathname === '/login' || pathname === '/signup') {
         return supabaseResponse
       }
