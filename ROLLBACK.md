@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 334 | `rollback/feat-seo-implement-and-update-json-ld-2026-07-04-c424713` | `c424713` | feat(seo): implement and update JSON-LD structured data (7f +349/-112) | 2026-07-04 |
 | 333 | `rollback/fix-demo-sync-inverter-hardware-select-2026-07-04-bd8c64e` | `bd8c64e` | fix(demo): sync inverter hardware selection live to the system diagram (3f +52/-31) | 2026-07-04 |
 | 332 | `rollback/fix-seo-allow-public-crawler-unauthent-2026-07-04-a41ae5e` | `a41ae5e` | fix(seo): allow public crawler/unauthenticated access to /demo and /demo/* to resolve sitemap noindex leaks (1f +2/-1) | 2026-07-04 |
 | 331 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-04-c35f380` | `c35f380` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-07-04 |
@@ -3520,6 +3521,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: fix(demo): sync inverter hardware selection live to the system diagram
 - **Date**: 2026-07-04
 - **Changed**: 3 file(s), +52/-31 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #334 — `rollback/feat-seo-implement-and-update-json-ld-2026-07-04-c424713`
+
+- **Branch**: `rollback/feat-seo-implement-and-update-json-ld-2026-07-04-c424713`
+- **Commit**: `c424713dc65ef758bf8195e15296eb0801ac6884`
+- **Subject**: feat(seo): implement and update JSON-LD structured data
+- **Date**: 2026-07-04
+- **Changed**: 7 file(s), +349/-112 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
