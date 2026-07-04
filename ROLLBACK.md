@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 329 | `rollback/chore-scope-dev-auth-bypass-to-localho-2026-07-04-84d7b40` | `84d7b40` | chore: scope dev auth bypass to localhost, lint script fixes (3f +8/-8) | 2026-07-04 |
 | 328 | `rollback/feat-sizing-replace-direct-kw-entry-sl-2026-07-04-30d08ab` | `30d08ab` | feat(sizing): replace Direct kW Entry slider with a number input (1f +8/-8) | 2026-07-04 |
 | 327 | `rollback/docs-auto-regenerate-readme-md-skip-ci-2026-07-03-969e30c` | `969e30c` | docs(auto): regenerate README.md [skip ci] (1f +2/-0) | 2026-07-03 |
 | 326 | `rollback/fix-sizing-fix-real-grid-overlap-bug-i-2026-07-03-532bd66` | `532bd66` | fix(sizing): fix real grid overlap bug in Load-Based Sizing fields (1f +1/-1) | 2026-07-03 |
@@ -3465,6 +3466,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat(sizing): replace Direct kW Entry slider with a number input
 - **Date**: 2026-07-04
 - **Changed**: 1 file(s), +8/-8 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #329 — `rollback/chore-scope-dev-auth-bypass-to-localho-2026-07-04-84d7b40`
+
+- **Branch**: `rollback/chore-scope-dev-auth-bypass-to-localho-2026-07-04-84d7b40`
+- **Commit**: `84d7b405d8169a51481488f6bd8376e98be0cd52`
+- **Subject**: chore: scope dev auth bypass to localhost, lint script fixes
+- **Date**: 2026-07-04
+- **Changed**: 3 file(s), +8/-8 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
