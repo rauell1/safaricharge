@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 338 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-05-454731c` | `454731c` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-07-05 |
 | 337 | `rollback/feat-analytics-add-google-analytics-4-2026-07-04-3a86510` | `3a86510` | feat(analytics): add Google Analytics 4 (gtag.js) (3f +30/-3) | 2026-07-04 |
 | 336 | `rollback/fix-seo-dedupe-titles-fix-demo-sub-pag-2026-07-04-c843f7f` | `c843f7f` | fix(seo): dedupe titles, fix demo sub-page canonicals, add llms.txt (8f +222/-4) | 2026-07-04 |
 | 335 | `rollback/refactor-routes-remove-orphaned-energy-2026-07-04-8618f8b` | `8618f8b` | refactor(routes): remove orphaned /energy-intelligence standalone route (4f +2/-22) | 2026-07-04 |
@@ -3564,6 +3565,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat(analytics): add Google Analytics 4 (gtag.js)
 - **Date**: 2026-07-04
 - **Changed**: 3 file(s), +30/-3 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #338 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-05-454731c`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-05-454731c`
+- **Commit**: `454731cae8ad7d08c0d7c354cf9e063c09fa1825`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-07-05
+- **Changed**: 1 file(s), +1/-1 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
