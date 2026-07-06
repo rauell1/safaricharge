@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 339 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-06-0685d38` | `0685d38` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-07-06 |
 | 338 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-05-454731c` | `454731c` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-07-05 |
 | 337 | `rollback/feat-analytics-add-google-analytics-4-2026-07-04-3a86510` | `3a86510` | feat(analytics): add Google Analytics 4 (gtag.js) (3f +30/-3) | 2026-07-04 |
 | 336 | `rollback/fix-seo-dedupe-titles-fix-demo-sub-pag-2026-07-04-c843f7f` | `c843f7f` | fix(seo): dedupe titles, fix demo sub-page canonicals, add llms.txt (8f +222/-4) | 2026-07-04 |
@@ -3574,6 +3575,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Commit**: `454731cae8ad7d08c0d7c354cf9e063c09fa1825`
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-07-05
+- **Changed**: 1 file(s), +1/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #339 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-06-0685d38`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-06-0685d38`
+- **Commit**: `0685d3845c9a8a39e2c812d74aaf54be502740da`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-07-06
 - **Changed**: 1 file(s), +1/-1 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
