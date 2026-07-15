@@ -19,72 +19,72 @@
   color-scheme: light;
 
   /* Shadcn / Radix hsl tokens */
-  --background:             210 40% 98%;
-  --foreground:             222 47% 11%;
+  --background:             150 20% 99%;
+  --foreground:             150 15% 8%;
   --card:                   0 0% 100%;
-  --card-foreground:        222 47% 11%;
+  --card-foreground:        150 15% 8%;
   --popover:                0 0% 100%;
-  --popover-foreground:     222 47% 11%;
-  --primary:                152 66% 34%;
+  --popover-foreground:     150 15% 8%;
+  --primary:                160 94% 24%;
   --primary-foreground:     144 86% 96%;
-  --secondary:              210 40% 94%;
-  --secondary-foreground:   222 47% 11%;
-  --muted:                  210 40% 94%;
-  --muted-foreground:       215 16% 42%;
+  --secondary:              150 12% 95%;
+  --secondary-foreground:   150 15% 8%;
+  --muted:                  150 12% 95%;
+  --muted-foreground:       150 6% 40%;
   --accent:                 44 95% 48%;
   --accent-foreground:      219 33% 10%;
   --destructive:            0 72% 52%;
   --destructive-foreground: 0 0% 100%;
-  --border-color:           214 32% 86%;
-  --input:                  214 32% 90%;
-  --ring:                   152 66% 34%;
+  --border-color:           150 10% 88%;
+  --input:                  150 10% 91%;
+  --ring:                   160 94% 24%;
   --radius:                 0.875rem;
 
-  /* Surfaces */
-  --bg-primary:       #f5f7f4;
+  /* Surfaces -  bright SaaS: near-white page, pure white cards */
+  --bg-primary:       #fafbfa;
   --bg-secondary:     #ffffff;
   --bg-card:          #ffffff;
-  --bg-card-hover:    #f8faf8;
-  --bg-card-muted:    rgba(7,18,14,0.04);
+  --bg-card-hover:    #f6f8f7;
+  --bg-card-muted:    rgba(15,23,20,0.03);
 
   /* Borders */
-  --border:           rgba(7,18,14,0.10);
-  --border-strong:    rgba(7,18,14,0.22);
-  --border-hover:     rgba(7,18,14,0.28);
+  --border:           rgba(15,23,20,0.08);
+  --border-strong:    rgba(15,23,20,0.16);
+  --border-hover:     rgba(15,23,20,0.24);
 
-  /* Text */
-  --text-primary:     #0d1f17;
-  --text-secondary:   #2e4a3c;
-  --text-tertiary:    #4a6658;
-  --text-muted:       #688070;
+  /* Text -  neutral gray ramp; brand green lives in accents only */
+  --text-primary:     #0f1712;
+  --text-secondary:   #3f4b45;
+  --text-tertiary:    #5f6b64;
+  --text-muted:       #8a948d;
 
-  /* Brand accents -  dark enough for light backgrounds */
-  --solar:            #b45309;
-  --solar-bright:     #d97706;
-  --solar-soft:       rgba(180,83,9,0.10);
+  /* Brand accents -  brightened for the SaaS palette, semantics unchanged */
+  --solar:            #d97706;
+  --solar-bright:     #f59e0b;
+  --solar-soft:       rgba(217,119,6,0.10);
 
   --battery:          #047857;
   --battery-bright:   #059669;
-  --battery-soft:     rgba(4,120,87,0.10);
+  --battery-soft:     rgba(5,150,105,0.10);
 
-  --consumption:      #0e7490;
-  --consumption-soft: rgba(14,116,144,0.10);
+  --consumption:      #0891b2;
+  --consumption-soft: rgba(8,145,178,0.10);
 
-  --grid:             #1d4ed8;
-  --grid-bright:      #2563eb;
-  --grid-soft:        rgba(29,78,216,0.10);
+  --grid:             #2563eb;
+  --grid-bright:      #3b82f6;
+  --grid-soft:        rgba(37,99,235,0.10);
 
-  --ev:               #6d28d9;
-  --ev-bright:        #7c3aed;
-  --ev-soft:          rgba(109,40,217,0.10);
+  --ev:               #7c3aed;
+  --ev-bright:        #8b5cf6;
+  --ev-soft:          rgba(124,58,237,0.10);
 
-  --alert:            #b91c1c;
-  --alert-bright:     #dc2626;
-  --alert-soft:       rgba(185,28,28,0.10);
+  --alert:            #dc2626;
+  --alert-bright:     #ef4444;
+  --alert-soft:       rgba(220,38,38,0.10);
 
-  --success:          #15803d;
-  --warning:          #b45309;
-  --warning-soft:     rgba(180,83,9,0.10);
+  --success:          #16a34a;
+  --warning:          #d97706;
+  --warning-soft:     rgba(217,119,6,0.10);
 
   /* Sidebar tokens (hsl for shadcn Sidebar component) */
   --sidebar-background:           210 40% 97%;
@@ -104,7 +104,10 @@
   --space-xl:  2rem;
   --space-2xl: 3rem;
 
-  /* Radius */
+  /* Radius
+     Policy: cards/inputs = --radius-lg; large marketing cards = --radius-2xl;
+     buttons = --radius-md (app) / --radius-full (marketing CTAs);
+     nav items = --radius-md. */
   --radius-sm:  0.375rem;
   --radius-md:  0.5rem;
   --radius-lg:  0.75rem;
@@ -112,9 +115,9 @@
   --radius-2xl: 1.5rem;
   --radius-full: 9999px;
 
-  /* Type */
+  /* Type -  Inter body, Space Grotesk display (h1-h3, hero/stat numerals) */
   --font-sans:    var(--font-inter), system-ui, -apple-system, sans-serif;
-  --font-display: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), var(--font-inter), system-ui, sans-serif;
 
   /* Responsive icon sizes */
   --icon-xs: 0.875rem;
@@ -122,25 +125,30 @@
   --icon-md: 1.25rem;
   --icon-lg: 1.5rem;
 
-  /* ── Site-shell tokens (used by landing, auth, marketing pages) ── */
-  --site-page-bg:      #f5f7f4;
-  --site-page-fg:      #0d1f17;
-  --site-page-muted:   rgba(13,31,23,0.62);
-  --site-page-soft:    rgba(13,31,23,0.36);
-  --site-page-border:  rgba(13,31,23,0.10);
+  /* ── Decorative tokens (marketing shells, hero backdrops) ── */
+  --hero-glow:         rgba(5,150,105,0.08);
+  --grid-line:         rgba(5,150,105,0.045);
+  --nav-bg:            rgba(250,251,250,0.85);
+
+  /* ── Site-shell tokens: TRANSITIONAL aliases of core tokens.
+        Landing/auth pages still reference these; they are deleted at the
+        end of the marketing-page revamp (Phase 2). Do not add new usages. ── */
+  --site-page-bg:      var(--bg-primary);
+  --site-page-fg:      var(--text-primary);
+  --site-page-muted:   var(--text-tertiary);
+  --site-page-soft:    var(--text-muted);
+  --site-page-border:  var(--border);
   --site-page-surface: rgba(255,255,255,0.80);
+  --site-grid-line:    var(--grid-line);
+  --site-top-glow:     var(--hero-glow);
+  --site-nav-bg:       var(--nav-bg);
+  --site-nav-link:     var(--text-tertiary);
+  --site-nav-link-hover: var(--text-primary);
+  --site-nav-link-bg-hover: var(--bg-card-muted);
 
-  /* Landing decorative tokens */
-  --site-grid-line:    rgba(4,120,87,0.05);
-  --site-top-glow:     rgba(4,120,87,0.10);
-  --site-nav-bg:       rgba(245,247,244,0.88);
-  --site-nav-link:     rgba(13,31,23,0.52);
-  --site-nav-link-hover: rgba(13,31,23,0.90);
-  --site-nav-link-bg-hover: rgba(13,31,23,0.05);
-
-  /* Card shadow -  light */
-  --card-shadow:       0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
-  --card-shadow-hover: 0 4px 8px rgba(0,0,0,0.10), 0 12px 24px rgba(0,0,0,0.07);
+  /* Card shadow -  soft, diffuse (bright SaaS) */
+  --card-shadow:       0 1px 2px rgba(15,23,20,0.04), 0 8px 24px -8px rgba(15,23,20,0.06);
+  --card-shadow-hover: 0 2px 4px rgba(15,23,20,0.05), 0 16px 32px -8px rgba(15,23,20,0.10);
 }
 
 
@@ -186,6 +194,16 @@ main, section, article, header, footer {
 /* ─── Typography ─────────────────────────────────────────────── */
 .tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* Display face for hero headlines and stat numerals */
+.font-display {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
 }
 
 h1, h2, h3, h4 {
@@ -571,11 +589,11 @@ a, button, input, select, textarea,
 ::-webkit-scrollbar       { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-primary); }
 ::-webkit-scrollbar-thumb {
-  background: rgba(148,163,184,0.18);
+  background: rgba(15,23,20,0.14);
   border-radius: 9999px;
 }
-::-webkit-scrollbar-thumb:hover  { background: rgba(148,163,184,0.30); }
-::-webkit-scrollbar-thumb:active { background: rgba(148,163,184,0.42); }
+::-webkit-scrollbar-thumb:hover  { background: rgba(15,23,20,0.24); }
+::-webkit-scrollbar-thumb:active { background: rgba(15,23,20,0.34); }
 
 /* ─── Focus ring ─────────────────────────────────────────────── */
 :focus-visible {

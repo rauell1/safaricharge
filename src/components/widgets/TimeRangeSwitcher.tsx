@@ -18,10 +18,10 @@ export function TimeRangeSwitcher({ selectedRange, onRangeChange }: TimeRangeSwi
   ];
 
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-dark-border bg-secondary-900 p-1">
+    <div className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card)] p-1">
       <div className="flex items-center gap-2 px-2">
-        <Calendar className="h-4 w-4 text-dark-text-secondary" />
-        <span className="text-sm font-medium text-dark-text-secondary">Time Range:</span>
+        <Calendar className="h-4 w-4 text-[var(--text-tertiary)]" />
+        <span className="text-sm font-medium text-[var(--text-secondary)]">Time Range:</span>
       </div>
       <div className="flex gap-1">
         {ranges.map((range) => (
@@ -32,8 +32,8 @@ export function TimeRangeSwitcher({ selectedRange, onRangeChange }: TimeRangeSwi
             onClick={() => onRangeChange(range.id)}
             className={`text-xs transition-all duration-200 ${
               selectedRange === range.id
-                ? 'bg-accent-energy hover:bg-accent-energy/90 text-primary shadow-glow-sm'
-                : 'text-dark-text-secondary hover:text-dark-text-primary hover:bg-secondary-800'
+                ? 'bg-[var(--battery)] hover:bg-[var(--battery-bright)] text-white'
+                : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-muted)]'
             }`}
           >
             {range.label}

@@ -123,7 +123,7 @@ export function AlertsList({ isLoading }: AlertsListProps) {
             alerts.map((alert) => (
               <div
                 key={alert.id}
-                className="flex items-start gap-3 rounded-xl border p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-glow-md cursor-default"
+                className="flex items-start gap-3 rounded-xl border p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--card-shadow-hover)] cursor-default"
                 style={{ backgroundColor: 'var(--bg-card-muted)', borderColor: 'var(--border)' }}
               >
                 <div className="mt-0.5 flex-shrink-0">

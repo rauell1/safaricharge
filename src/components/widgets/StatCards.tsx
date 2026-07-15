@@ -30,19 +30,19 @@ function StatCard({ title, value, unit, subtitle, icon, trend, trendValue, accen
     energy: {
       bg: 'bg-[var(--battery-soft)]',
       icon: 'text-[var(--battery)]',
-      glow: 'stat-card-energy',
+      glow: 'hover:shadow-[var(--card-shadow-hover)]',
       gradient: 'gradient-text-energy'
     },
     info: {
       bg: 'bg-[var(--consumption-soft)]',
       icon: 'text-[var(--consumption)]',
-      glow: 'hover:shadow-glow-md',
+      glow: 'hover:shadow-[var(--card-shadow-hover)]',
       gradient: 'text-[var(--consumption)]'
     },
     grid: {
       bg: 'bg-[var(--grid-soft)]',
       icon: 'text-[var(--grid)]',
-      glow: 'hover:shadow-glow-md',
+      glow: 'hover:shadow-[var(--card-shadow-hover)]',
       gradient: 'text-[var(--grid)]'
     }
   };

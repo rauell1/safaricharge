@@ -1,6 +1,6 @@
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
-import { Inter } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AIAssistantProvider } from "@/contexts/AIAssistantContext";
@@ -13,6 +13,13 @@ const inter = Inter({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-inter",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-space-grotesk",
+  weight: ["500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -107,11 +114,11 @@ export default function RootLayout({
     // overflow-x:hidden on <html>/<body> makes those elements the containing
     // block for fixed children, which mis-centres dialogs and clips overlays.
     // The overflow guard now lives on .page-shell in globals.css instead.
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`} suppressHydrationWarning>
       <head>
         <link rel="icon" type="image/png" href="/favicon.png" />
-        <meta name="theme-color" content="#01696f" />
-        <meta name="msapplication-TileColor" content="#01696f" />
+        <meta name="theme-color" content="#047857" />
+        <meta name="msapplication-TileColor" content="#047857" />
       </head>
       <GoogleAnalytics />
       <body className={inter.className}>

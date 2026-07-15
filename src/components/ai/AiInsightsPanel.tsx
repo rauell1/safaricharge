@@ -270,7 +270,7 @@ export function AiInsightsPanel() {
             return (
               <div
                 key={insight.id}
-                className={`flex items-start gap-3 rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-glow-md ${styles.bg} ${styles.border}`}
+                className={`flex items-start gap-3 rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--card-shadow-hover)] ${styles.bg} ${styles.border}`}
               >
                 <div className={`mt-0.5 flex-shrink-0 ${styles.icon}`}>
                   <SeverityIcon className="h-5 w-5" />
