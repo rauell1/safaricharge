@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 351 | `rollback/fix-auth-access-and-align-africa-landi-2026-07-16-811abf4` | `811abf4` | fix auth access and align Africa landing page (13f +132/-205) | 2026-07-16 |
 | 350 | `rollback/feat-ui-revamp-phase-4-sizing-onboardi-2026-07-16-d55e623` | `d55e623` | feat(ui): revamp phase 4 - sizing + onboarding/site-setup alignment (6f +78/-88) | 2026-07-16 |
 | 349 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-16-3e432a5` | `3e432a5` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-07-16 |
 | 348 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-15-c756c49` | `c756c49` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-07-15 |
@@ -3707,6 +3708,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: feat(ui): revamp phase 4 - sizing + onboarding/site-setup alignment
 - **Date**: 2026-07-16
 - **Changed**: 6 file(s), +78/-88 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #351 — `rollback/fix-auth-access-and-align-africa-landi-2026-07-16-811abf4`
+
+- **Branch**: `rollback/fix-auth-access-and-align-africa-landi-2026-07-16-811abf4`
+- **Commit**: `811abf4efa9e5470144cc9acb4ee9842fe704427`
+- **Subject**: fix auth access and align Africa landing page
+- **Date**: 2026-07-16
+- **Changed**: 13 file(s), +132/-205 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
