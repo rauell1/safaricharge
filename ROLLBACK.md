@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 350 | `rollback/feat-ui-revamp-phase-4-sizing-onboardi-2026-07-16-d55e623` | `d55e623` | feat(ui): revamp phase 4 - sizing + onboarding/site-setup alignment (6f +78/-88) | 2026-07-16 |
 | 349 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-16-3e432a5` | `3e432a5` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-07-16 |
 | 348 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-15-c756c49` | `c756c49` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-07-15 |
 | 347 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-14-192d292` | `192d292` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-07-14 |
@@ -3696,6 +3697,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-07-16
 - **Changed**: 1 file(s), +1/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #350 — `rollback/feat-ui-revamp-phase-4-sizing-onboardi-2026-07-16-d55e623`
+
+- **Branch**: `rollback/feat-ui-revamp-phase-4-sizing-onboardi-2026-07-16-d55e623`
+- **Commit**: `d55e62398481b84032c8dfd425610e9b43ee94cf`
+- **Subject**: feat(ui): revamp phase 4 - sizing + onboarding/site-setup alignment
+- **Date**: 2026-07-16
+- **Changed**: 6 file(s), +78/-88 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
