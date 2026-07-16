@@ -31,10 +31,10 @@ export default function SizingPage() {
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       {/* Header */}
-      <div className="border-b border-[var(--border)] bg-[var(--bg-card)]/90 backdrop-blur-sm sticky top-0 z-10">
+      <div className="border-b border-[var(--border)] bg-[var(--nav-bg)] backdrop-blur-md sticky top-0 z-10">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            <Link href="/demo" className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition font-mono shrink-0">
+            <Link href="/demo" className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition shrink-0">
               <ArrowLeft className="w-3.5 h-3.5" />
               Back to Dashboard
             </Link>
@@ -44,13 +44,13 @@ export default function SizingPage() {
             <div className="hidden sm:block w-px h-4 bg-[var(--border)] shrink-0" />
             <div className="flex items-center gap-2 min-w-0">
               <span className="w-6 h-6 rounded-md bg-[var(--battery)] flex items-center justify-center font-black text-white text-xs shrink-0">S</span>
-              <span className="text-sm font-bold text-[var(--text-primary)] font-mono tracking-tight truncate">
+              <span className="font-display text-sm font-bold text-[var(--text-primary)] tracking-tight truncate">
                 Safari<span className="text-[var(--battery)]">Charge</span>
                 <span className="hidden sm:inline text-[var(--text-muted)] font-normal ml-2">/ Parametric Sizing Engine</span>
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-[10px] font-mono text-[var(--text-muted)] shrink-0">
+          <div className="flex items-center gap-2 text-[10px] text-[var(--text-muted)] shrink-0">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--battery)] animate-pulse" />
             <span className="hidden sm:inline">Live Simulation</span>
           </div>
@@ -60,15 +60,15 @@ export default function SizingPage() {
       {/* Main Layout */}
       <div className="max-w-[1600px] mx-auto px-4 py-6">
         {catalogError ? (
-          <div className="flex flex-col items-center justify-center h-64 text-red-600 space-y-2">
-            <p className="text-sm font-mono">Failed to load sizing catalog: {catalogError}</p>
+          <div className="flex flex-col items-center justify-center h-64 text-[var(--alert)] space-y-2">
+            <p className="text-sm">Failed to load sizing catalog: {catalogError}</p>
           </div>
         ) : catalogLoading || !catalog ? (
           <div className="flex flex-col items-center justify-center h-64 text-[var(--text-muted)] space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] flex items-center justify-center animate-pulse">
+            <div className="w-12 h-12 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] flex items-center justify-center animate-pulse">
               <span className="text-2xl">&#9889;</span>
             </div>
-            <p className="text-sm font-mono">Loading hardware catalog...</p>
+            <p className="text-sm">Loading hardware catalog...</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-[420px_1fr] gap-6">
@@ -87,10 +87,10 @@ export default function SizingPage() {
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center h-64 text-[var(--text-muted)] space-y-3">
-                  <div className="w-12 h-12 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] flex items-center justify-center">
                     <span className="text-2xl">&#9889;</span>
                   </div>
-                  <p className="text-sm font-mono">Adjust parameters to run simulation...</p>
+                  <p className="text-sm">Adjust parameters to run simulation...</p>
                 </div>
               )}
             </div>

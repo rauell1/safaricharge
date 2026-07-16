@@ -53,7 +53,7 @@ function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      style={{ width: '100%', background: '#ffffff', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 14px', color: 'var(--text-primary)', fontSize: 14, outline: 'none', boxSizing: 'border-box', transition: 'all 0.2s' }}
+      style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 14px', color: 'var(--text-primary)', fontSize: 14, outline: 'none', boxSizing: 'border-box', transition: 'all 0.2s' }}
     />
   )
 }
@@ -65,7 +65,7 @@ function NumberInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
       min="0"
       step="any"
       {...props}
-      style={{ width: '100%', background: '#ffffff', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 14px', color: 'var(--text-primary)', fontSize: 14, outline: 'none', boxSizing: 'border-box', transition: 'all 0.2s' }}
+      style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, padding: '11px 14px', color: 'var(--text-primary)', fontSize: 14, outline: 'none', boxSizing: 'border-box', transition: 'all 0.2s' }}
     />
   )
 }
@@ -342,7 +342,7 @@ function SiteSetupForm() {
 
   const primaryBtn: React.CSSProperties = {
     width: '100%',
-    background: 'linear-gradient(135deg, #059669, #10b981)',
+    background: 'var(--battery-bright)',
     border: 'none',
     borderRadius: 10,
     padding: '13px',
@@ -354,7 +354,7 @@ function SiteSetupForm() {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    boxShadow: '0 0 28px rgba(16,185,129,0.22)',
+    boxShadow: '0 1px 2px rgba(4,120,87,0.35), 0 0 0 1px rgba(4,120,87,0.12)',
   }
 
   const secondaryBtn: React.CSSProperties = {
@@ -602,7 +602,7 @@ export default function SiteSetupPage() {
             position: 'absolute',
             inset: 0,
             backgroundImage:
-              'linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px)',
+              'linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px)',
             backgroundSize: '64px 64px',
             pointerEvents: 'none',
           }}
@@ -613,7 +613,7 @@ export default function SiteSetupPage() {
           style={{
             position: 'absolute',
             inset: 0,
-            background: 'radial-gradient(ellipse 55% 45% at 50% 0%, rgba(16,185,129,0.12) 0%, transparent 70%)',
+            background: 'radial-gradient(ellipse 55% 45% at 50% 0%, var(--hero-glow) 0%, transparent 70%)',
             pointerEvents: 'none',
           }}
         />
@@ -655,7 +655,7 @@ export default function SiteSetupPage() {
               border: '1px solid var(--border)',
               background: 'var(--bg-card)',
               backdropFilter: 'blur(24px)',
-              boxShadow: '0 20px 48px rgba(13,31,23,0.08), 0 1px 4px rgba(13,31,23,0.02)',
+              boxShadow: 'var(--card-shadow-hover)',
               padding: '32px 28px',
             }}
           >

@@ -25,7 +25,7 @@ export default function ProposalViewer({ results, projectName, clientName, engin
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-md z-50 overflow-y-auto p-4 md:p-8 flex justify-center items-start print:p-0 print:bg-white print:backdrop-blur-none">
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl w-full max-w-4xl shadow-2xl overflow-hidden print:border-none print:shadow-none print:bg-white print:text-slate-950 print:w-full print:rounded-none">
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl w-full max-w-4xl shadow-2xl overflow-hidden print:border-none print:shadow-none print:bg-white print:text-slate-950 print:w-full print:rounded-none">
 
         <div className="bg-[var(--bg-card-muted)] px-6 py-4 border-b border-[var(--border)] flex justify-between items-center print:hidden">
           <div className="flex items-center gap-2">
@@ -62,7 +62,7 @@ export default function ProposalViewer({ results, projectName, clientName, engin
 
           <div className="text-center py-4">
             <h1 className="text-2xl md:text-3xl font-black text-[var(--text-primary)] tracking-tight uppercase print:text-slate-900">Techno-Economic Feasibility Report</h1>
-            <p className="text-xs text-[var(--battery)] font-mono uppercase tracking-widest mt-1 print:text-emerald-600">Commercial Hybrid Solar PV & Battery Storage System</p>
+            <p className="text-xs text-[var(--battery)] uppercase tracking-widest mt-1 print:text-emerald-600">Commercial Hybrid Solar PV & Battery Storage System</p>
           </div>
 
           {/* Project Entity Matrix */}
@@ -102,20 +102,20 @@ export default function ProposalViewer({ results, projectName, clientName, engin
             <h3 className="text-sm font-bold text-[var(--battery)] uppercase tracking-widest font-mono border-b border-[var(--border)] pb-1.5 print:text-emerald-600 print:border-slate-300">2. Financial Feasibility & ROI Metrics</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-[var(--bg-card-muted)] border border-[var(--border)] p-4 rounded-xl text-center print:border-slate-300 print:bg-slate-50">
-                <span className="block text-[9px] text-[var(--text-muted)] font-mono uppercase">Capital Expense</span>
+                <span className="block text-[9px] text-[var(--text-muted)] uppercase">Capital Expense</span>
                 <span className="text-lg font-extrabold text-[var(--text-primary)] font-mono block print:text-slate-950">KSh {results.totalCapExKSh.toLocaleString()}</span>
                 <span className="text-[9px] text-[var(--text-muted)]">≈ ${results.totalCapExUSD.toLocaleString()}</span>
               </div>
               <div className="bg-[var(--bg-card-muted)] border border-[var(--border)] p-4 rounded-xl text-center print:border-slate-300 print:bg-slate-50">
-                <span className="block text-[9px] text-[var(--text-muted)] font-mono uppercase">Simple Payback</span>
+                <span className="block text-[9px] text-[var(--text-muted)] uppercase">Simple Payback</span>
                 <span className="text-lg font-extrabold text-[var(--battery)] font-mono print:text-emerald-600">{results.simplePaybackYears} Years</span>
               </div>
               <div className="bg-[var(--bg-card-muted)] border border-[var(--border)] p-4 rounded-xl text-center print:border-slate-300 print:bg-slate-50">
-                <span className="block text-[9px] text-[var(--text-muted)] font-mono uppercase">Internal Return (IRR)</span>
+                <span className="block text-[9px] text-[var(--text-muted)] uppercase">Internal Return (IRR)</span>
                 <span className="text-lg font-extrabold text-purple-700 font-mono print:text-purple-600">{results.irrPercent}%</span>
               </div>
               <div className="bg-[var(--bg-card-muted)] border border-[var(--border)] p-4 rounded-xl text-center print:border-slate-300 print:bg-slate-50">
-                <span className="block text-[9px] text-[var(--text-muted)] font-mono uppercase">LCOE (Levelized)</span>
+                <span className="block text-[9px] text-[var(--text-muted)] uppercase">LCOE (Levelized)</span>
                 <span className="text-lg font-extrabold text-teal-700 font-mono print:text-teal-600">${results.lcoeUSDPerKWh}/kWh</span>
               </div>
             </div>
@@ -209,7 +209,7 @@ export default function ProposalViewer({ results, projectName, clientName, engin
           </div>
 
           {/* Environmental Certificate */}
-          <div className="border border-[var(--battery)]/20 bg-[var(--battery-soft)] rounded-2xl p-6 flex flex-col md:flex-row items-center gap-6 print:bg-slate-50 print:border-slate-300 page-break-avoid">
+          <div className="border border-[var(--battery)]/20 bg-[var(--battery-soft)] rounded-xl p-6 flex flex-col md:flex-row items-center gap-6 print:bg-slate-50 print:border-slate-300 page-break-avoid">
             <div className="p-4 bg-white/60 rounded-full border border-[var(--battery)]/20 text-[var(--battery)] shrink-0"><Leaf className="w-8 h-8" /></div>
             <div className="space-y-1 flex-1">
               <div className="flex items-center gap-2 text-xs font-bold text-[var(--battery)] uppercase font-mono tracking-wider print:text-emerald-600"><Award className="w-4 h-4" /> ESG Compliance Certificate</div>

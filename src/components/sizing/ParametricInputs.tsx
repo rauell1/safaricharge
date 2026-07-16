@@ -39,7 +39,7 @@ const Section = ({ id, label, color, defaultOpen, children, summary }: {
 }) => {
   const [open, setOpen] = useState(defaultOpen ?? true);
   return (
-    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden transition-all duration-300 hover:border-[var(--border-hover)]">
+    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl overflow-hidden transition-all duration-300 hover:border-[var(--border-hover)]">
       <button onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-[var(--bg-card-muted)] transition-colors">
         <div className="flex items-center gap-3">
@@ -66,7 +66,7 @@ const Metric = ({ label, value, unit, color = 'slate', size = 'md' }: {
     emerald: 'text-[var(--battery)] bg-[var(--battery-soft)] border-[var(--battery)]/20',
     amber: 'text-[var(--solar)] bg-[var(--solar-soft)] border-[var(--solar)]/20',
     blue: 'text-[var(--grid)] bg-[var(--grid-soft)] border-[var(--grid)]/20',
-    red: 'text-red-600 bg-red-50 border-red-200',
+    red: 'text-[var(--alert)] bg-[var(--alert-soft)] border-[var(--alert)]/20',
     slate: 'text-[var(--text-secondary)] bg-[var(--bg-card-muted)] border-[var(--border)]',
   };
   return (
@@ -360,10 +360,10 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
     <div className="space-y-5">
       {/* PRESETS + PROJECT ROW */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-4">
+        <div className="lg:col-span-2 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-4">
           <div className="flex flex-wrap items-center gap-2">
             <RefreshCw className="w-3.5 h-3.5 text-[var(--battery)] shrink-0" />
-            <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider font-mono mr-1">Quick Load:</span>
+            <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider mr-1">Quick Load:</span>
             {PROJECT_PRESETS.map(p => (
               <button key={p.name} onClick={() => loadPreset(p)}
                 className="bg-[var(--bg-card-muted)] hover:bg-[var(--battery-soft)] hover:text-[var(--battery)] text-[var(--text-secondary)] text-[10px] px-3 py-1.5 rounded-lg border border-[var(--border)] hover:border-[var(--battery)]/40 font-medium transition-all duration-200 active:scale-95">
@@ -384,11 +384,11 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
       </div>
 
       {/* LOCATION SELECTOR */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-4">
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-4">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2 shrink-0">
             <MapPin className="w-4 h-4 text-[var(--battery)]" />
-            <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider font-mono">Location:</span>
+            <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Location:</span>
           </div>
           <select value={locationId} onChange={e => setLocationId(e.target.value)}
             className="flex-1 min-w-0 bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3.5 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--battery)] cursor-pointer font-medium">
@@ -401,7 +401,7 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
             <span className="text-[var(--text-muted)]">|</span>
             <span>&#9889; <strong className="text-[var(--text-primary)]">KSh {location.gridTariffKSh}</strong>/kWh</span>
             <span className="text-[var(--text-muted)]">|</span>
-            <span className={location.outageHoursPerDay > 4 ? 'text-red-600' : 'text-[var(--text-tertiary)]'}>
+            <span className={location.outageHoursPerDay > 4 ? 'text-[var(--alert)]' : 'text-[var(--text-tertiary)]'}>
               &#128268; <strong>{location.outageHoursPerDay}h</strong> outages
             </span>
           </div>
@@ -409,9 +409,9 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
       </div>
 
       {/* ARCHITECTURE TOGGLE */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl p-4">
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-4">
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider font-mono">System Architecture:</span>
+          <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">System Architecture:</span>
           <div className="flex gap-1 bg-[var(--bg-card-muted)] rounded-xl p-1">
             <button onClick={() => setArchitecture('central_inverter')}
               className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${architecture === 'central_inverter' ? 'bg-[var(--battery)] text-white shadow-lg shadow-emerald-600/20' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'}`}>
@@ -486,7 +486,7 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
             <div className="bg-[var(--battery-soft)] border border-[var(--battery)]/20 rounded-xl px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ArrowRight className="w-4 h-4 text-[var(--battery)]" />
-                <span className="text-xs font-bold text-[var(--battery)] font-mono uppercase tracking-wider">Effective Target</span>
+                <span className="text-xs font-bold text-[var(--battery)] uppercase tracking-wider">Effective Target</span>
               </div>
               <span className="text-xl font-black text-[var(--battery)] font-mono">{nf(effectiveTargetKW, 1)} <span className="text-sm font-normal text-[var(--battery)]/70">kW</span></span>
             </div>
@@ -542,7 +542,7 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
             </div>
 
             <div className="bg-[var(--grid-soft)] border border-[var(--grid)]/20 rounded-xl px-4 py-3 flex items-center justify-between">
-              <span className="text-xs font-bold text-[var(--grid)] font-mono uppercase">Total Inverter AC Capacity</span>
+              <span className="text-xs font-bold text-[var(--grid)] uppercase">Total Inverter AC Capacity</span>
               <span className="text-xl font-black text-[var(--grid)] font-mono">{nf(totalInverterACkW, 1)} kW</span>
             </div>
           </Section>
@@ -575,7 +575,7 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
             </div>
 
             {stockWarning && (
-              <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-[11px] text-red-600 font-medium">
+              <div className="flex items-center gap-2 bg-[var(--alert-soft)] border border-[var(--alert)]/20 rounded-xl px-3 py-2 text-[11px] text-[var(--alert)] font-medium">
                 <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> {stockWarning}
               </div>
             )}
@@ -587,7 +587,7 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
               <Metric label="Actual PV Array" value={nf(actualPVkWp, 1)} unit="kWp" color="amber" size="lg" />
             </div>
 
-            <div className={`flex items-center gap-2 rounded-xl px-3 py-2 text-[11px] font-semibold ${pvOversizeOK ? 'bg-[var(--battery-soft)] border border-[var(--battery)]/20 text-[var(--battery)]' : 'bg-red-50 border border-red-200 text-red-600'}`}>
+            <div className={`flex items-center gap-2 rounded-xl px-3 py-2 text-[11px] font-semibold ${pvOversizeOK ? 'bg-[var(--battery-soft)] border border-[var(--battery)]/20 text-[var(--battery)]' : 'bg-[var(--alert-soft)] border border-[var(--alert)]/20 text-[var(--alert)]'}`}>
               {pvOversizeOK ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
               {pvOversizeOK ? 'PV Oversize Check: OK - within inverter input limits' : `WARNING - ${nf(actualPVkWp, 1)}kWp exceeds ${nf(maxAllowablePVkWp, 1)}kWp inverter max!`}
             </div>
@@ -635,9 +635,9 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
                     <Metric label="Actual kWh" value={nf(actualBatteryKWh, 1)} unit="kWh" color="emerald" />
                     <Metric label="BDUs" value={String(bduCount)} color="slate" />
                     <Metric label="Module Cost" value={`KSh ${fmtKSh(modCost)}`} color="slate" />
-                    <div className={`rounded-xl border px-3.5 py-2.5 text-center ${vCheckOK ? 'bg-[var(--battery-soft)] border-[var(--battery)]/20' : 'bg-red-50 border-red-200'}`}>
+                    <div className={`rounded-xl border px-3.5 py-2.5 text-center ${vCheckOK ? 'bg-[var(--battery-soft)] border-[var(--battery)]/20' : 'bg-[var(--alert-soft)] border-[var(--alert)]/20'}`}>
                       <div className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider">Voltage Check</div>
-                      <div className={`font-bold font-mono text-sm ${vCheckOK ? 'text-[var(--battery)]' : 'text-red-600'}`}>{vCheckMsg}</div>
+                      <div className={`font-bold font-mono text-sm ${vCheckOK ? 'text-[var(--battery)]' : 'text-[var(--alert)]'}`}>{vCheckMsg}</div>
                     </div>
                   </>}
                 </div>
@@ -646,11 +646,11 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
           </Section>
 
           {/* SECTION E: LIVE SUMMARY */}
-          <div className="bg-[var(--battery-soft)] border border-[var(--battery)]/20 rounded-2xl p-5 space-y-4">
+          <div className="bg-[var(--battery-soft)] border border-[var(--battery)]/20 rounded-xl p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="w-8 h-8 rounded-lg bg-white/60 text-[var(--battery)] flex items-center justify-center text-sm font-black border border-[var(--battery)]/20">E</span>
-                <span className="text-sm font-bold text-[var(--battery)] uppercase tracking-wider font-mono">System Configuration Summary</span>
+                <span className="text-sm font-bold text-[var(--battery)] uppercase tracking-wider">System Configuration Summary</span>
               </div>
               <span className="text-[9px] text-[var(--text-muted)] font-mono animate-pulse">Live</span>
             </div>

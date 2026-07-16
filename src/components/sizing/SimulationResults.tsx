@@ -140,7 +140,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
       {(pvOversizeWarning || batteryVoltageWarning) && (
         <div className="space-y-2">
           {pvOversizeWarning && (
-            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+            <div className="flex items-start gap-2 rounded-lg border border-[var(--alert)]/20 bg-[var(--alert-soft)] p-3 text-sm text-[var(--alert)]">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
               <span>{pvOversizeWarning}</span>
             </div>
@@ -213,7 +213,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
       {/* 1.5 Extended Financial Metrics */}
       <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h4 className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider font-mono">
+          <h4 className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
             Extended Investment Metrics
           </h4>
           {systemArchitecture === 'microinverter' && (
@@ -285,7 +285,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
       {/* 2. Technical System Specifications Bar */}
       <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4 border-b border-[var(--border)] pb-3">
-          <h4 className="text-xs font-bold text-[var(--battery)] uppercase tracking-wider font-mono">
+          <h4 className="text-xs font-bold text-[var(--battery)] uppercase tracking-wider">
             Optimized System Configuration Summary
           </h4>
           <span className="text-[10px] bg-[var(--bg-card-muted)] text-[var(--text-tertiary)] px-2 py-0.5 rounded font-mono">
@@ -330,7 +330,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
           </div>
           <div>
             <span className="text-[var(--text-muted)] text-[9px] block">ANNUAL UTILITY IMPORT:</span>
-            <span className="text-[var(--text-primary)] font-bold text-red-600">{annualGridImportKWh.toLocaleString()} kWh</span>
+            <span className="text-[var(--text-primary)] font-bold text-[var(--alert)]">{annualGridImportKWh.toLocaleString()} kWh</span>
           </div>
           <div>
             <span className="text-[var(--text-muted)] text-[9px] block">ANNUAL NET SOLAR EXPORT:</span>
@@ -401,7 +401,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                   <span className="w-3 h-0.5 border-t-2 border-dashed border-emerald-500" /> Battery SoC (%)
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="w-3 h-1.5 bg-red-600 rounded-sm" /> Grid Import (kW)
+                  <span className="w-3 h-1.5 bg-[var(--alert)] rounded-sm" /> Grid Import (kW)
                 </span>
                 {annualDieselGenKWh > 0 && (
                   <span className="flex items-center gap-1">
@@ -561,7 +561,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                     <span className="font-bold text-[var(--text-primary)]">{hourlyProfile[hoveredHour].batterySoCAfter}%</span>
                   </div>
                   <div className="flex justify-between gap-6">
-                    <span className="text-red-600 font-semibold">Grid Import:</span>
+                    <span className="text-[var(--alert)] font-semibold">Grid Import:</span>
                     <span className="font-bold text-[var(--text-primary)]">{hourlyProfile[hoveredHour].gridImportKW} kW</span>
                   </div>
                   {hourlyProfile[hoveredHour].dieselGenKW > 0 && (
@@ -572,7 +572,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                   )}
                   <div className="flex justify-between gap-6 text-[9px] border-t border-[var(--border)] pt-1 text-[var(--text-muted)]">
                     <span>Grid Status:</span>
-                    <span className={hourlyProfile[hoveredHour].gridAvailable ? 'text-[var(--battery)]' : 'text-red-600'}>
+                    <span className={hourlyProfile[hoveredHour].gridAvailable ? 'text-[var(--battery)]' : 'text-[var(--alert)]'}>
                       {hourlyProfile[hoveredHour].gridAvailable ? 'Online' : 'OUTAGE (Blackout)'}
                     </span>
                   </div>
@@ -595,11 +595,11 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
               </div>
               <div className="grid grid-cols-2 gap-4 mt-4">
                 <div className="bg-[var(--bg-card-muted)] p-4 rounded-lg border border-[var(--border)]">
-                  <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase block">Annual CO₂ Saved</span>
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase block">Annual CO₂ Saved</span>
                   <span className="text-xl font-bold text-[var(--battery)] font-mono">{annualCO2SavedTons} tons/year</span>
                 </div>
                 <div className="bg-[var(--bg-card-muted)] p-4 rounded-lg border border-[var(--border)]">
-                  <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase block">Equivalent Trees Planted</span>
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase block">Equivalent Trees Planted</span>
                   <span className="text-xl font-bold text-[var(--battery)] font-mono">{equivalentTreesPlanted} trees</span>
                 </div>
               </div>
@@ -632,7 +632,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                 <div key={idx} className="bg-[var(--bg-card-muted)] border border-[var(--border)] rounded-lg p-3 flex justify-between items-center">
                   <div>
                     <span className="text-xs font-bold text-[var(--text-primary)] block truncate max-w-[220px]">{item.description}</span>
-                    <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase">{item.section} | Qty: {item.qty}</span>
+                    <span className="text-[10px] text-[var(--text-muted)] uppercase">{item.section} | Qty: {item.qty}</span>
                   </div>
                   <div className="text-right">
                     <span className="text-xs font-bold font-mono text-[var(--text-primary)]">KSh {item.totalKSh.toLocaleString()}</span>
@@ -681,14 +681,14 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
 
               <div className="grid grid-cols-2 gap-4 mb-4 text-center">
                 <div className="bg-[var(--bg-card-muted)] p-3 rounded-lg border border-[var(--border)]">
-                  <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase block">Grid Baseline (No Solar)</span>
-                  <span className="text-base font-extrabold text-red-600 font-mono">${baselineAnnualCostUSD.toLocaleString()}</span>
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase block">Grid Baseline (No Solar)</span>
+                  <span className="text-base font-extrabold text-[var(--alert)] font-mono">${baselineAnnualCostUSD.toLocaleString()}</span>
                   <span className="text-[9px] text-[var(--text-muted)] block mt-1">
                     Grid: ${annualGridBillWithoutSolarUSD.toLocaleString()} | Fuel: ${annualDieselCostWithoutSolarUSD.toLocaleString()}
                   </span>
                 </div>
                 <div className="bg-[var(--bg-card-muted)] p-3 rounded-lg border border-[var(--border)]">
-                  <span className="text-[10px] text-[var(--text-muted)] font-mono uppercase block">Proposed System OpEx</span>
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase block">Proposed System OpEx</span>
                   <span className="text-base font-extrabold text-[var(--battery)] font-mono">${totalAnnualOpExUSD.toLocaleString()}</span>
                   <span className="text-[9px] text-[var(--text-muted)] block mt-1">
                     Grid: ${annualGridBillWithSolarUSD.toLocaleString()} | Fuel: ${annualDieselCostWithSolarUSD.toLocaleString()}
@@ -696,7 +696,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                 </div>
               </div>
 
-              <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider font-mono block mb-2">
+              <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider block mb-2">
                 Itemized Operating Costs:
               </span>
               <div className="space-y-2.5 text-xs text-[var(--text-secondary)] font-mono">
@@ -855,7 +855,7 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
           {/* Cash Flow Spreadsheet Table */}
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider font-mono">
+              <span className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">
                 Project Lifecycle Economic Cash Flow Ledger:
               </span>
               <button
@@ -903,14 +903,14 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
                         </td>
                         <td
                           className={`py-2 px-4 text-right font-bold ${
-                            cf.cumulativeCashFlow < 0 ? 'text-red-600' : 'text-[var(--battery)]'
+                            cf.cumulativeCashFlow < 0 ? 'text-[var(--alert)]' : 'text-[var(--battery)]'
                           }`}
                         >
                           {cf.cumulativeCashFlow < 0 ? '-' : ''}${Math.abs(cf.cumulativeCashFlow).toLocaleString()}
                         </td>
                         <td className="py-2 px-4 text-center">
                           {cf.year === 0 ? (
-                            <span className="text-red-600 text-[10px]">Capital Outlay</span>
+                            <span className="text-[var(--alert)] text-[10px]">Capital Outlay</span>
                           ) : cf.cumulativeCashFlow < 0 ? (
                             <span className="text-[var(--text-muted)] text-[10px]">Amortizing</span>
                           ) : (
