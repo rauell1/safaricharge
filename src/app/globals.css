@@ -130,22 +130,6 @@
   --grid-line:         rgba(5,150,105,0.045);
   --nav-bg:            rgba(250,251,250,0.85);
 
-  /* ── Site-shell tokens: TRANSITIONAL aliases of core tokens.
-        Landing/auth pages still reference these; they are deleted at the
-        end of the marketing-page revamp (Phase 2). Do not add new usages. ── */
-  --site-page-bg:      var(--bg-primary);
-  --site-page-fg:      var(--text-primary);
-  --site-page-muted:   var(--text-tertiary);
-  --site-page-soft:    var(--text-muted);
-  --site-page-border:  var(--border);
-  --site-page-surface: rgba(255,255,255,0.80);
-  --site-grid-line:    var(--grid-line);
-  --site-top-glow:     var(--hero-glow);
-  --site-nav-bg:       var(--nav-bg);
-  --site-nav-link:     var(--text-tertiary);
-  --site-nav-link-hover: var(--text-primary);
-  --site-nav-link-bg-hover: var(--bg-card-muted);
-
   /* Card shadow -  soft, diffuse (bright SaaS) */
   --card-shadow:       0 1px 2px rgba(15,23,20,0.04), 0 8px 24px -8px rgba(15,23,20,0.06);
   --card-shadow-hover: 0 2px 4px rgba(15,23,20,0.05), 0 16px 32px -8px rgba(15,23,20,0.10);

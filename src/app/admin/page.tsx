@@ -112,10 +112,10 @@ export default function AdminDashboard() {
 
       <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontFamily: "'Inter',system-ui,sans-serif", display: 'flex', flexDirection: 'column' }}>
         {/* Background decoration */}
-        <div aria-hidden style={{ position: 'fixed', inset: 0, backgroundImage: 'linear-gradient(var(--site-grid-line) 1px,transparent 1px),linear-gradient(90deg,var(--site-grid-line) 1px,transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none', zIndex: 0 }} />
+        <div aria-hidden style={{ position: 'fixed', inset: 0, backgroundImage: 'linear-gradient(var(--grid-line) 1px,transparent 1px),linear-gradient(90deg,var(--grid-line) 1px,transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none', zIndex: 0 }} />
 
         {/* Header */}
-        <header style={{ position: 'sticky', top: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', height: 64, borderBottom: '1px solid var(--border)', background: 'var(--site-nav-bg)', backdropFilter: 'blur(16px)' }}>
+        <header style={{ position: 'sticky', top: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', height: 64, borderBottom: '1px solid var(--border)', background: 'var(--nav-bg)', backdropFilter: 'blur(16px)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ padding: 8, borderRadius: 10, background: 'var(--battery-soft)', border: '1px solid rgba(16,185,129,0.2)' }}>
               <Shield size={18} style={{ color: 'var(--battery)' }} />
