@@ -37,6 +37,7 @@ import {
   Building2,
   Wind,
   Settings2,
+  Moon,
 } from 'lucide-react';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -76,7 +77,7 @@ export const RigidCable = React.memo(
     height = 40,
     width = 2,
     active = false,
-    color = 'bg-slate-300',
+    color = 'bg-[var(--border-strong)]',
     flowDirection = 'down',
     speed = 1,
     arrowColor = 'text-white',
@@ -146,7 +147,7 @@ export const HorizontalCable = React.memo(
   ({
     width = '100%',
     height = 2,
-    color = 'bg-slate-300',
+    color = 'bg-[var(--border-strong)]',
     active = false,
     powerKw = 0,
     capacityKw = 0,
@@ -249,8 +250,8 @@ export const SolarPanelProduct = React.memo(
           <div className="text-lg font-black text-[var(--solar)] leading-none mt-0.5">
             {power.toFixed(2)} <span className="text-xs font-normal text-[var(--text-secondary)]">kW</span>
           </div>
-          <div className="text-[9px] text-[var(--text-tertiary)] mt-0.5">
-            {isNight ? '🌙 Night -  no generation' : `${(utilization * 100).toFixed(0)}% utilisation`}
+          <div className="text-[9px] text-[var(--text-tertiary)] mt-0.5 flex items-center justify-center gap-1">
+            {isNight ? (<><Moon size={9} /> Night -  no generation</>) : `${(utilization * 100).toFixed(0)}% utilisation`}
           </div>
         </div>
       </div>
@@ -267,20 +268,20 @@ export const InverterProduct = React.memo(
     const loadPct = ratedCapacityKw > 0 ? Math.min(100, (Math.abs(power) / ratedCapacityKw) * 100) : 0;
     const isActive = Math.abs(power) > 0.1;
     return (
-      <div className={`flex flex-col items-center bg-[var(--bg-card)] rounded-xl border ${
-        isActive ? 'border-orange-400 shadow-[0_0_10px_rgba(251,146,60,0.3)]' : 'border-[var(--border)]'
+      <div className={`flex flex-col items-center bg-[var(--bg-card)] rounded-lg border shadow-[var(--card-shadow)] ${
+        isActive ? 'border-[var(--solar-bright)] shadow-[0_0_10px_var(--solar-soft)]' : 'border-[var(--border)]'
       } w-36 p-3 gap-1.5 transition-all duration-500`}>
         <div className="w-full flex justify-between items-center">
           <span className="text-[9px] font-bold text-[var(--text-tertiary)] uppercase tracking-wide">
             {label ?? `${id != null ? `INV ${id}` : 'Inverter'} · ${ratedCapacityKw.toFixed(0)} kW`}
           </span>
-          <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-orange-400 animate-pulse' : 'bg-[var(--border)]'}`} />
+          <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-[var(--solar-bright)] animate-pulse' : 'bg-[var(--border)]'}`} />
         </div>
-        <div className="bg-slate-800 rounded w-full h-9 flex items-center justify-center font-mono text-orange-400 text-sm shadow-inner">
+        <div className="bg-[var(--solar-soft)] border border-[var(--solar)]/15 rounded w-full h-9 flex items-center justify-center font-display tabular text-[var(--solar)] text-sm font-semibold">
           {power.toFixed(2)} kW
         </div>
         <div className="w-full bg-[var(--bg-card-muted)] rounded-full h-1.5 overflow-hidden">
-          <div className="h-full rounded-full bg-orange-400 transition-all duration-500" style={{ width: `${loadPct}%` }} />
+          <div className="h-full rounded-full bg-[var(--solar-bright)] transition-all duration-500" style={{ width: `${loadPct}%` }} />
         </div>
         <div className="text-[9px] text-[var(--text-tertiary)]">{loadPct.toFixed(0)}% load</div>
       </div>
@@ -307,14 +308,14 @@ export const BatteryProduct = React.memo(
             }`}
             style={{
               height: `${Math.max(0, Math.min(100, level))}%`,
-              backgroundColor: level < 20 ? '#ef4444' : level < 40 ? '#f59e0b' : 'var(--battery)',
+              backgroundColor: level < 20 ? 'var(--alert-bright)' : level < 40 ? 'var(--warning)' : 'var(--battery)',
             }}
           />
-          <div className="absolute bottom-[20%] w-full h-0.5 bg-red-400/60 z-10" />
+          <div className="absolute bottom-[20%] w-full h-0.5 bg-[var(--alert-bright)]/60 z-10" />
         </div>
         {/* Status icon */}
         <div className="absolute top-2 right-2">
-          <BatteryCharging size={12} className={status === 'Charging' ? 'text-green-400 animate-pulse' : status === 'Discharging' ? 'text-amber-400' : 'text-[var(--border)]'} />
+          <BatteryCharging size={12} className={status === 'Charging' ? 'text-[var(--battery-bright)] animate-pulse' : status === 'Discharging' ? 'text-[var(--warning)]' : 'text-[var(--border)]'} />
         </div>
         <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
       </div>
@@ -324,7 +325,7 @@ export const BatteryProduct = React.memo(
         <div className="text-[10px] font-semibold text-[var(--text-secondary)]">
           {power >= 0 ? '+' : ''}{power.toFixed(1)} kW · {status}
         </div>
-        <div className={`text-[9px] ${health < 0.85 ? 'text-orange-500' : 'text-[var(--text-tertiary)]'}`}>
+        <div className={`text-[9px] ${health < 0.85 ? 'text-[var(--warning)]' : 'text-[var(--text-tertiary)]'}`}>
           Health {(health * 100).toFixed(0)}% · {cycles.toFixed(1)} cyc
         </div>
       </div>
@@ -342,25 +343,25 @@ export const EVChargerProduct = React.memo(
     capacity: number; maxRate: number; onToggle: () => void; v2g?: boolean;
   }) => (
     <div className="flex flex-col items-center gap-2 cursor-pointer" onClick={onToggle}>
-      <div className={`relative w-20 h-28 bg-slate-800 rounded-xl shadow-lg border-l-4 border-slate-600 flex flex-col items-center pt-3 transition-all duration-500 hover:-translate-y-1 ring-2 ${
-        status === 'Charging' ? 'ring-sky-300 shadow-[0_0_12px_#7dd3fc]' : 'ring-transparent'
+      <div className={`relative w-20 h-28 bg-[var(--bg-card)] rounded-lg shadow-[var(--card-shadow)] border border-[var(--border)] border-l-4 border-l-[var(--ev)] flex flex-col items-center pt-3 transition-all duration-500 hover:-translate-y-1 ring-2 ${
+        status === 'Charging' ? 'ring-[var(--ev-bright)]/40 shadow-[0_0_12px_var(--ev-soft)]' : 'ring-transparent'
       }`}>
         {/* Screen */}
-        <div className="w-12 h-6 bg-black rounded border border-slate-600 flex items-center justify-center mb-2 overflow-hidden relative">
+        <div className="w-12 h-6 bg-[var(--ev-soft)] rounded border border-[var(--ev)]/15 flex items-center justify-center mb-2 overflow-hidden relative">
           {v2g ? (
-            <span className="text-purple-400 text-[8px] font-mono animate-pulse z-20">V2G↑</span>
+            <span className="text-[var(--ev)] text-[8px] font-semibold animate-pulse z-20">V2G↑</span>
           ) : status === 'Charging' ? (
-            <span className="text-sky-100 text-[9px] font-semibold animate-pulse z-20">{power.toFixed(1)} kW</span>
+            <span className="text-[var(--ev)] text-[9px] font-semibold animate-pulse z-20">{power.toFixed(1)} kW</span>
           ) : status === 'Away' ? (
-            <span className="text-red-400 text-[8px] z-20">AWAY</span>
+            <span className="text-[var(--alert)] text-[8px] z-20">AWAY</span>
           ) : (
-            <span className="text-slate-500 text-[8px] z-20">IDLE</span>
+            <span className="text-[var(--text-muted)] text-[8px] z-20">IDLE</span>
           )}
         </div>
         {/* Plug icon */}
-        <Car size={18} className="text-slate-400" />
+        <Car size={18} className="text-[var(--text-tertiary)]" />
         <div className={`absolute top-2 right-2 w-1.5 h-1.5 rounded-full ${
-          status === 'Charging' ? 'bg-sky-300 shadow-[0_0_8px_#7dd3fc]' : status === 'Away' ? 'bg-red-500' : 'bg-slate-600'
+          status === 'Charging' ? 'bg-[var(--ev-bright)] shadow-[0_0_8px_var(--ev-bright)]' : status === 'Away' ? 'bg-[var(--alert-bright)]' : 'bg-[var(--border-strong)]'
         }`} />
       </div>
       <div className="text-center bg-[var(--bg-card)]/90 px-2 py-1.5 rounded-lg border border-[var(--border)] backdrop-blur-sm w-full">
@@ -368,7 +369,7 @@ export const EVChargerProduct = React.memo(
         <div className="text-[9px] text-[var(--text-secondary)]">{capacity} kWh · {maxRate} kW max</div>
         <div className="flex justify-between items-end px-1 mt-1 border-t border-[var(--border)] pt-0.5">
           <span className="text-[8px] text-[var(--text-tertiary)]">SoC</span>
-          <span className={`text-[10px] font-bold ${soc < 20 ? 'text-[var(--alert)]' : 'text-sky-400'}`}>
+          <span className={`text-[10px] font-bold ${soc < 20 ? 'text-[var(--alert)]' : 'text-[var(--ev)]'}`}>
             {(soc || 0).toFixed(0)}%
           </span>
         </div>
@@ -387,14 +388,14 @@ export const GridProduct = React.memo(
   }) => (
     <div className="flex flex-col items-center gap-2">
       <div className="w-20 h-28 flex items-center justify-center relative transition-transform duration-300 hover:scale-[1.03]">
-        <UtilityPole size={56} className={gridStatus === 'Online' ? 'text-[var(--text-secondary)]' : 'text-red-400'} strokeWidth={1} />
+        <UtilityPole size={56} className={gridStatus === 'Online' ? 'text-[var(--text-secondary)]' : 'text-[var(--alert-bright)]'} strokeWidth={1} />
         {gridStatus === 'Offline' && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="bg-red-500 text-white text-[9px] font-bold px-2 py-1 rounded animate-pulse">GRID DOWN</div>
+            <div className="bg-[var(--alert-bright)] text-white text-[9px] font-bold px-2 py-1 rounded animate-pulse">GRID DOWN</div>
           </div>
         )}
         {gridStatus === 'Online' && (isImporting || isExporting) && (
-          <div className={`absolute top-0 right-0 p-1 rounded bg-[var(--bg-card)] border border-[var(--border)] flex items-center gap-1 ${isImporting ? 'text-slate-400' : 'text-amber-400'}`}>
+          <div className={`absolute top-0 right-0 p-1 rounded bg-[var(--bg-card)] border border-[var(--border)] flex items-center gap-1 ${isImporting ? 'text-[var(--grid)]' : 'text-[var(--warning)]'}`}>
             {isImporting ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
             <span className="text-[9px] font-bold">{Math.abs(power).toFixed(2)} kW</span>
           </div>
@@ -588,8 +589,8 @@ function SimulationControls() {
             onClick={() => setSimState({ isAutoMode: !isAutoMode })}
             className={`flex items-center gap-1.5 min-w-[96px] font-semibold transition-all duration-200 ${
               isAutoMode
-                ? 'border-amber-400 text-amber-400 hover:bg-amber-400/10'
-                : 'border-green-500 text-green-500 hover:bg-green-500/10'
+                ? 'border-[var(--warning)] text-[var(--warning)] hover:bg-[var(--warning-soft)]'
+                : 'border-[var(--battery)] text-[var(--battery)] hover:bg-[var(--battery-soft)]'
             }`}
           >
             {isAutoMode
@@ -601,11 +602,11 @@ function SimulationControls() {
           <Badge
             variant="outline"
             className={isAutoMode
-              ? 'border-green-500 text-green-500 bg-green-500/10 text-[10px]'
+              ? 'border-[var(--battery)] text-[var(--battery)] bg-[var(--battery-soft)] text-[10px]'
               : 'border-[var(--border)] text-[var(--text-tertiary)] text-[10px]'
             }
           >
-            <span className={`mr-1.5 inline-block h-1.5 w-1.5 rounded-full ${isAutoMode ? 'bg-green-500 animate-pulse' : 'bg-[var(--border)]'}`} />
+            <span className={`mr-1.5 inline-block h-1.5 w-1.5 rounded-full ${isAutoMode ? 'bg-[var(--battery)] animate-pulse' : 'bg-[var(--border)]'}`} />
             {isAutoMode ? 'Running' : 'Paused'}
           </Badge>
 
@@ -622,8 +623,8 @@ function SimulationControls() {
                 className={[
                   'px-2 py-1 rounded text-[11px] font-bold border transition-all duration-150',
                   simSpeed === s
-                    ? 'bg-[var(--solar)] text-slate-900 border-[var(--solar)] shadow-sm'
-                    : 'bg-[var(--bg-card-muted)] text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--solar)] hover:text-[var(--solar)]',
+                    ? 'bg-[var(--battery)] text-white border-[var(--battery)] shadow-sm'
+                    : 'bg-[var(--bg-card-muted)] text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--battery)] hover:text-[var(--battery)]',
                 ].join(' ')}
                 title={s < 1 ? 'Slower than real-time' : s === 1 ? 'Real-time' : `${s}× faster than real-time`}
               >
@@ -640,7 +641,7 @@ function SimulationControls() {
             variant="ghost"
             size="sm"
             onClick={handleReset}
-            className="ml-auto text-[var(--text-tertiary)] hover:text-red-400 flex items-center gap-1.5"
+            className="ml-auto text-[var(--text-tertiary)] hover:text-[var(--alert)] flex items-center gap-1.5"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             Reset
@@ -779,12 +780,12 @@ export function SimulationNodes() {
           { label: 'Solar',    value: `${solarPower.toFixed(2)} kW`,                                                             color: 'text-[var(--solar)]' },
           { label: 'Battery',  value: `${batteryLevel.toFixed(1)}%`,                                                             color: 'text-[var(--battery)]' },
           { label: 'Grid',     value: isImporting ? `↑ ${gridImportKw.toFixed(2)} kW` : isExporting ? `↓ ${gridExportKw.toFixed(2)} kW` : 'Idle', color: 'text-[var(--text-primary)]' },
-          { label: 'Savings',  value: `KES ${Math.round(totalSavingsKES).toLocaleString()}`,                                     color: 'text-green-500' },
+          { label: 'Savings',  value: `KES ${Math.round(totalSavingsKES).toLocaleString()}`,                                     color: 'text-[var(--battery)]' },
         ].map(({ label, value, color }) => (
           <Card key={label} className="dashboard-card">
             <CardContent className="pt-3 pb-3">
               <div className="text-[10px] text-[var(--text-tertiary)] uppercase font-semibold mb-0.5">{label}</div>
-              <div className={`text-xl font-black ${color}`}>{value}</div>
+              <div className={`font-display tabular text-xl font-bold ${color}`}>{value}</div>
             </CardContent>
           </Card>
         ))}
@@ -809,7 +810,7 @@ export function SimulationNodes() {
                 </div>
               </div>
               {batteryLevel <= reservePct && (
-                <div className="rounded border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700">
+                <div className="rounded border border-[var(--alert)]/25 bg-[var(--alert-soft)] px-3 py-2 text-xs text-[var(--alert)]">
                   Battery SOC is at reserve threshold.
                 </div>
               )}
@@ -831,7 +832,7 @@ export function SimulationNodes() {
           )}
 
           {systemConfig.systemMode === 'hybrid' && (
-            <div className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+            <div className="rounded border border-[var(--grid)]/20 bg-[var(--grid-soft)] px-3 py-2 text-xs text-[var(--grid)]">
               Hybrid mode keeps both battery and grid pathways active.
             </div>
           )}
@@ -879,7 +880,7 @@ export function SimulationNodes() {
               <RigidCable
                 height={40}
                 active={solarPower > 0.1}
-                color="bg-yellow-400"
+                color="bg-[var(--solar-bright)]"
                 glowColor="var(--solar)"
                 powerKw={solarPower}
                 capacityKw={dcCap}
@@ -900,7 +901,7 @@ export function SimulationNodes() {
               <RigidCable
                 height={40}
                 active={Math.abs(batteryPower) > 0.05}
-                color="bg-green-400"
+                color="bg-[var(--battery-bright)]"
                 glowColor="var(--battery)"
                 powerKw={Math.abs(batteryPower)}
                 capacityKw={systemConfig.batteryCapacityKWh ?? 50}
@@ -917,7 +918,7 @@ export function SimulationNodes() {
               width="60%"
               height={4}
               active={solarPower > 0.1 || Math.abs(batteryPower) > 0.05}
-              color="bg-yellow-400"
+              color="bg-[var(--solar-bright)]"
               glowColor="var(--solar)"
               powerKw={solarPower + Math.abs(batteryPower)}
               capacityKw={dcCap * 2}
@@ -951,14 +952,14 @@ export function SimulationNodes() {
               width="100%"
               height={5}
               active={inverterPower > 0.1 || isImporting}
-              color="bg-orange-400"
-              glowColor="#f97316"
+              color="bg-[var(--solar-bright)]"
+              glowColor="var(--solar-bright)"
               powerKw={inverterPower}
               capacityKw={acCap}
               flowDirection="right"
               speed={simSpeed}
             />
-            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-0.5 rounded-full bg-orange-500 text-white text-[10px] font-black uppercase tracking-widest shadow-md whitespace-nowrap z-10 pointer-events-none">
+            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-0.5 rounded-full bg-[var(--solar)] text-white text-[10px] font-black uppercase tracking-widest shadow-md whitespace-nowrap z-10 pointer-events-none">
               AC Bus
             </span>
           </div>
@@ -971,8 +972,8 @@ export function SimulationNodes() {
               <RigidCable
                 height={36}
                 active={gridPower > 0.05}
-                color={isImporting ? 'bg-slate-400' : 'bg-amber-400'}
-                glowColor={isImporting ? '#94a3b8' : '#f59e0b'}
+                color={isImporting ? 'bg-[var(--grid-bright)]' : 'bg-[var(--warning)]'}
+                glowColor={isImporting ? 'var(--grid-bright)' : 'var(--warning)'}
                 powerKw={gridPower}
                 capacityKw={acCap}
                 flowDirection={isImporting ? 'down' : 'up'}
@@ -991,14 +992,14 @@ export function SimulationNodes() {
             {nonEvLoads.length === 0 ? (
               /* Fallback: show a generic Home Load if no loads configured */
               <div className="flex flex-col items-center gap-0 flex-shrink-0">
-                <RigidCable height={36} active={homeLoadKw > 0.1} color="bg-blue-300" glowColor="#93c5fd" powerKw={homeLoadKw} capacityKw={acCap} flowDirection="down" speed={simSpeed} showLabel />
+                <RigidCable height={36} active={homeLoadKw > 0.1} color="bg-[var(--grid-bright)]" glowColor="var(--grid-bright)" powerKw={homeLoadKw} capacityKw={acCap} flowDirection="down" speed={simSpeed} showLabel />
                 <HomeProduct power={homeLoadKw} label="Home Load" />
               </div>
             ) : nonEvLoads.map((load: any, i: number) => {
               const loadPower = getNonEvLoadPower(load);
               const LoadIcon  = getLoadIcon(load.type);
-              const cableColors = ['bg-blue-300', 'bg-emerald-300', 'bg-cyan-300', 'bg-purple-300', 'bg-rose-300'];
-              const glowColors  = ['#93c5fd', '#6ee7b7', '#67e8f9', '#c4b5fd', '#fda4af'];
+              const cableColors = ['bg-[var(--grid-bright)]', 'bg-[var(--battery-bright)]', 'bg-[var(--consumption)]', 'bg-[var(--ev-bright)]', 'bg-[var(--alert-bright)]'];
+              const glowColors  = ['var(--grid-bright)', 'var(--battery-bright)', 'var(--consumption)', 'var(--ev-bright)', 'var(--alert-bright)'];
               return (
                 <div key={load.id ?? i} className="flex flex-col items-center gap-0 flex-shrink-0">
                   <RigidCable
@@ -1023,11 +1024,11 @@ export function SimulationNodes() {
               const evSocV = getEvSoc(idx);
               const evStat = evPow > 0.1 ? 'Charging' : 'Idle';
               const evPalette = [
-                { cable: 'bg-sky-400',    glow: '#38bdf8' },
-                { cable: 'bg-violet-400', glow: '#a78bfa' },
-                { cable: 'bg-pink-400',   glow: '#f472b6' },
-                { cable: 'bg-teal-400',   glow: '#2dd4bf' },
-                { cable: 'bg-orange-400', glow: '#fb923c' },
+                { cable: 'bg-[var(--ev-bright)]',      glow: 'var(--ev-bright)' },
+                { cable: 'bg-[var(--consumption)]',    glow: 'var(--consumption)' },
+                { cable: 'bg-[var(--grid-bright)]',    glow: 'var(--grid-bright)' },
+                { cable: 'bg-[var(--battery-bright)]', glow: 'var(--battery-bright)' },
+                { cable: 'bg-[var(--solar-bright)]',   glow: 'var(--solar-bright)' },
               ];
               const col = evPalette[idx % evPalette.length];
               return (
@@ -1076,14 +1077,14 @@ export function SimulationNodes() {
             {[
               { label: 'Solar Gen',   value: `${totalSolarKWh.toFixed(2)} kWh`,                                                               color: 'var(--solar)' },
               { label: 'Grid Import', value: `${minuteData.reduce((s, d) => s + d.gridImportKWh, 0).toFixed(2)} kWh`,                         color: 'var(--text-primary)' },
-              { label: 'Grid Export', value: `${minuteData.reduce((s, d) => s + d.gridExportKWh, 0).toFixed(2)} kWh`,                         color: '#f59e0b' },
-              { label: 'Home Load',   value: `${minuteData.reduce((s, d) => s + d.homeLoadKWh, 0).toFixed(2)} kWh`,                           color: '#93c5fd' },
-              { label: 'EV Load',     value: `${minuteData.reduce((s, d) => s + d.ev1LoadKWh + d.ev2LoadKWh, 0).toFixed(2)} kWh`,             color: '#38bdf8' },
-              { label: 'Savings',     value: `KES ${Math.round(totalSavingsKES).toLocaleString()}`,                                           color: '#4ade80' },
+              { label: 'Grid Export', value: `${minuteData.reduce((s, d) => s + d.gridExportKWh, 0).toFixed(2)} kWh`,                         color: 'var(--warning)' },
+              { label: 'Home Load',   value: `${minuteData.reduce((s, d) => s + d.homeLoadKWh, 0).toFixed(2)} kWh`,                           color: 'var(--grid)' },
+              { label: 'EV Load',     value: `${minuteData.reduce((s, d) => s + d.ev1LoadKWh + d.ev2LoadKWh, 0).toFixed(2)} kWh`,             color: 'var(--ev)' },
+              { label: 'Savings',     value: `KES ${Math.round(totalSavingsKES).toLocaleString()}`,                                           color: 'var(--battery)' },
             ].map(({ label, value, color }) => (
               <div key={label} className="bg-[var(--bg-card-muted)] rounded-lg p-3 border border-[var(--border)]">
                 <div className="text-[9px] text-[var(--text-tertiary)] uppercase font-semibold mb-1">{label}</div>
-                <div className="text-sm font-black" style={{ color }}>{value}</div>
+                <div className="font-display tabular text-sm font-bold" style={{ color }}>{value}</div>
               </div>
             ))}
           </div>

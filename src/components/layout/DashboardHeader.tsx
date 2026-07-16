@@ -34,6 +34,11 @@ export interface HeaderNotification {
   onAction?: () => void;
 }
 
+const iconBtnCls =
+  'relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-md ' +
+  'border border-[var(--border)] bg-[var(--bg-card-muted)] text-[var(--text-secondary)] ' +
+  'transition-all duration-150 hover:border-[var(--border-hover)] hover:text-[var(--text-primary)]';
+
 export function DashboardHeader({
   currentDate,
   onReset,
@@ -74,64 +79,37 @@ export function DashboardHeader({
     });
   };
 
-  const iconBtn =
-    'relative rounded-xl transition-all duration-150 flex items-center justify-center'
-    + ' h-9 w-9 sm:h-10 sm:w-10';
-  const iconBtnStyle = {
-    background: 'var(--bg-card-muted)',
-    border: '1px solid var(--border)',
-    color: 'var(--text-secondary)',
-  };
-  const iconSize = { width: 'var(--icon-sm)', height: 'var(--icon-sm)', flexShrink: 0 };
-
   return (
-    <header
-      className="sticky top-0 z-40 w-full flex items-center justify-between gap-2 sm:gap-4 px-3 sm:px-4 py-2.5 sm:py-3 md:px-6 md:h-[68px] flex-nowrap backdrop-blur-md"
-      style={{
-        background: 'var(--bg-secondary)',
-        borderBottom: '1px solid var(--border)',
-        boxShadow: '0 1px 0 var(--border)',
-      }}
-    >
+    <header className="sticky top-0 z-40 flex w-full flex-nowrap items-center justify-between gap-2 border-b border-[var(--border)] bg-[var(--nav-bg)] px-3 py-2.5 backdrop-blur-md sm:gap-4 sm:px-4 sm:py-3 md:h-[68px] md:px-6">
       {/* Left: trigger + date + location */}
-      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-        <SidebarTrigger className={iconBtn} style={iconBtnStyle} />
+      <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+        <SidebarTrigger className={iconBtnCls} />
 
-        <div className="space-y-0.5 min-w-0 flex-1">
-          <div
-            className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold truncate"
-            style={{ color: 'var(--text-primary)' }}
-          >
-            <Calendar style={{ ...iconSize, color: 'var(--text-muted)' }} />
+        <div className="min-w-0 flex-1 space-y-0.5">
+          <div className="flex items-center gap-1.5 truncate text-xs font-semibold text-[var(--text-primary)] sm:text-sm">
+            <Calendar className="h-4 w-4 shrink-0 text-[var(--text-muted)]" />
             <span className="hidden sm:inline">{dateLabel}</span>
             <span className="sm:hidden">{dateLabelShort}</span>
           </div>
 
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--battery)' }}>
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--battery)] animate-pulse shrink-0" />
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--battery)]">
+            <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-[var(--battery)]" />
             Live simulation active
           </span>
         </div>
       </div>
 
       {/* Right: actions */}
-      <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap">
+      <div className="flex flex-nowrap items-center gap-1.5 sm:gap-2">
         <SubscriptionBadge />
 
         {/* Get Recommendation */}
         {onRecommendationClick && (
           <button
             onClick={onRecommendationClick}
-            className="h-9 sm:h-10 px-2.5 sm:px-4 rounded-xl flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-semibold transition-all whitespace-nowrap"
-            style={{
-              background: 'var(--battery)',
-              color: '#fff',
-              boxShadow: '0 2px 8px rgba(16,185,129,0.25)',
-            }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'var(--battery-bright)')}
-            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = 'var(--battery)')}
+            className="flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg bg-[var(--battery-bright)] px-2.5 text-xs font-semibold text-white shadow-[0_1px_2px_rgba(4,120,87,0.35),0_0_0_1px_rgba(4,120,87,0.12)] transition-all duration-200 hover:bg-[var(--battery)] hover:shadow-[0_4px_12px_rgba(4,120,87,0.25)] sm:h-10 sm:gap-2 sm:px-4 sm:text-sm"
           >
-            <Target style={iconSize} />
+            <Target className="h-4 w-4 shrink-0" />
             <span className="hidden md:inline">Recommend</span>
           </button>
         )}
@@ -140,20 +118,12 @@ export function DashboardHeader({
         <Popover>
           <PopoverTrigger asChild>
             <button
-              className={iconBtn}
-              style={iconBtnStyle}
+              className={iconBtnCls}
               aria-label={`Notifications (${effectiveNotificationCount})`}
             >
-              <Bell style={iconSize} />
+              <Bell className="h-4 w-4 shrink-0" />
               {effectiveNotificationCount > 0 && (
-                <Badge
-                  className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center p-0 text-[9px] sm:text-[10px] font-bold rounded-full border-2"
-                  style={{
-                    background: 'var(--alert)',
-                    color: '#fff',
-                    borderColor: 'var(--bg-secondary)',
-                  }}
-                >
+                <Badge className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border-2 border-[var(--bg-secondary)] bg-[var(--alert)] p-0 text-[9px] font-bold text-white sm:h-5 sm:w-5 sm:text-[10px]">
                   {effectiveNotificationCount > 9 ? '9+' : effectiveNotificationCount}
                 </Badge>
               )}
@@ -162,24 +132,16 @@ export function DashboardHeader({
           <PopoverContent
             align="end"
             sideOffset={8}
-            className="w-80 rounded-xl"
-            style={{
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border)',
-              color: 'var(--text-primary)',
-              padding: '16px',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-            }}
+            className="w-80 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4 text-[var(--text-primary)] shadow-[var(--card-shadow-hover)]"
           >
             {/* Notification header row */}
-            <div className="flex items-center justify-between" style={{ marginBottom: '12px' }}>
-              <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>Notifications</p>
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-semibold text-[var(--text-primary)]">Notifications</p>
               {unreadNotifications.length > 0 && (
                 <button
                   type="button"
                   onClick={markAllAsRead}
-                  style={{ fontSize: '0.6875rem', fontWeight: 500, color: 'var(--battery)' }}
-                  className="hover:opacity-80 whitespace-nowrap"
+                  className="whitespace-nowrap text-[11px] font-medium text-[var(--battery)] hover:opacity-80"
                 >
                   Mark all read
                 </button>
@@ -187,35 +149,29 @@ export function DashboardHeader({
             </div>
 
             {notifications.length === 0 ? (
-              <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>No notifications yet.</p>
+              <p className="text-[13px] text-[var(--text-secondary)]">No notifications yet.</p>
             ) : unreadNotifications.length === 0 ? (
-              <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>All caught up.</p>
+              <p className="text-[13px] text-[var(--text-secondary)]">All caught up.</p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div className="flex flex-col gap-2">
                 {unreadNotifications.slice(0, 6).map((item) => (
                   <div
                     key={item.id}
-                    style={{
-                      background: 'var(--bg-card-muted)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '8px',
-                      padding: '10px 12px',
-                    }}
+                    className="rounded-lg border border-[var(--border)] bg-[var(--bg-card-muted)] px-3 py-2.5"
                   >
-                    <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    <p className="text-[13px] font-semibold text-[var(--text-primary)]">
                       {item.title}
                     </p>
-                    <p style={{ marginTop: '3px', fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    <p className="mt-0.5 text-xs leading-normal text-[var(--text-secondary)]">
                       {item.description}
                     </p>
                     {/* Action row -  always horizontal */}
-                    <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div className="mt-2 flex items-center gap-2.5">
                       {item.actionLabel && item.onAction && (
                         <button
                           type="button"
                           onClick={() => { item.onAction?.(); markAsRead(item.id); }}
-                          style={{ fontSize: '0.6875rem', fontWeight: 500, color: 'var(--battery)', whiteSpace: 'nowrap' }}
-                          className="hover:opacity-80"
+                          className="whitespace-nowrap text-[11px] font-medium text-[var(--battery)] hover:opacity-80"
                         >
                           {item.actionLabel}
                         </button>
@@ -223,8 +179,7 @@ export function DashboardHeader({
                       <button
                         type="button"
                         onClick={() => markAsRead(item.id)}
-                        style={{ fontSize: '0.6875rem', fontWeight: 500, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}
-                        className="hover:opacity-80"
+                        className="whitespace-nowrap text-[11px] font-medium text-[var(--text-tertiary)] hover:opacity-80"
                       >
                         Dismiss
                       </button>
@@ -238,12 +193,11 @@ export function DashboardHeader({
 
         {/* Reset */}
         <button
-          className={iconBtn}
-          style={iconBtnStyle}
+          className={iconBtnCls}
           onClick={onReset}
           aria-label="Reset dashboard"
         >
-          <RotateCcw style={iconSize} />
+          <RotateCcw className="h-4 w-4 shrink-0" />
         </button>
       </div>
     </header>

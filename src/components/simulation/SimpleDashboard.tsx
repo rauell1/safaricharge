@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useCallback, useState, useEffect, useRef, type ChangeEvent } from 'react';
-import { Play, Pause, RotateCcw, Save, ExternalLink } from 'lucide-react';
+import { useMemo, useCallback, useState, useEffect, useRef, type ChangeEvent, type ElementType } from 'react';
+import { Play, Pause, RotateCcw, Save, ExternalLink, Home, Building, Building2, Factory, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useEnergySystemStore } from '@/stores/energySystemStore';
 import type { LocationOption } from '@/stores/energySystemStore';
@@ -27,17 +27,17 @@ type VoltageClass = typeof VOLTAGE_CLASSES[number];
 // ─── Project presets ──────────────────────────────────────────────────────────
 
 interface SimPreset {
-  label: string; icon: string; kwLabel: string;
+  label: string; icon: ElementType; kwLabel: string;
   inverterId: string; inverterUnits: number; batteryId: string; batteryModules: number;
   panelWatts: number; dcAcRatio: number; voltageClass: VoltageClass;
 }
 
 const PRESETS: SimPreset[] = [
-  { label: 'Home', icon: '🏠', kwLabel: '6 kW', inverterId: 'inv-solis-6k-lv', inverterUnits: 1, batteryId: 'bat-dyness-dl2.5', batteryModules: 2, panelWatts: 580, dcAcRatio: 1.3, voltageClass: 'LV (48V)' },
-  { label: 'Home+', icon: '🏘️', kwLabel: '12 kW', inverterId: 'inv-deye-12k-lv-1p', inverterUnits: 1, batteryId: 'bat-dyness-dl5.0', batteryModules: 5, panelWatts: 620, dcAcRatio: 1.3, voltageClass: 'LV (48V)' },
-  { label: 'Office', icon: '🏢', kwLabel: '30 kW', inverterId: 'inv-deye-30k-hv', inverterUnits: 1, batteryId: 'bat-dyness-stack100-mod', batteryModules: 6, panelWatts: 620, dcAcRatio: 1.3, voltageClass: 'HV (160-800V)' },
-  { label: 'Factory', icon: '🏭', kwLabel: '50 kW', inverterId: 'inv-deye-50k-hv', inverterUnits: 1, batteryId: 'bat-dyness-stack100-mod', batteryModules: 10, panelWatts: 620, dcAcRatio: 1.3, voltageClass: 'HV (160-800V)' },
-  { label: 'Campus', icon: '⚡', kwLabel: '2x 50 kW', inverterId: 'inv-deye-50k-hv', inverterUnits: 2, batteryId: 'bat-dyness-stack100-mod', batteryModules: 20, panelWatts: 625, dcAcRatio: 1.35, voltageClass: 'HV (160-800V)' },
+  { label: 'Home', icon: Home, kwLabel: '6 kW', inverterId: 'inv-solis-6k-lv', inverterUnits: 1, batteryId: 'bat-dyness-dl2.5', batteryModules: 2, panelWatts: 580, dcAcRatio: 1.3, voltageClass: 'LV (48V)' },
+  { label: 'Home+', icon: Building, kwLabel: '12 kW', inverterId: 'inv-deye-12k-lv-1p', inverterUnits: 1, batteryId: 'bat-dyness-dl5.0', batteryModules: 5, panelWatts: 620, dcAcRatio: 1.3, voltageClass: 'LV (48V)' },
+  { label: 'Office', icon: Building2, kwLabel: '30 kW', inverterId: 'inv-deye-30k-hv', inverterUnits: 1, batteryId: 'bat-dyness-stack100-mod', batteryModules: 6, panelWatts: 620, dcAcRatio: 1.3, voltageClass: 'HV (160-800V)' },
+  { label: 'Factory', icon: Factory, kwLabel: '50 kW', inverterId: 'inv-deye-50k-hv', inverterUnits: 1, batteryId: 'bat-dyness-stack100-mod', batteryModules: 10, panelWatts: 620, dcAcRatio: 1.3, voltageClass: 'HV (160-800V)' },
+  { label: 'Campus', icon: Zap, kwLabel: '2x 50 kW', inverterId: 'inv-deye-50k-hv', inverterUnits: 2, batteryId: 'bat-dyness-stack100-mod', batteryModules: 20, panelWatts: 625, dcAcRatio: 1.35, voltageClass: 'HV (160-800V)' },
 ];
 
 // ─── Rolling chart ────────────────────────────────────────────────────────────
@@ -100,7 +100,7 @@ function RollingChart({ data }: { data: Array<{ solarKW: number; homeLoadKW: num
 function KpiChip({ label, value, unit, color }: { label: string; value: string; unit: string; color: string }) {
   return (
     <div className="flex flex-col items-center rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2.5 text-center">
-      <span className={`text-lg font-black tabular-nums leading-none ${color}`}>{value}</span>
+      <span className={`font-display text-lg font-bold tabular-nums leading-none ${color}`}>{value}</span>
       <span className="mt-0.5 text-[9px] text-[var(--text-muted)]">{unit}</span>
       <span className="mt-1 text-[9px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{label}</span>
     </div>
@@ -278,7 +278,7 @@ export function SimpleDashboard({ onSaveRun, isSaving }: SimpleDashboardProps) {
                     : 'border-[var(--border)] bg-[var(--bg-card)] hover:border-[var(--battery)] hover:bg-[var(--battery-soft)]'
                 )}
               >
-                <span className="text-base">{p.icon}</span>
+                <p.icon className="h-4 w-4 text-[var(--battery)]" strokeWidth={1.8} />
                 <span className="mt-0.5 text-[9px] font-bold text-[var(--text-primary)]">{p.label}</span>
                 <span className="text-[9px] text-[var(--text-muted)]">{p.kwLabel}</span>
               </button>
@@ -484,7 +484,7 @@ export function SimpleDashboard({ onSaveRun, isSaving }: SimpleDashboardProps) {
             { label: '25-yr NPV', value: npvKSh !== 0 ? `KSh ${npvKSh > 0 ? '+' : ''}${(npvKSh / 1_000_000).toFixed(2)}M` : '--' },
           ].map(f => (
             <div key={f.label} className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3">
-              <p className="text-base font-black text-[var(--text-primary)]">{f.value}</p>
+              <p className="font-display tabular text-base font-bold text-[var(--text-primary)]">{f.value}</p>
               <p className="mt-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{f.label}</p>
             </div>
           ))}

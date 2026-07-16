@@ -3,24 +3,28 @@
 import React from 'react';
 import {
   LayoutDashboard,
+  FlaskConical,
   SlidersHorizontal,
   BookMarked,
   Zap,
-  TrendingUp,
+  DollarSign,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DashboardSection } from './DashboardSidebar';
 
+// Labels and icons mirror DashboardSidebar's primary nav so the two surfaces
+// never drift apart.
 const NAV_ITEMS: Array<{
   id: DashboardSection;
   label: string;
   icon: React.ElementType;
 }> = [
-  { id: 'dashboard',           label: 'Home',      icon: LayoutDashboard },
-  { id: 'configuration',       label: 'Design',    icon: SlidersHorizontal },
-  { id: 'scenarios',           label: 'Scenarios', icon: BookMarked },
-  { id: 'financial',           label: 'Finance',   icon: TrendingUp },
-  { id: 'energy-intelligence', label: 'AI & Intel', icon: Zap },
+  { id: 'dashboard',           label: 'Operations',  icon: LayoutDashboard },
+  { id: 'simulation',          label: 'Simulate',    icon: FlaskConical },
+  { id: 'configuration',       label: 'Design',      icon: SlidersHorizontal },
+  { id: 'scenarios',           label: 'History',     icon: BookMarked },
+  { id: 'financial',           label: 'Financials',  icon: DollarSign },
+  { id: 'energy-intelligence', label: 'AI Insights', icon: Zap },
 ];
 
 interface MobileBottomNavProps {
@@ -53,19 +57,19 @@ export function MobileBottomNav({
             <Icon
               className={cn(
                 'h-5 w-5 transition-colors',
-                isActive ? 'text-[var(--solar)]' : 'text-[var(--text-tertiary)]'
+                isActive ? 'text-[var(--battery)]' : 'text-[var(--text-tertiary)]'
               )}
             />
             <span
               className={cn(
                 'text-[10px] leading-none transition-colors font-medium',
-                isActive ? 'text-[var(--solar)]' : 'text-[var(--text-tertiary)]'
+                isActive ? 'text-[var(--battery)]' : 'text-[var(--text-tertiary)]'
               )}
             >
               {item.label}
             </span>
             {isActive && (
-              <span className="absolute top-0 inset-x-2 h-0.5 rounded-full bg-[var(--solar)]" />
+              <span className="absolute top-0 inset-x-2 h-0.5 rounded-full bg-[var(--battery)]" />
             )}
           </button>
         );
