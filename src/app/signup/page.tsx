@@ -3,7 +3,7 @@
 import { Suspense, useState } from 'react'
 import { Loader2, LockKeyhole, Mail } from 'lucide-react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase'
+import { createClient, isSupabaseConfigured } from '@/lib/supabase'
 import {
   AuthShell, authInputCls, authLabelCls, authButtonCls, authErrorCls, authSuccessCls,
 } from '@/components/marketing/AuthShell'
@@ -26,8 +26,8 @@ function RegisterForm() {
     reset()
 
     const normalizedEmail = email.trim().toLowerCase()
-    if (normalizedEmail !== 'royokola3@gmail.com') {
-      setError('Registration is restricted to authorized email addresses.')
+    if (!isSupabaseConfigured()) {
+      setError('Authentication is not configured for this deployment.')
       return
     }
 

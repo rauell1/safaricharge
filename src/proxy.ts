@@ -26,7 +26,9 @@ const ONBOARDING_COOKIE = 'sc_onboarded'
 // Routes that authenticated users may visit before completing onboarding
 const ONBOARDING_EXEMPT = new Set(['/onboarding', '/site-setup'])
 const AUTH_VALIDATED_AT_COOKIE = 'sc_auth_checked_at'
-const AUTH_VALIDATION_WINDOW_MS = Number(process.env.AUTH_VALIDATION_WINDOW_MS ?? 60_000)
+// Validate every protected request by default. A non-zero window is an explicit
+// performance trade-off for deployments that accept cached identity checks.
+const AUTH_VALIDATION_WINDOW_MS = Number(process.env.AUTH_VALIDATION_WINDOW_MS ?? 0)
 const AUTH_TIMING_DEBUG = process.env.AUTH_TIMING_DEBUG === '1'
 
 function withTimingHeaders(response: NextResponse, metrics: Record<string, number>) {
@@ -122,7 +124,7 @@ export async function proxy(request: NextRequest) {
       data: { user },
       error,
     } = await supabase.auth.getUser()
-    if (error || !user || user.email?.toLowerCase() !== 'royokola3@gmail.com') {
+    if (error || !user) {
       return NextResponse.json(
         { error: 'Authentication required.' },
         { status: 401, headers: { 'x-request-id': requestId } }
@@ -135,6 +137,17 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isPublic(pathname)) return NextResponse.next()
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!supabaseUrl || !supabaseKey) {
+    // Public pages and zero-config local development remain usable, while an
+    // unconfigured production deployment never exposes protected content.
+    if (pathname === '/login' || pathname === '/signup') {
+      return NextResponse.next()
+    }
+    return NextResponse.redirect(new URL('/landing?error=auth_not_configured', request.url))
+  }
 
   // ── Session TTL check (cookie-only, zero network cost) ──────────────────
   // Do this BEFORE the Supabase getUser() call. If the session has expired
@@ -185,8 +198,8 @@ export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         getAll() {
@@ -206,19 +219,6 @@ export async function proxy(request: NextRequest) {
   const getSessionStart = Date.now()
   const { data: { session }, error: sessionError } = await supabase.auth.getSession()
   const getSessionMs = Date.now() - getSessionStart
-
-  if (session?.user && session.user.email?.toLowerCase() !== 'royokola3@gmail.com') {
-    const response = pathname === '/login' || pathname === '/signup'
-      ? supabaseResponse
-      : redirectWithCookies(request, `/login?error=auth_failed`, supabaseResponse)
-    response.cookies.delete(SESSION_TOUCH_COOKIE)
-    response.cookies.delete(ONBOARDING_COOKIE)
-    response.cookies.delete(AUTH_VALIDATED_AT_COOKIE)
-    request.cookies.getAll()
-      .filter(c => c.name.startsWith('sb-'))
-      .forEach(c => response.cookies.delete(c.name))
-    return response
-  }
 
   if (sessionError || !session?.user || !session.user.email_confirmed_at) {
     if (pathname === '/login' || pathname === '/signup') {
@@ -249,7 +249,7 @@ export async function proxy(request: NextRequest) {
     const { data: { user }, error } = await supabase.auth.getUser()
     getUserMs = Date.now() - getUserStart
 
-    if (error || !user || !user.email_confirmed_at || user.email?.toLowerCase() !== 'royokola3@gmail.com') {
+    if (error || !user || !user.email_confirmed_at) {
       if (pathname === '/login' || pathname === '/signup') {
         return supabaseResponse
       }

@@ -33,11 +33,6 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error && data.user) {
       const user = data.user
-      if (user.email?.toLowerCase() !== 'royokola3@gmail.com') {
-        await supabase.auth.signOut()
-        return NextResponse.redirect(`${origin}/login?error=auth_failed`)
-      }
-
       const adminEmail = process.env.ADMIN_EMAIL || ''
       const adminEmailsEnv = process.env.ADMIN_EMAILS || adminEmail
       const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase()).filter(Boolean)

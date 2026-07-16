@@ -1,13 +1,13 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Solar Energy Management for Kenya & Africa',
+  title: 'Solar & Battery System Design for Africa',
   description:
-    'Simulate solar PV + BESS systems, optimize KPLC tariff costs with MILP dispatch, and forecast financial returns. Free to use. Built for Kenya and African microgrids.',
+    'Operate, simulate, design, size, and financially evaluate solar PV and battery systems for projects across Africa. Free to use.',
   keywords: [
     'solar energy Kenya',
     'BESS optimization',
-    'KPLC tariff savings',
+    'electricity tariff savings Africa',
     'solar simulation tool',
     'microgrid Kenya',
     'battery storage Africa',
@@ -34,15 +34,15 @@ export const metadata: Metadata = {
     locale: 'en_KE',
     url: 'https://solar.rauell.systems/landing',
     siteName: 'SafariCharge',
-    title: 'Solar Energy Management for Kenya & Africa | SafariCharge',
+    title: 'Solar & Battery System Design for Africa | SafariCharge',
     description:
-      'Simulate solar PV + BESS systems, optimize KPLC tariff costs with MILP dispatch, and forecast financial returns. Free to use.',
+      'Operate, simulate, design, size, and financially evaluate solar PV and battery systems for projects across Africa. Free to use.',
     images: [
       {
         url: '/opengraph-image',
         width: 1200,
         height: 630,
-        alt: 'SafariCharge -  Solar Energy Management for Kenya and Africa',
+        alt: 'SafariCharge solar and battery system design platform for Africa',
       },
     ],
   },
@@ -50,9 +50,9 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     site: '@rauell1',
     creator: '@rauell1',
-    title: 'Solar Energy Management for Kenya & Africa | SafariCharge',
+    title: 'Solar & Battery System Design for Africa | SafariCharge',
     description:
-      'Simulate solar PV + BESS systems, optimize KPLC tariffs with MILP dispatch. Free to use.',
+      'Simulate, size, and financially evaluate solar and battery projects across Africa. Free to use.',
     images: ['/opengraph-image'],
   },
 }
@@ -76,7 +76,7 @@ const landingPageGraphJsonLd = {
       knowsAbout: [
         'Solar Energy',
         'Battery Energy Storage Systems',
-        'KPLC Tariff Optimization',
+        'Electricity Tariff Analysis',
         'Microgrid Management',
         'Renewable Energy Africa',
       ],
@@ -87,8 +87,8 @@ const landingPageGraphJsonLd = {
       name: 'SafariCharge',
       url: 'https://solar.rauell.systems',
       description:
-        'Solar PV + BESS simulation, MILP dispatch optimization, and KPLC tariff analysis for Kenya and Africa.',
-      inLanguage: 'en-KE',
+        'Solar PV and battery simulation, system design, sizing, and financial analysis for projects across Africa.',
+      inLanguage: 'en',
       publisher: {
         '@id': 'https://solar.rauell.systems/#organization',
       },
@@ -101,7 +101,7 @@ const landingPageGraphJsonLd = {
       applicationCategory: 'EnergyApplication',
       operatingSystem: 'Web',
       description:
-        'Advanced solar PV and BESS simulation platform with MILP dispatch optimization and KPLC tariff analysis for Kenya and African microgrids.',
+        'Solar PV and battery platform for operations, simulation, system design, sizing, financial analysis, AI insights, and reporting across Africa.',
       offers: {
         '@type': 'Offer',
         price: '0',
@@ -111,7 +111,7 @@ const landingPageGraphJsonLd = {
       featureList: [
         'Solar PV simulation',
         'Battery storage optimization',
-        'KPLC tariff engine',
+        'Local grid tariff analysis',
         'MILP dispatch optimizer',
         'EV charging integration',
         'Financial ROI analysis',

@@ -4,7 +4,7 @@ import { Suspense, useMemo, useState } from 'react'
 import { Loader2, LockKeyhole, Mail } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
+import { createClient, isSupabaseConfigured } from '@/lib/supabase'
 import {
   AuthShell, authInputCls, authLabelCls, authButtonCls, authErrorCls, authSuccessCls,
 } from '@/components/marketing/AuthShell'
@@ -42,14 +42,14 @@ function LoginForm() {
     e.preventDefault()
     reset()
     setLoading(true)
-    const supabase = createClient()
-
-    const normalizedEmail = email.trim().toLowerCase()
-    if (normalizedEmail !== 'royokola3@gmail.com') {
-      setError('Access restricted to authorized email address.')
+    if (!isSupabaseConfigured()) {
+      setError('Authentication is not configured for this deployment.')
       setLoading(false)
       return
     }
+    const supabase = createClient()
+
+    const normalizedEmail = email.trim().toLowerCase()
 
     const { error: signInErr } = await supabase.auth.signInWithPassword({
       email: normalizedEmail,
@@ -92,14 +92,14 @@ function LoginForm() {
     e.preventDefault()
     reset()
     setLoading(true)
-    const supabase = createClient()
-
-    const normalizedEmail = email.trim().toLowerCase()
-    if (normalizedEmail !== 'royokola3@gmail.com') {
-      setError('Access restricted to authorized email address.')
+    if (!isSupabaseConfigured()) {
+      setError('Authentication is not configured for this deployment.')
       setLoading(false)
       return
     }
+    const supabase = createClient()
+
+    const normalizedEmail = email.trim().toLowerCase()
 
     const { error: resetErr } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
       redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
