@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 353 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-18-3fc6eea` | `3fc6eea` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-07-18 |
 | 352 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-17-54810b8` | `54810b8` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-07-17 |
 | 351 | `rollback/fix-auth-access-and-align-africa-landi-2026-07-16-811abf4` | `811abf4` | fix auth access and align Africa landing page (13f +132/-205) | 2026-07-16 |
 | 350 | `rollback/feat-ui-revamp-phase-4-sizing-onboardi-2026-07-16-d55e623` | `d55e623` | feat(ui): revamp phase 4 - sizing + onboarding/site-setup alignment (6f +78/-88) | 2026-07-16 |
@@ -3728,6 +3729,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Commit**: `54810b86831b55fc4fdc633020a3dc2c640ed258`
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-07-17
+- **Changed**: 1 file(s), +1/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #353 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-18-3fc6eea`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-07-18-3fc6eea`
+- **Commit**: `3fc6eea963e65abc51369ceb2ee17f6fd3f9ba59`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-07-18
 - **Changed**: 1 file(s), +1/-1 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
