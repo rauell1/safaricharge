@@ -144,6 +144,8 @@
 
 
 
+
+
 **SafariCharge** is a production-grade solar PV + BESS simulation, parametric sizing, and MILP dispatch optimisation platform built for Kenya and East Africa. It combines real-time physics simulation, hardware-accurate component catalogs, KPLC tariff modelling, and 25-year financial analysis — all in a Next.js 16 App Router application deployed on Vercel with Supabase as the backend.
 
 ---
