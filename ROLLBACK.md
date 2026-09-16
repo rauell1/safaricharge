@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 413 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-09-16-5fb1035` | `5fb1035` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-09-16 |
 | 412 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-09-15-0ca2507` | `0ca2507` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-09-15 |
 | 411 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-09-14-27c6a2d` | `27c6a2d` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-09-14 |
 | 410 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-09-13-b9bcae1` | `b9bcae1` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-09-13 |
@@ -4388,6 +4389,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Commit**: `0ca25079950d2ce749c4ac37d52b9895302ccdf9`
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-09-15
+- **Changed**: 1 file(s), +1/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #413 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-09-16-5fb1035`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-09-16-5fb1035`
+- **Commit**: `5fb1035ae1d7cde349af1e32a85bbde189c4d082`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-09-16
 - **Changed**: 1 file(s), +1/-1 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
