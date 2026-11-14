@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 473 | `rollback/feat-port-stimapulse-v2-tariffs-season-2026-11-14-ad93717` | `ad93717` | feat: port StimaPulse V2 tariffs, seasonal dispatch, sizing, reports, heatmap, scenarios, MCP & telemetry (v2.3.0) (40f +4909/-222) | 2026-11-14 |
 | 472 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-11-14-1042ab0` | `1042ab0` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-11-14 |
 | 471 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-11-13-07ed6a1` | `07ed6a1` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-11-13 |
 | 470 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-11-12-ca32f34` | `ca32f34` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +380/-385) | 2026-11-12 |
@@ -5049,6 +5050,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-11-14
 - **Changed**: 1 file(s), +1/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #473 — `rollback/feat-port-stimapulse-v2-tariffs-season-2026-11-14-ad93717`
+
+- **Branch**: `rollback/feat-port-stimapulse-v2-tariffs-season-2026-11-14-ad93717`
+- **Commit**: `ad93717b333ca38baebde2489cdfc56013dadb18`
+- **Subject**: feat: port StimaPulse V2 tariffs, seasonal dispatch, sizing, reports, heatmap, scenarios, MCP & telemetry (v2.3.0)
+- **Date**: 2026-11-14
+- **Changed**: 40 file(s), +4909/-222 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
 
