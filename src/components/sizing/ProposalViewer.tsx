@@ -1,6 +1,14 @@
-import { Printer, X, Award, Leaf } from 'lucide-react';
+'use client';
+
+import React, { useState } from 'react';
+import { Printer, X, Award, Leaf, FileText, FileSpreadsheet, AlertTriangle } from 'lucide-react';
 import { SimulationResults } from '@/lib/sizing/solarCalculator';
 import { KSH_PER_USD } from '@/lib/sizing/mockData';
+import { isOutdatedEngineVersion } from '@/lib/solar-resource';
+import {
+  DEFAULT_REPORT_SECTIONS,
+  type ReportSectionToggles,
+} from '@/lib/reports/report-types';
 
 interface ProposalViewerProps {
   results: SimulationResults;
@@ -13,8 +21,46 @@ interface ProposalViewerProps {
 export default function ProposalViewer({ results, projectName, clientName, engineerName, onClose }: ProposalViewerProps) {
   const dateStr = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
   const docId = `SC-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+  const [companyName, setCompanyName] = useState('SafariCharge Ltd');
+  const [sections, setSections] = useState<ReportSectionToggles>(DEFAULT_REPORT_SECTIONS);
+  const [downloading, setDownloading] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const triggerPrint = () => window.print();
+
+  const downloadFormat = async (format: 'docx' | 'pdf' | 'xlsx' | 'csv') => {
+    setDownloading(format);
+    setExportError(null);
+    try {
+      const res = await fetch('/api/sizing-export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          format,
+          results,
+          branding: { companyName, clientName, projectTitle: projectName },
+          sections,
+        }),
+      });
+      if (!res.ok) throw new Error(`Export failed (${res.status})`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const ext = format === 'csv' ? 'zip' : format;
+      a.download = `SafariCharge_Proposal_${new Date().toISOString().slice(0, 10)}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setExportError(e instanceof Error ? e.message : 'Export failed');
+    } finally {
+      setDownloading(null);
+    }
+  };
+
+  const outdated = isOutdatedEngineVersion(results.engineVersion);
 
   const sectionGroups = new Map<string, typeof results.bomLineItems>();
   results.bomLineItems.forEach(item => {
@@ -27,19 +73,74 @@ export default function ProposalViewer({ results, projectName, clientName, engin
     <div className="fixed inset-0 bg-black/50 backdrop-blur-md z-50 overflow-y-auto p-4 md:p-8 flex justify-center items-start print:p-0 print:bg-white print:backdrop-blur-none">
       <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl w-full max-w-4xl shadow-2xl overflow-hidden print:border-none print:shadow-none print:bg-white print:text-slate-950 print:w-full print:rounded-none">
 
-        <div className="bg-[var(--bg-card-muted)] px-6 py-4 border-b border-[var(--border)] flex justify-between items-center print:hidden">
-          <div className="flex items-center gap-2">
-            <span className="bg-[var(--battery-soft)] text-[var(--battery)] text-xs px-2.5 py-0.5 rounded-full font-mono border border-[var(--battery)]/30">Bankable Proposal Mode</span>
-            <span className="text-xs text-[var(--text-tertiary)] font-mono">ID: {docId}</span>
+        <div className="bg-[var(--bg-card-muted)] px-6 py-4 border-b border-[var(--border)] space-y-3 print:hidden">
+          <div className="flex flex-wrap justify-between items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="bg-[var(--battery-soft)] text-[var(--battery)] text-xs px-2.5 py-0.5 rounded-full font-mono border border-[var(--battery)]/30">Bankable Proposal Mode</span>
+              <span className="text-xs text-[var(--text-tertiary)] font-mono">ID: {docId}</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button onClick={() => downloadFormat('docx')} disabled={downloading !== null} className="bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-bold text-xs px-3 py-2 rounded-lg flex items-center gap-1.5 transition">
+                <FileText className="w-3.5 h-3.5" /><span>{downloading === 'docx' ? 'Exporting...' : 'Word (.docx)'}</span>
+              </button>
+              <button onClick={() => downloadFormat('pdf')} disabled={downloading !== null} className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs px-3 py-2 rounded-lg flex items-center gap-1.5 transition">
+                <FileText className="w-3.5 h-3.5" /><span>{downloading === 'pdf' ? 'Exporting...' : 'PDF (.pdf)'}</span>
+              </button>
+              <button onClick={() => downloadFormat('xlsx')} disabled={downloading !== null} className="bg-teal-700 hover:bg-teal-800 disabled:opacity-50 text-white font-bold text-xs px-3 py-2 rounded-lg flex items-center gap-1.5 transition">
+                <FileSpreadsheet className="w-3.5 h-3.5" /><span>{downloading === 'xlsx' ? 'Exporting...' : 'Excel (.xlsx)'}</span>
+              </button>
+              <button onClick={() => downloadFormat('csv')} disabled={downloading !== null} className="bg-[var(--bg-card)] hover:bg-[var(--border)] text-[var(--text-primary)] border border-[var(--border)] font-semibold text-xs px-3 py-2 rounded-lg transition">
+                <span>CSV ZIP</span>
+              </button>
+              <button onClick={triggerPrint} className="bg-[var(--battery)] hover:bg-emerald-700 text-white font-bold text-xs px-3 py-2 rounded-lg flex items-center gap-1.5 transition">
+                <Printer className="w-3.5 h-3.5" /><span>Print</span>
+              </button>
+              <button onClick={onClose} className="bg-[var(--bg-card-muted)] hover:bg-[var(--border)] text-[var(--text-secondary)] border border-[var(--border)] font-semibold text-xs px-3 py-2 rounded-lg flex items-center gap-1 transition">
+                <X className="w-3.5 h-3.5" /><span>Close</span>
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button onClick={triggerPrint} className="bg-[var(--battery)] hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-lg flex items-center gap-1.5 transition active:scale-95">
-              <Printer className="w-3.5 h-3.5" /><span>Print / Save as PDF</span>
-            </button>
-            <button onClick={onClose} className="bg-[var(--bg-card-muted)] hover:bg-[var(--border)] text-[var(--text-secondary)] border border-[var(--border)] font-semibold text-xs px-3 py-2 rounded-lg flex items-center gap-1 transition">
-              <X className="w-3.5 h-3.5" /><span>Close</span>
-            </button>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[var(--border)]/60 text-[11px]">
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[var(--text-tertiary)] uppercase">Brand:</span>
+              <input
+                type="text"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                className="rounded border border-[var(--border)] bg-[var(--bg-card)] px-2 py-1 text-xs font-semibold text-[var(--text-primary)]"
+                placeholder="Organization Name"
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {(
+                [
+                  ['executiveSummary', 'Summary'],
+                  ['systemSpecs', 'Specs'],
+                  ['engineeringChecks', 'Engineering'],
+                  ['financialAnalysis', 'Financials'],
+                  ['bomAndCapex', 'BOM'],
+                  ['seasonalMonthly', '12-Month'],
+                ] as const
+              ).map(([key, label]) => (
+                <label key={key} className="flex items-center gap-1 cursor-pointer select-none text-[var(--text-secondary)]">
+                  <input
+                    type="checkbox"
+                    checked={sections[key]}
+                    onChange={(e) => setSections((prev) => ({ ...prev, [key]: e.target.checked }))}
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
           </div>
+          {exportError && <div className="text-xs text-rose-500 font-medium">{exportError}</div>}
+          {outdated && (
+            <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-500/10 rounded-lg px-3 py-1.5">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>Legacy engine run (&lt; v2.0.0). Re-run simulation in Studio for updated PVGIS &amp; KPLC tariff math.</span>
+            </div>
+          )}
         </div>
 
         <div className="p-8 md:p-12 space-y-8 bg-[var(--bg-card)] print:bg-white print:text-slate-950 print:p-0">
@@ -47,8 +148,8 @@ export default function ProposalViewer({ results, projectName, clientName, engin
           <div className="border-b-4 border-[var(--battery)] pb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg bg-[var(--battery)] flex items-center justify-center font-black text-white text-lg">S</div>
-                <span className="text-lg font-extrabold text-[var(--text-primary)] font-mono tracking-tight print:text-slate-900">Safari<span className="text-[var(--battery)] print:text-emerald-600">Charge</span> Ltd</span>
+                <div className="w-8 h-8 rounded-lg bg-[var(--battery)] flex items-center justify-center font-black text-white text-lg">{companyName.slice(0, 1).toUpperCase() || 'S'}</div>
+                <span className="text-lg font-extrabold text-[var(--text-primary)] font-mono tracking-tight print:text-slate-900">{companyName}</span>
               </div>
               <span className="text-[10px] text-[var(--text-tertiary)] font-mono tracking-wider block uppercase print:text-slate-500">Renewable Infrastructure Systems Modeler</span>
             </div>

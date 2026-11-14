@@ -22,7 +22,7 @@ const AC_CABLE_REFERENCE: CatalogCableSpec[] = [
   { sizeMm2: 10.0, ampacityA: 63.0, mvPerAm: 4.4, dcPricePerM: 268, acPricePerM: 456 },
   { sizeMm2: 16.0, ampacityA: 85.0, mvPerAm: 2.8, dcPricePerM: 391, acPricePerM: 665 },
   { sizeMm2: 25.0, ampacityA: 112.0, mvPerAm: 1.75, dcPricePerM: 754, acPricePerM: 1282 },
-  { sizeMm2: 35.0, ampacityA: 138.0, mvPerAm: 1.25, dcPricePerM: 1508, acPricePerM: 2564 },
+  { sizeMm2: 35.0, ampacityA: 138.0, mvPerAm: 1.25, dcPricePerM: 843, acPricePerM: 1433 },
   { sizeMm2: 50.0, ampacityA: 168.0, mvPerAm: 0.93, dcPricePerM: 977, acPricePerM: 1661 },
   { sizeMm2: 70.0, ampacityA: 213.0, mvPerAm: 0.63, dcPricePerM: 1281, acPricePerM: 2178 },
   { sizeMm2: 95.0, ampacityA: 258.0, mvPerAm: 0.46, dcPricePerM: 1637, acPricePerM: 2783 },

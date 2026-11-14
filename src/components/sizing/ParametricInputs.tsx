@@ -187,6 +187,46 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
   const [loanRatePct, setLoanRatePct] = useState(15);
   const [loanTermYears, setLoanTermYears] = useState(5);
 
+  // ── V2 Sizing Goal, Grid Policy, Demand Charge & Tax Shield ──
+  const [pvSizingGoal, setPvSizingGoal] = useState<'dc_ac_ratio' | 'daily_energy' | 'least_waste'>('dc_ac_ratio');
+  const [exportAllowed, setExportAllowed] = useState(true);
+  const [exportLimitKw, setExportLimitKw] = useState(0);
+  const [demandChargeKShPerKVA, setDemandChargeKShPerKVA] = useState(800);
+  const [powerFactor, setPowerFactor] = useState(0.9);
+  const [taxShieldEnabled, setTaxShieldEnabled] = useState(false);
+
+  // ── Personal Draft Autosave (with local conflict guard) ──
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem('safaricharge_studio_draft_v1');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.pvSizingGoal) setPvSizingGoal(parsed.pvSizingGoal);
+        if (typeof parsed.exportAllowed === 'boolean') setExportAllowed(parsed.exportAllowed);
+        if (typeof parsed.demandChargeKShPerKVA === 'number') setDemandChargeKShPerKVA(parsed.demandChargeKShPerKVA);
+        if (typeof parsed.powerFactor === 'number') setPowerFactor(parsed.powerFactor);
+        if (typeof parsed.taxShieldEnabled === 'boolean') setTaxShieldEnabled(parsed.taxShieldEnabled);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        'safaricharge_studio_draft_v1',
+        JSON.stringify({
+          pvSizingGoal,
+          exportAllowed,
+          exportLimitKw,
+          demandChargeKShPerKVA,
+          powerFactor,
+          taxShieldEnabled,
+          savedAt: new Date().toISOString(),
+        })
+      );
+    } catch { /* ignore */ }
+  }, [pvSizingGoal, exportAllowed, exportLimitKw, demandChargeKShPerKVA, powerFactor, taxShieldEnabled]);
+
   // ── Add-ons: defaults mirror the Excel BOM's default configuration
   // (Section 8 priced via one switch, KPLC support and first-year O&M included).
   const [includeGenInterface, setIncludeGenInterface] = useState(true);
@@ -320,10 +360,18 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
       debtFractionPercent: debtFractionPct, loanInterestRatePercent: loanRatePct, loanTermYears,
       includeGeneratorInterface: includeGenInterface, includeWeatherproofEnclosure: includeGenInterface,
       includeKPLCapplication: includeKPLC, includeOandM: includeOandM,
+      pvSizingGoal,
+      exportAllowed,
+      exportLimitKw: exportAllowed && exportLimitKw > 0 ? exportLimitKw : undefined,
+      demandChargeKShPerKVA: useTOU ? demandChargeKShPerKVA : 0,
+      powerFactor,
+      essentialLoadKw: essentialLoadOverride ?? undefined,
+      taxShieldEnabled,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     catalog, architecture, locationId, sizingMethod, directTargetKW, dailyConsumptionKWh, peakLoadKW, backupAutonomyHrs,
+    essentialLoadOverride,
     selectedInverterId, actualInvUnits, dcAcOversize, panelWattage, panelsPerString,
     targetBatteryKWh, dynessLine, microTargetKW, microPanelWattage, microInverterId,
     installMethod, ambientTempC, minDesignAmbientTempC,
@@ -332,6 +380,7 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
     useTOU, kplcSegment, tariffStructure, monthlyConsumptionKWh,
     debtFractionPct, loanRatePct, loanTermYears,
     contingencyPct, epcMarginPct, includeGenInterface, includeKPLC, includeOandM,
+    pvSizingGoal, exportAllowed, exportLimitKw, demandChargeKShPerKVA, powerFactor, taxShieldEnabled,
   ]);
 
   const loadPreset = (preset: ProjectPreset) => {
@@ -550,6 +599,28 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
           {/* SECTION C: PV ARRAY */}
           <Section id="C" label="PV Array Sizing" color="bg-[var(--solar-soft)] text-[var(--solar)] border border-[var(--solar)]/20"
             summary={`${panelsRequired} panels - ${nf(actualPVkWp, 1)} kWp - DC/AC ${dcAcOversize.toFixed(2)}`}>
+            <div className="flex flex-wrap gap-1.5 pb-1">
+              {(
+                [
+                  ['dc_ac_ratio', 'DC/AC Ratio'],
+                  ['daily_energy', 'Daily Energy Fit'],
+                  ['least_waste', 'Least Waste (<=10%)'],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setPvSizingGoal(id)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition ${
+                    pvSizingGoal === id
+                      ? 'bg-[var(--solar-soft)] text-[var(--solar)] border-[var(--solar)]/40'
+                      : 'bg-[var(--bg-card-muted)] text-[var(--text-secondary)] border-[var(--border)]'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <div className="flex justify-between text-[10px] text-[var(--text-muted)] mb-1"><span>DC/AC Oversize Ratio</span><span className="font-mono font-bold text-[var(--solar)]">{dcAcOversize.toFixed(2)}</span></div>
@@ -795,12 +866,41 @@ export default function ParametricInputs({ catalog, onChange }: ParametricInputs
             </div>
           </div>
         )}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-[var(--border)]/60 text-xs">
+          <label className="flex flex-col">
+            <span className="text-[10px] text-[var(--text-muted)] mb-1">Demand Charge (KES/kVA)</span>
+            <input type="number" min={0} step={50} value={demandChargeKShPerKVA}
+              onChange={e => setDemandChargeKShPerKVA(Math.max(0, parseFloat(e.target.value) || 0))}
+              className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs font-mono" />
+          </label>
+          <label className="flex flex-col">
+            <span className="text-[10px] text-[var(--text-muted)] mb-1">Site Power Factor</span>
+            <input type="number" min={0.6} max={1.0} step={0.02} value={powerFactor}
+              onChange={e => setPowerFactor(Math.min(1, Math.max(0.6, parseFloat(e.target.value) || 0.9)))}
+              className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2 text-xs font-mono" />
+          </label>
+          <div className="flex flex-col justify-between">
+            <label className="flex items-center gap-2 text-[11px] font-medium text-[var(--text-secondary)] cursor-pointer mt-1">
+              <input type="checkbox" checked={exportAllowed} onChange={e => setExportAllowed(e.target.checked)} className="accent-emerald-600" />
+              Grid Export Allowed
+            </label>
+            {exportAllowed && (
+              <input type="number" min={0} placeholder="Export limit kW (0=unlimited)" value={exportLimitKw}
+                onChange={e => setExportLimitKw(Math.max(0, parseFloat(e.target.value) || 0))}
+                className="w-full bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-2.5 py-1.5 text-xs font-mono mt-1" />
+            )}
+          </div>
+        </div>
       </Section>
 
       {/* SECTION: FINANCING */}
       <Section id="J" label="Financing (Optional Solar Loan / Asset Finance)" color="bg-purple-50 text-purple-700 border border-purple-200"
         defaultOpen={false}
         summary={debtFractionPct > 0 ? `${debtFractionPct}% debt @ ${loanRatePct}%` : 'Cash purchase'}>
+        <label className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] cursor-pointer pb-2">
+          <input type="checkbox" checked={taxShieldEnabled} onChange={e => setTaxShieldEnabled(e.target.checked)} className="accent-purple-600 w-3.5 h-3.5 rounded" />
+          Apply Kenya Income Tax Act Capital Allowance Shield (50% Yr-1 + 25% reducing balance @ 30% CIT)
+        </label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <div className="flex justify-between text-[10px] text-[var(--text-tertiary)] mb-1"><span>Debt Fraction %</span><span className="font-mono font-bold text-purple-700">{debtFractionPct}%</span></div>

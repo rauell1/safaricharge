@@ -9,11 +9,12 @@ import { KSH_PER_USD } from './mockData';
 import type { SizingCatalog } from './catalogTypes';
 import type {
   SimulationInputs, SimulationResults, BOMLineItem, CableSizingResult, CapExItem,
-  FinancialYearRow, HourlyIllustrativeRow,
+  FinancialYearRow, HourlyIllustrativeRow, EngineeringChecks,
 } from './types';
 import {
   selectCable, selectBatteryCable, computeDerating, checkDeratedAmpacity,
-  checkPvStringVoltageWindow,
+  checkPvStringVoltageWindow, checkInverterBatteryMatch, buildEqualStringLayout,
+  genericMpptMaxVoltage,
 } from './cableSizing';
 import {
   suggestTariffCategory, computeTOUTariff, computeFinancing, buildCashFlows,
@@ -22,69 +23,135 @@ import {
   computeLifetimeNetSavings, computeDSCR, computeROE, computeEquityPaybackYears,
 } from './financialEngine';
 import { runMicroinverterSizing } from './microinverterCalculator';
+import {
+  computeSolarHourProfile,
+  runAnnualSeasonalDispatch,
+} from './dispatchEngine';
+import {
+  ENGINE_VERSION,
+  INCIDENCE_ANGLE_LOSS_FRAC,
+  LOCATION_SOLAR_OVERRIDES,
+  MARKET_SOLAR_RESOURCE,
+  solarProvenance,
+  solarResourceForCountry,
+} from '@/lib/solar-resource';
+import { BATTERY_ROUND_TRIP_EFFICIENCY, INVERTER_MAX_EFFICIENCY } from '@/lib/config';
 
 export type { SimulationInputs, SimulationResults, BOMLineItem, CableSizingResult, CapExItem, FinancialYearRow };
 
-function getHourlySolarRatio(hour: number): number {
-  if (hour < 6 || hour > 18) return 0;
-  return Math.sin((Math.PI * (hour - 6)) / 12);
+function expectedWastedFrac(
+  kwp: number,
+  hourlyPerKwpByMonth: number[][],
+  loadKwByHour: number[],
+  batteryUsableKwh: number,
+  batteryChargeKw: number,
+  rte: number
+): number {
+  let generated = 0;
+  let wasted = 0;
+  const days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  const nightKwh = loadKwByHour.reduce((sum, v, h) => (h < 6 || h >= 18 ? sum + v : sum), 0);
+  hourlyPerKwpByMonth.forEach((profile, m) => {
+    let surplus = 0;
+    let chargeable = 0;
+    let dayGen = 0;
+    for (let h = 0; h < 24; h++) {
+      const solar = kwp * (profile[h] ?? 0);
+      dayGen += solar;
+      const hourSurplus = Math.max(0, solar - (loadKwByHour[h] ?? 0));
+      surplus += hourSurplus;
+      chargeable += Math.min(hourSurplus, batteryChargeKw);
+    }
+    const absorbs = Math.min(
+      Math.min(chargeable, surplus),
+      batteryUsableKwh / Math.sqrt(Math.max(0.5, rte)),
+      nightKwh / Math.max(0.5, rte)
+    );
+    generated += days[m] * dayGen;
+    wasted += days[m] * Math.max(0, surplus - absorbs);
+  });
+  return generated > 0 ? wasted / generated : 0;
 }
 
-// Illustrative-only hourly shape for the SimulationResults chart. Scaled so its
-// daily sum matches the Excel-derived annual PV/load figures; it is NOT a
-// source of the financial numbers (the workbook has no hourly dispatch model).
-function buildIllustrativeHourlyProfile(
-  solarCapacityKWp: number, annualPVGeneratedKWh: number,
-  loadProfile: SimulationInputs['loadProfile'], loadMultiplier: number,
-  batteryCapacityKWh: number,
-): HourlyIllustrativeRow[] {
-  const dailyPVTarget = annualPVGeneratedKWh / 365;
-  const rawShape = Array.from({ length: 24 }, (_, h) => getHourlySolarRatio(h) * solarCapacityKWp);
-  const rawDailySum = rawShape.reduce((s, v) => s + v, 0);
-  const scale = rawDailySum > 0 ? dailyPVTarget / rawDailySum : 0;
+function buildPvEnergyBasis(
+  inputs: SimulationInputs,
+  loadKwByHour: number[],
+  batteryUsableKwh: number,
+  batteryChargeKw: number,
+  monthlyPeakSunHours: number[],
+  monthlyAmbientTempC: number[]
+): NonNullable<SimulationResults['pvEnergyBasis']> {
+  const goal = inputs.pvSizingGoal ?? 'dc_ac_ratio';
+  const rte = BATTERY_ROUND_TRIP_EFFICIENCY;
+  const totalDayLoad = loadKwByHour.reduce((s, v) => s + v, 0);
+  const daytimeLoad = loadKwByHour.reduce((s, v, h) => (h >= 6 && h < 18 ? s + v : s), 0);
+  const nightLoad = Math.max(0, totalDayLoad - daytimeLoad);
+  const annualYield = Math.max(
+    1,
+    inputs.specificYieldKWhPerKWpDay ||
+      monthlyPeakSunHours.reduce((a, b) => a + b, 0) / Math.max(1, monthlyPeakSunHours.length)
+  );
+  // Real PV yield per kWp averages ~80% of PSH after temp/soiling/IAM/inverter losses
+  const effectiveAcYieldPerKwp = annualYield * 0.82;
 
-  let soc = 50;
-  const batMaxChargeRate = batteryCapacityKWh * 0.5;
-  const batMaxDischargeRate = batteryCapacityKWh * 0.8;
-  const minSoC = 10;
-
-  return Array.from({ length: 24 }, (_, hour) => {
-    const loadKW = loadProfile.baseHourlyLoadKW[hour] * loadMultiplier;
-    const solarKW = rawShape[hour] * scale;
-    const netLoadKW = loadKW - solarKW;
-    const socBefore = soc;
-    let batCharge = 0, batDischarge = 0, gridImport = 0, gridExport = 0;
-
-    if (netLoadKW < 0) {
-      const surplus = Math.abs(netLoadKW);
-      if (soc < 100 && batteryCapacityKWh > 0) {
-        const maxChargePossible = ((100 - soc) / 100) * batteryCapacityKWh;
-        batCharge = Math.min(surplus, batMaxChargeRate, maxChargePossible);
-        soc += (batCharge / batteryCapacityKWh) * 100;
-        gridExport = surplus - batCharge;
-      } else {
-        gridExport = surplus;
-      }
-    } else {
-      let deficit = netLoadKW;
-      if (soc > minSoC && batteryCapacityKWh > 0) {
-        const availKWh = ((soc - minSoC) / 100) * batteryCapacityKWh;
-        batDischarge = Math.min(deficit, batMaxDischargeRate, availKWh);
-        soc -= (batDischarge / batteryCapacityKWh) * 100;
-        deficit -= batDischarge;
-      }
-      if (deficit > 0) gridImport = deficit;
-    }
-
+  if (goal === 'dc_ac_ratio') {
+    const ratioTarget = Math.max(0.5, inputs.dcAcOversizeRatio || 1.2) * (inputs.inverterQty || 1) * 5;
     return {
-      hour, loadKW: Math.round(loadKW * 100) / 100, solarKW: Math.round(solarKW * 100) / 100,
-      gridAvailable: true,
-      batterySoCBefore: Math.round(socBefore * 10) / 10, batterySoCAfter: Math.round(soc * 10) / 10,
-      batteryChargeKW: Math.round(batCharge * 100) / 100, batteryDischargeKW: Math.round(batDischarge * 100) / 100,
-      gridImportKW: Math.round(gridImport * 100) / 100, gridExportKW: Math.round(gridExport * 100) / 100,
-      dieselGenKW: 0, unservedLoadKW: 0,
+      goal,
+      targetKwp: Math.round(ratioTarget * 10) / 10,
+      dailyKwhToSupply: Math.round(totalDayLoad * 10) / 10,
+      wastedFrac: 0,
+      basis: 'Sized from inverter AC rating multiplied by target DC/AC oversize ratio.',
     };
-  });
+  }
+
+  const shifted = inputs.exportAllowed ? nightLoad : Math.min(nightLoad, batteryUsableKwh);
+  const dailyNeed = daytimeLoad + shifted / rte;
+  let targetKwp = dailyNeed / effectiveAcYieldPerKwp;
+
+  if (goal === 'least_waste' && !inputs.exportAllowed) {
+    const limit = inputs.maxWastedFrac ?? 0.1;
+    const perKwpByMonth = monthlyPeakSunHours.map((psh, m) =>
+      computeSolarHourProfile({
+        pvDcKwp: 1,
+        inverterAcKw: 1_000,
+        inverterEfficiencyFrac: INVERTER_MAX_EFFICIENCY,
+        peakSunHours: psh,
+        ambientTempC: monthlyAmbientTempC[m] ?? 21.5,
+        incidenceAngleLossFrac: INCIDENCE_ANGLE_LOSS_FRAC,
+      }).map((x) => x.acKw)
+    );
+    const wasteAt = (kwp: number) =>
+      expectedWastedFrac(kwp, perKwpByMonth, loadKwByHour, batteryUsableKwh, batteryChargeKw, rte);
+    if (wasteAt(targetKwp) > limit) {
+      let lo = 0;
+      let hi = targetKwp;
+      for (let i = 0; i < 50; i++) {
+        const mid = (lo + hi) / 2;
+        if (wasteAt(mid) > limit) hi = mid;
+        else lo = mid;
+      }
+      targetKwp = lo;
+    }
+    const finalWaste = wasteAt(targetKwp);
+    return {
+      goal,
+      targetKwp: Math.round(targetKwp * 100) / 100,
+      dailyKwhToSupply: Math.round(targetKwp * effectiveAcYieldPerKwp * (1 - finalWaste) * 10) / 10,
+      wastedFrac: Math.round(finalWaste * 1000) / 1000,
+      basis: `Least-waste array keeps expected curtailed solar ≤ ${Math.round(limit * 100)}% (${Math.round(finalWaste * 100)}% projected).`,
+    };
+  }
+
+  return {
+    goal,
+    targetKwp: Math.round(targetKwp * 100) / 100,
+    dailyKwhToSupply: Math.round(dailyNeed * 10) / 10,
+    wastedFrac: 0,
+    basis: inputs.exportAllowed
+      ? 'Daily-energy sizing covering full daytime and evening demand with export enabled.'
+      : 'Daily-energy sizing covering daytime load plus usable battery shift capacity.',
+  };
 }
 
 export function runSimulation(inputs: SimulationInputs, catalog: SizingCatalog): SimulationResults {
@@ -107,26 +174,21 @@ function runCentralInverterPath(inputs: SimulationInputs, catalog: SizingCatalog
     includeKPLCapplication, includeOandM,
   } = inputs;
 
-  const panel = catalog.panels.find((p) => p.id === panelId) || catalog.panels[0];
-  const inverter = catalog.inverters.find((i) => i.id === inverterId && i.category !== 'microinverter')
-    || catalog.inverters.find((i) => i.category === 'hybrid')!;
-  const battery = catalog.batteries.find((b) => b.id === batteryId) || catalog.batteries[0];
+  const panel = catalog.panels.find((p) => p.id === panelId) ?? catalog.panels[0];
+  const inverter = catalog.inverters.find((i) => i.id === inverterId) ?? catalog.inverters[0];
+  const battery = catalog.batteries.find((b) => b.id === batteryId) ?? catalog.batteries[0];
 
-  // ── Section A/B: Inverter + PV Array Sizing ───────────────────────────
+  // ── Section A/B/D: Monthly Solar Resource & Battery Sizing First (used by daily-energy/least-waste PV) ──
+  const locOverride = LOCATION_SOLAR_OVERRIDES[location.id];
+  const countrySolar = solarResourceForCountry(location.country || 'Kenya');
+  const monthlyIrradiance =
+    location.monthlyIrradiance?.length === 12
+      ? location.monthlyIrradiance
+      : (locOverride?.monthlyIrradiance ?? countrySolar.monthlyPeakSunHours);
+  const monthlyTemps =
+    locOverride?.monthlyAmbientTempC ?? countrySolar.monthlyAmbientTempC;
+
   const totalInverterACkW = (inverterQty * inverter.ratedAcW) / 1000;
-  const targetPVkWp = totalInverterACkW * dcAcOversizeRatio;
-  // Excel C33 uses ROUND (nearest panel), not CEILING.
-  const actualPanelQty = panelQty || Math.max(1, Math.round((targetPVkWp * 1000) / panel.wattage));
-  const solarCapacityKWp = (actualPanelQty * panel.wattage) / 1000;
-  const actualDcAcRatio = totalInverterACkW > 0 ? solarCapacityKWp / totalInverterACkW : 0;
-
-  const maxAllowedPVkWp = (inverter.maxPvInputKwp || 0) * inverterQty;
-  const pvOversizeWarning: string | null =
-    maxAllowedPVkWp > 0 && solarCapacityKWp > maxAllowedPVkWp
-      ? `PV array (${solarCapacityKWp.toFixed(1)} kWp) exceeds inverter max PV input (${maxAllowedPVkWp.toFixed(1)} kWp for ${inverterQty} unit${inverterQty > 1 ? 's' : ''}). Reduce panel count or adjust DC/AC ratio.`
-      : null;
-
-  // ── Section D: Battery Sizing ──────────────────────────────────────────
   const isGridTied = inverter.category === 'grid_tied';
   const isHV = (inverter.voltageClass || '').includes('HV');
   const isLV = (inverter.voltageClass || '').includes('LV');
@@ -138,6 +200,9 @@ function runCentralInverterPath(inputs: SimulationInputs, catalog: SizingCatalog
   let lv48ParallelCheck: string | null = null;
 
   const moduleKwh = battery.moduleKwh || battery.usableKwh || 5.12;
+  const vc = inverter.voltageClass || '';
+  const minV = isHV ? (vc.includes('150') ? 150 : 160) : 40;
+  const maxV = isHV ? (vc.includes('800') ? 800 : vc.includes('850') ? 850 : 700) : 60;
 
   if (!isGridTied) {
     if (isHV) {
@@ -148,36 +213,142 @@ function runCentralInverterPath(inputs: SimulationInputs, catalog: SizingCatalog
       actualBatteryKWh = actualModules * moduleKwh;
       bduRequired = towersRequired;
       towerVoltage = modulesPerTower * 51.2;
-
-      const vc = inverter.voltageClass || '';
-      const minV = vc.includes('150') ? 150 : 160;
-      const maxV = vc.includes('800') ? 800 : vc.includes('850') ? 850 : 700;
-      if (towerVoltage < minV || towerVoltage > maxV) {
-        batteryVoltageWarning = `Tower voltage (${towerVoltage.toFixed(0)} V) is outside inverter battery voltage window (${minV}-${maxV} V). Adjust modules per tower.`;
-      }
     } else if (isLV) {
       lv48ModulesRequired = Math.ceil(targetBatteryKWh / 5.12);
       actualModules = lv48ModulesRequired;
       actualBatteryKWh = lv48ModulesRequired * 5.12;
+      modulesPerTower = lv48ModulesRequired;
       if (lv48ModulesRequired > 40) {
         lv48ParallelCheck = `OVER LIMIT (${lv48ModulesRequired} modules) - split across multiple inverter/battery banks (max 40 parallel)`;
       }
     }
   }
 
+  const inverterBatteryMatch = isGridTied
+    ? {
+        ok: true,
+        status: 'unassessed' as const,
+        nominalV: 0,
+        emptyV: 0,
+        fullV: 0,
+        inverterMinV: null,
+        inverterMaxV: null,
+        message: 'Grid-tied inverter without battery storage.',
+      }
+    : checkInverterBatteryMatch({
+        isHv: isHV,
+        modulesPerBank: Math.max(1, modulesPerTower),
+        moduleVoltageV: isHV ? 51.2 : 48,
+        inverterMinV: minV,
+        inverterMaxV: maxV,
+      });
+
+  if (!inverterBatteryMatch.ok && !isGridTied) {
+    batteryVoltageWarning = inverterBatteryMatch.message;
+  }
+
+  // Cost-ranked battery comparison across compatible catalog batteries
+  const essentialLoadKw = inputs.essentialLoadKw ?? 0;
+  const loadKwByHour = loadProfile.baseHourlyLoadKW.map((v) => v * loadMultiplier);
+  const batteryComparison = isGridTied
+    ? []
+    : catalog.batteries
+        .filter((cand) =>
+          isHV ? cand.voltageClass?.includes('HV') : !cand.voltageClass?.includes('HV')
+        )
+        .map((cand) => {
+          const candModKwh = cand.moduleKwh || cand.usableKwh || 5.12;
+          const modsNeeded = Math.max(1, Math.ceil(targetBatteryKWh / candModKwh));
+          const banks = isHV ? Math.ceil(modsNeeded / 15) : 1;
+          const perBank = Math.ceil(modsNeeded / banks);
+          const totalMods = banks * perBank;
+          const match = checkInverterBatteryMatch({
+            isHv: isHV,
+            modulesPerBank: perBank,
+            moduleVoltageV: isHV ? 51.2 : 48,
+            inverterMinV: minV,
+            inverterMaxV: maxV,
+          });
+          const maxDischargeKw = Math.min(totalInverterACkW, totalMods * candModKwh * 0.5);
+          const powerSufficient = essentialLoadKw <= 0 || maxDischargeKw + 0.01 >= essentialLoadKw;
+          const estimatedCapexKSh = Math.round(totalMods * (cand.pricePerModuleKsh || 0));
+          const isPlaceholder = /placeholder|indicative|tbd/i.test(cand.productLine || cand.id);
+          return {
+            id: cand.id,
+            name: cand.productLine,
+            brand: cand.id.split('-')[0]?.toUpperCase() ?? 'BESS',
+            architecture: (isHV ? 'HV' : 'LV') as 'HV' | 'LV',
+            modules: totalMods,
+            banks,
+            nameplateKwh: Math.round(totalMods * candModKwh * 10) / 10,
+            usableKwh: Math.round(totalMods * candModKwh * 0.9 * 10) / 10,
+            estimatedCapexKSh,
+            powerSufficient,
+            voltageCompatible: match.ok,
+            isPlaceholder,
+            selected: cand.id === battery.id,
+          };
+        })
+        .sort((a, b) => {
+          if (a.voltageCompatible !== b.voltageCompatible) return a.voltageCompatible ? -1 : 1;
+          if (a.isPlaceholder !== b.isPlaceholder) return a.isPlaceholder ? 1 : -1;
+          if (a.powerSufficient !== b.powerSufficient) return a.powerSufficient ? -1 : 1;
+          return a.estimatedCapexKSh - b.estimatedCapexKSh;
+        });
+
+  // ── PV Array Sizing (Daily Energy / Least Waste / Legacy DC/AC Ratio) ──
+  const usableBatForPv = Math.max(0, actualBatteryKWh * 0.9);
+  const pvEnergyBasis = buildPvEnergyBasis(
+    inputs,
+    loadKwByHour,
+    usableBatForPv,
+    Math.min(totalInverterACkW, actualBatteryKWh * 0.5),
+    monthlyIrradiance,
+    monthlyTemps
+  );
+  const goalTargetKwp =
+    inputs.pvSizingGoal && inputs.pvSizingGoal !== 'dc_ac_ratio'
+      ? pvEnergyBasis.targetKwp
+      : totalInverterACkW * dcAcOversizeRatio;
+
+  const mpptChannels = Math.max(1, (inverter.mpptCount ?? 2) * inverterQty);
+  const maxMpptV = genericMpptMaxVoltage(inverter.voltageClass);
+  const vocCold = (panel.vmp || 45.79) / 0.85 * (1 + 0.0029 * (25 - minDesignAmbientTempC));
+  const maxPanelsPerStringByVoc = Math.max(1, Math.floor(maxMpptV / vocCold));
+  const rawPanelCount = panelQty || Math.max(1, Math.round((goalTargetKwp * 1000) / panel.wattage));
+  const stringLayoutSummary = buildEqualStringLayout({
+    targetPanelCount: rawPanelCount,
+    preferredPanelsPerString: Math.min(panelsPerString, maxPanelsPerStringByVoc),
+    mpptChannels,
+    maxStringsPerMppt: 2,
+    minPanelsPerString: 1,
+    maxPanelsPerString: maxPanelsPerStringByVoc,
+  });
+
+  const actualPanelQty = panelQty || stringLayoutSummary.usedPanelCount;
+  const effectivePanelsPerString = panelQty ? panelsPerString : stringLayoutSummary.panelsPerString;
+  const solarCapacityKWp = (actualPanelQty * panel.wattage) / 1000;
+  const actualDcAcRatio = totalInverterACkW > 0 ? solarCapacityKWp / totalInverterACkW : 0;
+
+  const maxAllowedPVkWp = (inverter.maxPvInputKwp || 0) * inverterQty;
+  const pvOversizeWarning: string | null =
+    maxAllowedPVkWp > 0 && solarCapacityKWp > maxAllowedPVkWp
+      ? `PV array (${solarCapacityKWp.toFixed(1)} kWp) exceeds inverter max PV input (${maxAllowedPVkWp.toFixed(1)} kWp for ${inverterQty} unit${inverterQty > 1 ? 's' : ''}). Reduce panel count or adjust DC/AC ratio.`
+      : null;
+
   const panelAreaRequiredM2 = Math.round(actualPanelQty * 2.3 * 10) / 10;
 
   // ── Section H: PV String Voltage Window Check ─────────────────────────
   const voltageWindowCheck = checkPvStringVoltageWindow(
-    panel.vmp || 45.79, panelsPerString, minDesignAmbientTempC, inverter.voltageClass,
+    panel.vmp || 45.79, effectivePanelsPerString, minDesignAmbientTempC, inverter.voltageClass,
   );
 
   // ── Cable Sizing Sections B-E ──────────────────────────────────────────
   const stringRunLength = 25, dcMainRunLength = 8, acRunLength = 20, battRunLength = 3;
   const stringCurrent = (panel.isc || 14) * 1.25;
-  const stringVoltage = (panel.vmp || 45.79) * panelsPerString;
+  const stringVoltage = (panel.vmp || 45.79) * effectivePanelsPerString;
   const pvStringCable = selectCable(catalog.cableReference, stringCurrent, stringVoltage, stringRunLength, 1.0, false);
-  const numStrings = Math.max(1, Math.ceil(actualPanelQty / panelsPerString));
+  const numStrings = panelQty ? Math.max(1, Math.ceil(actualPanelQty / effectivePanelsPerString)) : stringLayoutSummary.stringCount;
 
   const dcMainCurrent = solarCapacityKWp > 0 ? ((solarCapacityKWp * 1000) / stringVoltage) * 1.25 : 0;
   const dcMainCable = selectCable(catalog.cableReference, dcMainCurrent, stringVoltage, dcMainRunLength, 1.0, false);
@@ -288,6 +459,12 @@ function runCentralInverterPath(inputs: SimulationInputs, catalog: SizingCatalog
     voltageWindowCheck, deratingChecks,
     bom, cableSizingResults,
     loadProfile, loadMultiplier, location,
+    inverterBatteryMatch,
+    stringLayoutSummary: panelQty ? undefined : stringLayoutSummary,
+    pvEnergyBasis,
+    batteryComparison,
+    monthlyIrradiance,
+    monthlyAmbientTempC: monthlyTemps,
   });
 }
 
@@ -327,15 +504,17 @@ interface FinalizeParams {
   loadProfile: SimulationInputs['loadProfile'];
   loadMultiplier: number;
   location: SimulationInputs['location'];
+  inverterBatteryMatch?: EngineeringChecks['inverterBatteryMatch'];
+  stringLayoutSummary?: EngineeringChecks['stringLayoutSummary'];
+  pvEnergyBasis?: SimulationResults['pvEnergyBasis'];
+  batteryComparison?: SimulationResults['batteryComparison'];
+  monthlyIrradiance?: number[];
+  monthlyAmbientTempC?: number[];
 }
 
-function finalizeResults(inputs: SimulationInputs, catalog: SizingCatalog, p: FinalizeParams): SimulationResults {
+function finalizeResults(inputs: SimulationInputs, _catalog: SizingCatalog, p: FinalizeParams): SimulationResults {
   const { contingencyPercent, epcMarginPercent } = inputs;
 
-  // Per Excel Quotation & BOM: SUBTOTAL -> VAT @ 16% -> GRAND TOTAL (incl. VAT).
-  // Contingency and EPC margin are app-side optional adders (default 0 to match
-  // the Excel, whose retail prices already embed seller margin); VAT applies on
-  // top of everything, mirroring the Excel's F68 = 16% x F67 line.
   const subtotalCapExKSh = p.bom.reduce((s, i) => s + i.totalKSh, 0);
   const subtotalCapExUSD = Math.round(subtotalCapExKSh / KSH_PER_USD);
   const contingencyKSh = Math.round(subtotalCapExKSh * contingencyPercent / 100);
@@ -352,23 +531,83 @@ function finalizeResults(inputs: SimulationInputs, catalog: SizingCatalog, p: Fi
     unitCost: item.unitPriceUSD, totalCost: item.totalUSD, brand: '', model: '',
   }));
 
-  // ── Financial Analysis Section A: annualized generation model ─────────
-  const annualPVGeneratedKWh = Math.round(p.solarCapacityKWp * inputs.specificYieldKWhPerKWpDay * 365);
-  const selfConsumedKWh = Math.round(annualPVGeneratedKWh * (inputs.selfConsumptionRatioPercent / 100));
-  const exportedOrCurtailedKWh = annualPVGeneratedKWh - selfConsumedKWh;
-
-  // ── KPLC Time-of-Use tariff (Section B2) ───────────────────────────────
+  // ── KPLC Time-of-Use tariff (Oct 2026 defaults + proper VAT base) ──────
   let blendedTariffKShPerKWh = inputs.gridTariffKShPerKWh;
+  let peakTariffKSh = inputs.gridTariffKShPerKWh;
+  let offPeakTariffKSh = inputs.gridTariffKShPerKWh;
   let touTariff: SimulationResults['touTariff'] = null;
   if (inputs.useTOUTariff) {
     const category = suggestTariffCategory(inputs.kplcCustomerSegment, inputs.monthlyConsumptionKWh);
     const tou = computeTOUTariff({
       category, tariffStructure: category.supportsTOU ? inputs.tariffStructure : 'Standard',
-      variableSurchargeAdderKSh: 4.41, ercLevyKSh: 0.08, repLevyPercent: 5, vatPercent: 16, peakHoursFraction: 0.8,
+      variableSurchargeAdderKSh: 4.58, ercLevyKSh: 0.08, repLevyPercent: 5, vatPercent: 16, peakHoursFraction: 0.8,
     });
     blendedTariffKShPerKWh = tou.blendedTariffKShPerKWh;
+    peakTariffKSh = tou.effectivePeakTariffKShPerKWh;
+    offPeakTariffKSh = tou.effectiveOffPeakTariffKShPerKWh ?? tou.effectivePeakTariffKShPerKWh;
     touTariff = { category: category.label, ...tou };
   }
+
+  // ── Seasonal 12-Month Conservation-Checked Dispatch Engine ─────────────
+  const locOverride = LOCATION_SOLAR_OVERRIDES[p.location.id];
+  const countrySolar = solarResourceForCountry(p.location.country || 'Kenya');
+  const monthlyIrr =
+    p.monthlyIrradiance ??
+    (p.location.monthlyIrradiance?.length === 12
+      ? p.location.monthlyIrradiance
+      : (locOverride?.monthlyIrradiance ?? countrySolar.monthlyPeakSunHours));
+  const monthlyTemp =
+    p.monthlyAmbientTempC ??
+    locOverride?.monthlyAmbientTempC ??
+    MARKET_SOLAR_RESOURCE.KE.monthlyAmbientTempC;
+
+  const loadKwByHour = p.loadProfile.baseHourlyLoadKW.map((v) => v * p.loadMultiplier);
+  const tariffUsdByHour = Array.from({ length: 24 }, (_, h) => {
+    const isPeak = (h >= 6 && h < 10) || (h >= 18 && h < 22);
+    const rateKSh = inputs.useTOUTariff ? (isPeak ? peakTariffKSh : offPeakTariffKSh) : blendedTariffKShPerKWh;
+    return rateKSh / KSH_PER_USD;
+  });
+
+  const powerFactor = Math.max(0.5, Math.min(1, inputs.powerFactor ?? 0.9));
+  const demandChargeUsdPerKw =
+    ((inputs.demandChargeKShPerKVA ?? 0) / powerFactor) / KSH_PER_USD;
+  const exportAllowed = inputs.exportAllowed ?? true;
+  const exportTariffUsdPerKwh = (inputs.exportTariffKShPerKWh ?? 0) / KSH_PER_USD;
+  const batteryUsableKwh = Math.max(0, p.batteryCapacityKWh * 0.9);
+  const annualDispatch = runAnnualSeasonalDispatch(
+    {
+      pvDcKwp: p.solarCapacityKWp,
+      inverterAcKw: Math.max(0.1, p.inverterCapacityKW),
+      inverterEfficiencyFrac: INVERTER_MAX_EFFICIENCY,
+      incidenceAngleLossFrac: INCIDENCE_ANGLE_LOSS_FRAC,
+      loadKwByHour,
+      tariffUsdByHour,
+      batteryUsableKwh,
+      batteryMaxChargeKw: batteryUsableKwh * 0.5,
+      batteryMaxDischargeKw: Math.min(p.inverterCapacityKW, batteryUsableKwh * 0.8),
+      batteryRoundTripEffFrac: BATTERY_ROUND_TRIP_EFFICIENCY,
+      batteryReserveFrac: 0.1,
+      gridAvailable: true,
+      exportAllowed,
+      exportLimitKw: inputs.exportLimitKw,
+      exportTariffUsdPerKwh,
+      outageHours: inputs.outageHours,
+      outageEssentialLoadKw: inputs.essentialLoadKw,
+      demandChargeUsdPerKw,
+      socMode: 'periodic',
+    },
+    monthlyIrr,
+    monthlyTemp
+  );
+
+  const annualPVGeneratedKWh = Math.round(annualDispatch.annualSolarAcKwh);
+  const selfConsumedKWh = Math.round(annualDispatch.annualSolarAcKwh * annualDispatch.selfConsumptionFrac);
+  const exportedOrCurtailedKWh = Math.max(0, annualPVGeneratedKWh - selfConsumedKWh);
+  const annualUsefulSolarKWh = Math.round(annualDispatch.annualUsefulSolarKwh);
+  const effectiveSelfConsumptionPct =
+    annualPVGeneratedKWh > 0
+      ? Math.round((selfConsumedKWh / annualPVGeneratedKWh) * 1000) / 10
+      : inputs.selfConsumptionRatioPercent;
 
   // ── Financing (Section B) ──────────────────────────────────────────────
   const financingCalc = computeFinancing(totalCapExUSD, {
@@ -378,8 +617,6 @@ function finalizeResults(inputs: SimulationInputs, catalog: SizingCatalog, p: Fi
   });
 
   const annualOMCostUSDYear1 = (totalCapExUSD * inputs.annualOMCostPercent) / 100;
-  // Excel Financial C17: replacement default = 60% of the full Energy Storage
-  // section subtotal (modules + BDU + rack + cable + fuse + connector).
   const storageSectionKSh = p.bom
     .filter((i) => i.section === '2. Energy Storage')
     .reduce((s, i) => s + i.totalKSh, 0);
@@ -387,14 +624,35 @@ function finalizeResults(inputs: SimulationInputs, catalog: SizingCatalog, p: Fi
 
   const cashFlowRows = buildCashFlows({
     totalCapExUSD, equityUSD: financingCalc.equityUSD,
-    annualPVGeneratedKWhYear1: annualPVGeneratedKWh, selfConsumptionRatioPercent: inputs.selfConsumptionRatioPercent,
+    annualPVGeneratedKWhYear1: annualPVGeneratedKWh, selfConsumptionRatioPercent: effectiveSelfConsumptionPct,
     blendedTariffKShPerKWh, kshPerUsd: KSH_PER_USD,
     tariffEscalationPercent: inputs.tariffEscalationPercent, panelDegradationPercent: inputs.panelDegradationPercent,
     annualOMCostUSDYear1, omEscalationPercent: inputs.omEscalationPercent,
     batteryReplacementYear: inputs.batteryReplacementYear, batteryReplacementCostUSD,
     projectLifeYears: inputs.projectLifeYears,
     annualDebtServiceUSD: financingCalc.annualDebtServiceUSD, loanTermYears: inputs.loanTermYears,
+    taxShieldEnabled: inputs.taxShieldEnabled,
+    corporateTaxRatePercent: inputs.corporateTaxRatePercent,
+    investmentDeductionPercent: inputs.investmentDeductionPercent,
   });
+
+  // Add demand-charge savings + export revenue to Year 1..N cash flows
+  const extraAnnualRevenueUsd =
+    annualDispatch.annualDemandChargeSavingUsd + annualDispatch.annualExportRevenueUsd;
+  if (extraAnnualRevenueUsd > 0) {
+    let cum = -totalCapExUSD;
+    let cumLev = -financingCalc.equityUSD;
+    for (const row of cashFlowRows) {
+      if (row.year === 0) continue;
+      row.grossSavingsUSD = Math.round(row.grossSavingsUSD + extraAnnualRevenueUsd);
+      row.netCashFlow = Math.round(row.grossSavingsUSD - row.omUSD - row.batteryReplacementUSD);
+      cum += row.netCashFlow;
+      row.cumulativeCashFlow = Math.round(cum);
+      row.leveredNetCashFlow = Math.round(row.netCashFlow - row.debtServiceUSD);
+      cumLev += row.leveredNetCashFlow;
+      row.cumulativeLeveredCashFlow = Math.round(cumLev);
+    }
+  }
 
   const npvUSD = computeNPV(cashFlowRows, inputs.discountRate);
   const irrPercent = computeIRR(cashFlowRows);
@@ -412,27 +670,46 @@ function finalizeResults(inputs: SimulationInputs, catalog: SizingCatalog, p: Fi
   const roePercent = computeROE(annualSavingsUSD, financingCalc.annualDebtServiceUSD, financingCalc.equityUSD);
   const equityPaybackYears = computeEquityPaybackYears(annualSavingsUSD, financingCalc.annualDebtServiceUSD, financingCalc.equityUSD, inputs.projectLifeYears);
 
-  // LCOE: total lifecycle cost / total discounted energy produced (not just self-consumed)
-  let discountedOpex = 0, discountedGen = 0;
+  // Useful-energy LCOE (excludes curtailed & uncredited exports per StimaPulse V2 audit)
+  const usefulFraction = annualPVGeneratedKWh > 0 ? annualUsefulSolarKWh / annualPVGeneratedKWh : 1;
+  let discountedOpex = 0, discountedUsefulGen = 0;
   for (let y = 1; y <= inputs.projectLifeYears; y++) {
     const df = Math.pow(1 + inputs.discountRate / 100, y);
     const cf = cashFlowRows.find((c) => c.year === y);
     if (!cf) continue;
     discountedOpex += (cf.omUSD + cf.batteryReplacementUSD) / df;
-    discountedGen += cf.energyGeneratedKWh / df;
+    discountedUsefulGen += (cf.energyGeneratedKWh * usefulFraction) / df;
   }
-  const lcoeUSDPerKWh = discountedGen > 0 ? Math.round(((totalCapExUSD + discountedOpex) / discountedGen) * 1000) / 1000 : 0;
+  const lcoeUSDPerKWh = discountedUsefulGen > 0 ? Math.round(((totalCapExUSD + discountedOpex) / discountedUsefulGen) * 1000) / 1000 : 0;
   const lcoeBaselineUSDPerKWh = Math.round((blendedTariffKShPerKWh / KSH_PER_USD) * 1000) / 1000;
 
-  const annualCO2SavedTons = Math.round(((annualPVGeneratedKWh * p.location.co2Intensity) / 1000) * 10) / 10;
+  const annualCO2SavedTons = Math.round(((annualUsefulSolarKWh * p.location.co2Intensity) / 1000) * 10) / 10;
   const equivalentTreesPlanted = Math.round((annualCO2SavedTons * 1000) / 22);
 
-  const hourlyProfile = buildIllustrativeHourlyProfile(p.solarCapacityKWp, annualPVGeneratedKWh, p.loadProfile, p.loadMultiplier, p.batteryCapacityKWh);
-  const dailyLoadKWh = p.loadProfile.totalDailyKWh * p.loadMultiplier;
-  const annualLoadKWh = Math.round(dailyLoadKWh * 365);
-  const annualGridImportKWh = Math.max(0, annualLoadKWh - selfConsumedKWh);
-  const annualGridExportKWh = exportedOrCurtailedKWh;
-  const systemAutonomyPercent = annualLoadKWh > 0 ? Math.round((selfConsumedKWh / annualLoadKWh) * 1000) / 10 : 0;
+  // Representative average-year hourly profile (from June / middle month periodic dispatch)
+  const repMonth = annualDispatch.months[5] ?? annualDispatch.months[0];
+  const hourlyProfile: HourlyIllustrativeRow[] = repMonth.summary.hours.map((step, idx, arr) => {
+    const prevSoc = idx === 0 ? repMonth.summary.openingSocFrac * 100 : arr[idx - 1].socFrac * 100;
+    return {
+      hour: step.hour,
+      loadKW: Math.round(step.loadKw * 100) / 100,
+      solarKW: Math.round(step.solarAcKw * 100) / 100,
+      gridAvailable: !(inputs.outageHours ?? []).includes(step.hour),
+      batterySoCBefore: Math.round(prevSoc * 10) / 10,
+      batterySoCAfter: Math.round(step.socFrac * 1000) / 10,
+      batteryChargeKW: step.batteryKw > 0 ? Math.round(step.batteryKw * 100) / 100 : 0,
+      batteryDischargeKW: step.batteryKw < 0 ? Math.round(-step.batteryKw * 100) / 100 : 0,
+      gridImportKW: Math.round(step.gridImportKw * 100) / 100,
+      gridExportKW: Math.round(step.gridExportKw * 100) / 100,
+      dieselGenKW: 0,
+      unservedLoadKW: Math.round(step.unservedKw * 100) / 100,
+    };
+  });
+
+  const annualLoadKWh = Math.round(annualDispatch.annualLoadKwh);
+  const annualGridImportKWh = Math.round(annualDispatch.annualGridImportKwh);
+  const annualGridExportKWh = Math.round(annualDispatch.annualGridExportKwh);
+  const systemAutonomyPercent = Math.round(annualDispatch.autonomyFrac * 1000) / 10;
 
   const cashFlows: FinancialYearRow[] = cashFlowRows.map((cf) => ({
     year: cf.year, energyGeneratedKWh: cf.energyGeneratedKWh, effectiveTariffKShPerKWh: cf.effectiveTariffKShPerKWh,
@@ -455,14 +732,16 @@ function finalizeResults(inputs: SimulationInputs, catalog: SizingCatalog, p: Fi
       pvOversizeWarning: p.pvOversizeWarning, batteryVoltageWarning: p.batteryVoltageWarning,
       pvStringVoltageWindowMessage: p.voltageWindowCheck.message, pvStringVoltageWindowOk: p.voltageWindowCheck.ok,
       deratingChecks: p.deratingChecks,
+      inverterBatteryMatch: p.inverterBatteryMatch,
+      stringLayoutSummary: p.stringLayoutSummary,
     },
     pvOversizeWarning: p.pvOversizeWarning, batteryVoltageWarning: p.batteryVoltageWarning,
 
     hourlyProfile,
     annualPVGeneratedKWh, selfConsumedKWh, exportedOrCurtailedKWh,
     annualLoadKWh, annualGridImportKWh, annualGridExportKWh,
-    annualDieselGenKWh: 0, annualDieselFuelLiters: 0, annualUnservedLoadKWh: 0,
-    solarSelfConsumptionPercent: inputs.selfConsumptionRatioPercent,
+    annualDieselGenKWh: 0, annualDieselFuelLiters: 0, annualUnservedLoadKWh: Math.round(annualDispatch.annualUnservedKwh),
+    solarSelfConsumptionPercent: effectiveSelfConsumptionPct,
     systemAutonomyPercent,
 
     bomLineItems: p.bom, cableSizingResults: p.cableSizingResults,
@@ -470,10 +749,10 @@ function finalizeResults(inputs: SimulationInputs, catalog: SizingCatalog, p: Fi
     capexItems, subtotalCapExKSh, subtotalCapExUSD, contingencyKSh, contingencyUSD,
     epcMarginKSh, epcMarginUSD, vatKSh, vatUSD, totalCapExKSh, totalCapExUSD,
 
-    annualGridBillWithoutSolarUSD: Math.round((annualLoadKWh * blendedTariffKShPerKWh) / KSH_PER_USD),
+    annualGridBillWithoutSolarUSD: Math.round(annualDispatch.annualBillWithoutSolarUsd),
     annualDieselCostWithoutSolarUSD: 0,
-    baselineAnnualCostUSD: Math.round((annualLoadKWh * blendedTariffKShPerKWh) / KSH_PER_USD),
-    annualGridBillWithSolarUSD: Math.round((annualGridImportKWh * blendedTariffKShPerKWh) / KSH_PER_USD),
+    baselineAnnualCostUSD: Math.round(annualDispatch.annualBillWithoutSolarUsd),
+    annualGridBillWithSolarUSD: Math.round(annualDispatch.annualBillWithSolarUsd),
     annualDieselCostWithSolarUSD: 0,
     annualMaintenanceUSD: Math.round(annualOMCostUSDYear1),
     annualInsuranceUSD: Math.round(totalCapExUSD * 0.004),
@@ -495,6 +774,39 @@ function finalizeResults(inputs: SimulationInputs, catalog: SizingCatalog, p: Fi
 
     subtotalCapExUSD_legacy: subtotalCapExUSD, contingencyUSD_legacy: contingencyUSD,
     epcMarginUSD_legacy: epcMarginUSD, totalCapExUSD_legacy: totalCapExUSD,
+
+    engineVersion: ENGINE_VERSION,
+    solarProvenance: solarProvenance(inputs.solarSource ?? 'SafariCharge-solar-v2 (PVGIS 5.3)'),
+    pvEnergyBasis: p.pvEnergyBasis,
+    annualClippedKWh: Math.round(annualDispatch.annualClippedKwh),
+    annualCurtailedKWh: Math.round(annualDispatch.annualCurtailedKwh),
+    annualUsefulSolarKWh,
+    demandChargeSavingsUSD: Math.round(annualDispatch.annualDemandChargeSavingUsd),
+    exportRevenueUSD: Math.round(annualDispatch.annualExportRevenueUsd),
+    worstConservationResidualKWh: annualDispatch.worstConservationResidualKwh,
+    monthlyDispatchSummary: annualDispatch.months.map((m) => ({
+      monthIndex: m.monthIndex,
+      monthName: m.monthName,
+      days: m.days,
+      peakSunHours: m.peakSunHours,
+      ambientTempC: m.ambientTempC,
+      solarKwhMonth: Math.round(m.solarKwhMonth),
+      curtailedKwhMonth: Math.round(m.curtailedKwhMonth),
+      clippedKwhMonth: Math.round(m.clippedKwhMonth),
+      gridImportKwhMonth: Math.round(m.gridImportKwhMonth),
+      gridExportKwhMonth: Math.round(m.gridExportKwhMonth),
+      loadKwhMonth: Math.round(m.loadKwhMonth),
+      hourly: m.summary.hours.map((h) => ({
+        hour: h.hour,
+        solarAcKw: Math.round(h.solarAcKw * 100) / 100,
+        loadKw: Math.round(h.loadKw * 100) / 100,
+        gridImportKw: Math.round(h.gridImportKw * 100) / 100,
+        gridExportKw: Math.round(h.gridExportKw * 100) / 100,
+        curtailedKw: Math.round(h.curtailedKw * 100) / 100,
+        socFrac: Math.round(h.socFrac * 1000) / 1000,
+      })),
+    })),
+    batteryComparison: p.batteryComparison,
   };
 }
 

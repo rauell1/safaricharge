@@ -168,3 +168,126 @@ export function checkPvStringVoltageWindow(
     : `OVER VOLTAGE LIMIT - coldest-case string Voc ~${coldestCaseStringVocV}V exceeds ${mpptMaxVoltageV}V MPPT window. Reduce panels per string.`;
   return { vocTempCorrectionFactor: Math.round(vocTempCorrectionFactor * 1000) / 1000, coldestCaseStringVocV, mpptMaxVoltageV, ok, message };
 }
+
+// ─── SECTION I: FULL-WINDOW BATTERY VOLTAGE MATCH & EQUAL-STRING MPPT BUILDER ──
+
+export const HV_BANK_EMPTY_VOLTAGE_FRAC = 0.875;
+export const HV_BANK_FULL_VOLTAGE_FRAC = 1.125;
+
+export interface InverterBatteryMatchResult {
+  ok: boolean;
+  status: 'compatible' | 'empty-undervoltage' | 'full-overvoltage' | 'unassessed';
+  nominalV: number;
+  emptyV: number;
+  fullV: number;
+  inverterMinV: number | null;
+  inverterMaxV: number | null;
+  message: string;
+}
+
+/**
+ * Checks a battery bank against an inverter's DC battery voltage window at
+ * empty (2.8V/cell = 0.875x nominal) and full charge (3.6V/cell = 1.125x nominal)
+ * rather than nominal alone.
+ */
+export function checkInverterBatteryMatch(input: {
+  isHv: boolean;
+  modulesPerBank: number;
+  moduleVoltageV: number;
+  inverterMinV: number | null;
+  inverterMaxV: number | null;
+}): InverterBatteryMatchResult {
+  const nominalV = Math.round(
+    (input.isHv ? input.modulesPerBank * input.moduleVoltageV : input.moduleVoltageV) * 10
+  ) / 10;
+  const emptyV = input.isHv
+    ? Math.round(nominalV * HV_BANK_EMPTY_VOLTAGE_FRAC * 10) / 10
+    : Math.round(nominalV * 0.9 * 10) / 10;
+  const fullV = input.isHv
+    ? Math.round(nominalV * HV_BANK_FULL_VOLTAGE_FRAC * 10) / 10
+    : Math.round(nominalV * 1.1 * 10) / 10;
+
+  if (input.inverterMinV === null || input.inverterMaxV === null) {
+    return {
+      ok: true,
+      status: 'unassessed',
+      nominalV,
+      emptyV,
+      fullV,
+      inverterMinV: input.inverterMinV,
+      inverterMaxV: input.inverterMaxV,
+      message: `Nominal ${nominalV}V (${emptyV}V–${fullV}V operating span).`,
+    };
+  }
+  if (emptyV < input.inverterMinV) {
+    return {
+      ok: false,
+      status: 'empty-undervoltage',
+      nominalV,
+      emptyV,
+      fullV,
+      inverterMinV: input.inverterMinV,
+      inverterMaxV: input.inverterMaxV,
+      message: `Empty-state voltage ${emptyV}V falls below inverter ${input.inverterMinV}V minimum. Add series modules or use LV bank.`,
+    };
+  }
+  if (fullV > input.inverterMaxV) {
+    return {
+      ok: false,
+      status: 'full-overvoltage',
+      nominalV,
+      emptyV,
+      fullV,
+      inverterMinV: input.inverterMinV,
+      inverterMaxV: input.inverterMaxV,
+      message: `Full-charge voltage ${fullV}V exceeds inverter ${input.inverterMaxV}V maximum. Reduce series modules or split banks.`,
+    };
+  }
+  return {
+    ok: true,
+    status: 'compatible',
+    nominalV,
+    emptyV,
+    fullV,
+    inverterMinV: input.inverterMinV,
+    inverterMaxV: input.inverterMaxV,
+    message: `Compatible: ${emptyV}V–${fullV}V full operating swing within ${input.inverterMinV}V–${input.inverterMaxV}V window.`,
+  };
+}
+
+export interface EqualStringLayout {
+  stringCount: number;
+  panelsPerString: number;
+  usedPanelCount: number;
+  mpptsUsed: number;
+  message: string;
+}
+
+/**
+ * Rebuilds a PV array using equal-length strings distributed evenly across MPPT channels.
+ */
+export function buildEqualStringLayout(input: {
+  targetPanelCount: number;
+  preferredPanelsPerString: number;
+  mpptChannels: number;
+  maxStringsPerMppt?: number;
+  minPanelsPerString?: number;
+  maxPanelsPerString?: number;
+}): EqualStringLayout {
+  const minPerStr = Math.max(1, input.minPanelsPerString ?? 6);
+  const maxPerStr = Math.max(minPerStr, input.maxPanelsPerString ?? 24);
+  const panelsPerString = Math.min(maxPerStr, Math.max(minPerStr, input.preferredPanelsPerString));
+  const rawStrings = Math.max(1, Math.round(input.targetPanelCount / panelsPerString));
+  const maxTotalStrings = Math.max(1, input.mpptChannels * (input.maxStringsPerMppt ?? 2));
+  const stringCount = Math.min(maxTotalStrings, rawStrings);
+  const usedPanelCount = stringCount * panelsPerString;
+  const mpptsUsed = Math.min(input.mpptChannels, stringCount);
+  const stringsPerMppt = (stringCount / Math.max(1, mpptsUsed)).toFixed(1).replace(/\.0$/, '');
+  return {
+    stringCount,
+    panelsPerString,
+    usedPanelCount,
+    mpptsUsed,
+    message: `${stringCount} equal string(s) × ${panelsPerString} panels (${usedPanelCount} panels total) across ${mpptsUsed}/${input.mpptChannels} MPPT(s) (~${stringsPerMppt}/MPPT).`,
+  };
+}

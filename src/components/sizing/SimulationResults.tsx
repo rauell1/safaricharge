@@ -14,6 +14,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { SimulationResults as SimResultsType } from '@/lib/sizing/solarCalculator';
+import DispatchHeatmap from './DispatchHeatmap';
 
 interface SimulationResultsProps {
   results: SimResultsType;
@@ -22,7 +23,7 @@ interface SimulationResultsProps {
 }
 
 export default function SimulationResults({ results, activeOrgName, onViewProposal }: SimulationResultsProps) {
-  const [activeTab, setActiveTab] = useState<'charts' | 'capex' | 'cashflow'>('charts');
+  const [activeTab, setActiveTab] = useState<'charts' | 'heatmap' | 'capex' | 'cashflow'>('charts');
   const [hoveredHour, setHoveredHour] = useState<number | null>(null);
   const [showFullTable, setShowFullTable] = useState(false);
 
@@ -341,10 +342,58 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
             <span className="font-bold text-[var(--battery)]">{results.selfConsumedKWh.toLocaleString()} kWh</span>
           </div>
         </div>
+
+        {/* V2 Provenance, Battery Match, String Layout, Clipping & Curtailment HUD */}
+        <div className="mt-4 pt-3 border-t border-[var(--border)] flex flex-wrap gap-2 text-[11px] font-mono">
+          {results.solarProvenance && (
+            <span className="px-2.5 py-1 rounded-lg bg-[var(--bg-card-muted)] border border-[var(--border)] text-[var(--text-secondary)]">
+              Solar: <strong className="text-[var(--text-primary)]">{results.solarProvenance.label}</strong>
+            </span>
+          )}
+          <span className="px-2.5 py-1 rounded-lg bg-[var(--bg-card-muted)] border border-[var(--border)] text-[var(--text-secondary)]">
+            Engine: <strong className="text-[var(--text-primary)]">v{results.engineVersion ?? '2.3.0'}</strong>
+          </span>
+          {(results.annualClippedKWh ?? 0) > 0 && (
+            <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-600">
+              DC/AC Clipping: <strong>{results.annualClippedKWh?.toLocaleString()} kWh/yr</strong>
+            </span>
+          )}
+          {(results.annualCurtailedKWh ?? 0) > 0 && (
+            <span className="px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-600">
+              Curtailed Solar: <strong>{results.annualCurtailedKWh?.toLocaleString()} kWh/yr</strong>
+            </span>
+          )}
+          {(results.demandChargeSavingsUSD ?? 0) > 0 && (
+            <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600">
+              Demand Shave Saved: <strong>${results.demandChargeSavingsUSD?.toLocaleString()}/yr</strong>
+            </span>
+          )}
+          {results.engineeringChecks.inverterBatteryMatch && (
+            <span
+              className={`px-2.5 py-1 rounded-lg border ${
+                results.engineeringChecks.inverterBatteryMatch.ok
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600'
+                  : 'bg-rose-500/10 border-rose-500/30 text-rose-600'
+              }`}
+            >
+              Battery Match: <strong>{results.engineeringChecks.inverterBatteryMatch.emptyV}–{results.engineeringChecks.inverterBatteryMatch.fullV}V</strong>
+            </span>
+          )}
+          {results.engineeringChecks.stringLayoutSummary && (
+            <span className="px-2.5 py-1 rounded-lg bg-[var(--bg-card-muted)] border border-[var(--border)] text-[var(--text-secondary)]">
+              MPPT: <strong>{results.engineeringChecks.stringLayoutSummary.stringCount}×{results.engineeringChecks.stringLayoutSummary.panelsPerString} panels</strong>
+            </span>
+          )}
+        </div>
+        {results.pvEnergyBasis && (
+          <div className="mt-2 text-[11px] text-[var(--text-tertiary)]">
+            <strong className="text-[var(--text-secondary)]">PV Sizing Basis ({results.pvEnergyBasis.goal}):</strong> {results.pvEnergyBasis.basis}
+          </div>
+        )}
       </div>
 
       {/* Tabs Navigation */}
-      <div className="border-b border-[var(--border)] flex gap-4">
+      <div className="border-b border-[var(--border)] flex flex-wrap gap-4">
         <button
           onClick={() => setActiveTab('charts')}
           className={`pb-3 text-sm font-semibold border-b-2 transition ${
@@ -354,6 +403,16 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
           }`}
         >
           📈 Performance & Cash Flow Charts
+        </button>
+        <button
+          onClick={() => setActiveTab('heatmap')}
+          className={`pb-3 text-sm font-semibold border-b-2 transition ${
+            activeTab === 'heatmap'
+              ? 'border-[var(--battery)] text-[var(--battery)]'
+              : 'border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
+          }`}
+        >
+          🗓️ 12×24 Heatmap &amp; Battery Rank
         </button>
         <button
           onClick={() => setActiveTab('capex')}
@@ -615,6 +674,102 @@ export default function SimulationResults({ results, activeOrgName, onViewPropos
               </span>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Tab: 12x24 Seasonal Dispatch Heatmap & Cost-Ranked Battery Table */}
+      {activeTab === 'heatmap' && (
+        <div className="space-y-8">
+          <DispatchHeatmap results={results} />
+
+          {results.batteryComparison && results.batteryComparison.length > 0 && (
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-6">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-wider text-[var(--text-primary)]">
+                    Cost-Ranked Battery Pack Comparison
+                  </h3>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                    Ranked by estimated CapEx (KSh) across candidate chemistries & voltage architectures meeting C-rate and autonomy targets.
+                  </p>
+                </div>
+                <span className="text-[10px] font-mono px-2.5 py-1 rounded bg-[var(--bg-secondary)] border border-[var(--border)] text-[var(--text-secondary)]">
+                  HV window: 0.875× empty – 1.125× full
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-[var(--border)] text-left text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
+                      <th className="py-2.5 pr-3">Battery Model</th>
+                      <th className="py-2.5 px-3">Arch</th>
+                      <th className="py-2.5 px-3 text-right">Config</th>
+                      <th className="py-2.5 px-3 text-right">Nameplate / Usable</th>
+                      <th className="py-2.5 px-3 text-right">Est. CapEx (KES)</th>
+                      <th className="py-2.5 pl-3">Checks</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--border)]">
+                    {results.batteryComparison.map((row) => (
+                      <tr
+                        key={row.id}
+                        className={row.selected ? 'bg-[var(--battery-soft)]/50 font-semibold' : 'hover:bg-[var(--bg-secondary)]/50'}
+                      >
+                        <td className="py-2.5 pr-3">
+                          <div className="text-[var(--text-primary)] flex items-center gap-2">
+                            <span>{row.brand} {row.name}</span>
+                            {row.selected && (
+                              <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-[var(--battery)] text-black">
+                                Selected
+                              </span>
+                            )}
+                            {row.isPlaceholder && (
+                              <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                Placeholder
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 font-mono">{row.architecture}</td>
+                        <td className="py-2.5 px-3 text-right font-mono">
+                          {row.modules} mod × {row.banks} bank{row.banks > 1 ? 's' : ''}
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono">
+                          {row.nameplateKwh} / {row.usableKwh} kWh
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono">
+                          {row.estimatedCapexKSh.toLocaleString()}
+                        </td>
+                        <td className="py-2.5 pl-3">
+                          <div className="flex flex-wrap gap-1">
+                            <span
+                              className={`text-[9px] px-1.5 py-0.5 rounded ${
+                                row.powerSufficient
+                                  ? 'bg-emerald-500/15 text-emerald-400'
+                                  : 'bg-red-500/15 text-red-400'
+                              }`}
+                            >
+                              {row.powerSufficient ? 'C-rate OK' : 'Low kW'}
+                            </span>
+                            <span
+                              className={`text-[9px] px-1.5 py-0.5 rounded ${
+                                row.voltageCompatible
+                                  ? 'bg-emerald-500/15 text-emerald-400'
+                                  : 'bg-red-500/15 text-red-400'
+                              }`}
+                            >
+                              {row.voltageCompatible ? 'V-Window OK' : 'V Mismatch'}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -6,7 +6,7 @@
  * vectors, then POSTs to the optimizer microservice and returns the
  * typed response.
  */
-import type { TariffProfile } from './tariff-config';
+import { computeAllInRate, type TariffProfile } from './tariff-config';
 
 const OPTIMIZER_URL =
   process.env.OPTIMIZER_SERVICE_URL ?? 'http://localhost:8001';
@@ -133,8 +133,6 @@ export function buildPriceVector(
     vatRate,
   } = profile.energy;
 
-  const surcharge = fuelEnergyCost + ferfa + infa + ercLevy + wraLevy;
-
   for (let i = 0; i < steps; i++) {
     const hourOfDay = (i * stepHours) % 24;
 
@@ -146,12 +144,11 @@ export function buildPriceVector(
       );
 
     const baseRate = isPeak ? highRateBase : lowRateBase;
-    const preVat = baseRate + surcharge;
-    const allIn = preVat * (1 + vatRate);
+    const allIn = computeAllInRate(baseRate, profile);
 
     importPrices.push(parseFloat(allIn.toFixed(4)));
-    // Export: simple net-metering at off-peak rate (KPLC practice)
-    exportPrices.push(parseFloat((lowRateBase * (1 + vatRate)).toFixed(4)));
+    // Export: simple net-metering credit baseline at off-peak base rate
+    exportPrices.push(parseFloat(lowRateBase.toFixed(4)));
   }
 
   return { importPrices, exportPrices };

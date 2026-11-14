@@ -68,6 +68,21 @@ export interface SimulationInputs {
   includeWeatherproofEnclosure: boolean;
   includeKPLCapplication: boolean;
   includeOandM: boolean;
+
+  // V2 scientific & sizing enhancements (all optional for full backwards compatibility)
+  pvSizingGoal?: 'dc_ac_ratio' | 'daily_energy' | 'least_waste';
+  maxWastedFrac?: number;
+  exportAllowed?: boolean;
+  exportLimitKw?: number;
+  exportTariffKShPerKWh?: number;
+  demandChargeKShPerKVA?: number;
+  powerFactor?: number;
+  essentialLoadKw?: number;
+  outageHours?: number[];
+  solarSource?: string;
+  taxShieldEnabled?: boolean;
+  corporateTaxRatePercent?: number;
+  investmentDeductionPercent?: number;
 }
 
 export interface BOMLineItem {
@@ -141,6 +156,23 @@ export interface EngineeringChecks {
   pvStringVoltageWindowMessage: string;
   pvStringVoltageWindowOk: boolean;
   deratingChecks: Array<{ circuit: string; baseAmpacityA: number; deratedAmpacityA: number; designCurrentA: number; ok: boolean }>;
+  inverterBatteryMatch?: {
+    ok: boolean;
+    status: 'compatible' | 'empty-undervoltage' | 'full-overvoltage' | 'unassessed';
+    nominalV: number;
+    emptyV: number;
+    fullV: number;
+    inverterMinV: number | null;
+    inverterMaxV: number | null;
+    message: string;
+  };
+  stringLayoutSummary?: {
+    stringCount: number;
+    panelsPerString: number;
+    usedPanelCount: number;
+    mpptsUsed: number;
+    message: string;
+  };
 }
 
 export interface FinancingMetrics {
@@ -241,4 +273,62 @@ export interface SimulationResults {
   contingencyUSD_legacy: number;
   epcMarginUSD_legacy: number;
   totalCapExUSD_legacy: number;
+
+  // V2 calculation engine & seasonal metadata
+  engineVersion?: string;
+  solarProvenance?: {
+    kind: 'measured' | 'modelled' | 'market-default' | 'user-input' | 'legacy';
+    label: string;
+    detail: string;
+  };
+  pvEnergyBasis?: {
+    goal: 'dc_ac_ratio' | 'daily_energy' | 'least_waste';
+    targetKwp: number;
+    dailyKwhToSupply: number;
+    wastedFrac: number;
+    basis: string;
+  };
+  annualClippedKWh?: number;
+  annualCurtailedKWh?: number;
+  annualUsefulSolarKWh?: number;
+  demandChargeSavingsUSD?: number;
+  exportRevenueUSD?: number;
+  worstConservationResidualKWh?: number;
+  monthlyDispatchSummary?: Array<{
+    monthIndex: number;
+    monthName: string;
+    days: number;
+    peakSunHours: number;
+    ambientTempC: number;
+    solarKwhMonth: number;
+    curtailedKwhMonth: number;
+    clippedKwhMonth: number;
+    gridImportKwhMonth: number;
+    gridExportKwhMonth: number;
+    loadKwhMonth: number;
+    hourly: Array<{
+      hour: number;
+      solarAcKw: number;
+      loadKw: number;
+      gridImportKw: number;
+      gridExportKw: number;
+      curtailedKw: number;
+      socFrac: number;
+    }>;
+  }>;
+  batteryComparison?: Array<{
+    id: string;
+    name: string;
+    brand: string;
+    architecture: 'HV' | 'LV';
+    modules: number;
+    banks: number;
+    nameplateKwh: number;
+    usableKwh: number;
+    estimatedCapexKSh: number;
+    powerSufficient: boolean;
+    voltageCompatible: boolean;
+    isPlaceholder: boolean;
+    selected: boolean;
+  }>;
 }

@@ -2,21 +2,66 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, GitCompare, RefreshCw, Droplets, BookmarkPlus, Check } from 'lucide-react';
 import ParametricInputs from '@/components/sizing/ParametricInputs';
 import SimulationResults from '@/components/sizing/SimulationResults';
 import ProposalViewer from '@/components/sizing/ProposalViewer';
+import WaterPumpingCalculator from '@/components/sizing/WaterPumpingCalculator';
 import HelpPanel from '@/components/sizing/HelpPanel';
 import { runSimulation } from '@/lib/sizing/solarCalculator';
 import type { SimulationInputs, SimulationResults as SimResultsType } from '@/lib/sizing/solarCalculator';
 import { useSizingCatalog } from '@/hooks/useSizingCatalog';
+import { saveDesignOptionToStorage } from '@/components/sizing/ScenarioCompare';
+
+const STUDIO_STAGES = [
+  { id: 'site', label: '1. Site & Demand' },
+  { id: 'system', label: '2. System & Sizing' },
+  { id: 'dispatch', label: '3. Dispatch & Grid' },
+  { id: 'economics', label: '4. Economics & Tax' },
+  { id: 'export', label: '5. Export & Compare' },
+] as const;
 
 export default function SizingPage() {
   const { catalog, loading: catalogLoading, error: catalogError } = useSizingCatalog();
   const [inputs, setInputs] = useState<SimulationInputs | null>(null);
   const [results, setResults] = useState<SimResultsType | null>(null);
   const [showProposal, setShowProposal] = useState(false);
+  const [showWaterPumping, setShowWaterPumping] = useState(false);
+  const [activeStage, setActiveStage] = useState<(typeof STUDIO_STAGES)[number]['id']>('system');
+  const [tariffSyncMsg, setTariffSyncMsg] = useState<string | null>(null);
+  const [syncingTariff, setSyncingTariff] = useState(false);
+  const [savedOptionToast, setSavedOptionToast] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleTariffSync = async () => {
+    setSyncingTariff(true);
+    try {
+      const res = await fetch('/api/tariffs/kplc', { method: 'POST' });
+      const data = await res.json();
+      setTariffSyncMsg(
+        data.source === 'live'
+          ? `KPLC synced (${data.snapshot?.surchargesEffectiveFrom})`
+          : `Fallback Oct 2026 (FCC ${data.snapshot?.surcharges?.fccPerKwhKes ?? 3.22})`
+      );
+    } catch {
+      setTariffSyncMsg('Using Oct 2026 KPLC fallback');
+    } finally {
+      setSyncingTariff(false);
+    }
+  };
+
+  const handleSaveComparisonOption = () => {
+    if (!results) return;
+    const label = `${results.inputs.location.name} • ${results.solarCapacityKWp}kWp / ${results.batteryCapacityKWh}kWh`;
+    saveDesignOptionToStorage({
+      id: `opt-${Date.now()}`,
+      label,
+      savedAt: new Date().toISOString(),
+      results,
+    });
+    setSavedOptionToast(true);
+    setTimeout(() => setSavedOptionToast(false), 2500);
+  };
 
   useEffect(() => {
     if (!inputs || !catalog) return;
@@ -50,15 +95,74 @@ export default function SizingPage() {
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-[10px] text-[var(--text-muted)] shrink-0">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--battery)] animate-pulse" />
-            <span className="hidden sm:inline">Live Simulation</span>
+          <div className="flex flex-wrap items-center gap-2 text-[10px] text-[var(--text-muted)] shrink-0">
+            <button
+              type="button"
+              onClick={handleTariffSync}
+              disabled={syncingTariff}
+              className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-2.5 py-1.5 font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition"
+            >
+              <RefreshCw className={`w-3 h-3 ${syncingTariff ? 'animate-spin' : ''}`} />
+              <span>{tariffSyncMsg ?? 'Sync KPLC Tariffs'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowWaterPumping((v) => !v)}
+              className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 font-semibold transition ${
+                showWaterPumping
+                  ? 'border-sky-500/40 bg-sky-500/10 text-sky-600'
+                  : 'border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-secondary)]'
+              }`}
+            >
+              <Droplets className="w-3 h-3" />
+              <span>Borehole Pump</span>
+            </button>
+            {results && (
+              <button
+                type="button"
+                onClick={handleSaveComparisonOption}
+                className="flex items-center gap-1.5 rounded-lg border border-[var(--battery)]/30 bg-[var(--battery-soft)] px-2.5 py-1.5 font-semibold text-[var(--battery)] transition"
+              >
+                {savedOptionToast ? <Check className="w-3 h-3" /> : <BookmarkPlus className="w-3 h-3" />}
+                <span>{savedOptionToast ? 'Saved to Compare' : 'Save Option'}</span>
+              </button>
+            )}
+            <Link
+              href="/scenarios"
+              className="flex items-center gap-1 rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-2.5 py-1.5 font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            >
+              <GitCompare className="w-3 h-3" />
+              <span>Compare 3</span>
+            </Link>
+            <span className="hidden md:inline-flex items-center gap-1.5 pl-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--battery)] animate-pulse" />
+              Live
+            </span>
           </div>
+        </div>
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 pb-2 flex flex-wrap gap-1.5">
+          {STUDIO_STAGES.map((stage) => (
+            <button
+              key={stage.id}
+              type="button"
+              onClick={() => setActiveStage(stage.id)}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition ${
+                activeStage === stage.id
+                  ? 'bg-[var(--battery)] text-white'
+                  : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--border)] hover:opacity-80'
+              }`}
+            >
+              {stage.label}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Main Layout */}
-      <div className="max-w-[1600px] mx-auto px-4 py-6">
+      <div className="max-w-[1600px] mx-auto px-4 py-6 space-y-6">
+        {showWaterPumping && (
+          <WaterPumpingCalculator peakSunHours={inputs?.location.peakSunHours ?? 5.27} />
+        )}
         {catalogError ? (
           <div className="flex flex-col items-center justify-center h-64 text-[var(--alert)] space-y-2">
             <p className="text-sm">Failed to load sizing catalog: {catalogError}</p>

@@ -10,6 +10,7 @@ import {
   PANEL_TEMP_COEFFICIENT_PER_DEG_C,
 } from '@/lib/config';
 import { getCountyPreset } from '@/lib/kenya-irradiance-data';
+import { INCIDENCE_ANGLE_LOSS_FRAC } from '@/lib/solar-resource';
 
 export interface SolarEngineInputs {
   timeOfDay: number;
@@ -193,6 +194,7 @@ export const simulateSolar = (
       tempEffect *
       performanceRatio *
       resolvedShadingFactor *
+      (1 - INCIDENCE_ANGLE_LOSS_FRAC) *
       degradationFactor;
     solar = Math.max(0, solar);
   }

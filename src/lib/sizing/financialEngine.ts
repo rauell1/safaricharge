@@ -36,7 +36,16 @@ export function suggestTariffCategory(segment: KPLCCustomerSegment, monthlyConsu
 export interface TOUTariffInputs {
   category: KPLCTariffCategory;
   tariffStructure: TariffStructure;
-  variableSurchargeAdderKSh: number; // FCC+FERFA+IA+WARMA, default 4.41
+  /** Combined pass-through surcharges (FCC+FERFA+INFA+WARMA); Oct 2026 default = 4.58. */
+  variableSurchargeAdderKSh: number;
+  /** Optional itemized Fuel Cost Charge (KES/kWh); VAT applies to base + FCC + FERFA. */
+  fccPerKwhKSh?: number;
+  /** Optional itemized FERFA (KES/kWh); VAT applies to base + FCC + FERFA. */
+  ferfaPerKwhKSh?: number;
+  /** Optional itemized Inflation Adjustment (KES/kWh); outside VAT. */
+  infaPerKwhKSh?: number;
+  /** Optional itemized WARMA levy (KES/kWh); outside VAT. */
+  warmaPerKwhKSh?: number;
   ercLevyKSh: number;                // default 0.08
   repLevyPercent: number;            // default 5%
   vatPercent: number;                // default 16%
@@ -49,10 +58,22 @@ export interface TOUTariffResult {
   blendedTariffKShPerKWh: number;
 }
 
+/**
+ * Computes all-in billed KES/kWh following KPLC billing rules:
+ * VAT applies ONLY to (base + FCC + FERFA). INFA, ERC, WARMA, and REP (5% of base) sit outside VAT.
+ * When itemized surcharges are omitted, apportions `variableSurchargeAdderKSh` using Oct 2026 weights
+ * (`FCC 3.22 + FERFA 0.87` vatable, `INFA 0.48 + WARMA 0.01` non-vatable).
+ */
 function allInTariff(baseRate: number, i: TOUTariffInputs): number {
-  const withSurcharges = baseRate + i.variableSurchargeAdderKSh + i.ercLevyKSh;
-  const withRep = withSurcharges * (1 + i.repLevyPercent / 100);
-  return withRep * (1 + i.vatPercent / 100);
+  const octTotal = 3.22 + 0.87 + 0.48 + 0.01;
+  const fcc = i.fccPerKwhKSh ?? (i.variableSurchargeAdderKSh * (3.22 / octTotal));
+  const ferfa = i.ferfaPerKwhKSh ?? (i.variableSurchargeAdderKSh * (0.87 / octTotal));
+  const infa = i.infaPerKwhKSh ?? (i.variableSurchargeAdderKSh * (0.48 / octTotal));
+  const warma = i.warmaPerKwhKSh ?? (i.variableSurchargeAdderKSh * (0.01 / octTotal));
+
+  const vat = (baseRate + fcc + ferfa) * (i.vatPercent / 100);
+  const rep = baseRate * (i.repLevyPercent / 100);
+  return baseRate + fcc + ferfa + infa + warma + i.ercLevyKSh + rep + vat;
 }
 
 export function computeTOUTariff(i: TOUTariffInputs): TOUTariffResult {
@@ -133,6 +154,31 @@ export interface CashFlowBuildParams {
   projectLifeYears: number;
   annualDebtServiceUSD: number;
   loanTermYears: number;
+  /** Optional Kenya Income Tax Act investment deduction & corporate tax shield. */
+  taxShieldEnabled?: boolean;
+  corporateTaxRatePercent?: number; // default 30%
+  investmentDeductionPercent?: number; // default 50% Year-1 wear & tear / investment allowance
+}
+
+export function computeTaxShieldAnnualUSD(
+  totalCapExUSD: number,
+  year: number,
+  corporateTaxRatePercent = 30,
+  investmentDeductionPercent = 50
+): number {
+  if (year < 1) return 0;
+  const taxRate = Math.max(0, corporateTaxRatePercent) / 100;
+  const firstYearAllow = Math.min(1, Math.max(0, investmentDeductionPercent / 100));
+  if (year === 1) {
+    return Math.round(totalCapExUSD * firstYearAllow * taxRate);
+  }
+  // Remaining pool written down on reducing balance at 25% p.a. over years 2-10
+  if (year <= 10 && firstYearAllow < 1) {
+    const remainingAfterYr1 = totalCapExUSD * (1 - firstYearAllow);
+    const poolAtStartOfYear = remainingAfterYr1 * Math.pow(0.75, year - 2);
+    return Math.round(poolAtStartOfYear * 0.25 * taxRate);
+  }
+  return 0;
 }
 
 export function buildCashFlows(p: CashFlowBuildParams): CashFlowYear[] {
@@ -153,7 +199,15 @@ export function buildCashFlows(p: CashFlowBuildParams): CashFlowYear[] {
     const selfConsumedKWh = energyGeneratedKWh * (p.selfConsumptionRatioPercent / 100);
     const tariffEsc = Math.pow(1 + p.tariffEscalationPercent / 100, y - 1);
     const effectiveTariffKShPerKWh = Math.round(p.blendedTariffKShPerKWh * tariffEsc * 100) / 100;
-    const grossSavingsUSD = (selfConsumedKWh * effectiveTariffKShPerKWh) / p.kshPerUsd;
+    const taxShieldUSD = p.taxShieldEnabled
+      ? computeTaxShieldAnnualUSD(
+          p.totalCapExUSD,
+          y,
+          p.corporateTaxRatePercent ?? 30,
+          p.investmentDeductionPercent ?? 50
+        )
+      : 0;
+    const grossSavingsUSD = (selfConsumedKWh * effectiveTariffKShPerKWh) / p.kshPerUsd + taxShieldUSD;
 
     const omEsc = Math.pow(1 + p.omEscalationPercent / 100, y - 1);
     const omUSD = p.annualOMCostUSDYear1 * omEsc;

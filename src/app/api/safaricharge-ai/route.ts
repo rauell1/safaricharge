@@ -22,6 +22,16 @@ import {
   withTimeout,
 } from '@/lib/security';
 import { logger } from '@/lib/logger';
+import { KPLC_OCT_2026_SURCHARGES, TARIFF_PROFILES, computeAllInRate } from '@/lib/tariff-config';
+import { buildDeterministicAuditReply } from '@/lib/ai/deterministic-audit';
+import type { SimulationResults } from '@/lib/sizing/types';
+
+const DYNAMIC_EV_PEAK =
+  Math.round(computeAllInRate(TARIFF_PROFILES.ev.energy.highRateBase, TARIFF_PROFILES.ev) * 100) / 100;
+const DYNAMIC_EV_OFFPEAK =
+  Math.round(computeAllInRate(TARIFF_PROFILES.ev.energy.lowRateBase, TARIFF_PROFILES.ev) * 100) / 100;
+const DYNAMIC_DOM_HIGH =
+  Math.round(computeAllInRate(TARIFF_PROFILES.domestic.energy.highRateBase, TARIFF_PROFILES.domestic) * 100) / 100;
 
 const SYSTEM_PROMPT = `
 You are SafariCharge AI, an expert assistant for solar, battery, EV charging, and energy-cost optimization.
@@ -33,8 +43,8 @@ Mode selection:
 1) Dashboard mode (default when system data is relevant): diagnose performance and optimize results.
 2) General research mode (when user asks outside current dashboard data): provide direct, research-backed guidance.
 
-Kenya-specific context:
-- KPLC tariff structure (EPRA 2025/26): peak window 18:00-22:00 EAT daily at ~KES 27/kWh; off-peak all other hours at ~KES 23/kWh. Always reference the correct rate when computing savings.
+Kenya-specific context (EPRA Oct 2026 baseline):
+- KPLC tariff structure: E-Mobility/TOU peak window 18:00-22:00 EAT daily at KES ${DYNAMIC_EV_PEAK.toFixed(2)}/kWh all-in; off-peak at KES ${DYNAMIC_EV_OFFPEAK.toFixed(2)}/kWh all-in (Domestic Ordinary >100 kWh ~KES ${DYNAMIC_DOM_HIGH.toFixed(2)}/kWh). 16% VAT applies strictly to (Base + FCC ${KPLC_OCT_2026_SURCHARGES.fuelEnergyCost} + FERFA ${KPLC_OCT_2026_SURCHARGES.ferfa}), while INFA (${KPLC_OCT_2026_SURCHARGES.infa}), ERC (${KPLC_OCT_2026_SURCHARGES.ercLevy}), WARMA (${KPLC_OCT_2026_SURCHARGES.wraLevy}), and REP (5% of base) are non-VAT pass-throughs. Always reference the correct all-in rate when computing savings.
 - Kenya grid emission factor: 0.50 kg CO₂/kWh (EPRA 2025). Use this for all carbon calculations.
 - Solar irradiance seasonality: long rains March-May and short rains October-December reduce solar yield by 15-25%; factor this into generation forecasts and battery sizing advice.
 - Primary hardware in this region: Deye SG04LP1 / SG05LP3 inverters (97.6% efficiency); Jinko Tiger Neo N-type TOPCon panels (temperature coefficient −0.29 %/°C, annual degradation 0.40 %/yr). Reference these specs when diagnosing performance.
@@ -149,6 +159,7 @@ const aiRequestSchema = z
     userPrompt: z.string().min(1).max(AI_MAX_PROMPT_CHARS).optional(),
     conversationHistory: z.array(messageSchema).max(AI_MAX_HISTORY_TURNS * 2).default([]),
     systemData: systemDataSchema,
+    sizingResults: z.unknown().optional(),
   })
   .refine((value) => Boolean(value.userQuery || value.userPrompt), {
     path: ['userQuery'],
@@ -158,6 +169,7 @@ const aiRequestSchema = z
     userQuery: (value.userQuery ?? value.userPrompt) as string,
     conversationHistory: value.conversationHistory ?? [],
     systemData: value.systemData,
+    sizingResults: value.sizingResults as SimulationResults | undefined,
   }));
 
 type AiRequest = z.infer<typeof aiRequestSchema>;
@@ -400,9 +412,11 @@ function computeDerivedMetrics(systemData: AiRequest['systemData']): DerivedMetr
 function buildEnergyPrompt({
   userQuery,
   systemData,
+  sizingResults,
 }: {
   userQuery: string;
   systemData: AiRequest['systemData'];
+  sizingResults?: SimulationResults;
 }): ChatMessage[] {
   const derived = computeDerivedMetrics(systemData);
   const derivedSection = `Derived metrics:
@@ -462,12 +476,21 @@ High-priority: Battery efficiency has dropped significantly. Highlight the degra
   const now = new Date(systemData.timestamp);
   const hourEAT = (now.getUTCHours() + 3) % 24; // UTC+3
   const isPeakKPLC = hourEAT >= 18 && hourEAT < 22;
-  const tariffZone = isPeakKPLC ? 'PEAK (KES 27/kWh, 18:00-22:00)' : 'OFF-PEAK (KES 23/kWh)';
+  const tariffZone = isPeakKPLC
+    ? `PEAK (KES ${DYNAMIC_EV_PEAK.toFixed(2)}/kWh all-in, 18:00-22:00)`
+    : `OFF-PEAK (KES ${DYNAMIC_EV_OFFPEAK.toFixed(2)}/kWh all-in; Domestic Ordinary top-tier ~KES ${DYNAMIC_DOM_HIGH.toFixed(2)}/kWh)`;
   const hoursUntilPeak = isPeakKPLC ? 0 : (18 - hourEAT > 0 ? 18 - hourEAT : 24 - hourEAT + 18);
-  const kplcSection = `KPLC tariff context:
+  const kplcSection = `KPLC tariff context (Oct 2026):
 - Current time (EAT): ${hourEAT.toString().padStart(2, '0')}:00
 - Tariff zone: ${tariffZone}
 - Next zone change: ${isPeakKPLC ? '22:00 → off-peak' : `${hoursUntilPeak}h until peak`}`;
+
+  const sizingSection = sizingResults
+    ? `\nAttached Studio Sizing Design (${sizingResults.inputs?.location?.name ?? 'Site'}):
+- PV: ${sizingResults.solarCapacityKWp} kWp, Inverter: ${sizingResults.inverterCapacityKW} kW, BESS: ${sizingResults.batteryCapacityKWh} kWh (DC/AC ${sizingResults.actualDcAcRatio})
+- Annual AC Yield: ${sizingResults.annualPVGeneratedKWh} kWh (${sizingResults.annualUsefulSolarKWh ?? sizingResults.selfConsumedKWh} kWh useful, ${sizingResults.annualCurtailedKWh ?? 0} kWh curtailed, ${sizingResults.annualClippedKWh ?? 0} kWh clipped)
+- Autonomy: ${sizingResults.systemAutonomyPercent}%, Payback: ${sizingResults.simplePaybackYears} yrs, IRR: ${sizingResults.irrPercent}%, Useful LCOE: $${sizingResults.lcoeUSDPerKWh}/kWh`
+    : '';
 
   const co2Saved = systemData.solar.daily_kwh * 0.50; // kg, Kenya grid factor
   const co2Section = `CO₂ context:
@@ -489,6 +512,7 @@ ${derivedSection}
 ${learningSection}
 
 ${kplcSection}
+${sizingSection}
 
 ${co2Section}
 
@@ -741,6 +765,7 @@ export async function POST(request: NextRequest) {
     const promptMessages = buildEnergyPrompt({
       userQuery: payload.userQuery,
       systemData: payload.systemData,
+      sizingResults: payload.sizingResults,
     });
 
     // Check cache first
@@ -765,13 +790,17 @@ export async function POST(request: NextRequest) {
       return jsonResponse({ response: zaiResult.text }, { status: 200, headers });
     }
 
-    const hint = !process.env.GEMINI_API_KEY
-      ? 'Add GEMINI_API_KEY to your environment to enable SafariCharge AI.'
-      : 'Gemini and Z.AI are unavailable. Check API keys and quotas.';
-
+    const deterministicReply = buildDeterministicAuditReply({
+      prompt: payload.userQuery,
+      results: payload.sizingResults ?? null,
+    });
+    logger.info('[AI] Returning deterministic engineering audit fallback', {
+      geminiError: geminiResult.error,
+      zaiError: zaiResult.error,
+    });
     return jsonResponse(
-      { error: 'AI service unavailable.', hint, details: [geminiResult.error, zaiResult.error] },
-      { status: 502, headers }
+      { response: deterministicReply, fallback: 'deterministic' },
+      { status: 200, headers }
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown server error';

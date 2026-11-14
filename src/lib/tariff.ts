@@ -1,4 +1,4 @@
-import { TARIFF_PROFILES, type TariffProfileType } from './tariff-config';
+import { computeAllInRate, TARIFF_PROFILES, type TariffProfileType } from './tariff-config';
 import {
   GRID_EMISSION_FACTOR_KG_CO2_PER_KWH,
   TREE_CO2_ABSORPTION_KG_PER_YEAR,
@@ -6,12 +6,6 @@ import {
 } from './config';
 
 const activeProfile = TARIFF_PROFILES.ev;
-
-function computeBasePlusLevies(profileType: TariffProfileType, highRate: boolean): number {
-  const profile = TARIFF_PROFILES[profileType];
-  const energyBase = highRate ? profile.energy.highRateBase : profile.energy.lowRateBase;
-  return energyBase + profile.energy.fuelEnergyCost + profile.energy.ferfa + profile.energy.infa + profile.energy.ercLevy + profile.energy.wraLevy;
-}
 
 export const KPLC_TARIFF = {
   PROFILE: activeProfile,
@@ -24,6 +18,7 @@ export const KPLC_TARIFF = {
   INFA: activeProfile.energy.infa,
   ERC_LEVY: activeProfile.energy.ercLevy,
   WRA_LEVY: activeProfile.energy.wraLevy,
+  REP_RATE: activeProfile.energy.repRate ?? 0.05,
   VAT_RATE: activeProfile.energy.vatRate,
 
   PEAK_MORNING_START: activeProfile.peakHours[0]?.start ?? 6,
@@ -32,11 +27,13 @@ export const KPLC_TARIFF = {
   PEAK_EVENING_END: activeProfile.peakHours[1]?.end ?? 22,
 
   getHighRateWithVAT: function(profileType: TariffProfileType = 'ev') {
-    return computeBasePlusLevies(profileType, true) * (1 + TARIFF_PROFILES[profileType].energy.vatRate);
+    const profile = TARIFF_PROFILES[profileType];
+    return computeAllInRate(profile.energy.highRateBase, profile);
   },
 
   getLowRateWithVAT: function(profileType: TariffProfileType = 'ev') {
-    return computeBasePlusLevies(profileType, false) * (1 + TARIFF_PROFILES[profileType].energy.vatRate);
+    const profile = TARIFF_PROFILES[profileType];
+    return computeAllInRate(profile.energy.lowRateBase, profile);
   },
 
   isPeakTime: function(hour: number, profileType: TariffProfileType = 'ev'): boolean {
