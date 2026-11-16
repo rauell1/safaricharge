@@ -55,6 +55,7 @@ git checkout rollback/<name> -- src/path/to/file.ts
 
 | # | Branch | Pinned Commit | Description | Date |
 |---|--------|--------------|-------------|------|
+| 475 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-11-16-43bb16c` | `43bb16c` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-11-16 |
 | 474 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-11-15-56417c9` | `56417c9` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-11-15 |
 | 473 | `rollback/feat-port-stimapulse-v2-tariffs-season-2026-11-14-ad93717` | `ad93717` | feat: port StimaPulse V2 tariffs, seasonal dispatch, sizing, reports, heatmap, scenarios, MCP & telemetry (v2.3.0) (40f +4909/-222) | 2026-11-14 |
 | 472 | `rollback/docs-auto-regenerate-codebase-map-md-s-2026-11-14-1042ab0` | `1042ab0` | docs(auto): regenerate CODEBASE_MAP.md [skip ci] (1f +1/-1) | 2026-11-14 |
@@ -5070,6 +5071,16 @@ git checkout rollback/<name> -- src/path/to/file.ts
 - **Commit**: `56417c95ecdf16cd058f662eb87a5a555d2c3d10`
 - **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
 - **Date**: 2026-11-15
+- **Changed**: 1 file(s), +1/-1 lines
+- **Auto-generated**: yes (by update-rollback.yml)
+---
+
+## Snapshot #475 — `rollback/docs-auto-regenerate-codebase-map-md-s-2026-11-16-43bb16c`
+
+- **Branch**: `rollback/docs-auto-regenerate-codebase-map-md-s-2026-11-16-43bb16c`
+- **Commit**: `43bb16ca26e354d320aafd452da59b27d3ca6909`
+- **Subject**: docs(auto): regenerate CODEBASE_MAP.md [skip ci]
+- **Date**: 2026-11-16
 - **Changed**: 1 file(s), +1/-1 lines
 - **Auto-generated**: yes (by update-rollback.yml)
 
